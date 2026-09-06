@@ -1,0 +1,15 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: internal/db/ddl
+    queries: internal/db/sql
+    gen:
+      go:
+        package: gen
+        out: internal/db/gen
+        sql_package: pgx/v5
+        emit_json_tags: true
+        # Dynamic queries scan by column name, which needs the db tag.
+        emit_db_tags: true
+        emit_pointers_for_null_types: true
+        emit_empty_slices: true
