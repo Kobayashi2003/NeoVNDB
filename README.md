@@ -56,16 +56,30 @@ go run ./cmd/neovndb db verify
 ```
 cmd/neovndb/          single binary, one subcommand per role
 internal/config/      environment settings
+internal/dump/        fetch and stream the tar
+internal/importer/    COPY the dump into a fresh generation
+internal/vndb/        the dump's own encodings: ids, dates, extlinks, animation
 internal/db/
   ddl/01_mirror.sql   the 42 dump tables we import
   ddl/02_derived.sql  what vndb computes but does not export
   ddl/03_indexes.sql  every access path the API takes
-  query/*.sql         sqlc source
+  derive/*.sql        the derived step, run after COPY
+  sql/*.sql           sqlc source
   gen/                sqlc output, generated
   db.go               pool and transaction helpers
   generation.go       create, promote, roll back, drop
   status.go
   verify.go
+internal/api/
+  server.go           routes and graceful shutdown
+  handlers.go         the four handlers and the JSON envelope
+  middleware.go       panic recovery and request logging
+  query/              shared machinery: request parsing, field registry,
+                      filter builder, paging
+  vn/ release/ character/ producer/ staff/ tag/ trait/
+                      one package per type, each a query.Resolver.
+                      Small types are a single resolver.go; the three large
+                      ones split into fields.go, filters.go and fragments.go.
 ```
 
 ## Decisions worth knowing before reading the schema

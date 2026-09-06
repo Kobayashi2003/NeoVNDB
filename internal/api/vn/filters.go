@@ -1,8 +1,6 @@
 package vn
 
 import (
-	"strings"
-
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -21,7 +19,7 @@ var filters = map[string]query.FilterFunc{
 	"platform":  query.ArrayColumn("vn.c_platforms"),
 
 	"released": releasedFilter,
-	"search":   searchFilter,
+	"search":   query.SearchFilter("v", "vn"),
 
 	"has_description": query.BoolFilter("vn.description <> ''", "vn.description = ''"),
 	"has_screenshot": query.BoolFilter(
@@ -101,19 +99,6 @@ func releasedFilter(b *query.Builder, value string) error {
 		}
 		return nil
 	})
-}
-
-// searchFilter runs the input through the same normaliser that built the
-// index, so punctuation, case and width differences all fall away.
-func searchFilter(b *query.Builder, value string) error {
-	if strings.TrimSpace(value) == "" {
-		return query.BadRequest("search needs a term")
-	}
-	b.Where(`EXISTS (
-		SELECT 1 FROM search_cache sc
-		 WHERE sc.entity_type = 'v' AND sc.id = vn.id
-		   AND sc.label LIKE '%%' || search_norm_term(%s) || '%%')`, value)
-	return nil
 }
 
 // Sortable expressions. searchrank ranks by the strength of the match, so it

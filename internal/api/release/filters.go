@@ -1,8 +1,6 @@
 package release
 
 import (
-	"strings"
-
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -13,7 +11,7 @@ var filters = map[string]query.FilterFunc{
 	"voiced": query.IntColumn("r.voiced", 1),
 
 	"released": releasedFilter,
-	"search":   searchFilter,
+	"search":   query.SearchFilter("r", "r"),
 
 	"patch":      query.BoolFilter("r.patch", "NOT r.patch"),
 	"freeware":   query.BoolFilter("r.freeware", "NOT r.freeware"),
@@ -100,17 +98,6 @@ func releasedFilter(b *query.Builder, value string) error {
 		}
 		return nil
 	})
-}
-
-func searchFilter(b *query.Builder, value string) error {
-	if strings.TrimSpace(value) == "" {
-		return query.BadRequest("search needs a term")
-	}
-	b.Where(`EXISTS (
-		SELECT 1 FROM search_cache sc
-		 WHERE sc.entity_type = 'r' AND sc.id = r.id
-		   AND sc.label LIKE '%%' || search_norm_term(%s) || '%%')`, value)
-	return nil
 }
 
 var sorts = map[string]string{

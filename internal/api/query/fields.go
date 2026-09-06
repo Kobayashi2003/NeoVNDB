@@ -95,7 +95,9 @@ func ParseFields(reg Registry, value string) (Selection, error) {
 		if len(parts) == 1 {
 			if def.Kind == Column {
 				sel.Columns = append(sel.Columns, parts[0])
-			} else if _, seen := sel.Fragments[parts[0]]; !seen {
+			} else {
+				// A bare fragment means all of it, and widens one that a
+				// subfield already narrowed, whichever order they arrived in.
 				sel.Fragments[parts[0]] = nil
 			}
 			continue

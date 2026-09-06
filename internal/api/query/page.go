@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -127,7 +128,7 @@ func SearchFilter(entity, alias string) FilterFunc {
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
 		   AND sc.label LIKE '%%%%' || search_norm_term(%%s) || '%%%%')`, entity, alias)
 	return func(b *Builder, value string) error {
-		if value == "" {
+		if strings.TrimSpace(value) == "" {
 			return BadRequest("search needs a term")
 		}
 		b.Where(condition, value)
