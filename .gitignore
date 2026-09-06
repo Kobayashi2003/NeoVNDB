@@ -1,0 +1,8 @@
+.env
+/bin/
+/data/
+*.exe
+
+# stray server logs from local runs
+*.log
+*.err
