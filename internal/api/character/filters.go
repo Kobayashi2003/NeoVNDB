@@ -1,8 +1,6 @@
 package character
 
 import (
-	"strings"
-
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -19,7 +17,7 @@ var filters = map[string]query.FilterFunc{
 	"hips":       query.IntColumn("c.s_hip", 1),
 	"age":        query.IntColumn("c.age", 1),
 
-	"search": searchFilter,
+	"search": query.SearchFilter("c", "c"),
 
 	// trait expands through the closure, so a parent trait also matches
 	// characters carrying any of its children; dtrait matches only what was
@@ -45,17 +43,6 @@ var filters = map[string]query.FilterFunc{
 			return nil
 		})
 	},
-}
-
-func searchFilter(b *query.Builder, value string) error {
-	if strings.TrimSpace(value) == "" {
-		return query.BadRequest("search needs a term")
-	}
-	b.Where(`EXISTS (
-		SELECT 1 FROM search_cache sc
-		 WHERE sc.entity_type = 'c' AND sc.id = c.id
-		   AND sc.label LIKE '%%' || search_norm_term(%s) || '%%')`, value)
-	return nil
 }
 
 var sorts = map[string]string{

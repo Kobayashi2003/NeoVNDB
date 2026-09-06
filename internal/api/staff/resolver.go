@@ -116,6 +116,10 @@ func (r *Resolver) build(ctx context.Context, page []gen.Staff, sel query.Select
 				obj["gender"] = query.EmptyToNil(s.Gender)
 			case "description":
 				obj["description"] = query.EmptyToNil(s.Description)
+			case "name", "original":
+				// Filled from the main alias below. Pre-set so a requested
+				// field is always present, as it is for every other type.
+				obj[col] = nil
 			}
 		}
 		out[i], byID[s.ID] = obj, obj
@@ -155,12 +159,16 @@ func (r *Resolver) loadAliases(ctx context.Context, ids []int32, mainOf map[int3
 
 	grouped := map[int32][]map[string]any{}
 	for _, a := range rows {
+		obj, ok := byID[a.StaffID]
+		if !ok {
+			continue
+		}
 		if a.Aid == mainOf[a.StaffID] {
 			if sel.Has("name") {
-				byID[a.StaffID]["name"] = query.PreferLatin(a.Name, a.Latin)
+				obj["name"] = query.PreferLatin(a.Name, a.Latin)
 			}
 			if sel.Has("original") {
-				byID[a.StaffID]["original"] = query.OriginalOf(a.Name, a.Latin)
+				obj["original"] = query.OriginalOf(a.Name, a.Latin)
 			}
 		}
 		grouped[a.StaffID] = append(grouped[a.StaffID], map[string]any{
