@@ -19,6 +19,25 @@ const (
 	defaultConnectTimeout = 10 * time.Second
 	defaultDumpDir        = "data/dumps"
 	defaultDumpURL        = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
+
+	// What one request may ask for. These bound work, not correctness, so they
+	// are settings: what a deployment can afford differs, and a private
+	// instance serving one frontend can afford far more than a public one.
+	defaultPageSize      = 24
+	defaultMaxPageSize   = 100
+	defaultMaxIDs        = 100
+	defaultMaxFieldDepth = 3
+	// Estimated field values in a response, priced from each level's declared
+	// fan-out before the request runs. Follows vndb's own ceiling.
+	defaultMaxCost = 100_000
+
+	defaultGraphDepth    = 3
+	defaultMaxGraphDepth = 8
+	defaultMaxGraphNodes = 300
+
+	defaultRequestTimeout    = 5 * time.Second
+	defaultReadHeaderTimeout = 10 * time.Second
+	defaultShutdownTimeout   = 10 * time.Second
 )
 
 type Config struct {
@@ -35,6 +54,23 @@ type Config struct {
 	MinConns       int32
 	ConnLifetime   time.Duration
 	ConnectTimeout time.Duration
+
+	// Bounds on a single request.
+	PageSize      int
+	MaxPageSize   int
+	MaxIDs        int
+	MaxFieldDepth int
+	MaxCost       int
+
+	// Bounds on the VN relation graph, which is a walk rather than a page and
+	// so is bounded by depth and node count instead.
+	GraphDepth    int
+	MaxGraphDepth int
+	MaxGraphNodes int
+
+	RequestTimeout    time.Duration
+	ReadHeaderTimeout time.Duration
+	ShutdownTimeout   time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -51,6 +87,20 @@ func Load() (*Config, error) {
 		MinConns:       int32(envInt("NEOVNDB_DB_MIN_CONNS", defaultMinConns)),
 		ConnLifetime:   envDuration("NEOVNDB_DB_CONN_LIFETIME", defaultConnLifetime),
 		ConnectTimeout: envDuration("NEOVNDB_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
+
+		PageSize:      envInt("NEOVNDB_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:   envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
+		MaxIDs:        envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
+		MaxFieldDepth: envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
+		MaxCost:       envInt("NEOVNDB_MAX_COST", defaultMaxCost),
+
+		GraphDepth:    envInt("NEOVNDB_GRAPH_DEPTH", defaultGraphDepth),
+		MaxGraphDepth: envInt("NEOVNDB_MAX_GRAPH_DEPTH", defaultMaxGraphDepth),
+		MaxGraphNodes: envInt("NEOVNDB_MAX_GRAPH_NODES", defaultMaxGraphNodes),
+
+		RequestTimeout:    envDuration("NEOVNDB_REQUEST_TIMEOUT", defaultRequestTimeout),
+		ReadHeaderTimeout: envDuration("NEOVNDB_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
+		ShutdownTimeout:   envDuration("NEOVNDB_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")

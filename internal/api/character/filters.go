@@ -57,3 +57,8 @@ var sorts = map[string]string{
 	// Ranks by the strength of the match; only meaningful with a search term.
 	"searchrank": "",
 }
+
+var spec = query.PageSpec{
+	Table: "chars c", Alias: "c", IDType: vndb.TypeCharacter, SearchEntity: "c",
+	Filters: filters, Sorts: sorts,
+}

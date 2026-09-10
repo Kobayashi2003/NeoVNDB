@@ -73,51 +73,10 @@ SELECT v.id, v.olang, v.c_released, t.title, t.latin
   LEFT JOIN vn_titles t ON t.id = v.id AND t.lang = v.olang
  WHERE v.id = ANY(@ids::int[]);
 
--- name: VNReleases :many
-SELECT rv.vid, rv.rtype, r.*
-  FROM releases r
-  JOIN releases_vn rv ON rv.id = r.id
- WHERE rv.vid = ANY(@ids::int[])
- ORDER BY rv.vid, r.released;
-
--- name: VNCharacters :many
-SELECT cv.vid, cv.role, cv.spoil, c.*
-  FROM chars c
-  JOIN chars_vns cv ON cv.id = c.id
- WHERE cv.vid = ANY(@ids::int[])
- ORDER BY cv.vid, cv.role, c.id;
-
--- name: VNStaff :many
--- aid identifies the pen name credited on this work, so the alias row is
--- joined rather than the person's main name.
-SELECT vs.id, vs.aid, vs.role, vs.eid, vs.note,
-       sa.id AS staff_id, sa.name, sa.latin, s.lang
-  FROM vn_staff vs
-  JOIN staff_alias sa ON sa.aid = vs.aid
-  JOIN staff s ON s.id = sa.id
- WHERE vs.id = ANY(@ids::int[])
- ORDER BY vs.id, vs.role;
-
--- name: VNScreenshots :many
-SELECT s.id, s.scr, s.rid,
-       i.width, i.height, i.c_sexual_avg, i.c_violence_avg, i.c_votecount
-  FROM vn_screenshots s
-  JOIN images i ON i.kind = 'sf' AND i.num = s.scr
- WHERE s.id = ANY(@ids::int[])
- ORDER BY s.id, s.scr;
-
 -- name: GetCovers :many
 SELECT num, width, height, c_sexual_avg, c_violence_avg, c_votecount
   FROM images
  WHERE kind = 'cv' AND num = ANY(@nums::int[]);
-
--- name: ListVNs :many
--- count travels with the page: the filter is the expensive half either way, and
--- a window function avoids running it twice.
-SELECT sqlc.embed(vn), COUNT(*) OVER ()::int AS total
-  FROM vn
- ORDER BY id
- LIMIT $1 OFFSET $2;
 
 -- name: VNDevelopers :many
 -- c_developers is a cached array on the row, so the producers come back in one
@@ -163,17 +122,6 @@ SELECT cv.vid AS vn_id, cv.role, cv.spoil, c.id, c.c_lang, c.image, c.sex
   JOIN chars c ON c.id = cv.id
  WHERE cv.vid = ANY(@ids::int[])
  ORDER BY cv.vid, cv.role, c.id;
-
--- name: ReleaseTitles :many
-SELECT id, lang, mtl, title, latin
-  FROM releases_titles
- WHERE id = ANY(@ids::int[]);
-
--- name: CharacterNames :many
-SELECT n.id, n.name, n.latin
-  FROM chars_names n
-  JOIN chars c ON c.id = n.id AND c.c_lang = n.lang
- WHERE n.id = ANY(@ids::int[]);
 
 -- name: GetCharImages :many
 SELECT num, width, height, c_sexual_avg, c_violence_avg, c_votecount

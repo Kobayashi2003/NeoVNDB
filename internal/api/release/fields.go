@@ -1,78 +1,83 @@
 package release
 
 import (
+	"context"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/db/gen"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
+type field = query.Field[gen.Release]
+type source = query.Source[*Resolver, gen.Release]
+
 // animation, drm and supersedes are the three things vndb.org shows that the
 // Kana API does not carry at all. They exist here because the dump does.
-var registry = query.Registry{
-	"title":      {Kind: query.Column},
-	"alttitle":   {Kind: query.Column},
-	"olang":      {Kind: query.Column},
-	"released":   {Kind: query.Column},
-	"minage":     {Kind: query.Column},
-	"patch":      {Kind: query.Column},
-	"freeware":   {Kind: query.Column},
-	"uncensored": {Kind: query.Column},
-	"official":   {Kind: query.Column},
-	"has_ero":    {Kind: query.Column},
-	"voiced":     {Kind: query.Column},
-	"resolution": {Kind: query.Column},
-	"notes":      {Kind: query.Column},
-	"gtin":       {Kind: query.Column},
-	"catalog":    {Kind: query.Column},
-	"animation":  {Kind: query.Column},
+var fields = query.NewTable(query.Table[*Resolver, gen.Release]{
+	IDType: vndb.TypeRelease,
+	ID:     func(r gen.Release) int32 { return r.ID },
+	Fetch:  fetch,
 
-	"titles":     {Kind: query.Fragment, Subfields: []string{"lang", "title", "latin", "mtl"}},
-	"platforms":  {Kind: query.Fragment},
-	"media":      {Kind: query.Fragment, Subfields: []string{"medium", "qty"}},
-	"vns":        {Kind: query.Fragment, Subfields: []string{"id", "title", "rtype"}},
-	"producers":  {Kind: query.Fragment, Subfields: []string{"id", "name", "original", "developer", "publisher"}},
-	"images":     {Kind: query.Fragment, Subfields: []string{"url", "dims", "itype", "vn", "languages", "sexual", "violence"}},
-	"drm":        {Kind: query.Fragment, Subfields: []string{"id", "name", "description", "notes", "properties"}},
-	"supersedes": {Kind: query.Fragment},
-	"extlinks":   {Kind: query.Fragment, Subfields: []string{"site", "label", "url"}},
-	"engine":     {Kind: query.Fragment, Subfields: []string{"id", "name", "description"}},
-}
-
-func column(row gen.Release, name string) (any, bool) {
-	switch name {
-	case "olang":
-		return row.Olang, true
-	case "released":
-		return vndb.FormatReleased(row.Released), true
-	case "minage":
-		return row.Minage, true
-	case "patch":
-		return row.Patch, true
-	case "freeware":
-		return row.Freeware, true
-	case "uncensored":
-		return row.Uncensored, true
-	case "official":
-		return row.Official, true
-	case "has_ero":
-		return row.HasEro, true
-	case "voiced":
-		return zeroToNil(row.Voiced), true
-	case "resolution":
-		return vndb.Resolution(row.ResoX, row.ResoY), true
-	case "notes":
-		return query.EmptyToNil(row.Notes), true
-	case "catalog":
-		return query.EmptyToNil(row.Catalog), true
-	case "gtin":
+	Fields: map[string]field{
+		"olang":      {Row: func(r gen.Release) any { return r.Olang }},
+		"released":   {Row: func(r gen.Release) any { return vndb.FormatReleased(r.Released) }},
+		"minage":     {Row: func(r gen.Release) any { return r.Minage }},
+		"patch":      {Row: func(r gen.Release) any { return r.Patch }},
+		"freeware":   {Row: func(r gen.Release) any { return r.Freeware }},
+		"uncensored": {Row: func(r gen.Release) any { return r.Uncensored }},
+		"official":   {Row: func(r gen.Release) any { return r.Official }},
+		"has_ero":    {Row: func(r gen.Release) any { return r.HasEro }},
+		"voiced":     {Row: func(r gen.Release) any { return zeroToNil(r.Voiced) }},
+		"resolution": {Row: func(r gen.Release) any { return vndb.Resolution(r.ResoX, r.ResoY) }},
+		"notes":      {Row: func(r gen.Release) any { return query.EmptyToNil(r.Notes) }},
+		"catalog":    {Row: func(r gen.Release) any { return query.EmptyToNil(r.Catalog) }},
 		// 0 is the dump's empty barcode, and the number is wider than a JSON
 		// consumer should treat as arithmetic, so it goes out as a string.
-		return gtin(row.Gtin), true
-	case "animation":
-		return animation(row), true
-	}
-	// title and alttitle come from releases_titles.
-	return nil, false
+		"gtin":      {Row: func(r gen.Release) any { return gtin(r.Gtin) }},
+		"animation": {Row: func(r gen.Release) any { return animation(r) }},
+
+		// The title is the releases_titles row in the release's own language,
+		// the same rule a visual novel's title follows.
+		"title":    {Source: "titles"},
+		"alttitle": {Source: "titles"},
+		"titles": {Kind: query.Fragment, Source: "titles", Num: 2,
+			Subfields: []string{"lang", "title", "latin", "mtl"}},
+
+		"platforms": {Kind: query.Fragment, Source: "platforms", Num: 2},
+		"media": {Kind: query.Fragment, Source: "media", Num: 2,
+			Subfields: []string{"medium", "qty"}},
+		"images": {Kind: query.Fragment, Source: "images", Num: 3,
+			Subfields: []string{"url", "dims", "itype", "vn", "languages", "sexual", "violence"}},
+		"drm": {Kind: query.Fragment, Source: "drm", Num: 2,
+			Subfields: []string{"id", "name", "description", "notes", "properties"}},
+		"extlinks": {Kind: query.Fragment, Source: "extlinks", Num: 5,
+			Subfields: []string{"site", "label", "url"}},
+		"engine": {Kind: query.Fragment, Source: "engine", Num: 1,
+			Subfields: []string{"id", "name", "description"}},
+
+		"vns": {Kind: query.Fragment, Source: "vns", Num: 2,
+			Edge: []string{"rtype"}, Target: vndb.TypeVN},
+		"producers": {Kind: query.Fragment, Source: "producers", Num: 2,
+			Edge: []string{"developer", "publisher"}, Target: vndb.TypeProducer},
+		"supersedes": {Kind: query.Fragment, Source: "supersedes", Num: 1,
+			Target: vndb.TypeRelease},
+	},
+	Sources: map[string]source{
+		"titles":     loadTitles,
+		"platforms":  loadPlatforms,
+		"media":      loadMedia,
+		"images":     loadImages,
+		"drm":        loadDRM,
+		"extlinks":   loadExtLinks,
+		"engine":     loadEngine,
+		"vns":        loadVNs,
+		"producers":  loadProducers,
+		"supersedes": loadSupersedes,
+	},
+})
+
+func fetch(ctx context.Context, r *Resolver, ids []int32) ([]gen.Release, error) {
+	return r.q.GetReleases(ctx, ids)
 }
 
 // animation groups the nine stored columns the way vndb's own page presents

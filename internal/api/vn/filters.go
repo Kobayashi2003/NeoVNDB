@@ -113,3 +113,8 @@ var sorts = map[string]string{
 	"length_minutes": "vn.c_length",
 	"searchrank":     "",
 }
+
+var spec = query.PageSpec{
+	Table: "vn", Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v",
+	Filters: filters, Sorts: sorts,
+}

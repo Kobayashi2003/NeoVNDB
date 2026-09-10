@@ -1,68 +1,72 @@
 package character
 
 import (
+	"context"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/db/gen"
+	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// name and original are resolved from chars_names rather than being columns,
-// the same way a visual novel's title is.
-var registry = query.Registry{
-	"name":        {Kind: query.Column},
-	"original":    {Kind: query.Column},
-	"description": {Kind: query.Column},
-	"blood_type":  {Kind: query.Column},
-	"cup":         {Kind: query.Column},
-	"sex":         {Kind: query.Column},
-	"gender":      {Kind: query.Column},
-	"height":      {Kind: query.Column},
-	"weight":      {Kind: query.Column},
-	"bust":        {Kind: query.Column},
-	"waist":       {Kind: query.Column},
-	"hips":        {Kind: query.Column},
-	"age":         {Kind: query.Column},
-	"birthday":    {Kind: query.Column},
-	"instance_of": {Kind: query.Column},
+type field = query.Field[gen.Char]
+type source = query.Source[*Resolver, gen.Char]
 
-	"image":   {Kind: query.Fragment, Subfields: []string{"url", "dims", "sexual", "violence"}},
-	"names":   {Kind: query.Fragment, Subfields: []string{"lang", "name", "latin"}},
-	"aliases": {Kind: query.Fragment, Subfields: []string{"name", "latin", "spoiler"}},
-	"traits":  {Kind: query.Fragment, Subfields: []string{"id", "name", "group", "spoiler", "lie", "sexual"}},
-	"vns":     {Kind: query.Fragment, Subfields: []string{"id", "title", "role", "spoiler", "release"}},
-	"seiyuu":  {Kind: query.Fragment, Subfields: []string{"id", "name", "original", "vn", "note"}},
-}
+var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
+	IDType: vndb.TypeCharacter,
+	ID:     func(c gen.Char) int32 { return c.ID },
+	Fetch:  fetch,
 
-func column(row gen.Char, name string) (any, bool) {
-	switch name {
-	case "description":
-		return query.EmptyToNil(row.Description), true
-	case "blood_type":
-		return unknownToNil(row.Bloodt, "unknown"), true
-	case "cup":
-		return query.EmptyToNil(row.CupSize), true
-	case "sex":
-		return query.EmptyToNil(row.Sex), true
-	case "gender":
-		return row.Gender, true
-	case "height":
-		return zeroToNil(row.Height), true
-	case "weight":
-		return row.Weight, true
-	case "bust":
-		return zeroToNil(row.SBust), true
-	case "waist":
-		return zeroToNil(row.SWaist), true
-	case "hips":
-		return zeroToNil(row.SHip), true
-	case "age":
-		return row.Age, true
-	case "birthday":
-		return birthday(row.Birthday), true
-	case "instance_of":
-		return instanceOf(row.Main), true
-	}
-	// name and original come from chars_names.
-	return nil, false
+	Fields: map[string]field{
+		"description": {Row: func(c gen.Char) any { return query.EmptyToNil(c.Description) }},
+		"blood_type":  {Row: func(c gen.Char) any { return unknownToNil(c.Bloodt, "unknown") }},
+		"cup":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.CupSize) }},
+		"sex":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},
+		"gender":      {Row: func(c gen.Char) any { return c.Gender }},
+		"height":      {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},
+		"weight":      {Row: func(c gen.Char) any { return c.Weight }},
+		"bust":        {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},
+		"waist":       {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},
+		"hips":        {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},
+		"age":         {Row: func(c gen.Char) any { return c.Age }},
+		"birthday":    {Row: func(c gen.Char) any { return birthday(c.Birthday) }},
+		"instance_of": {Row: func(c gen.Char) any { return instanceOf(c.Main) }},
+
+		// The name is the chars_names row in the character's own language,
+		// which the import resolved into chars.c_lang -- the same read the
+		// names fragment needs.
+		"name":     {Source: "names"},
+		"original": {Source: "names"},
+		"names": {Kind: query.Fragment, Source: "names", Num: 2,
+			Subfields: []string{"lang", "name", "latin"}},
+
+		"image": {Kind: query.Fragment, Source: "image", Num: 1,
+			Subfields: []string{"url", "dims", "sexual", "violence"}},
+		"aliases": {Kind: query.Fragment, Source: "aliases", Num: 2,
+			Subfields: []string{"name", "latin", "spoiler"}},
+
+		"traits": {Kind: query.Fragment, Source: "traits", Num: 30,
+			Edge: []string{"spoiler", "lie"}, Target: vndb.TypeTrait},
+		// release names the one release a character is tied to when the
+		// appearance is route-specific rather than across the whole VN.
+		"vns": {Kind: query.Fragment, Source: "vns", Num: 3,
+			Edge: []string{"role", "spoiler", "release"}, Target: vndb.TypeVN},
+		// name is the alias credited for this voice role, not the person's own.
+		"seiyuu": {Kind: query.Fragment, Source: "seiyuu", Num: 2,
+			Edge:   []string{"vn", "note", "name", "original"},
+			Target: vndb.TypeStaff},
+	},
+	Sources: map[string]source{
+		"names":   loadNames,
+		"image":   loadImage,
+		"aliases": loadAliases,
+		"traits":  loadTraits,
+		"vns":     loadVNs,
+		"seiyuu":  loadSeiyuu,
+	},
+})
+
+func fetch(ctx context.Context, r *Resolver, ids []int32) ([]gen.Char, error) {
+	return r.q.GetChars(ctx, ids)
 }
 
 // The dump packs a birthday as mmdd in one smallint, with 0 for unknown.
@@ -77,7 +81,7 @@ func instanceOf(v *int32) *string {
 	if v == nil {
 		return nil
 	}
-	s := vndbCharID(*v)
+	s := vndb.FormatID(vndb.TypeCharacter, *v)
 	return &s
 }
 

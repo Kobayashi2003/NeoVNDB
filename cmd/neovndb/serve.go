@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"net"
 	"os"
+	"strconv"
 
 	"github.com/kobayashi/neovndb/internal/api"
 	"github.com/kobayashi/neovndb/internal/config"
@@ -35,9 +37,28 @@ func runServe(ctx context.Context, args []string) error {
 		log.Warn("no live generation; every query will fail until an import is promoted")
 	}
 
-	listen := cfg.Addr()
 	if *addr != "" {
-		listen = *addr
+		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)
 	}
-	return api.Serve(ctx, listen, api.NewServer(store, log).Routes(), log)
+	srv, err := api.NewServer(store, log, cfg)
+	if err != nil {
+		return err
+	}
+	return api.Serve(ctx, cfg, srv.Routes(), log)
+}
+
+// splitAddr applies a -addr override onto the configured host and port. A bare
+// port (":6000") keeps the configured host.
+func splitAddr(addr, host string, port int) (string, int) {
+	h, p, err := net.SplitHostPort(addr)
+	if err != nil {
+		return host, port
+	}
+	if h != "" {
+		host = h
+	}
+	if n, err := strconv.Atoi(p); err == nil {
+		port = n
+	}
+	return host, port
 }

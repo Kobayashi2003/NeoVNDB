@@ -106,3 +106,8 @@ var sorts = map[string]string{
 	"minage":     "r.minage",
 	"searchrank": "",
 }
+
+var spec = query.PageSpec{
+	Table: "releases r", Alias: "r", IDType: vndb.TypeRelease, SearchEntity: "r",
+	Filters: filters, Sorts: sorts,
+}

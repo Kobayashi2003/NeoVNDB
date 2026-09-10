@@ -8,35 +8,42 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-type loader func(ctx context.Context, r *Resolver, page []gen.Release,
-	sel query.Selection, byID map[int32]map[string]any) error
-
-var fragments = map[string]loader{
-	"titles":     loadTitles,
-	"platforms":  loadPlatforms,
-	"media":      loadMedia,
-	"vns":        loadVNs,
-	"producers":  loadProducers,
-	"images":     loadImages,
-	"drm":        loadDRM,
-	"supersedes": loadSupersedes,
-	"extlinks":   loadExtLinks,
-	"engine":     loadEngine,
-}
-
+// loadTitles serves title, alttitle and the titles fragment from one read of
+// releases_titles. title and alttitle are the row matching the release's own
+// language, the same rule a visual novel's title follows.
 func loadTitles(ctx context.Context, r *Resolver, page []gen.Release,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
+	olang := make(map[int32]string, len(page))
+	for _, rel := range page {
+		olang[rel.ID] = rel.Olang
+	}
 	rows, err := r.q.ReleaseTitleList(ctx, idsOf(page))
 	if err != nil {
 		return err
 	}
 
+	wantTitle, wantAlt := sel.Has("title"), sel.Has("alttitle")
 	grouped := map[int32][]map[string]any{}
 	for _, t := range rows {
+		obj, ok := byID[t.ID]
+		if !ok {
+			continue
+		}
+		if t.Lang == olang[t.ID] && t.Title != nil {
+			if wantTitle {
+				obj["title"] = query.PreferLatin(*t.Title, t.Latin)
+			}
+			if wantAlt {
+				obj["alttitle"] = query.OriginalOf(*t.Title, t.Latin)
+			}
+		}
 		grouped[t.ID] = append(grouped[t.ID], map[string]any{
 			"lang": t.Lang, "title": t.Title, "latin": t.Latin, "mtl": t.Mtl,
 		})
+	}
+	if !sel.Has("titles") {
+		return nil
 	}
 	for id, obj := range byID {
 		obj["titles"] = query.OrEmpty(grouped[id])
@@ -78,54 +85,6 @@ func loadMedia(ctx context.Context, r *Resolver, page []gen.Release,
 	}
 	for id, obj := range byID {
 		obj["media"] = query.OrEmpty(grouped[id])
-	}
-	return nil
-}
-
-func loadVNs(ctx context.Context, r *Resolver, page []gen.Release,
-	sel query.Selection, byID map[int32]map[string]any) error {
-
-	rows, err := r.q.ReleaseVNs(ctx, idsOf(page))
-	if err != nil {
-		return err
-	}
-
-	grouped := map[int32][]map[string]any{}
-	for _, v := range rows {
-		item := map[string]any{
-			"id": vndb.FormatID(vndb.TypeVN, v.Vid), "rtype": v.Rtype,
-		}
-		if v.Title != nil {
-			item["title"] = query.PreferLatin(*v.Title, v.Latin)
-		}
-		grouped[v.ReleaseID] = append(grouped[v.ReleaseID], item)
-	}
-	for id, obj := range byID {
-		obj["vns"] = query.OrEmpty(grouped[id])
-	}
-	return nil
-}
-
-func loadProducers(ctx context.Context, r *Resolver, page []gen.Release,
-	sel query.Selection, byID map[int32]map[string]any) error {
-
-	rows, err := r.q.ReleaseProducers(ctx, idsOf(page))
-	if err != nil {
-		return err
-	}
-
-	grouped := map[int32][]map[string]any{}
-	for _, p := range rows {
-		grouped[p.ReleaseID] = append(grouped[p.ReleaseID], map[string]any{
-			"id":        vndb.FormatID(vndb.TypeProducer, p.Pid),
-			"name":      query.PreferLatin(p.Name, p.Latin),
-			"original":  query.OriginalOf(p.Name, p.Latin),
-			"developer": p.Developer,
-			"publisher": p.Publisher,
-		})
-	}
-	for id, obj := range byID {
-		obj["producers"] = query.OrEmpty(grouped[id])
 	}
 	return nil
 }
@@ -202,25 +161,6 @@ func loadDRM(ctx context.Context, r *Resolver, page []gen.Release,
 	return nil
 }
 
-func loadSupersedes(ctx context.Context, r *Resolver, page []gen.Release,
-	sel query.Selection, byID map[int32]map[string]any) error {
-
-	rows, err := r.q.ReleaseSupersedes(ctx, idsOf(page))
-	if err != nil {
-		return err
-	}
-
-	grouped := map[int32][]string{}
-	for _, s := range rows {
-		grouped[s.ReleaseID] = append(grouped[s.ReleaseID],
-			vndb.FormatID(vndb.TypeRelease, s.Rid))
-	}
-	for id, obj := range byID {
-		obj["supersedes"] = query.OrEmpty(grouped[id])
-	}
-	return nil
-}
-
 func loadExtLinks(ctx context.Context, r *Resolver, page []gen.Release,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
@@ -275,4 +215,58 @@ func loadEngine(ctx context.Context, r *Resolver, page []gen.Release,
 		}
 	}
 	return nil
+}
+
+func loadVNs(ctx context.Context, r *Resolver, page []gen.Release,
+	sel query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.ReleaseVNs(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, len(rows))
+	for i, v := range rows {
+		edges[i] = query.Edge{Parent: v.ReleaseID, Child: v.Vid,
+			Attrs: map[string]any{"rtype": v.Rtype}}
+	}
+	return query.Relate(ctx, r.cat, vndb.TypeRelease, "vns", edges, sel, byID)
+}
+
+func loadProducers(ctx context.Context, r *Resolver, page []gen.Release,
+	sel query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.ReleaseProducers(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, len(rows))
+	for i, p := range rows {
+		edges[i] = query.Edge{Parent: p.ReleaseID, Child: p.Pid, Attrs: map[string]any{
+			"developer": p.Developer, "publisher": p.Publisher,
+		}}
+	}
+	return query.Relate(ctx, r.cat, vndb.TypeRelease, "producers", edges, sel, byID)
+}
+
+// supersedes points at other releases of the same VN that this one replaces.
+func loadSupersedes(ctx context.Context, r *Resolver, page []gen.Release,
+	sel query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.ReleaseSupersedes(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, len(rows))
+	for i, s := range rows {
+		edges[i] = query.Edge{Parent: s.ReleaseID, Child: s.Rid}
+	}
+	return query.Relate(ctx, r.cat, vndb.TypeRelease, "supersedes", edges, sel, byID)
+}
+
+func idsOf(page []gen.Release) []int32 {
+	ids := make([]int32, len(page))
+	for i, r := range page {
+		ids[i] = r.ID
+	}
+	return ids
 }

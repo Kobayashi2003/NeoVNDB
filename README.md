@@ -74,12 +74,15 @@ internal/api/
   server.go           routes and graceful shutdown
   handlers.go         the four handlers and the JSON envelope
   middleware.go       panic recovery and request logging
-  query/              shared machinery: request parsing, field registry,
-                      filter builder, paging
+  query/              shared machinery: field tables, request parsing,
+                      filter builder, paging, the type catalog
   vn/ release/ character/ producer/ staff/ tag/ trait/
-                      one package per type, each a query.Resolver.
-                      Small types are a single resolver.go; the three large
-                      ones split into fields.go, filters.go and fragments.go.
+                      one package per type, all seven the same four files:
+                        resolver.go  Resolver, Registry, Objects, Resolve
+                        fields.go    the field table
+                        filters.go   filters, sorts, page spec
+                        sources.go   the batched loaders
+                      vn adds graph.go for the relation graph.
 ```
 
 ## Decisions worth knowing before reading the schema
@@ -99,6 +102,10 @@ internal/api/
   internally consistent and import verification checks integrity instead.
 - **`tags_vn_direct` and `tags_vn_inherit` are separate.** Kana's `vn.tags`
   returns the direct scores; the `tag=` filter expands parents.
+- **Every bound is a setting.** Page size, id-list length, field depth, the
+  response cost ceiling, the graph's depth and node cap, and the request
+  timeout all come from the environment (see `.env.sample`). They bound work
+  rather than correctness, and what a deployment can afford differs.
 - **No migrations.** Each generation is built fresh from the DDL, and its
   `import_info.ddl_checksum` says which version built it. `db status` reports
   when the live generation is behind the source.

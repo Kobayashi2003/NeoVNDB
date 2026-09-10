@@ -44,7 +44,7 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 
 	byID := false
 	if raw, ok := req.Filters["id"]; ok {
-		ids, err := vndb.ParseIDs(spec.IDType, raw)
+		ids, err := vndb.ParseIDs(spec.IDType, raw, req.Limits.MaxIDs)
 		if err != nil {
 			return nil, 0, BadRequest("%v", err)
 		}

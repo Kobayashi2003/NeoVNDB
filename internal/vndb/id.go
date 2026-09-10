@@ -59,12 +59,8 @@ func ParseID(entity, value string) (int32, error) {
 	return int32(n), nil
 }
 
-// MaxIDs bounds a comma-separated id list. Looking rows up by id skips paging,
-// so without a cap one request could ask for the whole database at once.
-const MaxIDs = 100
-
 // ParseIDs splits a comma-separated list, as a filter value carries it.
-func ParseIDs(entity, value string) ([]int32, error) {
+func ParseIDs(entity, value string, max int) ([]int32, error) {
 	parts := strings.Split(value, ",")
 	ids := make([]int32, 0, len(parts))
 	for _, p := range parts {
@@ -81,8 +77,8 @@ func ParseIDs(entity, value string) ([]int32, error) {
 	if len(ids) == 0 {
 		return nil, fmt.Errorf("no ids given")
 	}
-	if len(ids) > MaxIDs {
-		return nil, fmt.Errorf("at most %d ids per request, got %d", MaxIDs, len(ids))
+	if len(ids) > max {
+		return nil, fmt.Errorf("at most %d ids per request, got %d", max, len(ids))
 	}
 	return ids, nil
 }

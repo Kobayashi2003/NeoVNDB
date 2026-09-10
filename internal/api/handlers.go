@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -31,13 +32,18 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := query.Parse(resolver.Registry(), r)
+	req, err := query.Parse(s.cat, resolver.Registry(), s.limits, r)
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	results, total, err := resolver.Resolve(r.Context(), req)
+	// A nested request runs several queries in sequence, so the bound is on
+	// the request as a whole rather than on any one of them.
+	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.RequestTimeout)
+	defer cancel()
+
+	results, total, err := resolver.Resolve(ctx, req)
 	if err != nil {
 		if query.IsClientError(err) {
 			fail(w, http.StatusBadRequest, err.Error())
@@ -61,7 +67,7 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	depth := 0
+	depth := s.cfg.GraphDepth
 	if raw := r.URL.Query().Get("depth"); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {
@@ -71,7 +77,14 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 		depth = n
 	}
 
-	graph, err := resolver.RelationGraph(r.Context(), r.PathValue("id"), depth)
+	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.RequestTimeout)
+	defer cancel()
+
+	graph, err := resolver.RelationGraph(ctx, r.PathValue("id"), vn.GraphOpts{
+		Depth:    depth,
+		MaxDepth: s.cfg.MaxGraphDepth,
+		MaxNodes: s.cfg.MaxGraphNodes,
+	})
 	if err != nil {
 		if query.IsClientError(err) {
 			fail(w, http.StatusBadRequest, err.Error())

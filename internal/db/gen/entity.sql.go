@@ -9,39 +9,6 @@ import (
 	"context"
 )
 
-const finishImport = `-- name: FinishImport :exec
-UPDATE import_info SET finished_at = now(), row_counts = $1
-`
-
-func (q *Queries) FinishImport(ctx context.Context, rowCounts []byte) error {
-	_, err := q.db.Exec(ctx, finishImport, rowCounts)
-	return err
-}
-
-const getEntryMeta = `-- name: GetEntryMeta :one
-SELECT entity_type, id, created, lastmod, revision, num_edits, num_users FROM entry_meta WHERE entity_type = $1 AND id = $2
-`
-
-type GetEntryMetaParams struct {
-	EntityType string `db:"entity_type" json:"entity_type"`
-	ID         int32  `db:"id" json:"id"`
-}
-
-func (q *Queries) GetEntryMeta(ctx context.Context, arg GetEntryMetaParams) (EntryMetum, error) {
-	row := q.db.QueryRow(ctx, getEntryMeta, arg.EntityType, arg.ID)
-	var i EntryMetum
-	err := row.Scan(
-		&i.EntityType,
-		&i.ID,
-		&i.Created,
-		&i.Lastmod,
-		&i.Revision,
-		&i.NumEdits,
-		&i.NumUsers,
-	)
-	return i, err
-}
-
 const getImportInfo = `-- name: GetImportInfo :one
 SELECT code, dump_url, dump_sha256, published_at, started_at, finished_at, ddl_checksum, row_counts FROM import_info LIMIT 1
 `
@@ -94,27 +61,6 @@ func (q *Queries) GetProducers(ctx context.Context, ids []int32) ([]Producer, er
 	return items, nil
 }
 
-const getTag = `-- name: GetTag :one
-SELECT id, cat, defaultspoil, searchable, applicable, name, alias, description, c_items FROM tags WHERE id = $1
-`
-
-func (q *Queries) GetTag(ctx context.Context, id int32) (Tag, error) {
-	row := q.db.QueryRow(ctx, getTag, id)
-	var i Tag
-	err := row.Scan(
-		&i.ID,
-		&i.Cat,
-		&i.Defaultspoil,
-		&i.Searchable,
-		&i.Applicable,
-		&i.Name,
-		&i.Alias,
-		&i.Description,
-		&i.CItems,
-	)
-	return i, err
-}
-
 const getTags = `-- name: GetTags :many
 SELECT id, cat, defaultspoil, searchable, applicable, name, alias, description, c_items FROM tags WHERE id = ANY($1::int[])
 `
@@ -147,29 +93,6 @@ func (q *Queries) GetTags(ctx context.Context, ids []int32) ([]Tag, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const getTrait = `-- name: GetTrait :one
-SELECT id, gid, gorder, defaultspoil, sexual, searchable, applicable, name, alias, description, c_items FROM traits WHERE id = $1
-`
-
-func (q *Queries) GetTrait(ctx context.Context, id int32) (Trait, error) {
-	row := q.db.QueryRow(ctx, getTrait, id)
-	var i Trait
-	err := row.Scan(
-		&i.ID,
-		&i.Gid,
-		&i.Gorder,
-		&i.Defaultspoil,
-		&i.Sexual,
-		&i.Searchable,
-		&i.Applicable,
-		&i.Name,
-		&i.Alias,
-		&i.Description,
-		&i.CItems,
-	)
-	return i, err
 }
 
 const getTraits = `-- name: GetTraits :many
