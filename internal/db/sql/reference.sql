@@ -16,6 +16,9 @@ SELECT pe.id AS producer_id, e.site, e.value
  WHERE pe.id = ANY(@ids::int[])
  ORDER BY pe.id, e.site;
 
+-- name: GetStaff :many
+SELECT * FROM staff WHERE id = ANY(@ids::int[]);
+
 -- name: StaffAliases :many
 -- is_main marks the alias staff.main points at, the person's own name.
 SELECT sa.id AS staff_id, sa.aid, sa.name, sa.latin, (sa.aid = s.main) AS is_main

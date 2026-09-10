@@ -13,11 +13,14 @@ import (
 // all, and the component containing Ever17 alone runs to about nineteen
 // hundred nodes. The walk therefore stops at a depth, the way vndb's own view
 // does, and reports whether it cut anything off.
-const (
-	DefaultGraphDepth = 3
-	MaxGraphDepth     = 8
-	maxGraphNodes     = 300
-)
+// GraphOpts bounds one walk. Depth is what the caller asked for; the two
+// ceilings come from configuration, because how big a graph is worth drawing
+// is a deployment's call rather than a property of the data.
+type GraphOpts struct {
+	Depth    int
+	MaxDepth int
+	MaxNodes int
+}
 
 type Graph struct {
 	Root      string      `json:"root"`
@@ -45,16 +48,17 @@ type GraphEdge struct {
 
 // RelationGraph walks outward from one VN and returns what a graph needs to be
 // drawn. Truncated says the component continues past what was returned.
-func (r *Resolver) RelationGraph(ctx context.Context, rawID string, depth int) (*Graph, error) {
+func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpts) (*Graph, error) {
 	root, err := vndb.ParseID(vndb.TypeVN, rawID)
 	if err != nil {
 		return nil, query.BadRequest("%v", err)
 	}
+	depth := opt.Depth
 	if depth < 1 {
-		depth = DefaultGraphDepth
+		depth = 1
 	}
-	if depth > MaxGraphDepth {
-		return nil, query.BadRequest("depth may not exceed %d", MaxGraphDepth)
+	if depth > opt.MaxDepth {
+		return nil, query.BadRequest("depth may not exceed %d", opt.MaxDepth)
 	}
 
 	// One layer beyond the requested depth is walked, purely so the answer can
@@ -84,7 +88,7 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, depth int) (
 		if depthOf[e.ID] >= depth {
 			continue // its target would sit past the boundary
 		}
-		if !included[e.Vid] && len(included) >= maxGraphNodes {
+		if !included[e.Vid] && len(included) >= opt.MaxNodes {
 			graph.Truncated = true
 			continue
 		}

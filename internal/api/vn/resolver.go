@@ -10,28 +10,25 @@ import (
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/db/gen"
-	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
 type Resolver struct {
 	store *db.Store
 	q     *gen.Queries
-
-	table query.Table[gen.Vn]
-	reg   query.Registry
+	cat   *query.Catalog
 }
 
-// New builds the field table once. Deriving the registry from it also
-// validates it, so a table that offers a field it cannot fill fails at
-// startup rather than answering requests with the field missing.
-func New(store *db.Store) *Resolver {
-	r := &Resolver{store: store, q: store.Queries}
-	r.table = r.fields()
-	r.reg = r.table.Registry()
-	return r
+func New(store *db.Store, cat *query.Catalog) *Resolver {
+	return &Resolver{store: store, q: store.Queries, cat: cat}
 }
 
-func (r *Resolver) Registry() query.Registry { return r.reg }
+func (r *Resolver) Registry() query.Registry { return fields.Registry() }
+
+// Objects renders these entities for another type that nests them.
+func (r *Resolver) Objects(ctx context.Context, ids []int32,
+	sel query.Selection) (map[int32]map[string]any, error) {
+	return fields.Objects(ctx, r, ids, sel)
+}
 
 // row carries the page row plus the total the window function computed
 // alongside it. Counting in the same statement runs the filter once, not twice.
@@ -42,11 +39,6 @@ type row struct {
 
 func (r row) Count() int32 { return r.Total }
 
-var spec = query.PageSpec{
-	Table: "vn", Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v",
-	Filters: filters, Sorts: sorts,
-}
-
 func (r *Resolver) Resolve(ctx context.Context, req *query.Request) ([]map[string]any, int, error) {
 	collected, total, err := query.Page(ctx, r.store.Pool(), spec, req, pgx.RowToStructByNameLax[row])
 	if err != nil {
@@ -56,10 +48,6 @@ func (r *Resolver) Resolve(ctx context.Context, req *query.Request) ([]map[strin
 	for i, c := range collected {
 		page[i] = c.Vn
 	}
-
-	results, err := r.table.Apply(ctx, page, req.Fields)
-	if err != nil {
-		return nil, 0, err
-	}
-	return results, total, nil
+	results, err := fields.Apply(ctx, r, page, req.Fields)
+	return results, total, err
 }

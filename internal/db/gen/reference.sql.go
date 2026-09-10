@@ -9,6 +9,37 @@ import (
 	"context"
 )
 
+const getStaff = `-- name: GetStaff :many
+SELECT id, gender, lang, main, description, prod FROM staff WHERE id = ANY($1::int[])
+`
+
+func (q *Queries) GetStaff(ctx context.Context, ids []int32) ([]Staff, error) {
+	rows, err := q.db.Query(ctx, getStaff, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Staff{}
+	for rows.Next() {
+		var i Staff
+		if err := rows.Scan(
+			&i.ID,
+			&i.Gender,
+			&i.Lang,
+			&i.Main,
+			&i.Description,
+			&i.Prod,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const producerExtLinks = `-- name: ProducerExtLinks :many
 SELECT pe.id AS producer_id, e.site, e.value
   FROM producers_extlinks pe

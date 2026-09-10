@@ -6,7 +6,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/kobayashi/neovndb/internal/api/character"
 	"github.com/kobayashi/neovndb/internal/api/producer"
@@ -16,6 +15,7 @@ import (
 	"github.com/kobayashi/neovndb/internal/api/tag"
 	"github.com/kobayashi/neovndb/internal/api/trait"
 	"github.com/kobayashi/neovndb/internal/api/vn"
+	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -23,24 +23,44 @@ import (
 type Server struct {
 	store     *db.Store
 	log       *slog.Logger
+	cfg       *config.Config
+	limits    query.Limits
+	cat       *query.Catalog
 	resolvers map[string]query.Resolver
 }
 
-func NewServer(store *db.Store, log *slog.Logger) *Server {
-	return &Server{
-		store: store,
-		log:   log,
-		// One entry per served type.
-		resolvers: map[string]query.Resolver{
-			vndb.TypeVN:        vn.New(store),
-			vndb.TypeCharacter: character.New(store),
-			vndb.TypeRelease:   release.New(store),
-			vndb.TypeProducer:  producer.New(store),
-			vndb.TypeStaff:     staff.New(store),
-			vndb.TypeTag:       tag.New(store),
-			vndb.TypeTrait:     trait.New(store),
-		},
+func NewServer(store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, error) {
+	// Types reach each other by name through the catalog: the graph has cycles
+	// -- a VN reaches characters, which reach VNs -- so no type can hold a
+	// reference to another at construction. Every type is built first and
+	// registered second, and Check then confirms every name resolves.
+	cat := query.NewCatalog()
+	resolvers := map[string]query.Resolver{
+		vndb.TypeVN:        vn.New(store, cat),
+		vndb.TypeRelease:   release.New(store, cat),
+		vndb.TypeCharacter: character.New(store, cat),
+		vndb.TypeProducer:  producer.New(store, cat),
+		vndb.TypeStaff:     staff.New(store, cat),
+		vndb.TypeTag:       tag.New(store, cat),
+		vndb.TypeTrait:     trait.New(store, cat),
 	}
+	for name, r := range resolvers {
+		cat.Put(name, r.(query.Nested))
+	}
+	if err := cat.Check(); err != nil {
+		return nil, err
+	}
+	return &Server{
+		store: store, log: log, cfg: cfg,
+		limits: query.Limits{
+			PageSize:      cfg.PageSize,
+			MaxPageSize:   cfg.MaxPageSize,
+			MaxIDs:        cfg.MaxIDs,
+			MaxFieldDepth: cfg.MaxFieldDepth,
+			MaxCost:       cfg.MaxCost,
+		},
+		cat: cat, resolvers: resolvers,
+	}, nil
 }
 
 func (s *Server) Routes() http.Handler {
@@ -55,11 +75,12 @@ func (s *Server) Routes() http.Handler {
 }
 
 // Serve runs until the context is cancelled, then drains in-flight requests.
-func Serve(ctx context.Context, addr string, handler http.Handler, log *slog.Logger) error {
+func Serve(ctx context.Context, cfg *config.Config, handler http.Handler, log *slog.Logger) error {
+	addr := cfg.Addr()
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           handler,
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 	}
 
 	errs := make(chan error, 1)
@@ -75,7 +96,7 @@ func Serve(ctx context.Context, addr string, handler http.Handler, log *slog.Log
 		}
 		return err
 	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdown, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
 		return srv.Shutdown(shutdown)
 	}

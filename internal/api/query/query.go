@@ -15,15 +15,6 @@ import (
 	"strconv"
 )
 
-const (
-	defaultLimit = 24
-	maxLimit     = 100
-	// A page costs one query per fragment, and each returns roughly limit rows
-	// times whatever that relation holds. Bounding the product keeps a browse
-	// grid working while refusing a full page of detail-page payloads.
-	maxFragmentRows = 200
-)
-
 // Resolver is one entity type: what it can be asked for, and how to answer.
 type Resolver interface {
 	Registry() Registry
@@ -38,6 +29,9 @@ type Request struct {
 	Reverse bool
 	Page    int
 	Limit   int
+	// Limits are the bounds this request was validated against, carried so the
+	// stages after parsing hold to the same ones.
+	Limits Limits
 }
 
 // Reserved parameter names; everything else in the query string is a filter.
@@ -45,9 +39,9 @@ var reserved = map[string]bool{
 	"fields": true, "sort": true, "reverse": true, "page": true, "limit": true,
 }
 
-func Parse(reg Registry, r *http.Request) (*Request, error) {
+func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, error) {
 	values := r.URL.Query()
-	fields, err := ParseFields(reg, values.Get("fields"))
+	fields, err := ParseFields(cat, reg, lim.MaxFieldDepth, values.Get("fields"))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +52,8 @@ func Parse(reg Registry, r *http.Request) (*Request, error) {
 		Sort:    values.Get("sort"),
 		Reverse: values.Get("reverse") == "true",
 		Page:    1,
-		Limit:   defaultLimit,
+		Limit:   lim.PageSize,
+		Limits:  lim,
 	}
 
 	if raw := values.Get("page"); raw != "" {
@@ -73,14 +68,14 @@ func Parse(reg Registry, r *http.Request) (*Request, error) {
 		if err != nil || n < 1 {
 			return nil, BadRequest("limit must be a positive number")
 		}
-		if n > maxLimit {
-			return nil, BadRequest("limit may not exceed %d", maxLimit)
+		if n > lim.MaxPageSize {
+			return nil, BadRequest("limit may not exceed %d", lim.MaxPageSize)
 		}
 		req.Limit = n
 	}
-	if fragments := len(req.Fields.Fragments); fragments > 0 && req.Limit*fragments > maxFragmentRows {
-		return nil, BadRequest("limit %d with %d nested fields exceeds what one request may fetch; "+
-			"lower the limit or ask for fewer fields", req.Limit, fragments)
+	if cost := Cost(cat, reg, fields, req.Limit); cost > lim.MaxCost {
+		return nil, BadRequest("too much data selected (estimated %d values, limit %d); "+
+			"lower the limit or ask for fewer fields", cost, lim.MaxCost)
 	}
 
 	for name, vs := range values {
