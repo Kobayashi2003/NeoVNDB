@@ -42,10 +42,6 @@ const (
 	defaultCacheTTL      = time.Hour
 	defaultCacheEntries  = 10000
 	defaultCacheMaxEntry = 1 << 20
-	// How long the live generation's code is reused before being read again.
-	// A promote is not seen until this expires, which for a weekly dump is
-	// nothing; it is the price of not reading import_info on every request.
-	defaultGenerationTTL = 10 * time.Second
 
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
@@ -90,7 +86,6 @@ type Config struct {
 	CacheEntries  int
 	CacheMaxEntry int
 	RedisURL      string
-	GenerationTTL time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -127,7 +122,6 @@ func Load() (*Config, error) {
 		CacheEntries:  envInt("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
 		CacheMaxEntry: envInt("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
 		RedisURL:      envString("NEOVNDB_REDIS_URL", ""),
-		GenerationTTL: envDuration("NEOVNDB_GENERATION_TTL", defaultGenerationTTL),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")
