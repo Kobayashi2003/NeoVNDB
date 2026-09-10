@@ -11,6 +11,7 @@ import (
 
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/api/vn"
+	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -40,8 +41,18 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 
 	// A nested request runs several queries in sequence, so the bound is on
 	// the request as a whole rather than on any one of them.
-	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.RequestTimeout)
+	ctx, cancel := s.withTimeout(r.Context())
 	defer cancel()
+
+	// Cached after parsing, so the key is built from the parsed request rather
+	// than the query string: two requests that differ only in the order they
+	// listed their fields are one entry.
+	key := cache.Key(s.gen.current(ctx), req.Canonical(entity))
+	if body, ok := s.cache.Get(ctx, key); ok {
+		w.Header().Set("X-Cache", "hit")
+		writeJSON(w, http.StatusOK, body)
+		return
+	}
 
 	results, total, err := resolver.Resolve(ctx, req)
 	if err != nil {
@@ -53,11 +64,20 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "query failed")
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{
+
+	body, err := json.Marshal(map[string]any{
 		"results": results,
 		"count":   total,
 		"more":    req.Offset()+len(results) < total,
 	})
+	if err != nil {
+		s.log.Error("encode failed", "type", entity, "err", err)
+		fail(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	s.remember(ctx, key, body)
+	w.Header().Set("X-Cache", "miss")
+	writeJSON(w, http.StatusOK, body)
 }
 
 func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
@@ -77,14 +97,23 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 		depth = n
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.RequestTimeout)
+	ctx, cancel := s.withTimeout(r.Context())
 	defer cancel()
 
-	graph, err := resolver.RelationGraph(ctx, r.PathValue("id"), vn.GraphOpts{
+	opts := vn.GraphOpts{
 		Depth:    depth,
 		MaxDepth: s.cfg.MaxGraphDepth,
 		MaxNodes: s.cfg.MaxGraphNodes,
-	})
+	}
+	key := cache.Key(s.gen.current(ctx), "graph", r.PathValue("id"),
+		strconv.Itoa(opts.Depth), strconv.Itoa(opts.MaxDepth), strconv.Itoa(opts.MaxNodes))
+	if body, ok := s.cache.Get(ctx, key); ok {
+		w.Header().Set("X-Cache", "hit")
+		writeJSON(w, http.StatusOK, body)
+		return
+	}
+
+	graph, err := resolver.RelationGraph(ctx, r.PathValue("id"), opts)
 	if err != nil {
 		if query.IsClientError(err) {
 			fail(w, http.StatusBadRequest, err.Error())
@@ -94,7 +123,15 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "query failed")
 		return
 	}
-	respond(w, http.StatusOK, graph)
+	body, err := json.Marshal(graph)
+	if err != nil {
+		s.log.Error("encode failed", "err", err)
+		fail(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	s.remember(ctx, key, body)
+	w.Header().Set("X-Cache", "miss")
+	writeJSON(w, http.StatusOK, body)
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +156,23 @@ func (s *Server) generation(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// remember keeps a rendered response unless it is too big to be worth the room.
+// With the ceilings switched off a single response can be enormous, and one of
+// those would evict everything else.
+func (s *Server) remember(ctx context.Context, key string, body []byte) {
+	if s.cfg.CacheMaxEntry > 0 && len(body) > s.cfg.CacheMaxEntry {
+		return
+	}
+	s.cache.Set(ctx, key, body)
+}
+
+// writeJSON sends an already-encoded body, which is what the cache holds.
+func writeJSON(w http.ResponseWriter, status int, body []byte) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+}
+
 func respond(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
@@ -129,4 +183,12 @@ func respond(w http.ResponseWriter, status int, body any) {
 
 func fail(w http.ResponseWriter, status int, message string) {
 	respond(w, status, map[string]string{"error": message})
+}
+
+// withTimeout bounds a request unless the timeout is switched off.
+func (s *Server) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if s.cfg.RequestTimeout <= 0 {
+		return context.WithCancel(ctx)
+	}
+	return context.WithTimeout(ctx, s.cfg.RequestTimeout)
 }

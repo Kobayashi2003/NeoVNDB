@@ -15,6 +15,7 @@ import (
 	"github.com/kobayashi/neovndb/internal/api/tag"
 	"github.com/kobayashi/neovndb/internal/api/trait"
 	"github.com/kobayashi/neovndb/internal/api/vn"
+	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/vndb"
@@ -27,9 +28,18 @@ type Server struct {
 	limits    query.Limits
 	cat       *query.Catalog
 	resolvers map[string]query.Resolver
+
+	cache cache.Cache
+	gen   *generations
 }
 
-func NewServer(store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, error) {
+func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, error) {
+	responses, err := newCache(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	log.Info("response cache", "backend", responses.Name(), "ttl", cfg.CacheTTL)
+
 	// Types reach each other by name through the catalog: the graph has cycles
 	// -- a VN reaches characters, which reach VNs -- so no type can hold a
 	// reference to another at construction. Every type is built first and
@@ -50,6 +60,7 @@ func NewServer(store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, 
 	if err := cat.Check(); err != nil {
 		return nil, err
 	}
+
 	return &Server{
 		store: store, log: log, cfg: cfg,
 		limits: query.Limits{
@@ -60,6 +71,8 @@ func NewServer(store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, 
 			MaxCost:       cfg.MaxCost,
 		},
 		cat: cat, resolvers: resolvers,
+		cache: responses,
+		gen:   &generations{store: store, ttl: cfg.GenerationTTL},
 	}, nil
 }
 
@@ -96,8 +109,14 @@ func Serve(ctx context.Context, cfg *config.Config, handler http.Handler, log *s
 		}
 		return err
 	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		shutdown, cancel := context.Background(), context.CancelFunc(func() {})
+		if cfg.ShutdownTimeout > 0 {
+			shutdown, cancel = context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		}
 		defer cancel()
 		return srv.Shutdown(shutdown)
 	}
 }
+
+// Close releases what the server owns; the store is the caller's.
+func (s *Server) Close() error { return s.cache.Close() }

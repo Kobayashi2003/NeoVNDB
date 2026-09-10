@@ -35,6 +35,18 @@ const (
 	defaultMaxGraphDepth = 8
 	defaultMaxGraphNodes = 300
 
+	// The database only changes when an import is promoted, so a cached
+	// response stays correct until then and the TTL is a memory bound rather
+	// than a freshness one.
+	defaultCacheBackend  = "memory"
+	defaultCacheTTL      = time.Hour
+	defaultCacheEntries  = 10000
+	defaultCacheMaxEntry = 1 << 20
+	// How long the live generation's code is reused before being read again.
+	// A promote is not seen until this expires, which for a weekly dump is
+	// nothing; it is the price of not reading import_info on every request.
+	defaultGenerationTTL = 10 * time.Second
+
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
@@ -71,6 +83,14 @@ type Config struct {
 	RequestTimeout    time.Duration
 	ReadHeaderTimeout time.Duration
 	ShutdownTimeout   time.Duration
+
+	// CacheBackend is "memory", "redis" or "off".
+	CacheBackend  string
+	CacheTTL      time.Duration
+	CacheEntries  int
+	CacheMaxEntry int
+	RedisURL      string
+	GenerationTTL time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -101,6 +121,13 @@ func Load() (*Config, error) {
 		RequestTimeout:    envDuration("NEOVNDB_REQUEST_TIMEOUT", defaultRequestTimeout),
 		ReadHeaderTimeout: envDuration("NEOVNDB_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
 		ShutdownTimeout:   envDuration("NEOVNDB_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
+
+		CacheBackend:  envString("NEOVNDB_CACHE", defaultCacheBackend),
+		CacheTTL:      envDuration("NEOVNDB_CACHE_TTL", defaultCacheTTL),
+		CacheEntries:  envInt("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
+		CacheMaxEntry: envInt("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
+		RedisURL:      envString("NEOVNDB_REDIS_URL", ""),
+		GenerationTTL: envDuration("NEOVNDB_GENERATION_TTL", defaultGenerationTTL),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")
