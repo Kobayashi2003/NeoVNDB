@@ -623,6 +623,7 @@ const vNRelations = `-- name: VNRelations :many
 SELECT id, vid, relation, official
   FROM vn_relations
  WHERE id = ANY($1::int[])
+ ORDER BY id, vid
 `
 
 func (q *Queries) VNRelations(ctx context.Context, ids []int32) ([]VnRelation, error) {
@@ -997,7 +998,7 @@ const vNTags = `-- name: VNTags :many
 SELECT vid, tag, rating, spoiler, lie, count
   FROM tags_vn_direct
  WHERE vid = ANY($1::int[])
- ORDER BY vid, rating DESC
+ ORDER BY vid, rating DESC, tag
 `
 
 type VNTagsRow struct {
@@ -1009,6 +1010,8 @@ type VNTagsRow struct {
 	Count   int16   `db:"count" json:"count"`
 }
 
+// tag breaks ties: without it equally rated tags come back in whatever order
+// the scan produced, so two identical requests can disagree.
 func (q *Queries) VNTags(ctx context.Context, ids []int32) ([]VNTagsRow, error) {
 	rows, err := q.db.Query(ctx, vNTags, ids)
 	if err != nil {

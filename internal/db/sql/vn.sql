@@ -25,10 +25,12 @@ SELECT * FROM vn
  LIMIT $1 OFFSET $2;
 
 -- name: VNTags :many
+-- tag breaks ties: without it equally rated tags come back in whatever order
+-- the scan produced, so two identical requests can disagree.
 SELECT vid, tag, rating, spoiler, lie, count
   FROM tags_vn_direct
  WHERE vid = ANY(@ids::int[])
- ORDER BY vid, rating DESC;
+ ORDER BY vid, rating DESC, tag;
 
 -- name: VNsByTag :many
 -- tags_vn_inherit already carries a row for every ancestor tag, so matching on
@@ -42,7 +44,8 @@ SELECT vid, rating
 -- name: VNRelations :many
 SELECT id, vid, relation, official
   FROM vn_relations
- WHERE id = ANY(@ids::int[]);
+ WHERE id = ANY(@ids::int[])
+ ORDER BY id, vid;
 
 -- name: VNRelationGraph :many
 -- The connected component reachable from one VN, breadth-first and capped.
