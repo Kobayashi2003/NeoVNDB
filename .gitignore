@@ -1,8 +1,11 @@
-.env
-/bin/
-/data/
+# Secrets and anything a run produces.
+backend/.env
+backend/bin/
 *.exe
 
-# stray server logs from local runs
+# Archives are large and reproducible from upstream.
+/data/
+
+# Stray server logs from local runs.
 *.log
 *.err
