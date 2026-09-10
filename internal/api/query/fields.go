@@ -5,16 +5,10 @@ import (
 	"strings"
 )
 
-// A request names the fields it wants; the registry says where each one comes
-// from. Anything not named is not fetched, which is what keeps a list query
-// from paying for a detail page's worth of joins.
-//
-// A field is either part of the entity's own row or a fragment: a related
-// collection loaded by its own batched query. A fragment that points at
-// another entity type does not list its subfields -- it names that type, and
-// inherits whatever field surface that type declares. So a type gaining a
-// field makes it reachable everywhere that type is nested, with nothing to
-// keep in sync.
+// Parsing and validating a `fields` parameter. Anything not named is not
+// fetched, which is what keeps a list query from paying for a detail page's
+// worth of joins. The surface it validates against is derived from a Table;
+// see field.go for how a field is declared.
 
 type FieldKind int
 

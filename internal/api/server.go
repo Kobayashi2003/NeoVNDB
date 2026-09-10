@@ -40,10 +40,8 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 	}
 	log.Info("response cache", "backend", responses.Name(), "ttl", cfg.CacheTTL)
 
-	// Types reach each other by name through the catalog: the graph has cycles
-	// -- a VN reaches characters, which reach VNs -- so no type can hold a
-	// reference to another at construction. Every type is built first and
-	// registered second, and Check then confirms every name resolves.
+	// Every type is built first and registered second; see query.Catalog for
+	// why they cannot reference each other directly.
 	cat := query.NewCatalog()
 	resolvers := map[string]query.Resolver{
 		vndb.TypeVN:        vn.New(store, cat),
@@ -80,6 +78,7 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", s.health)
 	mux.HandleFunc("GET /meta/generation", s.generation)
+	mux.HandleFunc("GET /meta/fields/{type}", s.fields)
 	// The graph returns a graph rather than a page of rows, so it has its own
 	// route instead of being a filter on the unified endpoint.
 	mux.HandleFunc("GET /vn/{id}/relations", s.relationGraph)

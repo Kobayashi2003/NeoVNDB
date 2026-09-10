@@ -105,16 +105,22 @@ func releasedFilter(b *query.Builder, value string) error {
 // is only meaningful alongside a search term.
 var sorts = map[string]string{
 	"id":             "vn.id",
+	"title":          "COALESCE(vt.latin, vt.title)",
 	"released":       "vn.c_released",
 	"rating":         "vn.c_rating",
 	"average":        "vn.c_average",
 	"votecount":      "vn.c_votecount",
 	"length":         "vn.c_length",
 	"length_minutes": "vn.c_length",
-	"searchrank":     "",
+	// Ranks by the strength of the match; only meaningful with a search term.
+	"searchrank": "",
 }
 
+// The join to the title in the VN's own language is one-to-one, so it adds a
+// sortable title without multiplying rows and without costing anything when
+// the sort is by something else.
 var spec = query.PageSpec{
-	Table: "vn", Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v",
+	Table: "vn LEFT JOIN vn_titles vt ON vt.id = vn.id AND vt.lang = vn.olang",
+	Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v",
 	Filters: filters, Sorts: sorts,
 }

@@ -33,25 +33,26 @@ type Source[R, T any] func(ctx context.Context, r R, page []T, sel Selection,
 // nesting type knowing anything about its row type. A resolver implements it.
 type Nested interface {
 	Registry() Registry
+	// Type is the entity's id prefix, which is enough to name a row without
+	// reading it.
+	Type() string
 	Objects(ctx context.Context, ids []int32, sel Selection) (map[int32]map[string]any, error)
 }
 
 type Field[T any] struct {
 	// Kind is Column unless the field is a fragment.
 	Kind FieldKind
-	// Row produces the value from the entity's own row. Mutually exclusive
-	// with Source.
+	// Row and Source are mutually exclusive.
 	Row func(T) any
-	// Source names the loader in Table.Sources that fills this field.
+	// Source names the loader in Table.Sources.
 	Source string
-	// Subfields a self-contained fragment understands. Leave empty when the
-	// fragment points at another type; Target supplies the surface instead.
+	// Subfields a self-contained fragment understands. Leave empty when Target
+	// supplies the surface instead.
 	Subfields []string
 	// Edge names the attributes this relation carries itself.
 	Edge []string
-	// Target is the entity type at the end of this relation. Its whole field
-	// surface becomes reachable through this fragment, so a type gaining a
-	// field needs no change here.
+	// Target is the entity type at the end of this relation; its whole field
+	// surface becomes reachable through this fragment.
 	Target string
 	// Num estimates how many of these one parent carries, for pricing a
 	// request before running it.
@@ -105,6 +106,8 @@ func NewTable[R, T any](t Table[R, T]) *Table[R, T] {
 }
 
 func (t *Table[R, T]) Registry() Registry { return t.reg }
+
+func (t *Table[R, T]) Type() string { return t.IDType }
 
 // Objects renders rows this type owns for another type's relation, keyed by
 // id. It is the same work Apply does for a page, which is what makes a nested
@@ -255,11 +258,21 @@ func Relate(ctx context.Context, cat *Catalog, self, field string,
 		}
 	}
 
-	objs := map[int32]map[string]any{}
-	if len(ids) > 0 {
+	target := cat.Get(def.Target)
+	objs := make(map[int32]map[string]any, len(ids))
+	switch {
+	case len(ids) == 0:
+	case pass.All || len(pass.Columns) > 0 || len(pass.Fragments) > 0:
 		var err error
-		if objs, err = cat.Get(def.Target).Objects(ctx, ids, pass); err != nil {
+		if objs, err = target.Objects(ctx, ids, pass); err != nil {
 			return err
+		}
+	default:
+		// Only the edge's own attributes were asked for, so the entity at the
+		// other end is never read: its id is all that is needed and the
+		// relation row already carries it.
+		for _, id := range ids {
+			objs[id] = map[string]any{"id": vndb.FormatID(target.Type(), id)}
 		}
 	}
 

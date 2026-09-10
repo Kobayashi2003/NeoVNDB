@@ -22,8 +22,9 @@ var filters = map[string]query.FilterFunc{
 }
 
 var sorts = map[string]string{
-	"id":         "p.id",
-	"name":       "COALESCE(p.latin, p.name)",
+	"id":   "p.id",
+	"name": "COALESCE(p.latin, p.name)",
+	// Ranks by the strength of the match; only meaningful with a search term.
 	"searchrank": "",
 }
 

@@ -23,9 +23,10 @@ var filters = map[string]query.FilterFunc{
 }
 
 var sorts = map[string]string{
-	"id":         "g.id",
-	"name":       "g.name",
-	"vn_count":   "g.c_items",
+	"id":       "g.id",
+	"name":     "g.name",
+	"vn_count": "g.c_items",
+	// Ranks by the strength of the match; only meaningful with a search term.
 	"searchrank": "",
 }
 
