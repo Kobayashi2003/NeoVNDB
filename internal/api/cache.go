@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/config"
@@ -27,30 +26,32 @@ func newCache(ctx context.Context, cfg *config.Config) (cache.Cache, error) {
 	}
 }
 
-// generations holds the live generation's code, which every cache key starts
-// with. Reading it per request would cost a round trip on the very path the
-// cache exists to shorten, so it is reused for a short while -- meaning a
-// promote takes up to that long to be noticed.
+// generations reports which generation is live, which every cache key starts
+// with.
 type generations struct {
 	store *db.Store
-	ttl   time.Duration
 
-	mu      sync.Mutex
-	code    string
-	fetched time.Time
+	mu   sync.Mutex
+	last string
 }
 
+// current reads the code rather than remembering it. That read is one row of a
+// one-row table -- a fraction of a millisecond against the hundreds the cache
+// saves -- and paying it per request is what keeps a promote from being
+// followed by a window where some types answer out of the new generation and
+// others out of entries keyed to the old one. Reusing the code for even a few
+// seconds does not make the response stale so much as incoherent.
 func (g *generations) current(ctx context.Context) string {
+	gen, err := g.store.Describe(ctx, db.SchemaLive)
+
 	g.mu.Lock()
 	defer g.mu.Unlock()
-
-	if g.code != "" && time.Since(g.fetched) < g.ttl {
-		return g.code
-	}
-	gen, err := g.store.Describe(ctx, db.SchemaLive)
 	if err != nil || gen == nil {
-		return ""
+		// The database is unreachable. Holding on to the last code known keeps
+		// cache hits working, where an empty one would collapse every
+		// generation's keys onto each other.
+		return g.last
 	}
-	g.code, g.fetched = gen.Code, time.Now()
-	return g.code
+	g.last = gen.Code
+	return g.last
 }

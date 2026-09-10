@@ -72,7 +72,7 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 		},
 		cat: cat, resolvers: resolvers,
 		cache: responses,
-		gen:   &generations{store: store, ttl: cfg.GenerationTTL},
+		gen:   &generations{store: store},
 	}, nil
 }
 

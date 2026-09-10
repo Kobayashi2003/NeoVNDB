@@ -109,7 +109,11 @@ internal/api/
   until then. Putting the live generation's code at the front of every key
   means a promote makes the whole previous generation unreachable at once,
   with nothing to invalidate by hand. The key is built from the *parsed*
-  request, so `fields=a,b` and `fields=b,a` are one entry.
+  request, so `fields=a,b` and `fields=b,a` are one entry. The live
+  generation is read per request rather than remembered: that read is a
+  fraction of a millisecond, and paying it is what keeps a promote from being
+  followed by a window where some types answer out of the new generation and
+  others out of entries keyed to the old one.
 - **Every bound is a setting.** Page size, id-list length, field depth, the
   response cost ceiling, the graph's depth and node cap, and the request
   timeout all come from the environment (see `.env.sample`). They bound work
