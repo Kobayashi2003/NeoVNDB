@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"sort"
@@ -330,4 +331,43 @@ func sqlFiles(dir string) ([]sqlFile, error) {
 	}
 	sort.Slice(files, func(i, j int) bool { return files[i].name < files[j].name })
 	return files, nil
+}
+
+// Derived names the tables the derive step builds. They are not in the dump,
+// so nothing else counts them, and an empty one is the only sign that a derive
+// query matched nothing.
+var Derived = []string{
+	"tags_vn_direct", "tags_vn_inherit", "chars_traits_inherit",
+	"search_cache", "tags_closure", "traits_closure",
+}
+
+// DerivedCounts counts what the derive step built, so the recorded row counts
+// cover the whole generation rather than only what was copied in.
+func (s *Store) DerivedCounts(ctx context.Context, schema string) (map[string]int64, error) {
+	counts := make(map[string]int64, len(Derived))
+	for _, table := range Derived {
+		var n int64
+		err := s.pool.QueryRow(ctx,
+			fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, pgx.Identifier{schema}.Sanitize(), table)).Scan(&n)
+		if err != nil {
+			return nil, fmt.Errorf("count %s: %w", table, err)
+		}
+		counts[table] = n
+	}
+	return counts, nil
+}
+
+// Counts reads back what an import recorded for a generation.
+func (s *Store) Counts(ctx context.Context, schema string) (map[string]int64, error) {
+	var raw []byte
+	err := s.pool.QueryRow(ctx,
+		fmt.Sprintf(`SELECT row_counts FROM %s.import_info`, pgx.Identifier{schema}.Sanitize())).Scan(&raw)
+	if err != nil {
+		return nil, err
+	}
+	counts := map[string]int64{}
+	if err := json.Unmarshal(raw, &counts); err != nil {
+		return nil, fmt.Errorf("row_counts of %s: %w", schema, err)
+	}
+	return counts, nil
 }

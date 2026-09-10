@@ -24,6 +24,7 @@ func runImport(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("import", flag.ContinueOnError)
 	file := fs.String("file", "", "import a local archive instead of downloading")
 	promote := fs.Bool("promote", false, "go live once the import succeeds")
+	force := fs.Bool("force", false, "promote even when the checks object")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -72,6 +73,17 @@ func runImport(ctx context.Context, args []string) error {
 		return err
 	}
 
+	// The derive step's tables are counted here so the recorded totals cover
+	// the whole generation: an empty one is what a derive query that matched
+	// nothing looks like, and the guard has no other way to see it.
+	derived, err := store.DerivedCounts(ctx, db.SchemaNext)
+	if err != nil {
+		return err
+	}
+	for table, n := range derived {
+		counts[table] = n
+	}
+
 	encoded, err := json.Marshal(counts)
 	if err != nil {
 		return err
@@ -88,8 +100,11 @@ func runImport(ctx context.Context, args []string) error {
 		total, len(counts), time.Since(started).Round(time.Second))
 
 	if !*promote {
-		fmt.Println("staged in " + db.SchemaNext + "; run `db promote` to go live")
+		fmt.Println("staged in " + db.SchemaNext + "; run `db check` then `db promote`")
 		return nil
+	}
+	if err := inspect(ctx, cfg, store, *force); err != nil {
+		return err
 	}
 	if err := store.Promote(ctx); err != nil {
 		return err

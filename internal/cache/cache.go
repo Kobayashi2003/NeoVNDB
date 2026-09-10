@@ -1,8 +1,7 @@
 // Package cache stores rendered API responses. The database only changes when
-// an import is promoted, so a response stays correct until then -- which is
-// why the live generation's code is part of every key: promoting a new one
-// makes the whole previous generation's keys unreachable at once, with nothing
-// to invalidate by hand.
+// an import is promoted, so the live generation's code goes at the front of
+// every key: promoting a new one makes the previous generation's entries
+// unreachable at once, with nothing to invalidate by hand.
 package cache
 
 import (
@@ -15,13 +14,11 @@ import (
 type Cache interface {
 	Get(ctx context.Context, key string) ([]byte, bool)
 	Set(ctx context.Context, key string, value []byte)
-	// Name says which backend this is, for logging and /health.
 	Name() string
 	Close() error
 }
 
-// Key composes the cache key for one request. generation makes a promote
-// invalidate everything; parts are whatever else changes the answer.
+// Key composes a cache key. parts are whatever changes the answer.
 func Key(generation string, parts ...string) string {
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return "neovndb:" + generation + ":" + hex.EncodeToString(sum[:12])
