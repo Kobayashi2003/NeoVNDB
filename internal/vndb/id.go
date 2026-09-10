@@ -77,7 +77,7 @@ func ParseIDs(entity, value string, max int) ([]int32, error) {
 	if len(ids) == 0 {
 		return nil, fmt.Errorf("no ids given")
 	}
-	if len(ids) > max {
+	if max > 0 && len(ids) > max {
 		return nil, fmt.Errorf("at most %d ids per request, got %d", max, len(ids))
 	}
 	return ids, nil

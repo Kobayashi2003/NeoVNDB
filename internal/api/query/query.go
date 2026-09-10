@@ -68,12 +68,12 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		if err != nil || n < 1 {
 			return nil, BadRequest("limit must be a positive number")
 		}
-		if n > lim.MaxPageSize {
+		if lim.MaxPageSize > 0 && n > lim.MaxPageSize {
 			return nil, BadRequest("limit may not exceed %d", lim.MaxPageSize)
 		}
 		req.Limit = n
 	}
-	if cost := Cost(cat, reg, fields, req.Limit); cost > lim.MaxCost {
+	if cost := Cost(cat, reg, fields, req.Limit); lim.MaxCost > 0 && cost > lim.MaxCost {
 		return nil, BadRequest("too much data selected (estimated %d values, limit %d); "+
 			"lower the limit or ask for fewer fields", cost, lim.MaxCost)
 	}

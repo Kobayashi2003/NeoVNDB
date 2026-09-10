@@ -132,7 +132,7 @@ func ParseFields(cat *Catalog, reg Registry, maxDepth int, value string) (Select
 			continue
 		}
 		parts := strings.Split(name, ".")
-		if len(parts) > maxDepth {
+		if maxDepth > 0 && len(parts) > maxDepth {
 			return sel, BadRequest("field %q is nested more than %d deep", name, maxDepth)
 		}
 		if err := add(cat, &sel, reg, parts, name); err != nil {

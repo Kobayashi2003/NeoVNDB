@@ -56,6 +56,7 @@ go run ./cmd/neovndb db verify
 ```
 cmd/neovndb/          single binary, one subcommand per role
 internal/config/      environment settings
+internal/cache/       response cache: memory LRU or Redis
 internal/dump/        fetch and stream the tar
 internal/importer/    COPY the dump into a fresh generation
 internal/vndb/        the dump's own encodings: ids, dates, extlinks, animation
@@ -74,6 +75,7 @@ internal/api/
   server.go           routes and graceful shutdown
   handlers.go         the four handlers and the JSON envelope
   middleware.go       panic recovery and request logging
+  cache.go            picking a backend, and the live generation's code
   query/              shared machinery: field tables, request parsing,
                       filter builder, paging, the type catalog
   vn/ release/ character/ producer/ staff/ tag/ trait/
@@ -102,10 +104,17 @@ internal/api/
   internally consistent and import verification checks integrity instead.
 - **`tags_vn_direct` and `tags_vn_inherit` are separate.** Kana's `vn.tags`
   returns the direct scores; the `tag=` filter expands parents.
+- **Responses are cached under the generation's code.** The database only
+  changes when an import is promoted, so a rendered response stays correct
+  until then. Putting the live generation's code at the front of every key
+  means a promote makes the whole previous generation unreachable at once,
+  with nothing to invalidate by hand. The key is built from the *parsed*
+  request, so `fields=a,b` and `fields=b,a` are one entry.
 - **Every bound is a setting.** Page size, id-list length, field depth, the
   response cost ceiling, the graph's depth and node cap, and the request
   timeout all come from the environment (see `.env.sample`). They bound work
-  rather than correctness, and what a deployment can afford differs.
+  rather than correctness, and what a deployment can afford differs; 0 turns
+  a ceiling off.
 - **No migrations.** Each generation is built fresh from the DDL, and its
   `import_info.ddl_checksum` says which version built it. `db status` reports
   when the live generation is behind the source.

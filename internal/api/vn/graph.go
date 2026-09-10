@@ -57,7 +57,7 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 	if depth < 1 {
 		depth = 1
 	}
-	if depth > opt.MaxDepth {
+	if opt.MaxDepth > 0 && depth > opt.MaxDepth {
 		return nil, query.BadRequest("depth may not exceed %d", opt.MaxDepth)
 	}
 
@@ -88,7 +88,7 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		if depthOf[e.ID] >= depth {
 			continue // its target would sit past the boundary
 		}
-		if !included[e.Vid] && len(included) >= opt.MaxNodes {
+		if !included[e.Vid] && opt.MaxNodes > 0 && len(included) >= opt.MaxNodes {
 			graph.Truncated = true
 			continue
 		}

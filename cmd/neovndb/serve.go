@@ -40,10 +40,12 @@ func runServe(ctx context.Context, args []string) error {
 	if *addr != "" {
 		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)
 	}
-	srv, err := api.NewServer(store, log, cfg)
+	srv, err := api.NewServer(ctx, store, log, cfg)
 	if err != nil {
 		return err
 	}
+	defer srv.Close()
+
 	return api.Serve(ctx, cfg, srv.Routes(), log)
 }
 
