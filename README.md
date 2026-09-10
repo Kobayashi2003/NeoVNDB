@@ -46,10 +46,32 @@ go run ./cmd/neovndb db verify
 | --- | --- |
 | `db status` | Generations, whether the live one matches current DDL, row counts |
 | `db init <code>` | Build an empty `vndb_next` from the embedded DDL |
-| `db promote` | Swap `vndb_next` into place; refuses an unfinished import |
+| `db promote` | Run `db check`, then swap `vndb_next` into place; refuses an unfinished import |
 | `db rollback` | Swap `vndb_prev` back |
 | `db drop <schema>` | Drop one generation; refuses the live one |
+| `db check` | Compare `vndb_next` with the live generation and report what objects |
 | `db verify` | Write and read through the generated queries, then roll back |
+
+## Updating
+
+```sh
+go run ./cmd/neovndb update          # no-op if upstream is what is already live
+```
+
+One command for the weekly run and for a run by hand -- an update path that
+only ever runs unattended is one nobody can reproduce when it fails. It stops
+if upstream has nothing newer, and refuses to go backwards if upstream
+republishes an older archive.
+
+Before a generation goes live it is compared with the one it replaces. An
+import can succeed in every mechanical sense and still be wrong: a truncated
+archive parses, and a derive step whose joins match nothing writes no rows and
+reports no error. A mirror of a dump has no invariant of its own to violate --
+what it has is a predecessor. Three checks ship: a table that lost more than
+`NEOVNDB_GUARD_MAX_LOSS` of its rows, a table that was not imported at all, and
+a derived table that came back empty. They are an interface, so a deployment
+that knows a table is expected to shrink adds or drops one. `-force` promotes
+anyway.
 
 ## Layout
 
@@ -61,6 +83,7 @@ internal/dump/        fetch and stream the tar
 internal/importer/    COPY the dump into a fresh generation
 internal/vndb/        the dump's own encodings: ids, dates, extlinks, animation
 internal/db/
+  guard/              what makes a fresh generation unfit to go live
   ddl/01_mirror.sql   the 42 dump tables we import
   ddl/02_derived.sql  what vndb computes but does not export
   ddl/03_indexes.sql  every access path the API takes

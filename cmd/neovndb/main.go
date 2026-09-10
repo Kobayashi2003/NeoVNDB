@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,12 +18,14 @@ import (
 
 const usage = `neovndb
 
-  serve  [--addr host:port]        run the read-only HTTP API
-  import [--file p] [--promote]   load an archive into vndb_next
+  serve  [--addr host:port]              run the read-only HTTP API
+  import [--file p] [--promote] [--force] load an archive into vndb_next
+  update [--force]                       import and go live if upstream is newer
 
   db status              generations, DDL freshness and row counts
   db init <code>         build an empty vndb_next from the embedded DDL
-  db promote             swap vndb_next into place (atomic)
+  db check               compare vndb_next with the live generation
+  db promote [--force]   run db check, then swap vndb_next into place (atomic)
   db rollback            swap vndb_prev back
   db drop <schema>       drop one generation schema
   db verify              round-trip the generated query layer, then roll back`
@@ -49,6 +52,8 @@ func run() error {
 		return runServe(ctx, args[1:])
 	case "import":
 		return runImport(ctx, args[1:])
+	case "update":
+		return runUpdate(ctx, args[1:])
 	case "db":
 		return runDB(ctx, args[1:])
 	case "help", "-h", "--help":
@@ -83,8 +88,10 @@ func runDB(ctx context.Context, args []string) error {
 			return fmt.Errorf("db init: expected a generation code, e.g. 20260903")
 		}
 		return initGeneration(ctx, store, args[1], cfg.DumpURL)
+	case "check":
+		return inspect(ctx, cfg, store, false)
 	case "promote":
-		return promote(ctx, store)
+		return promote(ctx, cfg, store, args[1:])
 	case "rollback":
 		return rollback(ctx, store)
 	case "drop":
@@ -144,7 +151,15 @@ func initGeneration(ctx context.Context, store *db.Store, code, dumpURL string) 
 	return nil
 }
 
-func promote(ctx context.Context, store *db.Store) error {
+func promote(ctx context.Context, cfg *config.Config, store *db.Store, args []string) error {
+	fs := flag.NewFlagSet("db promote", flag.ContinueOnError)
+	force := fs.Bool("force", false, "promote even when the checks object")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if err := inspect(ctx, cfg, store, *force); err != nil {
+		return err
+	}
 	if err := store.Promote(ctx); err != nil {
 		return err
 	}
