@@ -17,8 +17,10 @@ const (
 	defaultMinConns       = 2
 	defaultConnLifetime   = time.Hour
 	defaultConnectTimeout = 10 * time.Second
-	defaultDumpDir        = "data/dumps"
-	defaultDumpURL        = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
+	// Archives live at the repository root, beside the backend rather than
+	// inside it, because they are neither source nor Go module content.
+	defaultDumpDir = "../data/dumps"
+	defaultDumpURL = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
 
 	// What one request may ask for. These bound work, not correctness, so they
 	// are settings: what a deployment can afford differs, and a private

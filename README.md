@@ -29,11 +29,23 @@ application never has to discover which generation it is talking to.
 `vndb_prev` is kept for one cycle so a bad import can be rolled back in
 seconds.
 
+## Repository
+
+```
+backend/    the Go module: API, importer, data layer
+frontend/   the web client
+docs/       design and structure notes
+data/       downloaded archives, reproducible from upstream and not in git
+```
+
+Every command below runs from `backend/`.
+
 ## Setup
 
 Requires Go 1.24+, PostgreSQL 15+ and `sqlc` to regenerate the query layer.
 
 ```sh
+cd backend
 cp .env.sample .env          # adjust NEOVNDB_DB_URL
 createdb neovndb
 go run ./cmd/neovndb db init 20260819
@@ -55,7 +67,7 @@ go run ./cmd/neovndb db verify
 ## Updating
 
 ```sh
-go run ./cmd/neovndb update          # no-op if upstream is what is already live
+cd backend && go run ./cmd/neovndb update   # no-op if upstream is already live
 ```
 
 One command for the weekly run and for a run by hand -- an update path that
@@ -76,6 +88,7 @@ anyway.
 ## Layout
 
 ```
+backend/
 cmd/neovndb/          single binary, one subcommand per role
 internal/config/      environment settings
 internal/cache/       response cache: memory LRU or Redis
