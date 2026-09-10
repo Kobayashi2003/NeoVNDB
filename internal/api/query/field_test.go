@@ -14,6 +14,8 @@ type testResolver struct{ ran []string }
 
 func (r *testResolver) Registry() Registry { return testTable.Registry() }
 
+func (r *testResolver) Type() string { return "vn" }
+
 func (r *testResolver) Objects(ctx context.Context, ids []int32,
 	sel Selection) (map[int32]map[string]any, error) {
 	return testTable.Objects(ctx, r, ids, sel)
@@ -56,6 +58,8 @@ func record(name string) Source[*testResolver, testRow] {
 
 // tagType stands in for the entity a relation points at.
 type tagType struct{}
+
+func (tagType) Type() string { return "tag" }
 
 func (tagType) Registry() Registry {
 	return Registry{
@@ -270,4 +274,52 @@ func TestParseFieldsOrderSymmetry(t *testing.T) {
 			t.Errorf("fields=%q did not widen to all", fields)
 		}
 	}
+}
+
+// Asking only for the edge's own attributes must not read the entity at the
+// other end: the relation row already carries its id.
+func TestRelateSkipsTheTargetWhenOnlyEdgeIsWanted(t *testing.T) {
+	cat, _ := setup()
+	read := &countingTarget{}
+	cat.Put("tag", read)
+
+	sel, err := ParseFields(cat, testTable.Registry(), lim.MaxFieldDepth, "tags.rating")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[int32]map[string]any{17: {}}
+	edges := []Edge{{Parent: 17, Child: 2, Attrs: map[string]any{"rating": 2.5}}}
+	if err := Relate(context.Background(), cat, "vn", "tags", edges, sel, byID); err != nil {
+		t.Fatal(err)
+	}
+	if read.calls != 0 {
+		t.Errorf("read the target %d times, want 0", read.calls)
+	}
+	got := byID[17]["tags"].([]map[string]any)[0]
+	if got["id"] != "g2" || got["rating"] != 2.5 {
+		t.Errorf("got %v, want the id and the edge attribute", got)
+	}
+
+	// Asking for one of the target's own fields does read it.
+	sel, err = ParseFields(cat, testTable.Registry(), lim.MaxFieldDepth, "tags.name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Relate(context.Background(), cat, "vn", "tags", edges, sel, byID); err != nil {
+		t.Fatal(err)
+	}
+	if read.calls != 1 {
+		t.Errorf("read the target %d times, want 1", read.calls)
+	}
+}
+
+type countingTarget struct {
+	tagType
+	calls int
+}
+
+func (c *countingTarget) Objects(ctx context.Context, ids []int32,
+	sel Selection) (map[int32]map[string]any, error) {
+	c.calls++
+	return c.tagType.Objects(ctx, ids, sel)
 }

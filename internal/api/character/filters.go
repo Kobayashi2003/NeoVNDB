@@ -47,6 +47,7 @@ var filters = map[string]query.FilterFunc{
 
 var sorts = map[string]string{
 	"id":       "c.id",
+	"name":     "COALESCE(cn.latin, cn.name)",
 	"height":   "c.height",
 	"weight":   "c.weight",
 	"bust":     "c.s_bust",
@@ -58,7 +59,10 @@ var sorts = map[string]string{
 	"searchrank": "",
 }
 
+// The join to the name in the character's own language is one-to-one, so it
+// adds a sortable name without multiplying rows.
 var spec = query.PageSpec{
-	Table: "chars c", Alias: "c", IDType: vndb.TypeCharacter, SearchEntity: "c",
+	Table: "chars c LEFT JOIN chars_names cn ON cn.id = c.id AND cn.lang = c.c_lang",
+	Alias: "c", IDType: vndb.TypeCharacter, SearchEntity: "c",
 	Filters: filters, Sorts: sorts,
 }

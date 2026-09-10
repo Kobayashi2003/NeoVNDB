@@ -69,8 +69,12 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		return nil, 0, err
 	}
 
+	// Kept before paging is appended, so the count below can reuse them.
+	where := b.SQL()
+	conds := append([]any(nil), b.Args...)
+
 	sql := fmt.Sprintf("SELECT %s.*, COUNT(*) OVER ()::int AS total FROM %s WHERE %s ORDER BY %s",
-		spec.Alias, spec.Table, b.SQL(), ordering)
+		spec.Alias, spec.Table, where, ordering)
 	if !byID {
 		sql += fmt.Sprintf(" LIMIT %s OFFSET %s", b.Arg(req.Limit), b.Arg(req.Offset()))
 	}
@@ -84,11 +88,27 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		return nil, 0, err
 	}
 
-	total := 0
 	if len(page) > 0 {
-		total = int(page[0].Count())
+		return page, int(page[0].Count()), nil
 	}
-	return page, total, nil
+	// The count rides back on the rows, so an empty page carries none -- which
+	// for a page past the end would report a filter that matches thousands as
+	// matching nothing. Only then is it worth a second statement.
+	if byID || req.Offset() == 0 {
+		return page, 0, nil
+	}
+	total, err := count(ctx, pool, spec, where, conds)
+	return page, total, err
+}
+
+func count(ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
+	where string, args []any) (int, error) {
+
+	var total int
+	err := pool.QueryRow(ctx,
+		fmt.Sprintf("SELECT COUNT(*)::int FROM %s WHERE %s", spec.Table, where),
+		args...).Scan(&total)
+	return total, err
 }
 
 func orderBy(spec PageSpec, req *Request) (string, error) {

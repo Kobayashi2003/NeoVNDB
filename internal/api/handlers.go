@@ -1,5 +1,4 @@
-// The four handlers behind the routes, plus the JSON envelope every one of
-// them answers in.
+// The handlers behind the routes, plus the JSON envelope they answer in.
 package api
 
 import (
@@ -132,6 +131,48 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 	s.remember(ctx, key, body)
 	w.Header().Set("X-Cache", "miss")
 	writeJSON(w, http.StatusOK, body)
+}
+
+// fields answers what one type can be asked for. A fragment that points at
+// another type reports that rather than its fields, because those belong to
+// the other type and the graph has cycles.
+func (s *Server) fields(w http.ResponseWriter, r *http.Request) {
+	entity := r.PathValue("type")
+	resolver, ok := s.resolvers[entity]
+	if !ok {
+		fail(w, http.StatusNotFound, fmt.Sprintf("unknown type %q", entity))
+		return
+	}
+
+	out := map[string]any{}
+	for name, def := range resolver.Registry() {
+		field := map[string]any{"kind": "column"}
+		if def.Kind == query.Fragment {
+			field["kind"] = "fragment"
+			field["expected"] = def.Num
+			if def.Target != "" {
+				field["target"] = def.Target
+			}
+			if len(def.Subfields) > 0 {
+				field["subfields"] = def.Subfields
+			}
+			if len(def.Edge) > 0 {
+				field["edge"] = def.Edge
+			}
+		}
+		out[name] = field
+	}
+	// A ceiling of zero means there is none, which reads better as null than
+	// as a depth of nothing.
+	var maxDepth any
+	if s.limits.MaxFieldDepth > 0 {
+		maxDepth = s.limits.MaxFieldDepth
+	}
+	respond(w, http.StatusOK, map[string]any{
+		"type":      entity,
+		"max_depth": maxDepth,
+		"fields":    out,
+	})
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {

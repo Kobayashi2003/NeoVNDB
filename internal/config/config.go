@@ -43,6 +43,12 @@ const (
 	defaultCacheEntries  = 10000
 	defaultCacheMaxEntry = 1 << 20
 
+	// How much of a table may disappear between generations before promoting
+	// is refused. vndb only grows -- entries are hidden rather than deleted,
+	// and hidden ones never reach the dump -- so any real shrink means a
+	// truncated archive or an import that stopped partway.
+	defaultGuardMaxLoss = 0.02
+
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
@@ -86,6 +92,9 @@ type Config struct {
 	CacheEntries  int
 	CacheMaxEntry int
 	RedisURL      string
+
+	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
+	GuardMaxLoss float64
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -122,6 +131,8 @@ func Load() (*Config, error) {
 		CacheEntries:  envInt("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
 		CacheMaxEntry: envInt("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
 		RedisURL:      envString("NEOVNDB_REDIS_URL", ""),
+
+		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")
@@ -153,6 +164,15 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 	if v := os.Getenv(key); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
+		}
+	}
+	return fallback
+}
+
+func envFloat(key string, fallback float64) float64 {
+	if v := os.Getenv(key); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
 		}
 	}
 	return fallback

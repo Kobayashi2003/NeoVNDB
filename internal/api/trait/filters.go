@@ -27,6 +27,7 @@ var sorts = map[string]string{
 	"id":         "i.id",
 	"name":       "i.name",
 	"char_count": "i.c_items",
+	// Ranks by the strength of the match; only meaningful with a search term.
 	"searchrank": "",
 }
 

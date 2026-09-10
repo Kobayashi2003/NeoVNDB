@@ -10,6 +10,7 @@ import (
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/db/gen"
+	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
 type Resolver struct {
@@ -23,6 +24,8 @@ func New(store *db.Store, cat *query.Catalog) *Resolver {
 }
 
 func (r *Resolver) Registry() query.Registry { return fields.Registry() }
+
+func (r *Resolver) Type() string { return vndb.TypeCharacter }
 
 // Objects renders these entities for another type that nests them.
 func (r *Resolver) Objects(ctx context.Context, ids []int32,

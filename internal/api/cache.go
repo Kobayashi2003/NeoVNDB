@@ -35,21 +35,18 @@ type generations struct {
 	last string
 }
 
-// current reads the code rather than remembering it. That read is one row of a
-// one-row table -- a fraction of a millisecond against the hundreds the cache
-// saves -- and paying it per request is what keeps a promote from being
-// followed by a window where some types answer out of the new generation and
-// others out of entries keyed to the old one. Reusing the code for even a few
-// seconds does not make the response stale so much as incoherent.
+// current reads the code rather than remembering it. One row of a one-row
+// table costs a fraction of a millisecond; reusing it for even a few seconds
+// leaves a window where some types answer out of the new generation and others
+// out of entries keyed to the old one -- incoherent rather than merely stale.
 func (g *generations) current(ctx context.Context) string {
 	gen, err := g.store.Describe(ctx, db.SchemaLive)
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if err != nil || gen == nil {
-		// The database is unreachable. Holding on to the last code known keeps
-		// cache hits working, where an empty one would collapse every
-		// generation's keys onto each other.
+		// Unreachable: the last code known keeps hits working, where an empty
+		// one would collapse every generation's keys onto each other.
 		return g.last
 	}
 	g.last = gen.Code
