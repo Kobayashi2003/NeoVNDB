@@ -1,11 +1,6 @@
-# Secrets and anything a run produces.
-backend/.env
-backend/bin/
-*.exe
-
 # Archives are large and reproducible from upstream.
 /data/
 
-# Stray server logs from local runs.
-*.log
-*.err
+# Editor and OS noise.
+.DS_Store
+Thumbs.db

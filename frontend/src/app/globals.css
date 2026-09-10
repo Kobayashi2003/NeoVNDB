@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Titles and names are mostly Japanese, so the stack leads with what the
+   platform has for CJK rather than with a Latin-only face. */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: ui-sans-serif, system-ui, "Hiragino Sans", "Yu Gothic UI",
+    "Noto Sans JP", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
