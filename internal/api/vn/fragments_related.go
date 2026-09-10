@@ -12,7 +12,7 @@ import (
 // the relation, plus at most one more for the names or images it displays --
 // and those extra lookups only run when the caller asked for that subfield.
 
-func loadDevelopers(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadDevelopers(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNDevelopers(ctx, idsOf(page))
@@ -34,7 +34,7 @@ func loadDevelopers(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadScreenshots(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNScreenshotList(ctx, idsOf(page))
@@ -63,7 +63,7 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadStaff(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadStaff(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNStaffList(ctx, idsOf(page))
@@ -91,7 +91,7 @@ func loadStaff(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadReleases(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadReleases(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNReleaseList(ctx, idsOf(page))
@@ -141,7 +141,7 @@ func loadReleases(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadCharacters(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadCharacters(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNCharacterList(ctx, idsOf(page))

@@ -8,28 +8,11 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// A loader fills one fragment for a whole page in a single query, attaching
-// results to the objects being built. It receives the base rows as well, so it
-// never refetches what the caller already read.
-type loader func(ctx context.Context, r *Resolver, page []gen.Vn,
-	sel query.Selection, byID map[int32]map[string]any) error
-
-var fragments = map[string]loader{
-	"titles":    loadTitles,
-	"image":     loadImage,
-	"tags":      loadTags,
-	"relations": loadRelations,
-	"extlinks":  loadExtLinks,
-
-	// Fragments reaching other entities live in fragments_related.go.
-	"developers":  loadDevelopers,
-	"screenshots": loadScreenshots,
-	"staff":       loadStaff,
-	"releases":    loadReleases,
-	"characters":  loadCharacters,
-}
-
-func loadTitles(ctx context.Context, r *Resolver, page []gen.Vn,
+// loadTitles serves title, alttitle and the titles fragment from one read of
+// vn_titles. title and alttitle are the row matching the VN's own language:
+// vndb prefers the romanised form there and keeps the original script as the
+// alternative.
+func (r *Resolver) loadTitles(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNTitles(ctx, idsOf(page))
@@ -37,43 +20,43 @@ func loadTitles(ctx context.Context, r *Resolver, page []gen.Vn,
 		return err
 	}
 
+	wantTitle, wantAlt := sel.Has("title"), sel.Has("alttitle")
+	olang := make(map[int32]string, len(page))
+	for _, v := range page {
+		olang[v.ID] = v.Olang
+	}
+
 	grouped := map[int32][]map[string]any{}
 	for _, t := range rows {
+		obj, ok := byID[t.ID]
+		if !ok {
+			continue
+		}
+		if t.Lang == olang[t.ID] {
+			if wantTitle {
+				if t.Latin != nil {
+					obj["title"] = *t.Latin
+				} else {
+					obj["title"] = t.Title
+				}
+			}
+			if wantAlt && t.Latin != nil {
+				obj["alttitle"] = t.Title
+			}
+		}
 		grouped[t.ID] = append(grouped[t.ID], map[string]any{
 			"lang": t.Lang, "title": t.Title, "latin": t.Latin, "official": t.Official,
 		})
 	}
-	for id, obj := range byID {
-		obj["titles"] = query.OrEmpty(grouped[id])
+	if sel.Has("titles") {
+		for id, obj := range byID {
+			obj["titles"] = query.OrEmpty(grouped[id])
+		}
 	}
 	return nil
 }
 
-// setTitles fills title and alttitle, which are not columns: vndb picks the
-// row matching the entity's own language and prefers its romanised form,
-// keeping the original script as the alternative.
-func setTitles(rows []gen.VnTitle, olang map[int32]string,
-	byID map[int32]map[string]any, wantTitle, wantAlt bool) {
-
-	for _, t := range rows {
-		obj, ok := byID[t.ID]
-		if !ok || t.Lang != olang[t.ID] {
-			continue
-		}
-		if wantTitle {
-			if t.Latin != nil {
-				obj["title"] = *t.Latin
-			} else {
-				obj["title"] = t.Title
-			}
-		}
-		if wantAlt && t.Latin != nil {
-			obj["alttitle"] = t.Title
-		}
-	}
-}
-
-func loadImage(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadImage(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	nums := make([]int32, 0, len(page))
@@ -117,7 +100,7 @@ func loadImage(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadTags(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadTags(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNTags(ctx, idsOf(page))
@@ -159,7 +142,7 @@ func loadTags(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-func loadRelations(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadRelations(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNRelations(ctx, idsOf(page))
@@ -182,7 +165,7 @@ func loadRelations(ctx context.Context, r *Resolver, page []gen.Vn,
 
 // loadExtLinks renders each stored (site, value) pair through the recipe
 // table. A site with no recipe is dropped rather than shown broken.
-func loadExtLinks(ctx context.Context, r *Resolver, page []gen.Vn,
+func (r *Resolver) loadExtLinks(ctx context.Context, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
 	rows, err := r.q.VNExtLinks(ctx, idsOf(page))
