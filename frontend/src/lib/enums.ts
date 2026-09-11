@@ -191,6 +191,16 @@ export const ENUMS = {
     complete: "Complete",
   },
 
+  /* What a release image is a picture of (VNDB `release.images.itype`) */
+  "IMAGE_TYPE": {
+    dig: "Digital",
+    pkgfront: "Package front",
+    pkgback: "Package back",
+    pkgcontent: "Package contents",
+    pkgside: "Package spine",
+    pkgmed: "Package media",
+  },
+
   /* Character role within a VN (VNDB `character.vns.role`) */
   "CHARACTER_ROLE": {
     main: "Protagonist",
