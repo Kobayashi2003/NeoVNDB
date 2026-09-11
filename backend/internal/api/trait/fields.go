@@ -11,30 +11,41 @@ import (
 type field = query.Field[gen.Trait]
 type source = query.Source[*Resolver, gen.Trait]
 
+// Each field is tagged with where its value comes from; the tags are defined
+// in query.Field's documentation.
 var fields = query.NewTable(query.Table[*Resolver, gen.Trait]{
 	IDType: vndb.TypeTrait,
 	ID:     func(t gen.Trait) int32 { return t.ID },
 	Fetch:  fetch,
 
 	Fields: map[string]field{
-		"name":        {Row: func(t gen.Trait) any { return t.Name }},
-		"aliases":     {Row: func(t gen.Trait) any { return query.SplitLines(t.Alias) }},
-		"description": {Row: func(t gen.Trait) any { return query.EmptyToNil(t.Description) }},
-		"searchable":  {Row: func(t gen.Trait) any { return t.Searchable }},
-		"applicable":  {Row: func(t gen.Trait) any { return t.Applicable }},
-		"sexual":      {Row: func(t gen.Trait) any { return t.Sexual }},
-		// Counted over the inherited table, so a parent trait covers everything
-		// below it.
-		"char_count": {Row: func(t gen.Trait) any { return t.CItems }},
+		// COL -- traits, passed through.
+		"name":       {Row: func(t gen.Trait) any { return t.Name }},       // traits.name
+		"searchable": {Row: func(t gen.Trait) any { return t.Searchable }}, // traits.searchable
+		"applicable": {Row: func(t gen.Trait) any { return t.Applicable }}, // traits.applicable
+		"sexual":     {Row: func(t gen.Trait) any { return t.Sexual }},     // traits.sexual
 
-		// The group a trait is filed under, which is how it is displayed:
-		// "Hair / Blonde" rather than "Blonde".
-		"group_id":   {Source: "group"},
-		"group_name": {Source: "group"},
+		// CONV -- one traits column, re-expressed.
+		"aliases":     {Row: func(t gen.Trait) any { return query.SplitLines(t.Alias) }},       // traits.alias, newline-separated -> array
+		"description": {Row: func(t gen.Trait) any { return query.EmptyToNil(t.Description) }}, // traits.description; '' -> null
 
-		"parents": {Kind: query.Fragment, Source: "parents", Num: 3,
+		// DERIV -- on the traits row, but filled by derive/03_traits.sql: a
+		// count over chars_traits_inherit, a table this import builds. It
+		// reads like a stored total and is really "how many characters carry
+		// this trait or anything below it", recomputed every import.
+		"char_count": {Row: func(t gen.Trait) any { return t.CItems }}, // traits.c_items <- COUNT(*) over chars_traits_inherit
+
+		// JOIN1 -- traits is self-referential: gid points at the trait that is
+		// this one's group, which is how it is displayed ("Hair / Blonde"
+		// rather than "Blonde").
+		"group_id":   {Source: "group"}, // JOIN1 traits g WHERE g.id = traits.gid
+		"group_name": {Source: "group"}, // JOIN1 traits g WHERE g.id = traits.gid
+
+		// REL -- traits_parents read both ways. main marks the parent a trait
+		// is filed under when it has several.
+		"parents": {Kind: query.Fragment, Source: "parents", Num: 3, // REL traits_parents -> traits
 			Edge: []string{"main"}, Target: vndb.TypeTrait},
-		"children": {Kind: query.Fragment, Source: "children", Num: 10,
+		"children": {Kind: query.Fragment, Source: "children", Num: 10, // REL traits_parents, read from the parent side -> traits
 			Edge: []string{"main"}, Target: vndb.TypeTrait},
 	},
 	Sources: map[string]source{

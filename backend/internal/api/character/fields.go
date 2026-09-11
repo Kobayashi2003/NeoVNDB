@@ -11,53 +11,72 @@ import (
 type field = query.Field[gen.Char]
 type source = query.Source[*Resolver, gen.Char]
 
+// Each field is tagged with where its value comes from; the tags are defined
+// in query.Field's documentation.
 var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 	IDType: vndb.TypeCharacter,
 	ID:     func(c gen.Char) int32 { return c.ID },
 	Fetch:  fetch,
 
 	Fields: map[string]field{
-		"description": {Row: func(c gen.Char) any { return query.EmptyToNil(c.Description) }},
-		"blood_type":  {Row: func(c gen.Char) any { return unknownToNil(c.Bloodt, "unknown") }},
-		"cup":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.CupSize) }},
-		// sex is what a character appears to be and spoil_sex what they turn
-		// out to be, which the dump keeps apart precisely because the second
-		// one spoils the first. gender is the separate self-identification
-		// axis, spoiled the same way.
-		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},
-		"spoil_sex":    {Row: func(c gen.Char) any { return blankToNil(c.SpoilSex) }},
-		"gender":       {Row: func(c gen.Char) any { return blankToNil(c.Gender) }},
-		"spoil_gender": {Row: func(c gen.Char) any { return blankToNil(c.SpoilGender) }},
-		"height":       {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},
-		"weight":       {Row: func(c gen.Char) any { return c.Weight }},
-		"bust":         {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},
-		"waist":        {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},
-		"hips":         {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},
-		"age":          {Row: func(c gen.Char) any { return c.Age }},
-		"birthday":     {Row: func(c gen.Char) any { return birthday(c.Birthday) }},
-		"instance_of":  {Row: func(c gen.Char) any { return instanceOf(c.Main) }},
+		// COL -- chars, passed through.
+		"weight": {Row: func(c gen.Char) any { return c.Weight }}, // chars.weight
+		"age":    {Row: func(c gen.Char) any { return c.Age }},    // chars.age
 
-		// The name is the chars_names row in the character's own language,
-		// which the import resolved into chars.c_lang -- the same read the
-		// names fragment needs.
-		"name":     {Source: "names"},
-		"original": {Source: "names"},
-		"names": {Kind: query.Fragment, Source: "names", Num: 2,
+		// CONV -- one chars column, re-expressed. The measurements and the
+		// height spell "not recorded" as 0, bloodt spells it as a word, and
+		// the text columns spell it as either NULL or ''.
+		"description": {Row: func(c gen.Char) any { return query.EmptyToNil(c.Description) }},   // chars.description; '' -> null
+		"blood_type":  {Row: func(c gen.Char) any { return unknownToNil(c.Bloodt, "unknown") }}, // chars.bloodt; 'unknown' -> null
+		"cup":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.CupSize) }},       // chars.cup_size
+		"height":      {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},               // chars.height; 0 -> null
+		"bust":        {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},                // chars.s_bust
+		"waist":       {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},               // chars.s_waist
+		"hips":        {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},                 // chars.s_hip
+		"birthday":    {Row: func(c gen.Char) any { return birthday(c.Birthday) }},              // chars.birthday, mmdd in one smallint -> [month, day]
+		"instance_of": {Row: func(c gen.Char) any { return instanceOf(c.Main) }},                // chars.main, an integer id -> 'cNNN'
+
+		// CONV -- sex is what a character appears to be and spoil_sex what
+		// they turn out to be, which the dump keeps apart precisely because
+		// the second one spoils the first. gender is the separate
+		// self-identification axis, spoiled the same way.
+		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},   // chars.sex; '' -> null
+		"spoil_sex":    {Row: func(c gen.Char) any { return blankToNil(c.SpoilSex) }},    // chars.spoil_sex; NULL and '' both -> null
+		"gender":       {Row: func(c gen.Char) any { return blankToNil(c.Gender) }},      // chars.gender
+		"spoil_gender": {Row: func(c gen.Char) any { return blankToNil(c.SpoilGender) }}, // chars.spoil_gender
+
+		// JOIN1 + LIST -- chars_names, one read. The row picked for name and
+		// original is the one in chars.c_lang, which is itself DERIV: the
+		// import chooses it from the VNs this character appears in (see
+		// derive/01_vncache.sql), so a name can change language without the
+		// character row changing at all.
+		"name":     {Source: "names"}, // JOIN1 chars_names WHERE lang = chars.c_lang, romanised form
+		"original": {Source: "names"}, // JOIN1 chars_names WHERE lang = chars.c_lang, original script
+		"names": {Kind: query.Fragment, Source: "names", Num: 2, // LIST chars_names
 			Subfields: []string{"lang", "name", "latin"}},
 
-		"image": {Kind: query.Fragment, Source: "image", Num: 1,
+		// JOIN1 -- images, keyed by the portrait id on the row. url is MADE
+		// from (kind, num).
+		"image": {Kind: query.Fragment, Source: "image", Num: 1, // JOIN1 images WHERE kind='ch' AND num = chars.image
 			Subfields: []string{"url", "dims", "sexual", "violence"}},
-		"aliases": {Kind: query.Fragment, Source: "aliases", Num: 2,
+
+		// LIST -- every alias row this character has.
+		"aliases": {Kind: query.Fragment, Source: "aliases", Num: 2, // LIST chars_alias
 			Subfields: []string{"name", "latin", "spoiler"}},
 
-		"traits": {Kind: query.Fragment, Source: "traits", Num: 30,
+		// REL -- another entity, plus whatever the relation table holds itself.
+		"traits": {Kind: query.Fragment, Source: "traits", Num: 30, // REL chars_traits -> traits
 			Edge: []string{"spoiler", "lie"}, Target: vndb.TypeTrait},
 		// release names the one release a character is tied to when the
 		// appearance is route-specific rather than across the whole VN.
-		"vns": {Kind: query.Fragment, Source: "vns", Num: 3,
+		"vns": {Kind: query.Fragment, Source: "vns", Num: 3, // REL chars_vns -> vn
 			Edge: []string{"role", "spoiler", "release"}, Target: vndb.TypeVN},
+		// vn_seiyuu is keyed by (work, character, actor), so reading it from
+		// the character side returns credits from every work they appear in.
+		// The vn edge attribute is what tells them apart -- a caller showing
+		// one work has to filter; this type cannot, it does not know which.
 		// name is the alias credited for this voice role, not the person's own.
-		"seiyuu": {Kind: query.Fragment, Source: "seiyuu", Num: 2,
+		"seiyuu": {Kind: query.Fragment, Source: "seiyuu", Num: 2, // REL vn_seiyuu JOIN staff_alias -> staff
 			Edge:   []string{"vn", "note", "name", "original"},
 			Target: vndb.TypeStaff},
 	},

@@ -39,6 +39,36 @@ type Nested interface {
 	Objects(ctx context.Context, ids []int32, sel Selection) (map[int32]map[string]any, error)
 }
 
+// Where a value comes from
+//
+// Every field in every type package carries one of these tags, so a reader can
+// tell what a field's relationship to the mirrored database actually is
+// without following the code. The mirror keeps vndb's own table and column
+// names, so a tag plus a column name is enough to check a field against the
+// dump's schema.
+//
+//	COL    A column on this entity's own row, passed through. The note gives
+//	       the column when the API renamed it (vn.c_length -> length_minutes).
+//	CONV   One column on the row, re-expressed: a unit, an encoding, a split,
+//	       or a spelling of "absent" turned into null. Same fact, other shape.
+//	CALC   Several columns on the row, combined into one value.
+//	DERIV  A column on the row that the dump does NOT ship. The import computes
+//	       it from other tables (internal/db/derive/*.sql), so it reads here
+//	       like a plain column but is really a cross-table aggregate. These are
+//	       the ones to distrust when a number looks wrong.
+//	JOIN1  One row of another table, matched on a key held by this row.
+//	LIST   Many rows of another table, gathered into a fragment.
+//	REL    Another entity. The target type's whole field surface is reachable
+//	       through it, and Edge names what the relation table carries of its
+//	       own.
+//	MADE   Not stored anywhere. Built from an id or rendered through a lookup
+//	       table -- checking it against the database means checking the recipe.
+//
+// vndb's own cached columns (c_votecount, c_rating, images.c_sexual_avg) are
+// COL, not DERIV: they arrive in the dump already computed, and this codebase
+// only reads them. DERIV is reserved for the five columns this import fills
+// itself.
+
 type Field[T any] struct {
 	// Kind is Column unless the field is a fragment.
 	Kind FieldKind
@@ -146,6 +176,9 @@ func (t *Table[R, T]) Apply(ctx context.Context, r R, page []T, sel Selection) (
 
 	for i, row := range page {
 		id := t.ID(row)
+		// id is CONV and is on every object without being declared: the mirror
+		// stores the numeric part and the prefix is implied by the table, so
+		// the dump's own 'v17' spelling is put back here.
 		obj := map[string]any{"id": vndb.FormatID(t.IDType, id)}
 		for _, name := range sel.Columns {
 			if f := t.Fields[name]; f.Row != nil {
