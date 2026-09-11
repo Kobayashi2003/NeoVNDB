@@ -108,11 +108,16 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 	grouped := map[int32][]map[string]any{}
 	for _, s := range rows {
 		shot := map[string]any{
-			"url":      vndb.ImageURL("sf", s.Scr),
-			"dims":     []int16{s.Width, s.Height},
-			"sexual":   query.ContentLevel(s.CSexualAvg, s.CVotecount),
-			"violence": query.ContentLevel(s.CViolenceAvg, s.CVotecount),
-			"release":  nil,
+			"url": vndb.ImageURL("sf", s.Scr),
+			// st is not a stored image row: vndb serves the thumbnail of a
+			// screenshot from the same id under a different kind, and the
+			// thumbnail keeps the full image's aspect ratio, so dims still
+			// describes it.
+			"thumbnail": vndb.ImageURL("st", s.Scr),
+			"dims":      []int16{s.Width, s.Height},
+			"sexual":    query.ContentLevel(s.CSexualAvg, s.CVotecount),
+			"violence":  query.ContentLevel(s.CViolenceAvg, s.CVotecount),
+			"release":   nil,
 		}
 		if s.Rid != nil {
 			shot["release"] = vndb.FormatID(vndb.TypeRelease, *s.Rid)

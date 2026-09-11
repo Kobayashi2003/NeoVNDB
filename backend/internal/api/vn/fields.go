@@ -46,7 +46,7 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"image": {Kind: query.Fragment, Source: "image", Num: 1,
 			Subfields: []string{"url", "dims", "sexual", "violence", "votecount"}},
 		"screenshots": {Kind: query.Fragment, Source: "screenshots", Num: 10,
-			Subfields: []string{"url", "dims", "sexual", "violence", "release"}},
+			Subfields: []string{"url", "thumbnail", "dims", "sexual", "violence", "release"}},
 		"extlinks": {Kind: query.Fragment, Source: "extlinks", Num: 5,
 			Subfields: []string{"site", "label", "url"}},
 
