@@ -24,7 +24,8 @@ export const VN_PAGE = [
   "characters.bust", "characters.waist", "characters.hips", "characters.cup",
   "characters.description", "characters.image",
   "characters.aliases.name", "characters.aliases.latin", "characters.aliases.spoiler",
-  "characters.traits.name", "characters.traits.group_name", "characters.traits.spoiler",
+  "characters.traits.name", "characters.traits.group_name",
+  "characters.traits.spoiler", "characters.traits.lie",
   "characters.seiyuu.name", "characters.seiyuu.note", "characters.seiyuu.vn",
 
   // Staff, credited under the name used on this work.
@@ -43,4 +44,43 @@ export const VN_PAGE = [
   "screenshots.sexual", "screenshots.violence", "screenshots.release",
 
   "relations.title", "relations.relation", "relations.official",
+].join(",")
+
+/** The character page. A character read on its own carries more than one read
+ *  through a visual novel: the works are the subject rather than the context,
+ *  and the instance group only makes sense here. */
+export const CHARACTER_PAGE = [
+  "name", "original", "description",
+  "sex", "spoil_sex", "gender", "spoil_gender",
+  "age", "birthday", "blood_type", "height", "weight",
+  "bust", "waist", "hips", "cup",
+  "image.url", "image.dims", "image.sexual", "image.violence",
+  "aliases.name", "aliases.latin", "aliases.spoiler",
+
+  "traits.name", "traits.group_name", "traits.spoiler", "traits.lie",
+
+  // Appearances. released comes from the visual novel itself, which is what
+  // the list offers to sort by.
+  "vns.title", "vns.released", "vns.role", "vns.spoiler", "vns.release",
+
+  // Who voiced this character, and in which work -- the page hangs each
+  // credit off the appearance it belongs to.
+  "seiyuu.name", "seiyuu.note", "seiyuu.vn",
+
+  // The instance group, read from whichever end this character sits at.
+  "instance_of", "instance_of_spoiler",
+  "instances.name", "instances.original", "instances.spoiler",
+  "instances.image.url", "instances.image.dims",
+  "instances.image.sexual", "instances.image.violence",
+].join(",")
+
+/** A parent character read only for its instance group. An instance's
+ *  siblings are not on the instance -- chars.main points one way -- so the
+ *  page reads them from the character at the top of the group. */
+export const INSTANCE_GROUP = [
+  "name", "original",
+  "image.url", "image.dims", "image.sexual", "image.violence",
+  "instances.name", "instances.original", "instances.spoiler",
+  "instances.image.url", "instances.image.dims",
+  "instances.image.sexual", "instances.image.violence",
 ].join(",")

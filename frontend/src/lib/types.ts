@@ -32,6 +32,9 @@ export interface Trait {
   name: string
   group_name: string | null
   spoiler: number
+  /** Flagged as untrue of this character -- kept visible but struck, because
+   *  it is part of what was assigned. */
+  lie: boolean
 }
 
 export interface Seiyuu {
@@ -75,10 +78,41 @@ export interface Character {
   hips: number | null
   cup: string | null
   description: string | null
+  /** Whether being an instance of `instance_of` is itself a spoiler. */
+  instance_of: string | null
+  instance_of_spoiler: number
   aliases: CharacterAlias[]
   image: Image | null
   traits: Trait[]
   seiyuu: Seiyuu[]
+}
+
+/** One work this character appears in, with what they are in it. */
+export interface Appearance {
+  id: string
+  title: string
+  released: string
+  /** main, primary, side or appears. */
+  role: string
+  spoiler: number
+  /** Set when the appearance is route-specific rather than across the work. */
+  release: string | null
+}
+
+/** Another character filed as an instance of this one, or the reverse. */
+export interface Instance {
+  id: string
+  name: string
+  original: string | null
+  image: Image | null
+  /** Whether the link itself is a spoiler. */
+  spoiler: number
+}
+
+/** A character read on its own page, rather than through a visual novel. */
+export interface CharacterDetail extends Character {
+  vns: Appearance[]
+  instances: Instance[]
 }
 
 export interface StaffCredit {

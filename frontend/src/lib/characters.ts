@@ -9,7 +9,7 @@
 
 import { enumLabel } from "./enums"
 import { allowedTraits } from "./traits"
-import type { Character } from "./types"
+import type { Character, CharacterDetail } from "./types"
 
 export interface SexReading {
   /** The code the icon is drawn from, which is always the apparent one. */
@@ -95,4 +95,37 @@ export function forVN(characters: Character[], vnId: string): Character[] {
     ...c,
     seiyuu: c.seiyuu.filter((s) => s.vn === vnId),
   }))
+}
+
+/** Everything a character page can hold back, at each spoiler level.
+ *
+ *  Five things on that page carry a level of their own: the traits, the works
+ *  the character appears in, the instance links, the aliases, and the sex or
+ *  gender they turn out to have. One control governs all of them, so it has to
+ *  know about all of them -- offering to reveal nothing, or staying hidden
+ *  while something is withheld, would both be lies. */
+export function characterSpoilerExtent(
+  character: CharacterDetail,
+  explicit: boolean,
+): { minor: boolean; major: boolean } {
+  const levels: number[] = [
+    ...allowedTraits(character.traits, explicit).map((t) => t.spoiler),
+    ...character.vns.map((v) => v.spoiler),
+    ...character.instances.map((i) => i.spoiler),
+    ...character.aliases.map((a) => a.spoiler),
+  ]
+  // A sex or gender that turns out to be something else is a major spoiler --
+  // the dump has no level for it, only the fact that it differs.
+  const hidden = (apparent: string | null, spoiler: string | null) =>
+    !!apparent && !!spoiler && spoiler !== apparent && spoiler !== "n"
+  if (
+    hidden(character.sex, character.spoil_sex) ||
+    hidden(character.gender, character.spoil_gender) ||
+    character.instance_of_spoiler === 2
+  ) {
+    levels.push(2)
+  }
+  if (character.instance_of_spoiler === 1) levels.push(1)
+
+  return { minor: levels.includes(1), major: levels.includes(2) }
 }

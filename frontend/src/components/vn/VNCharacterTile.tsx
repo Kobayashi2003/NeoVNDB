@@ -16,7 +16,7 @@ import { shouldBlur } from "@/lib/content"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
 import { Tooltip } from "@/components/ui/Tooltip"
 import { usePrefs } from "@/hooks/usePrefs"
-import { SexLine } from "./VNCharacterSex"
+import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
 
 const SEX = ICON.CHARACTER_SEX as Record<string, string>

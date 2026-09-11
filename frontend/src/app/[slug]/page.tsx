@@ -10,9 +10,10 @@
 
 import { notFound } from "next/navigation"
 import { byId } from "@/lib/api"
-import { VN_PAGE } from "@/lib/fields"
+import { CHARACTER_PAGE, INSTANCE_GROUP, VN_PAGE } from "@/lib/fields"
 import { VNPage } from "@/components/vn/VNPage"
-import type { VN } from "@/lib/types"
+import { CharacterPage } from "@/components/character/CharacterPage"
+import type { CharacterDetail, Instance, VN } from "@/lib/types"
 
 /** The seven types the dump carries, each with the letter vndb gives it. */
 const ID = /^([vrcpsgi])\d+$/
@@ -30,6 +31,33 @@ export default async function Page({ params }: PageProps<"/[slug]">) {
       if (!vn) notFound()
       return <VNPage vn={vn} />
     }
+    case "c": {
+      const character = await byId<CharacterDetail>("character", slug, CHARACTER_PAGE)
+      if (!character) notFound()
+      // chars.main points from an instance to its parent and no further, so a
+      // character in the middle of a group has to ask the top of it for the
+      // rest -- one extra read, and only for the pages that need it.
+      const top = character.instance_of
+        ? await byId<{ name: string; original: string | null; image: Instance["image"]; instances: Instance[] }>(
+            "character",
+            character.instance_of,
+            INSTANCE_GROUP,
+          )
+        : null
+      const parent = top
+        ? {
+            character: {
+              id: character.instance_of!,
+              name: top.name,
+              original: top.original,
+              image: top.image,
+              spoiler: character.instance_of_spoiler,
+            },
+            instances: top.instances,
+          }
+        : null
+      return <CharacterPage character={character} parent={parent} />
+    }
     default:
       notFound()
   }
@@ -42,6 +70,10 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">) {
     case "v": {
       const vn = await byId<{ title: string | null }>("vn", slug, "title")
       return { title: vn?.title ? `${vn.title} - NeoVNDB` : "NeoVNDB" }
+    }
+    case "c": {
+      const c = await byId<{ name: string | null }>("character", slug, "name")
+      return { title: c?.name ? `${c.name} - NeoVNDB` : "NeoVNDB" }
     }
     default:
       return { title: "NeoVNDB" }
