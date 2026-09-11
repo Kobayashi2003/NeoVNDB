@@ -38,6 +38,43 @@ func (q *Queries) CharAliases(ctx context.Context, ids []int32) ([]CharsAlias, e
 	return items, nil
 }
 
+const charInstances = `-- name: CharInstances :many
+SELECT c.main AS char_id, c.id, c.main_spoil
+  FROM chars c
+  LEFT JOIN chars_names n ON n.id = c.id AND n.lang = c.c_lang
+ WHERE c.main = ANY($1::int[])
+ ORDER BY c.main, COALESCE(n.latin, n.name)
+`
+
+type CharInstancesRow struct {
+	CharID    *int32 `db:"char_id" json:"char_id"`
+	ID        int32  `db:"id" json:"id"`
+	MainSpoil int16  `db:"main_spoil" json:"main_spoil"`
+}
+
+// The other way down chars.main: who is an instance of this character. The
+// child's own main_spoil rides along, because whether the link is a spoiler is
+// a property of the link and the link is stored on the child.
+func (q *Queries) CharInstances(ctx context.Context, ids []int32) ([]CharInstancesRow, error) {
+	rows, err := q.db.Query(ctx, charInstances, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CharInstancesRow{}
+	for rows.Next() {
+		var i CharInstancesRow
+		if err := rows.Scan(&i.CharID, &i.ID, &i.MainSpoil); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const charNames = `-- name: CharNames :many
 SELECT id, lang, name, latin FROM chars_names WHERE id = ANY($1::int[]) ORDER BY id, lang
 `
