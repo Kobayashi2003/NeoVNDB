@@ -16,7 +16,7 @@ import { Collapsible } from "@/components/ui/Collapsible"
 import { InfoCard } from "@/components/ui/InfoCard"
 import { Section } from "@/components/ui/Section"
 import { VNInfoPanel } from "./VNInfoPanel"
-import { VNControls } from "./VNControls"
+import { PrefsControls } from "@/components/ui/PrefsControls"
 import { usePrefs } from "@/hooks/usePrefs"
 import { VNTags } from "./VNTags"
 import { VNCharacters } from "./VNCharacters"
@@ -49,7 +49,7 @@ export function VNPage({ vn }: { vn: VN }) {
       }
       aside={
         <>
-          <VNControls className="flex-col items-stretch" />
+          <PrefsControls className="flex-col items-stretch" />
           <VNInfoPanel vn={vn} />
         </>
       }

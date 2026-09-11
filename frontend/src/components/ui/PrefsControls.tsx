@@ -1,4 +1,4 @@
-/** The one place the reading preferences are set.
+/** The one place the reading preferences are set, on every detail page.
  *
  *  The two content scales sit side by side because they are read together:
  *  what a reader will look at is one answer with two axes, not two unrelated
@@ -24,7 +24,7 @@ const VIOLENCE: Option<ViolenceLevel>[] = [
   { value: "brutal", label: "Brutal", short: "Brut", activeClass: "bg-red-800/80 text-white" },
 ]
 
-export function VNControls({ className }: { className?: string }) {
+export function PrefsControls({ className }: { className?: string }) {
   const p = usePrefs()
 
   return (

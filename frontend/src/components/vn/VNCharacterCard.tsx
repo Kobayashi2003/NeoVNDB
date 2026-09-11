@@ -24,7 +24,7 @@ import { Cover } from "@/components/ui/Cover"
 import { InlineList } from "@/components/ui/InfoCard"
 import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
 import { usePrefs } from "@/hooks/usePrefs"
-import { SexLine } from "./VNCharacterSex"
+import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
 import type { SpoilerLevel } from "@/hooks/useSpoilerLevel"
 
@@ -186,8 +186,12 @@ export function VNCharacterCard({
                     <Link
                       key={t.id}
                       href={`/${t.id}`}
+                      title={t.lie ? "Flagged as untrue" : undefined}
                       className={cn(
-                        "inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/90 transition-colors hover:bg-white/20",
+                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs transition-colors",
+                        t.lie
+                          ? "bg-white/5 text-muted line-through hover:bg-white/10"
+                          : "bg-white/10 text-white/90 hover:bg-white/20",
                         t.spoiler === 1 && "border border-yellow-500/30",
                         t.spoiler === 2 && "border border-orange-500/40",
                       )}
