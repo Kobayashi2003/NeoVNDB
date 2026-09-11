@@ -93,7 +93,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
             <InfoRow label="Developer">
               <InlineList
                 items={vn.developers.map((d) => (
-                  <Link key={d.id} href={`/p/${d.id}`} className="hover:text-accent">
+                  <Link key={d.id} href={`/${d.id}`} className="hover:text-accent">
                     {d.name}
                   </Link>
                 ))}
@@ -107,7 +107,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
                 {published.map((p) => (
                   <Link
                     key={p.id}
-                    href={`/p/${p.id}`}
+                    href={`/${p.id}`}
                     className="flex items-center gap-1.5 transition-colors hover:text-accent"
                   >
                     {p.lang && LANG[p.lang] && (

@@ -25,7 +25,7 @@ export function VNRelations({ relations }: { relations: Relation[] }) {
             {list.map((r) => (
               <Link
                 key={r.id}
-                href={`/v/${r.id}`}
+                href={`/${r.id}`}
                 title={r.official ? undefined : "Unofficial relation"}
                 className={cn(
                   "truncate text-xs text-white/80 transition-colors hover:text-accent",

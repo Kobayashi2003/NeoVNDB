@@ -104,7 +104,7 @@ export function VNCharacterCard({
       <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/c/${character.id}`}
+            href={`/${character.id}`}
             className="text-sm font-semibold leading-snug transition-colors hover:text-accent"
           >
             {display(character.name, character.original, original)}
@@ -163,7 +163,7 @@ export function VNCharacterCard({
               items={character.seiyuu.map((s, i) => (
                 <Link
                   key={`${s.id}-${i}`}
-                  href={`/s/${s.id}`}
+                  href={`/${s.id}`}
                   className="transition-colors hover:text-accent"
                 >
                   {s.name}
@@ -185,7 +185,7 @@ export function VNCharacterCard({
                   {list.map((t) => (
                     <Link
                       key={t.id}
-                      href={`/i/${t.id}`}
+                      href={`/${t.id}`}
                       className={cn(
                         "inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/90 transition-colors hover:bg-white/20",
                         t.spoiler === 1 && "border border-yellow-500/30",

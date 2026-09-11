@@ -57,7 +57,7 @@ export function VNTags({ tags }: { tags: Tag[] }) {
               {shown.map((tag) => (
                 <Link
                   key={tag.id}
-                  href={`/g/${tag.id}`}
+                  href={`/${tag.id}`}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-colors",
                     // A tag flagged as a lie is kept visible but struck: it is

@@ -68,7 +68,7 @@ export function BBCode({ text }: { text: string }) {
       )
     } else if (id !== undefined) {
       out.push(
-        <Link key={key} href={`/${id[0]}/${id}`} className="text-accent hover:text-accent-hover">
+        <Link key={key} href={`/${id}`} className="text-accent hover:text-accent-hover">
           {id}
         </Link>,
       )
