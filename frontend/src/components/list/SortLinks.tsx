@@ -1,0 +1,52 @@
+/** The orders a listing offers.
+ *
+ *  Clicking the order already in use flips its direction, which is what a
+ *  column heading does everywhere else. A fresh order starts at the end worth
+ *  looking at -- rating and vote counts start high, because nobody opens a
+ *  listing to find the worst of something. */
+
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { withParams, type Params } from "@/lib/href"
+import type { Sort } from "@/lib/list"
+
+export function SortLinks({
+  path,
+  params,
+  sorts,
+  active,
+  reverse,
+}: {
+  path: string
+  params: Params
+  sorts: Sort[]
+  active: string
+  reverse: boolean
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="mr-1 text-xs text-muted">Sort</span>
+      {sorts.map((sort) => {
+        const here = sort.value === active
+        // Changing the page's contents invalidates which page you were on.
+        const next = here
+          ? { sort: sort.value, reverse: reverse ? null : "true", page: null }
+          : { sort: sort.value, reverse: sort.descending ? "true" : null, page: null }
+
+        return (
+          <Link
+            key={sort.value}
+            href={withParams(path, params, next)}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+              here ? "bg-white/20 text-white" : "text-muted hover:bg-white/10 hover:text-white",
+            )}
+          >
+            {sort.label}
+            {here && <span className="ml-1 text-muted">{reverse ? "↓" : "↑"}</span>}
+          </Link>
+        )
+      })}
+    </div>
+  )
+}

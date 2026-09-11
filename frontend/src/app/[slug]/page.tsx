@@ -1,16 +1,20 @@
-/** Every entity lives directly under the root, at its own id.
+/** Every entity lives directly under the root, at its own id; every type lives
+ *  under the letter its ids start with.
  *
  *  A vndb id already says what it is -- v17 is a visual novel, c521 a
  *  character -- so a /v/ segment in front of v17 would be saying it twice, and
- *  a link can be written as the id and nothing else. This route reads the type
- *  off the front of the id and hands the rest to that type's page.
+ *  a link can be written as the id and nothing else. `/v` on its own, with no
+ *  number after it, is every visual novel: the same letter asking the same
+ *  question without naming one.
  *
- *  Static segments win over a dynamic one in the App Router, so a future /
- *  search or /about is unaffected by this catching everything else. */
+ *  Static segments win over a dynamic one in the App Router, so a future
+ *  /about is unaffected by this catching everything else. */
 
 import { notFound } from "next/navigation"
 import { byId } from "@/lib/api"
 import { CHARACTER_PAGE, INSTANCE_GROUP, RELEASE_PAGE, VN_PAGE } from "@/lib/fields"
+import { LIST } from "@/lib/list"
+import { ListPage } from "@/components/list/ListPage"
 import { VNPage } from "@/components/vn/VNPage"
 import { CharacterPage } from "@/components/character/CharacterPage"
 import { ReleasePage } from "@/components/release/ReleasePage"
@@ -18,13 +22,16 @@ import type { CharacterDetail, Instance, ReleaseDetail, VN } from "@/lib/types"
 
 /** The seven types the dump carries, each with the letter vndb gives it. */
 const ID = /^([vrcpsgi])\d+$/
+const TYPE = /^([vrcpsgi])$/
 
 function typeOf(slug: string): string | null {
   return ID.exec(slug)?.[1] ?? null
 }
 
-export default async function Page({ params }: PageProps<"/[slug]">) {
+export default async function Page({ params, searchParams }: PageProps<"/[slug]">) {
   const { slug } = await params
+
+  if (TYPE.test(slug)) return <ListPage type={slug} params={await searchParams} />
 
   switch (typeOf(slug)) {
     case "v": {
@@ -71,6 +78,8 @@ export default async function Page({ params }: PageProps<"/[slug]">) {
 
 export async function generateMetadata({ params }: PageProps<"/[slug]">) {
   const { slug } = await params
+
+  if (TYPE.test(slug)) return { title: `${LIST[slug].label} - NeoVNDB` }
 
   switch (typeOf(slug)) {
     case "v": {
