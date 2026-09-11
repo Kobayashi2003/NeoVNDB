@@ -1,0 +1,209 @@
+/** Response shapes for the fields in lib/fields.ts. A field absent from the
+ *  selection is absent from the object, so these describe one page's request
+ *  rather than everything the type can carry. */
+
+export interface Image {
+  url: string
+  dims: [number, number]
+  /** 0 to 2, or null when nobody has voted. */
+  sexual: number | null
+  violence: number | null
+}
+
+export interface ExtLink {
+  site: string
+  label: string
+  url: string
+}
+
+export interface Tag {
+  id: string
+  name: string
+  category: "cont" | "ero" | "tech" | string
+  /** 0 to 3. */
+  rating: number
+  /** 0 none, 1 minor, 2 major. */
+  spoiler: number
+  lie: boolean
+}
+
+export interface Trait {
+  id: string
+  name: string
+  group_name: string | null
+  spoiler: number
+}
+
+export interface Seiyuu {
+  id: string
+  /** The alias credited for this voice role, not the person's own name. */
+  name: string
+  note: string | null
+  /** The visual novel this credit is for. A character carries the credits
+   *  from every work they appear in, so this is what tells them apart. */
+  vn: string
+}
+
+export interface CharacterAlias {
+  name: string
+  latin: string | null
+  spoiler: number
+}
+
+export interface Character {
+  id: string
+  name: string
+  original: string | null
+  /** main, primary, side or appears. */
+  role: string
+  spoiler: number
+  /** What the character appears to be; `spoil_sex` is what they turn out to
+   *  be, kept apart because revealing it spoils the first. `gender` is the
+   *  separate self-identification axis, spoiled the same way. */
+  sex: string | null
+  spoil_sex: string | null
+  gender: string | null
+  spoil_gender: string | null
+  age: number | null
+  /** Month and day; vndb records no year. */
+  birthday: [number, number] | null
+  blood_type: string | null
+  height: number | null
+  weight: number | null
+  bust: number | null
+  waist: number | null
+  hips: number | null
+  cup: string | null
+  description: string | null
+  aliases: CharacterAlias[]
+  image: Image | null
+  traits: Trait[]
+  seiyuu: Seiyuu[]
+}
+
+export interface StaffCredit {
+  id: string
+  /** The name credited on this work, which may be a pen name. */
+  name: string
+  original: string | null
+  role: string
+  note: string | null
+}
+
+export interface Medium {
+  medium: string
+  qty: number
+}
+
+export interface AnimationKind {
+  kind: string
+  frequency?: string | null
+}
+
+export interface Animation {
+  story: { overall: number | null; sprites: AnimationKind | null; cg: AnimationKind | null }
+  ero: { overall: number | null; sprites: AnimationKind | null; cg: AnimationKind | null }
+  cutscene: AnimationKind | null
+  background: boolean
+  face: boolean
+}
+
+export interface ReleaseTitle {
+  lang: string
+  title: string | null
+  latin: string | null
+  mtl: boolean
+}
+
+export interface Drm {
+  id: number
+  name: string
+  description: string | null
+  notes: string | null
+  properties: string[]
+}
+
+export interface Release {
+  id: string
+  title: string | null
+  released: string
+  /** complete, partial or trial, as this VN records it. */
+  rtype: string
+  minage: number | null
+  patch: boolean
+  official: boolean
+  freeware: boolean
+  uncensored: boolean
+  has_ero: boolean
+  voiced: number | null
+  resolution: string | null
+  notes: string | null
+  animation: Animation
+  platforms: string[]
+  media: Medium[]
+  engine: { id: number; name: string; description: string | null } | null
+  titles: ReleaseTitle[]
+  drm: Drm[]
+  extlinks: ExtLink[]
+  producers: ReleaseProducer[]
+}
+
+export interface Screenshot {
+  url: string
+  /** The same image at thumbnail size; dims describes both, since vndb keeps
+   *  the aspect ratio. */
+  thumbnail: string
+  dims: [number, number]
+  sexual: number | null
+  violence: number | null
+  release: string | null
+}
+
+export interface Relation {
+  id: string
+  title: string
+  relation: string
+  official: boolean
+}
+
+export interface Producer {
+  id: string
+  name: string
+  original: string | null
+  lang?: string
+}
+
+/** A producer as one release credits them. A company can be both. */
+export interface ReleaseProducer extends Producer {
+  developer: boolean
+  publisher: boolean
+}
+
+export interface VN {
+  id: string
+  title: string | null
+  alttitle: string | null
+  olang: string
+  released: string
+  devstatus: number
+  languages: string[]
+  platforms: string[]
+  aliases: string[]
+  length: number | null
+  length_minutes: number | null
+  length_votes: number
+  /** Both are 10 to 100, or null with too few votes. */
+  rating: number | null
+  average: number | null
+  votecount: number
+  description: string | null
+  image: Image | null
+  developers: Producer[]
+  extlinks: ExtLink[]
+  tags: Tag[]
+  characters: Character[]
+  staff: StaffCredit[]
+  releases: Release[]
+  screenshots: Screenshot[]
+  relations: Relation[]
+}
