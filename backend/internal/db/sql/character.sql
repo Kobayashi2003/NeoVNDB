@@ -31,6 +31,16 @@ SELECT cv.id AS char_id, cv.vid, cv.rid, cv.role, cv.spoil,
  WHERE cv.id = ANY(@ids::int[])
  ORDER BY cv.id, v.c_released;
 
+-- name: CharInstances :many
+-- The other way down chars.main: who is an instance of this character. The
+-- child's own main_spoil rides along, because whether the link is a spoiler is
+-- a property of the link and the link is stored on the child.
+SELECT c.main AS char_id, c.id, c.main_spoil
+  FROM chars c
+  LEFT JOIN chars_names n ON n.id = c.id AND n.lang = c.c_lang
+ WHERE c.main = ANY(@ids::int[])
+ ORDER BY c.main, COALESCE(n.latin, n.name);
+
 -- name: CharSeiyuu :many
 -- The voice credits are recorded on the VN, not the character, so this reaches
 -- through vn_seiyuu and resolves the alias that was credited.

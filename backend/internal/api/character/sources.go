@@ -145,6 +145,27 @@ func loadVNs(ctx context.Context, r *Resolver, page []gen.Char,
 	return query.Relate(ctx, r.cat, vndb.TypeCharacter, "vns", edges, sel, byID)
 }
 
+// chars.main points from an instance to the character it is an instance of;
+// this reads it from the other end, so a character can list the instances of
+// itself without a caller having to search for them.
+func loadInstances(ctx context.Context, r *Resolver, page []gen.Char,
+	sel query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.CharInstances(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, 0, len(rows))
+	for _, c := range rows {
+		if c.CharID == nil {
+			continue
+		}
+		edges = append(edges, query.Edge{Parent: *c.CharID, Child: c.ID,
+			Attrs: map[string]any{"spoiler": c.MainSpoil}})
+	}
+	return query.Relate(ctx, r.cat, vndb.TypeCharacter, "instances", edges, sel, byID)
+}
+
 func loadSeiyuu(ctx context.Context, r *Resolver, page []gen.Char,
 	sel query.Selection, byID map[int32]map[string]any) error {
 

@@ -35,6 +35,10 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		"hips":        {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},                 // chars.s_hip
 		"birthday":    {Row: func(c gen.Char) any { return birthday(c.Birthday) }},              // chars.birthday, mmdd in one smallint -> [month, day]
 		"instance_of": {Row: func(c gen.Char) any { return instanceOf(c.Main) }},                // chars.main, an integer id -> 'cNNN'
+		// Whether being an instance of that character is itself a spoiler.
+		// It sits on this row because the link does, and it is the same value
+		// the instances fragment carries from the other end.
+		"instance_of_spoiler": {Row: func(c gen.Char) any { return c.MainSpoil }}, // chars.main_spoil
 
 		// CONV -- sex is what a character appears to be and spoil_sex what
 		// they turn out to be, which the dump keeps apart precisely because
@@ -71,6 +75,11 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		// appearance is route-specific rather than across the whole VN.
 		"vns": {Kind: query.Fragment, Source: "vns", Num: 3, // REL chars_vns -> vn
 			Edge: []string{"role", "spoiler", "release"}, Target: vndb.TypeVN},
+		// chars.main read from the other end: the characters that are
+		// instances of this one. The edge spoiler is each instance's own
+		// main_spoil, because it describes that one link.
+		"instances": {Kind: query.Fragment, Source: "instances", Num: 3, // REL chars WHERE main = this id -> chars
+			Edge: []string{"spoiler"}, Target: vndb.TypeCharacter},
 		// vn_seiyuu is keyed by (work, character, actor), so reading it from
 		// the character side returns credits from every work they appear in.
 		// The vn edge attribute is what tells them apart -- a caller showing
@@ -81,12 +90,13 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 			Target: vndb.TypeStaff},
 	},
 	Sources: map[string]source{
-		"names":   loadNames,
-		"image":   loadImage,
-		"aliases": loadAliases,
-		"traits":  loadTraits,
-		"vns":     loadVNs,
-		"seiyuu":  loadSeiyuu,
+		"names":     loadNames,
+		"image":     loadImage,
+		"aliases":   loadAliases,
+		"traits":    loadTraits,
+		"vns":       loadVNs,
+		"instances": loadInstances,
+		"seiyuu":    loadSeiyuu,
 	},
 })
 
