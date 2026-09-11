@@ -10,7 +10,10 @@ export interface Page<T> {
 }
 
 class ApiError extends Error {
-  constructor(readonly status: number, message: string) {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
     super(message)
     this.name = "ApiError"
   }
@@ -32,6 +35,32 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T> 
 export async function byId<T>(type: string, id: string, fields: string): Promise<T | null> {
   const page = await get<Page<T>>(`/${type}`, { id, fields, limit: "1" })
   return page.results[0] ?? null
+}
+
+/** list runs one page of a search.
+ *
+ *  `filters` is passed through as it arrives. Everything the API does not
+ *  reserve for itself is a filter, so a query string a reader can edit is a
+ *  query the API can answer -- which is the point of having built it that way.
+ *  A filter it does not know is a 400 with a message saying so, and that is
+ *  the right answer rather than something to hide here. */
+export async function list<T>(
+  type: string,
+  opts: {
+    fields: string
+    page?: number
+    limit?: number
+    sort?: string
+    reverse?: boolean
+    filters?: Record<string, string>
+  },
+): Promise<Page<T>> {
+  const params: Record<string, string> = { ...opts.filters, fields: opts.fields }
+  if (opts.page && opts.page > 1) params.page = String(opts.page)
+  if (opts.limit) params.limit = String(opts.limit)
+  if (opts.sort) params.sort = opts.sort
+  if (opts.reverse) params.reverse = "true"
+  return get<Page<T>>(`/${type}`, params)
 }
 
 export { ApiError }

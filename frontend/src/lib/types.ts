@@ -276,3 +276,73 @@ export interface VN {
   screenshots: Screenshot[]
   relations: Relation[]
 }
+
+/* ─── List rows ─────────────────────────────────────────────────────────────
+ * What a search result carries, which is a fraction of what a detail page
+ * asks for. One per type, because the seven look nothing alike in a list.
+ */
+
+export interface VNRow {
+  id: string
+  title: string | null
+  alttitle: string | null
+  released: string
+  rating: number | null
+  votecount: number
+  languages: string[]
+  platforms: string[]
+  devstatus: number
+  image: Image | null
+}
+
+export interface CharacterRow {
+  id: string
+  name: string
+  original: string | null
+  sex: string | null
+  image: Image | null
+}
+
+export interface ReleaseRow {
+  id: string
+  title: string | null
+  released: string
+  minage: number | null
+  platforms: string[]
+  official: boolean
+  patch: boolean
+  freeware: boolean
+}
+
+export interface ProducerRow {
+  id: string
+  name: string
+  original: string | null
+  lang: string
+  type: string
+}
+
+export interface StaffRow {
+  id: string
+  name: string
+  original: string | null
+  lang: string
+  gender: string | null
+}
+
+export interface TagRow {
+  id: string
+  name: string
+  category: string
+  description: string | null
+  vn_count: number
+}
+
+export interface TraitRow {
+  id: string
+  name: string
+  group_name: string | null
+  description: string | null
+  char_count: number
+  sexual: boolean
+}
