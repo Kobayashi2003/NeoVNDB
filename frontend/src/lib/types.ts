@@ -182,6 +182,41 @@ export interface Release {
   producers: ReleaseProducer[]
 }
 
+/** A release read on its own page. */
+export interface ReleaseDetail extends Release {
+  alttitle: string | null
+  olang: string
+  catalog: string | null
+  gtin: string | null
+  images: ReleaseImage[]
+  vns: ReleasedVN[]
+  supersedes: { id: string; title: string }[]
+}
+
+/** A picture of the release itself: a package scan, or the store artwork for a
+ *  download. Unlike a screenshot these are cover-kind images, which vndb
+ *  serves at one size only. */
+export interface ReleaseImage {
+  url: string
+  dims: [number, number]
+  /** dig, pkgfront, pkgback, pkgcontent, pkgside or pkgmed. */
+  itype: string
+  /** Which work the picture belongs to, when the release carries several. */
+  vn: string | null
+  languages: string[]
+  sexual: number | null
+  violence: number | null
+}
+
+/** One work this release publishes, and what it publishes of it. rtype sits on
+ *  the link rather than on the release: the same disc can be a complete
+ *  edition of one work and a trial of another. */
+export interface ReleasedVN {
+  id: string
+  title: string
+  rtype: string
+}
+
 export interface Screenshot {
   url: string
   /** The same image at thumbnail size; dims describes both, since vndb keeps

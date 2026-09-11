@@ -10,10 +10,11 @@
 
 import { notFound } from "next/navigation"
 import { byId } from "@/lib/api"
-import { CHARACTER_PAGE, INSTANCE_GROUP, VN_PAGE } from "@/lib/fields"
+import { CHARACTER_PAGE, INSTANCE_GROUP, RELEASE_PAGE, VN_PAGE } from "@/lib/fields"
 import { VNPage } from "@/components/vn/VNPage"
 import { CharacterPage } from "@/components/character/CharacterPage"
-import type { CharacterDetail, Instance, VN } from "@/lib/types"
+import { ReleasePage } from "@/components/release/ReleasePage"
+import type { CharacterDetail, Instance, ReleaseDetail, VN } from "@/lib/types"
 
 /** The seven types the dump carries, each with the letter vndb gives it. */
 const ID = /^([vrcpsgi])\d+$/
@@ -58,6 +59,11 @@ export default async function Page({ params }: PageProps<"/[slug]">) {
         : null
       return <CharacterPage character={character} parent={parent} />
     }
+    case "r": {
+      const release = await byId<ReleaseDetail>("release", slug, RELEASE_PAGE)
+      if (!release) notFound()
+      return <ReleasePage release={release} />
+    }
     default:
       notFound()
   }
@@ -74,6 +80,10 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">) {
     case "c": {
       const c = await byId<{ name: string | null }>("character", slug, "name")
       return { title: c?.name ? `${c.name} - NeoVNDB` : "NeoVNDB" }
+    }
+    case "r": {
+      const r = await byId<{ title: string | null }>("release", slug, "title")
+      return { title: r?.title ? `${r.title} - NeoVNDB` : "NeoVNDB" }
     }
     default:
       return { title: "NeoVNDB" }

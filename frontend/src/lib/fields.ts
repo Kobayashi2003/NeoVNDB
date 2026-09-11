@@ -84,3 +84,23 @@ export const INSTANCE_GROUP = [
   "instances.image.url", "instances.image.dims",
   "instances.image.sexual", "instances.image.violence",
 ].join(",")
+
+/** The release page. A release read on its own is the packaging rather than
+ *  the work: what is in the box, who put it there, and in what shape. */
+export const RELEASE_PAGE = [
+  "title", "alttitle", "olang", "released", "minage",
+  "patch", "official", "freeware", "uncensored", "has_ero",
+  "voiced", "resolution", "notes", "catalog", "gtin", "animation",
+  "platforms", "media", "engine",
+  "titles",
+  "images",
+  "drm",
+  "extlinks.site", "extlinks.label", "extlinks.url",
+
+  // rtype is on the link, not on the release: one disc can be a complete
+  // edition of one work and a trial of another.
+  "vns.title", "vns.rtype",
+  "producers.name", "producers.original", "producers.lang",
+  "producers.developer", "producers.publisher",
+  "supersedes.title",
+].join(",")
