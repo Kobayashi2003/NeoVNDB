@@ -20,16 +20,22 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		"description": {Row: func(c gen.Char) any { return query.EmptyToNil(c.Description) }},
 		"blood_type":  {Row: func(c gen.Char) any { return unknownToNil(c.Bloodt, "unknown") }},
 		"cup":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.CupSize) }},
-		"sex":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},
-		"gender":      {Row: func(c gen.Char) any { return c.Gender }},
-		"height":      {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},
-		"weight":      {Row: func(c gen.Char) any { return c.Weight }},
-		"bust":        {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},
-		"waist":       {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},
-		"hips":        {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},
-		"age":         {Row: func(c gen.Char) any { return c.Age }},
-		"birthday":    {Row: func(c gen.Char) any { return birthday(c.Birthday) }},
-		"instance_of": {Row: func(c gen.Char) any { return instanceOf(c.Main) }},
+		// sex is what a character appears to be and spoil_sex what they turn
+		// out to be, which the dump keeps apart precisely because the second
+		// one spoils the first. gender is the separate self-identification
+		// axis, spoiled the same way.
+		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},
+		"spoil_sex":    {Row: func(c gen.Char) any { return blankToNil(c.SpoilSex) }},
+		"gender":       {Row: func(c gen.Char) any { return blankToNil(c.Gender) }},
+		"spoil_gender": {Row: func(c gen.Char) any { return blankToNil(c.SpoilGender) }},
+		"height":       {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},
+		"weight":       {Row: func(c gen.Char) any { return c.Weight }},
+		"bust":         {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},
+		"waist":        {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},
+		"hips":         {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},
+		"age":          {Row: func(c gen.Char) any { return c.Age }},
+		"birthday":     {Row: func(c gen.Char) any { return birthday(c.Birthday) }},
+		"instance_of":  {Row: func(c gen.Char) any { return instanceOf(c.Main) }},
 
 		// The name is the chars_names row in the character's own language,
 		// which the import resolved into chars.c_lang -- the same read the
@@ -90,6 +96,16 @@ func zeroToNil(v int16) *int16 {
 		return nil
 	}
 	return &v
+}
+
+// A nullable text column can still arrive as the empty string -- the dump has
+// both spellings of "not recorded" in the same column (spoil_sex has 9 empties
+// among its nulls). They mean the same thing and must read the same.
+func blankToNil(v *string) *string {
+	if v == nil || *v == "" {
+		return nil
+	}
+	return v
 }
 
 // A few enum-like columns spell "not recorded" as a word rather than as null.
