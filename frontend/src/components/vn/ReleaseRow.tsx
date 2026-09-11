@@ -74,7 +74,7 @@ export function ReleaseRow({ release: r, striped }: { release: Release; striped:
       </div>
 
       <div className="min-w-0">
-        <Link href={`/r/${r.id}`} className="text-white/90 transition-colors hover:text-accent">
+        <Link href={`/${r.id}`} className="text-white/90 transition-colors hover:text-accent">
           {display(r.title, r.titles.find((t) => t.latin && t.title)?.title ?? null, original) || r.id}
         </Link>
         {r.patch && <span className="ml-1 text-muted">(patch)</span>}

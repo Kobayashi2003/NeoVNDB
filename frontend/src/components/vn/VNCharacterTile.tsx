@@ -35,7 +35,7 @@ export function VNCharacterTile({
   const sex = readSex(character.sex, character.spoil_sex, spoilerLevel)
 
   return (
-    <Link href={`/c/${character.id}`} className="group block h-full">
+    <Link href={`/${character.id}`} className="group block h-full">
       <div
         className={cn(
           "flex h-full flex-col overflow-hidden rounded-lg border bg-surface transition-transform duration-200 hover:scale-[1.02]",

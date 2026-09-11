@@ -29,7 +29,7 @@ export function VNStaff({ staff }: { staff: StaffCredit[] }) {
             {credits.map((c, i) => (
               <span key={`${c.id}-${i}`}>
                 {i > 0 && ", "}
-                <Link href={`/s/${c.id}`} className="hover:text-accent">
+                <Link href={`/${c.id}`} className="hover:text-accent">
                   {display(c.name, c.original, original)}
                 </Link>
                 {c.note && <span className="text-muted"> ({c.note})</span>}
