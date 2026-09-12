@@ -209,6 +209,19 @@ export const ENUMS = {
     appears: "Appears",
   },
 
+  /* How one producer relates to another (VNDB `producer.relations.relation`).
+     Stored as symmetric pairs -- each row has a mirror on the other company. */
+  "PRODUCER_RELATION": {
+    old: "Formerly",
+    new: "Succeeded by",
+    spa: "Spawned",
+    ori: "Originated from",
+    sub: "Subsidiary",
+    par: "Parent producer",
+    imp: "Imprint",
+    ipa: "Parent brand",
+  },
+
   /* Producer type (VNDB `producer.type`) */
   "TYPE": {
     co: "Company",

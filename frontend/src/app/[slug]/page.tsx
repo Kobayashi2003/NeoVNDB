@@ -12,13 +12,23 @@
 
 import { notFound } from "next/navigation"
 import { byId } from "@/lib/api"
-import { CHARACTER_PAGE, INSTANCE_GROUP, RELEASE_PAGE, VN_PAGE } from "@/lib/fields"
+import {
+  CHARACTER_PAGE, INSTANCE_GROUP, PRODUCER_PAGE, RELEASE_PAGE,
+  STAFF_PAGE, TAG_PAGE, TRAIT_PAGE, VN_PAGE,
+} from "@/lib/fields"
 import { LIST } from "@/lib/list"
 import { ListPage } from "@/components/list/ListPage"
 import { VNPage } from "@/components/vn/VNPage"
 import { CharacterPage } from "@/components/character/CharacterPage"
 import { ReleasePage } from "@/components/release/ReleasePage"
-import type { CharacterDetail, Instance, ReleaseDetail, VN } from "@/lib/types"
+import { ProducerPage } from "@/components/catalog/ProducerPage"
+import { StaffPage } from "@/components/catalog/StaffPage"
+import { TagPage } from "@/components/catalog/TagPage"
+import { TraitPage } from "@/components/catalog/TraitPage"
+import type {
+  CharacterDetail, Instance, ProducerDetail, ReleaseDetail,
+  StaffDetail, TagDetail, TraitDetail, VN,
+} from "@/lib/types"
 
 /** The seven types the dump carries, each with the letter vndb gives it. */
 const ID = /^([vrcpsgi])\d+$/
@@ -30,8 +40,9 @@ function typeOf(slug: string): string | null {
 
 export default async function Page({ params, searchParams }: PageProps<"/[slug]">) {
   const { slug } = await params
+  const query = await searchParams
 
-  if (TYPE.test(slug)) return <ListPage type={slug} params={await searchParams} />
+  if (TYPE.test(slug)) return <ListPage type={slug} params={query} />
 
   switch (typeOf(slug)) {
     case "v": {
@@ -71,6 +82,26 @@ export default async function Page({ params, searchParams }: PageProps<"/[slug]"
       if (!release) notFound()
       return <ReleasePage release={release} />
     }
+    case "p": {
+      const producer = await byId<ProducerDetail>("producer", slug, PRODUCER_PAGE)
+      if (!producer) notFound()
+      return <ProducerPage producer={producer} params={query} />
+    }
+    case "s": {
+      const staff = await byId<StaffDetail>("staff", slug, STAFF_PAGE)
+      if (!staff) notFound()
+      return <StaffPage staff={staff} params={query} />
+    }
+    case "g": {
+      const tag = await byId<TagDetail>("tag", slug, TAG_PAGE)
+      if (!tag) notFound()
+      return <TagPage tag={tag} params={query} />
+    }
+    case "i": {
+      const trait = await byId<TraitDetail>("trait", slug, TRAIT_PAGE)
+      if (!trait) notFound()
+      return <TraitPage trait={trait} params={query} />
+    }
     default:
       notFound()
   }
@@ -93,6 +124,14 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">) {
     case "r": {
       const r = await byId<{ title: string | null }>("release", slug, "title")
       return { title: r?.title ? `${r.title} - NeoVNDB` : "NeoVNDB" }
+    }
+    case "p":
+    case "s":
+    case "g":
+    case "i": {
+      const type = { p: "producer", s: "staff", g: "tag", i: "trait" }[slug[0]]!
+      const e = await byId<{ name: string | null }>(type, slug, "name")
+      return { title: e?.name ? `${e.name} - NeoVNDB` : "NeoVNDB" }
     }
     default:
       return { title: "NeoVNDB" }

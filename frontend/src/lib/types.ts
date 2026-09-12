@@ -346,3 +346,68 @@ export interface TraitRow {
   char_count: number
   sexual: boolean
 }
+
+/* ─── Catalogue entities ────────────────────────────────────────────────────
+ * The four types whose page is mostly a listing of what they apply to.
+ */
+
+export interface ProducerDetail {
+  id: string
+  name: string
+  original: string | null
+  aliases: string[]
+  lang: string
+  type: string
+  description: string | null
+  extlinks: ExtLink[]
+  relations: { id: string; name: string; original: string | null; relation: string }[]
+}
+
+export interface StaffAlias {
+  aid: number
+  name: string
+  original: string | null
+  /** True for the alias that is the person's own name. */
+  ismain: boolean
+}
+
+export interface StaffDetail {
+  id: string
+  name: string
+  original: string | null
+  /** The alias id of the person's own name, which is what a credit points at. */
+  aid: number
+  lang: string
+  gender: string | null
+  description: string | null
+  aliases: StaffAlias[]
+  extlinks: ExtLink[]
+}
+
+export interface TagDetail {
+  id: string
+  name: string
+  aliases: string[]
+  description: string | null
+  category: string
+  searchable: boolean
+  applicable: boolean
+  vn_count: number
+  parents: { id: string; name: string; main: boolean }[]
+  children: { id: string; name: string; vn_count: number }[]
+}
+
+export interface TraitDetail {
+  id: string
+  name: string
+  aliases: string[]
+  description: string | null
+  searchable: boolean
+  applicable: boolean
+  sexual: boolean
+  char_count: number
+  group_id: string | null
+  group_name: string | null
+  parents: { id: string; name: string; main: boolean }[]
+  children: { id: string; name: string; char_count: number }[]
+}
