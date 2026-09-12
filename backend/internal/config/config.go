@@ -4,7 +4,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -50,6 +52,22 @@ const (
 	// and hidden ones never reach the dump -- so any real shrink means a
 	// truncated archive or an import that stopped partway.
 	defaultGuardMaxLoss = 0.02
+
+	// The image mirror lives beside the archives, and for the same reason:
+	// neither is source nor Go module content. Derived copies are kept apart
+	// from it so that "deleting this loses nothing" is visible from the path.
+	defaultImageDir        = "../data/images"
+	defaultImageDerivedDir = "../data/images-derived"
+	defaultImagePort       = 5101
+	// The widths pages actually render at. An unlisted width would be a new
+	// decode and a new file on disk for anyone who asked, so a request is
+	// rounded up to one of these rather than honoured as given.
+	defaultImageWidths = "128,256,512"
+	// A cover can be 15158x15189 upstream. Decoding one is expensive enough to
+	// be worth refusing rather than serving slowly.
+	defaultImageMaxPixels  = 40_000_000
+	defaultImageMaxBytes   = 32 << 20
+	defaultImageFetchLimit = 30 * time.Second
 
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
@@ -97,6 +115,16 @@ type Config struct {
 
 	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
 	GuardMaxLoss float64
+
+	// The image mirror: where originals are kept, where resized copies go, and
+	// what a caller may ask for.
+	ImageDir        string
+	ImageDerivedDir string
+	ImagePort       int
+	ImageWidths     []int
+	ImageMaxPixels  int
+	ImageMaxBytes   int64
+	ImageFetchLimit time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -135,6 +163,14 @@ func Load() (*Config, error) {
 		RedisURL:      envString("NEOVNDB_REDIS_URL", ""),
 
 		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
+
+		ImageDir:        envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
+		ImageDerivedDir: envString("NEOVNDB_IMAGE_DERIVED_DIR", defaultImageDerivedDir),
+		ImagePort:       envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
+		ImageWidths:     envInts("NEOVNDB_IMAGE_WIDTHS", defaultImageWidths),
+		ImageMaxPixels:  envInt("NEOVNDB_IMAGE_MAX_PIXELS", defaultImageMaxPixels),
+		ImageMaxBytes:   int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
+		ImageFetchLimit: envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")
@@ -144,6 +180,11 @@ func Load() (*Config, error) {
 
 func (c *Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+}
+
+// ImageAddr is the image mirror's own listener, on the same host as the API.
+func (c *Config) ImageAddr() string {
+	return fmt.Sprintf("%s:%d", c.Host, c.ImagePort)
 }
 
 func envString(key, fallback string) string {
@@ -169,6 +210,20 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 		}
 	}
 	return fallback
+}
+
+// envInts reads a comma-separated list. A malformed entry drops out rather
+// than failing the load: a typo in one width should not stop the server.
+func envInts(key, fallback string) []int {
+	raw := envString(key, fallback)
+	out := []int{}
+	for _, part := range strings.Split(raw, ",") {
+		if n, err := strconv.Atoi(strings.TrimSpace(part)); err == nil && n > 0 {
+			out = append(out, n)
+		}
+	}
+	sort.Ints(out)
+	return out
 }
 
 func envFloat(key string, fallback float64) float64 {
