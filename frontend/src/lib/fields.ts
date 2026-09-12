@@ -104,3 +104,34 @@ export const RELEASE_PAGE = [
   "producers.developer", "producers.publisher",
   "supersedes.title",
 ].join(",")
+
+/** The producer page. A company is mostly what it made, so the row itself is
+ *  short and the body is a listing. */
+export const PRODUCER_PAGE = [
+  "name", "original", "aliases", "lang", "type", "description",
+  "extlinks.site", "extlinks.label", "extlinks.url",
+  "relations.name", "relations.original", "relations.relation",
+].join(",")
+
+/** The staff page. name is the person's own, from the alias staff.main points
+ *  at; the credits elsewhere may use any of the others. */
+export const STAFF_PAGE = [
+  "name", "original", "aid", "lang", "gender", "description",
+  "aliases.aid", "aliases.name", "aliases.original", "aliases.ismain",
+  "extlinks.site", "extlinks.label", "extlinks.url",
+].join(",")
+
+/** The tag page. */
+export const TAG_PAGE = [
+  "name", "aliases", "description", "category", "searchable", "applicable", "vn_count",
+  "parents.name", "parents.main",
+  "children.name", "children.vn_count",
+].join(",")
+
+/** The trait page. */
+export const TRAIT_PAGE = [
+  "name", "aliases", "description", "searchable", "applicable", "sexual", "char_count",
+  "group_id", "group_name",
+  "parents.name", "parents.main",
+  "children.name", "children.char_count",
+].join(",")
