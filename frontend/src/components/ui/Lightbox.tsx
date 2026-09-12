@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { imageURL } from "@/lib/images"
 import { ImageWithFallback } from "./ImageWithFallback"
 
 export interface LightboxImage {
@@ -96,8 +97,9 @@ export function Lightbox({
             className="min-h-0 min-w-0"
             aria-label={hidden ? "Reveal image" : undefined}
           >
+            {/* No width: the viewer is the one place the original is wanted. */}
             <ImageWithFallback
-              src={image.url}
+              src={imageURL(image.url)}
               alt={image.caption ?? ""}
               className={`max-h-[80vh] max-w-full rounded object-contain transition-[filter] duration-300 ${
                 hidden ? "blur-2xl" : ""
