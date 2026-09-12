@@ -9,6 +9,7 @@
 
 import { useState } from "react"
 import { enumLabel } from "@/lib/enums"
+import { imageURL } from "@/lib/images"
 import { shouldBlur } from "@/lib/content"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
 import { Lightbox, type LightboxImage } from "@/components/ui/Lightbox"
@@ -58,7 +59,7 @@ export function ReleaseImages({ images }: { images: ReleaseImage[] }) {
                 className="h-24 shrink-0 overflow-hidden rounded bg-elevated transition-all hover:ring-2 hover:ring-accent sm:h-32"
               >
                 <ImageWithFallback
-                  src={images[i].url}
+                  src={imageURL(images[i].url, 256)}
                   alt={enumLabel("IMAGE_TYPE", images[i].itype)}
                   width={images[i].dims[0]}
                   height={images[i].dims[1]}

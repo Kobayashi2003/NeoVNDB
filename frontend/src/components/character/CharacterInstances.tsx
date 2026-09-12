@@ -13,6 +13,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { imageURL } from "@/lib/images"
 import { display } from "@/lib/format"
 import { shouldBlur } from "@/lib/content"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
@@ -81,7 +82,7 @@ function InstanceTile({
       <div className="relative aspect-[17/20] w-full shrink-0 overflow-hidden bg-elevated">
         {character.image ? (
           <ImageWithFallback
-            src={character.image.url}
+            src={imageURL(character.image.url, 256)}
             alt={character.name}
             width={character.image.dims[0]}
             height={character.image.dims[1]}

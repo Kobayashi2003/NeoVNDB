@@ -6,6 +6,7 @@ import { useState } from "react"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
 import { Lightbox, type LightboxImage } from "@/components/ui/Lightbox"
 import { shouldBlur } from "@/lib/content"
+import { imageURL } from "@/lib/images"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Release, Screenshot } from "@/lib/types"
 
@@ -55,8 +56,9 @@ export function VNScreenshots({
                 <ImageWithFallback
                   /* The thumbnail, not the full image: vndb serves the same
                      shot at about a sixteenth the bytes, and nothing here is
-                     ever drawn larger than that. The viewer loads the full one. */
-                  src={screenshots[i].thumbnail}
+                     ever drawn larger than that. The viewer loads the full one.
+                     No width either -- upstream already sized it. */
+                  src={imageURL(screenshots[i].thumbnail)}
                   alt=""
                   width={screenshots[i].dims[0]}
                   height={screenshots[i].dims[1]}

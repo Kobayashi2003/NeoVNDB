@@ -8,6 +8,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { imageURL } from "@/lib/images"
 import { ImageWithFallback } from "./ImageWithFallback"
 import { Lightbox } from "./Lightbox"
 import type { Image } from "@/lib/types"
@@ -40,7 +41,7 @@ export function Cover({
         )}
       >
         <ImageWithFallback
-          src={image.url}
+          src={imageURL(image.url, 512)}
           alt={alt}
           width={image.dims[0]}
           height={image.dims[1]}
