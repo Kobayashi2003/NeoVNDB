@@ -8,7 +8,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { imageURL } from "@/lib/images"
+import { imageURL, type Width } from "@/lib/images"
 import { ImageWithFallback } from "./ImageWithFallback"
 import { Lightbox } from "./Lightbox"
 import type { Image } from "@/lib/types"
@@ -19,6 +19,7 @@ export function Cover({
   blurred,
   className,
   imageClassName,
+  width = 512,
 }: {
   image: Image
   alt: string
@@ -26,6 +27,10 @@ export function Cover({
   /** Sizes the frame; the image fills its width. */
   className?: string
   imageClassName?: string
+  /** What to load, which is not what the frame renders at: a cover on a
+   *  retina screen wants more pixels than its CSS width. The viewer always
+   *  gets the original whatever this says. */
+  width?: Width
 }) {
   const [open, setOpen] = useState(false)
 
@@ -41,7 +46,7 @@ export function Cover({
         )}
       >
         <ImageWithFallback
-          src={imageURL(image.url, 512)}
+          src={imageURL(image.url, width)}
           alt={alt}
           width={image.dims[0]}
           height={image.dims[1]}
