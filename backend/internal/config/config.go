@@ -68,6 +68,10 @@ const (
 	defaultImageMaxPixels  = 40_000_000
 	defaultImageMaxBytes   = 32 << 20
 	defaultImageFetchLimit = 30 * time.Second
+	// How many images may be fetched from vndb at once. The point of holding
+	// a mirror is to stop leaning on their CDN; opening a hundred connections
+	// to it while filling the mirror would be a poor way to start.
+	defaultImageFetchParallel = 8
 
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
@@ -118,13 +122,14 @@ type Config struct {
 
 	// The image mirror: where originals are kept, where resized copies go, and
 	// what a caller may ask for.
-	ImageDir        string
-	ImageDerivedDir string
-	ImagePort       int
-	ImageWidths     []int
-	ImageMaxPixels  int
-	ImageMaxBytes   int64
-	ImageFetchLimit time.Duration
+	ImageDir           string
+	ImageDerivedDir    string
+	ImagePort          int
+	ImageWidths        []int
+	ImageMaxPixels     int
+	ImageMaxBytes      int64
+	ImageFetchLimit    time.Duration
+	ImageFetchParallel int
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -164,13 +169,14 @@ func Load() (*Config, error) {
 
 		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
 
-		ImageDir:        envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
-		ImageDerivedDir: envString("NEOVNDB_IMAGE_DERIVED_DIR", defaultImageDerivedDir),
-		ImagePort:       envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
-		ImageWidths:     envInts("NEOVNDB_IMAGE_WIDTHS", defaultImageWidths),
-		ImageMaxPixels:  envInt("NEOVNDB_IMAGE_MAX_PIXELS", defaultImageMaxPixels),
-		ImageMaxBytes:   int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
-		ImageFetchLimit: envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
+		ImageDir:           envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
+		ImageDerivedDir:    envString("NEOVNDB_IMAGE_DERIVED_DIR", defaultImageDerivedDir),
+		ImagePort:          envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
+		ImageWidths:        envInts("NEOVNDB_IMAGE_WIDTHS", defaultImageWidths),
+		ImageMaxPixels:     envInt("NEOVNDB_IMAGE_MAX_PIXELS", defaultImageMaxPixels),
+		ImageMaxBytes:      int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
+		ImageFetchLimit:    envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
+		ImageFetchParallel: envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")

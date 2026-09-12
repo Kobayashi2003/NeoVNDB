@@ -1,6 +1,9 @@
 package img
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 // A flight collapses concurrent work on the same key into one run.
 //
@@ -27,7 +30,7 @@ func newFlight() *flight { return &flight{calls: map[string]*call{}} }
 
 // Do runs fn for the first caller on key and makes every other caller that
 // arrives while it runs wait for the same answer.
-func (f *flight) Do(key string, fn func() ([]byte, error)) ([]byte, error) {
+func (f *flight) Do(key string, fn func() ([]byte, error)) (data []byte, err error) {
 	f.mu.Lock()
 	if c, running := f.calls[key]; running {
 		f.mu.Unlock()
@@ -38,12 +41,22 @@ func (f *flight) Do(key string, fn func() ([]byte, error)) ([]byte, error) {
 	f.calls[key] = c
 	f.mu.Unlock()
 
+	// Whatever fn does, the waiters are released and the key is freed. A panic
+	// left to unwind would strand everyone waiting on this image and poison
+	// the key for every request after them -- one malformed file upstream
+	// would take that image down for the life of the process. Turning it into
+	// an error keeps the damage to the one image it belongs to.
+	defer func() {
+		if p := recover(); p != nil {
+			c.err = fmt.Errorf("recovered while working on %s: %v", key, p)
+		}
+		f.mu.Lock()
+		delete(f.calls, key)
+		f.mu.Unlock()
+		close(c.done)
+		data, err = c.bytes, c.err
+	}()
+
 	c.bytes, c.err = fn()
-
-	f.mu.Lock()
-	delete(f.calls, key)
-	f.mu.Unlock()
-	close(c.done)
-
 	return c.bytes, c.err
 }

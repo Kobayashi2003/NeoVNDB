@@ -18,10 +18,11 @@
 package img
 
 import (
-	"context"
+	"bytes"
 	"errors"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -42,12 +43,12 @@ type Server struct {
 func NewServer(cfg *config.Config, log *slog.Logger) *Server {
 	derived := map[int]*Store{}
 	for _, w := range cfg.ImageWidths {
-		derived[w] = NewStore(cfg.ImageDerivedDir + "/" + strconv.Itoa(w))
+		derived[w] = NewStore(filepath.Join(cfg.ImageDerivedDir, strconv.Itoa(w)))
 	}
 	return &Server{
 		mirror:  NewStore(cfg.ImageDir),
 		derived: derived,
-		source:  NewSource(cfg.ImageFetchLimit, cfg.ImageMaxBytes),
+		source:  NewSource(cfg.ImageFetchLimit, cfg.ImageMaxBytes, cfg.ImageFetchParallel),
 		widths:  Widths(cfg.ImageWidths),
 		max:     cfg.ImageMaxPixels,
 		flight:  newFlight(),
@@ -88,7 +89,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := s.serve(r.Context(), ref, width)
+	data, err := s.serve(ref, width)
 	switch {
 	case errors.Is(err, ErrMissing):
 		http.Error(w, "no such image", http.StatusNotFound)
@@ -103,36 +104,32 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	// never needs to ask again.
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	http.ServeContent(w, r, ref.String()+".jpg", time.Time{}, strings.NewReader(string(data)))
+	// ServeContent rather than Write, for the range requests a browser makes
+	// of a large image. A zero time leaves out Last-Modified, which says
+	// nothing here that immutable has not already said.
+	http.ServeContent(w, r, ".jpg", time.Time{}, bytes.NewReader(data))
 }
 
 // serve returns the bytes for one request, filling whatever is missing on the
 // way: the derived copy, the original it is made from, or both.
-func (s *Server) serve(ctx context.Context, ref Ref, width int) ([]byte, error) {
+func (s *Server) serve(ref Ref, width int) ([]byte, error) {
 	store, resizing := s.derived[width]
 	if !resizing {
-		store = s.mirror
+		return s.original(ref)
 	}
 	if data, err := store.Read(ref); err == nil {
 		return data, nil
 	}
 
-	// One fetch-and-resize per image and width, however many readers asked at
-	// once. Keyed on both, so a cold page wanting two sizes of the same cover
-	// still fetches the original once.
-	key := ref.String() + "@" + strconv.Itoa(width)
-	return s.flight.Do(key, func() ([]byte, error) {
-		original, err := s.mirror.Read(ref)
-		if errors.Is(err, ErrMissing) {
-			original, err = s.source.Fetch(ctx, s.mirror, ref)
-		}
+	// Keyed on the width as well as the image, because two widths are two
+	// different pieces of work. They still share one trip upstream: the
+	// original each of them needs is fetched under its own key, one level
+	// down, so a cold page wanting a cover at two sizes asks vndb once.
+	return s.flight.Do(ref.String()+"@"+strconv.Itoa(width), func() ([]byte, error) {
+		original, err := s.original(ref)
 		if err != nil {
 			return nil, err
 		}
-		if !resizing {
-			return original, nil
-		}
-
 		scaled, changed, err := Scale(original, width, s.max)
 		if err != nil {
 			return nil, err
@@ -146,5 +143,20 @@ func (s *Server) serve(ctx context.Context, ref Ref, width int) ([]byte, error) 
 			}
 		}
 		return scaled, nil
+	})
+}
+
+// original returns the mirrored bytes, fetching them if this is the first ask.
+func (s *Server) original(ref Ref) ([]byte, error) {
+	if data, err := s.mirror.Read(ref); err == nil {
+		return data, nil
+	}
+	return s.flight.Do(ref.String(), func() ([]byte, error) {
+		// Checked again inside: whoever held this key before may have been
+		// fetching the very image now wanted.
+		if data, err := s.mirror.Read(ref); err == nil {
+			return data, nil
+		}
+		return s.source.Fetch(s.mirror, ref)
 	})
 }

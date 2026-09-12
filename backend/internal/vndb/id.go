@@ -83,11 +83,22 @@ func ParseIDs(entity, value string, max int) ([]int32, error) {
 	return ids, nil
 }
 
-// ImageURL builds the address a stored (kind, num) pair points at. The path
-// splits on the last two digits, which is how t.vndb.org shards its files:
-// cv/20339 -> /cv/39/20339.jpg
+// ImageHost is where vndb serves its images.
+const ImageHost = "https://t.vndb.org"
+
+// ImagePath is where a stored (kind, num) pair lives, splitting on the last
+// two digits the way t.vndb.org shards its files: cv/20339 -> /cv/39/20339.jpg
+//
+// Separate from ImageURL because the local mirror files images at this same
+// path, and the rule has to be stated once: a mirror that sharded differently
+// would answer a rewritten address with nothing.
+func ImagePath(kind string, num int32) string {
+	return fmt.Sprintf("/%s/%02d/%d.jpg", kind, num%100, num)
+}
+
+// ImageURL is the address the API hands out, which is vndb's own.
 func ImageURL(kind string, num int32) string {
-	return fmt.Sprintf("https://t.vndb.org/%s/%02d/%d.jpg", kind, num%100, num)
+	return ImageHost + ImagePath(kind, num)
 }
 
 func isLetter(r rune) bool { return r >= 'a' && r <= 'z' }
