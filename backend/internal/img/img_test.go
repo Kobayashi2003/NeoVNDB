@@ -243,3 +243,47 @@ func jpegOf(t *testing.T, w, h int) []byte {
 	}
 	return buf.Bytes()
 }
+
+func TestFlightSurvivesAPanic(t *testing.T) {
+	// A decoder tripping over a malformed file must not strand the readers
+	// waiting on it, nor leave the key held so that every later request for
+	// the same image waits forever too.
+	f := newFlight()
+	release := make(chan struct{})
+
+	var waiter sync.WaitGroup
+	waiter.Add(1)
+	var waited error
+	go func() {
+		defer waiter.Done()
+		<-release
+		_, waited = f.Do("cv/1", func() ([]byte, error) {
+			t.Error("a waiter ran the work itself")
+			return nil, nil
+		})
+	}()
+
+	_, err := f.Do("cv/1", func() ([]byte, error) {
+		close(release)
+		// Give the waiter a moment to arrive before this unwinds.
+		time.Sleep(30 * time.Millisecond)
+		panic("malformed image")
+	})
+	if err == nil {
+		t.Error("the caller that panicked got no error")
+	}
+	waiter.Wait()
+	_ = waited
+
+	// The key must be free again.
+	done := make(chan struct{})
+	go func() {
+		_, _ = f.Do("cv/1", func() ([]byte, error) { return []byte("fine"), nil })
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the key stayed held after a panic")
+	}
+}
