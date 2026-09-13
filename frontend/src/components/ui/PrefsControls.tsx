@@ -1,8 +1,10 @@
-/** The one place the reading preferences are set, on every detail page.
+/** The one place the reading preferences are set, on every page.
  *
  *  The two content scales sit side by side because they are read together:
  *  what a reader will look at is one answer with two axes, not two unrelated
- *  switches. */
+ *  switches. Below sm they each take a row instead of sharing one: a scale
+ *  squeezed to a third of a phone's width shows "Expl" clipped to "Exp",
+ *  which is worse than a second line. */
 "use client"
 
 import { Languages } from "lucide-react"
@@ -49,14 +51,14 @@ export function PrefsControls({ className }: { className?: string }) {
         value={p.sexual}
         options={SEXUAL}
         onChange={(sexual) => p.set({ sexual })}
-        className="flex-1 sm:flex-none"
+        className="w-full sm:w-auto"
       />
       <Segmented
         label="Violent content"
         value={p.violence}
         options={VIOLENCE}
         onChange={(violence) => p.set({ violence })}
-        className="flex-1 sm:flex-none"
+        className="w-full sm:w-auto"
       />
     </div>
   )

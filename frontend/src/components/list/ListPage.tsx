@@ -11,10 +11,12 @@
  *  built the API that way. A filter it does not know comes back as a message
  *  saying so, which is shown rather than swallowed. */
 
+import { FILTERS } from "@/lib/filters"
 import { withParams, type Params } from "@/lib/href"
 import { LIST } from "@/lib/list"
 import { fetchResults } from "@/lib/results"
 import { PrefsControls } from "@/components/ui/PrefsControls"
+import { FilterBar } from "./FilterBar"
 import { ResultsPanel } from "./ResultsPanel"
 import { SearchBox } from "./SearchBox"
 
@@ -50,6 +52,8 @@ export async function ListPage({ type, params }: { type: string; params: Params 
         </h1>
         <SearchBox path={path} params={params} initial={search} />
       </div>
+
+      <FilterBar path={path} params={params} filters={FILTERS[type] ?? []} />
 
       <ResultsPanel
         type={type}
