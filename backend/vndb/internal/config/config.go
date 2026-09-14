@@ -19,9 +19,10 @@ const (
 	defaultMinConns       = 2
 	defaultConnLifetime   = time.Hour
 	defaultConnectTimeout = 10 * time.Second
-	// Archives live at the repository root, beside the backend rather than
-	// inside it, because they are neither source nor Go module content.
-	defaultDumpDir = "../data/dumps"
+	// Archives live at the repository root, beside the services rather than
+	// inside any of them, because they are neither source nor Go module
+	// content -- and because two modules now read them.
+	defaultDumpDir = "../../data/dumps"
 	defaultDumpURL = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
 
 	// What one request may ask for. These bound work, not correctness, so they
@@ -56,8 +57,8 @@ const (
 	// The image mirror lives beside the archives, and for the same reason:
 	// neither is source nor Go module content. Derived copies are kept apart
 	// from it so that "deleting this loses nothing" is visible from the path.
-	defaultImageDir        = "../data/images"
-	defaultImageDerivedDir = "../data/images-derived"
+	defaultImageDir        = "../../data/images"
+	defaultImageDerivedDir = "../../data/images-derived"
 	defaultImagePort       = 5101
 	// The widths pages actually render at. An unlisted width would be a new
 	// decode and a new file on disk for anyone who asked, so a request is
