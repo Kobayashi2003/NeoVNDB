@@ -1,0 +1,10 @@
+# Local settings; .env.sample is the tracked template.
+.env
+
+# Build output.
+/bin/
+*.exe
+
+# Stray server logs from local runs.
+*.log
+*.err
