@@ -32,20 +32,26 @@ seconds.
 ## Repository
 
 ```
-backend/    the Go module: API, importer, data layer
-frontend/   the web client
-docs/       design and structure notes
-data/       downloaded archives, reproducible from upstream and not in git
+backend/vndb/    the mirror: read API, image mirror, importer, data layer
+backend/users/   accounts, sessions and the lists a reader keeps
+frontend/        the web client
+docs/            design and structure notes
+data/            archives and mirrored images, reproducible and not in git
 ```
 
-Every command below runs from `backend/`.
+Two Go modules, not one. `backend/vndb` is a pure function of a dump and never
+migrates -- it rebuilds. `backend/users` holds the one thing here that cannot
+be rebuilt from upstream, so it migrates and keeps its own database; separate
+modules are what stops the second from reaching into the first.
+
+Every command below runs from `backend/vndb/`.
 
 ## Setup
 
 Requires Go 1.24+, PostgreSQL 15+ and `sqlc` to regenerate the query layer.
 
 ```sh
-cd backend
+cd backend/vndb
 cp .env.sample .env          # adjust NEOVNDB_DB_URL
 createdb neovndb
 go run ./cmd/neovndb db init 20260819
@@ -67,7 +73,7 @@ go run ./cmd/neovndb db verify
 ## Updating
 
 ```sh
-cd backend && go run ./cmd/neovndb update   # no-op if upstream is already live
+cd backend/vndb && go run ./cmd/neovndb update   # no-op if upstream is already live
 ```
 
 One command for the weekly run and for a run by hand -- an update path that
@@ -88,7 +94,7 @@ anyway.
 ## Layout
 
 ```
-backend/
+backend/vndb/
 cmd/neovndb/          single binary, one subcommand per role
 internal/config/      environment settings
 internal/cache/       response cache: memory LRU or Redis
