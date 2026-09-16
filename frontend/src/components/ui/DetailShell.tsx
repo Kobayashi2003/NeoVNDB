@@ -23,11 +23,14 @@ export function DetailShell({
         "lg:h-[calc(100vh-var(--header-h,0px))] lg:overflow-hidden",
       )}
     >
-      <aside className="hidden shrink-0 flex-col gap-3 overflow-y-auto overscroll-contain py-4 pr-1 lg:flex lg:w-64 xl:w-72 animate-slide-up-fade">
+      {/* Both columns keep a little room on the right. Each scrolls on its own,
+          so each grows its own scrollbar there, and content run right up
+          against one reads as content that has been cut off. */}
+      <aside className="hidden shrink-0 flex-col gap-3 overflow-y-auto overscroll-contain py-4 pr-3 lg:flex lg:w-64 xl:w-72 animate-slide-up-fade">
         {aside}
       </aside>
 
-      <div className="min-w-0 flex-1 py-4 pb-12 lg:overflow-y-auto lg:overscroll-contain animate-slide-up-fade">
+      <div className="min-w-0 flex-1 py-4 pb-12 lg:overflow-y-auto lg:overscroll-contain lg:pr-3 animate-slide-up-fade">
         <div className="mb-6">{header}</div>
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
         <div className="flex flex-col gap-8">{children}</div>
