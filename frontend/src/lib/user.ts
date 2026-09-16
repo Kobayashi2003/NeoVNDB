@@ -77,8 +77,11 @@ export const changePassword = (current: string, next: string) =>
 
 /* --- The lists a reader keeps --------------------------------------------- */
 
-export const collections = (type: string) =>
-  call<{ results: Collection[] }>("GET", `/collections?type=${type}`).then((r) => r.results)
+/** The reader's lists: one type's, or every one they keep. */
+export const collections = (type?: string) =>
+  call<{ results: Collection[] }>("GET", type ? `/collections?type=${type}` : "/collections").then(
+    (r) => r.results,
+  )
 
 export const createCollection = (type: string, name: string) =>
   call<Collection>("POST", "/collections", { type, name })
@@ -86,6 +89,27 @@ export const createCollection = (type: string, name: string) =>
 /** Which of the reader's lists hold this item. What a detail page asks. */
 export const holding = (item: string) =>
   call<{ collections: number[] }>("GET", `/holding/${item}`).then((r) => r.collections)
+
+export interface Mark {
+  /** The full vndb id, which is what the read API is handed to turn a list
+   *  back into things. */
+  id: string
+  marked_at: string
+}
+
+/** One page of what a list holds, newest first. The size is named so that a
+ *  collection pages like every other listing on the site rather than at
+ *  whatever the service happens to default to. */
+export const marks = (list: number, page: number, limit: number) =>
+  call<{ results: Mark[]; count: number; more: boolean }>(
+    "GET",
+    `/collections/${list}/marks?page=${page}&limit=${limit}`,
+  )
+
+export const renameCollection = (list: number, name: string) =>
+  call<void>("PATCH", `/collections/${list}`, { name })
+
+export const deleteCollection = (list: number) => call<void>("DELETE", `/collections/${list}`)
 
 /** Both are idempotent at the service, so a double click is not an error. */
 export const addMark = (list: number, item: string) =>
