@@ -118,6 +118,15 @@ export const addMark = (list: number, item: string) =>
 export const removeMark = (list: number, item: string) =>
   call<void>("DELETE", `/collections/${list}/marks/${item}`)
 
+/** A page at a time, for a reader tidying a list rather than saving one thing.
+ *  Both answer how many marks actually changed, which is not always how many
+ *  were named: a page can be a moment out of date. */
+export const removeMarks = (list: number, items: string[]) =>
+  call<{ changed: number }>("POST", `/collections/${list}/marks/remove`, { items })
+
+export const moveMarks = (from: number, to: number, items: string[]) =>
+  call<{ changed: number }>("POST", `/collections/${from}/marks/move`, { items, to })
+
 /** What the service will refuse, said before it has to. */
 export const RULES = {
   username: "2 to 32 characters: letters, digits, - and _",
