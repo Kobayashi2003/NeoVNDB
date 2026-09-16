@@ -16,7 +16,7 @@ import { Collapsible } from "@/components/ui/Collapsible"
 import { Icon } from "@/components/ui/Icon"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
 import { Name } from "@/components/ui/Name"
-import { CollectionButton } from "@/components/user/CollectionButton"
+import { DetailControls } from "@/components/ui/DetailControls"
 import { CatalogPage } from "./CatalogPage"
 import type { ProducerDetail } from "@/lib/types"
 
@@ -58,7 +58,7 @@ export async function ProducerPage({
         { value: "involved", label: "Developed or published", count: involved, type: "v", filters: { producer: p.id } },
         { value: "releases", label: "Releases", count: released, type: "r", filters: { producer: p.id } },
       ]}
-      action={<CollectionButton id={p.id} />}
+      action={<DetailControls id={p.id} />}
       aside={
         <>
           <InfoCard>
