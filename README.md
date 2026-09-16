@@ -73,6 +73,27 @@ mirror process at all.
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
 
+## Accounts carried over
+
+`backend/users` can take on the database of the service this project replaces:
+
+```sh
+cd backend/users
+go run ./cmd/users import-legacy postgres://user:pass@host/olddb
+```
+
+It reads the old side and never writes to it, does everything in one
+transaction, and reports what it made so the counts can be compared with the
+old database rather than taken on trust. A username already taken here is left
+alone and named in the output: two rows are the same person only if someone
+says so.
+
+Passwords come across as they are. They are Werkzeug scrypt hashes, which
+bcrypt cannot read and nothing but the password itself can convert -- so
+`internal/auth` reads that format too and re-hashes the row the first time its
+owner signs in. Nobody has to reset anything, and the old format retires one
+sign-in at a time. Ratings are not carried over; nothing here keeps one.
+
 ## Setup
 
 Requires Go 1.24+, PostgreSQL 15+, Caddy 2 for the edge, and `sqlc` to

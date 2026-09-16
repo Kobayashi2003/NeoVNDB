@@ -217,18 +217,38 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// One answer for two different failures, said in both places rather than
+	// funnelled through one: telling an unknown name from a wrong password
+	// turns the sign-in form into a way to find out who has an account here.
+	const refuse = "That username and password do not match."
+
 	user, hash, err := s.store.UserByName(r.Context(), strings.TrimSpace(body.Username))
-	// The same answer whether the name is unknown or the password is wrong:
-	// telling them apart turns the sign-in form into a way to find out who has
-	// an account here.
-	if errors.Is(err, store.ErrNotFound) || (err == nil && !auth.Check(hash, body.Password)) {
-		fail(w, http.StatusUnauthorized, "That username and password do not match.")
+	if errors.Is(err, store.ErrNotFound) {
+		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}
 	if err != nil {
 		s.oops(w, "reading user", err)
 		return
 	}
+	ok, stale := auth.Check(hash, body.Password)
+	if !ok {
+		fail(w, http.StatusUnauthorized, refuse)
+		return
+	}
+
+	// The password was right and the hash was the old service's. Now is the
+	// only moment the plaintext is in hand, so it is the only moment this row
+	// can be moved to bcrypt. Failing to is not the reader's problem -- they
+	// signed in -- so it is logged and the sign-in goes through.
+	if stale {
+		if next, err := auth.Hash(body.Password, s.cfg.BcryptCost); err != nil {
+			s.log.Error("rehashing a migrated password", "user", user.ID, "err", err)
+		} else if err := s.store.SetPassword(r.Context(), user.ID, next); err != nil {
+			s.log.Error("saving a rehashed password", "user", user.ID, "err", err)
+		}
+	}
+
 	if err := s.start(w, r, user.ID); err != nil {
 		s.oops(w, "starting session", err)
 		return
@@ -295,7 +315,9 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, userID i
 		s.oops(w, "reading user", err)
 		return
 	}
-	if !auth.Check(hash, body.Current) {
+	// The new password is hashed afresh below whatever the old one was in, so
+	// changing it retires a migrated hash as surely as signing in does.
+	if ok, _ := auth.Check(hash, body.Current); !ok {
 		fail(w, http.StatusForbidden, "That is not your current password.")
 		return
 	}

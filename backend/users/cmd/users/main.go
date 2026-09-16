@@ -1,5 +1,8 @@
 // Command users serves accounts, sessions and the lists a reader keeps.
 //
+//	users                       serve
+//	users import-legacy <url>   bring across the old service's database
+//
 // Its own binary and its own database, apart from the mirror on purpose: the
 // mirror's schemas are dropped and rebuilt from the dump every week, and an
 // account that lived beside them would go with them. It is also the only
@@ -46,6 +49,13 @@ func run(ctx context.Context) error {
 	}
 	defer st.Close()
 
+	if len(os.Args) > 1 {
+		if os.Args[1] != "import-legacy" || len(os.Args) != 3 {
+			return fmt.Errorf("usage: users [import-legacy <old database url>]")
+		}
+		return importLegacy(ctx, st, os.Args[2], log)
+	}
+
 	go sweep(ctx, st, cfg.SweepEvery, log)
 
 	srv := &http.Server{
@@ -71,6 +81,26 @@ func run(ctx context.Context) error {
 		defer cancel()
 		return srv.Shutdown(shutdown)
 	}
+}
+
+// importLegacy brings accounts and lists across from the service this one
+// replaces. Run once, by hand, against a database that is no longer being
+// written to -- it reads the old side and never writes to it, but a list
+// changed halfway through would simply not be seen.
+//
+// It says what it did in the same terms the old database can be counted in, so
+// the two can be compared rather than taken on trust.
+func importLegacy(ctx context.Context, st *store.Store, oldURL string, log *slog.Logger) error {
+	report, err := st.ImportLegacy(ctx, oldURL)
+	if err != nil {
+		return err
+	}
+	log.Info("imported", "users", report.Users,
+		"collections", report.Collections, "marks", report.Marks)
+	for _, name := range report.Skipped {
+		log.Warn("left alone: that username is already taken here", "username", name)
+	}
+	return nil
 }
 
 // sweep clears out sessions that have already expired. They are refused on
