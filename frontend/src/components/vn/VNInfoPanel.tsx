@@ -158,7 +158,9 @@ function Rating({ value, votes }: { value: number | null; votes: number }) {
   const [hidden, setHidden] = useState(true)
 
   return (
-    <span className="flex w-full items-center gap-1.5">
+    // Wrapping, because beside the cover on a phone this column is about
+    // 114px and "84.50 / 100 (8,726)" with a button after it is not.
+    <span className="flex w-full flex-wrap items-center gap-1.5">
       {value === null ? (
         <span className="text-muted">No rating</span>
       ) : (

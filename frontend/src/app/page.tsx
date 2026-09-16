@@ -39,7 +39,10 @@ export default async function Home() {
           <Link
             key={type}
             href={`/${type}`}
-            className="flex items-baseline justify-between gap-3 rounded-lg border border-white/5 bg-surface px-4 py-3 transition-colors hover:border-white/20"
+            // min-w-0 on the grid item itself: a track sized `auto` takes the
+            // item's min-content as its floor, and the nowrap description
+            // inside makes that wider than a phone.
+            className="flex min-w-0 items-baseline justify-between gap-3 rounded-lg border border-white/5 bg-surface px-4 py-3 transition-colors hover:border-white/20"
           >
             <span className="min-w-0">
               <span className="block text-sm font-semibold">{LIST[type].label}</span>

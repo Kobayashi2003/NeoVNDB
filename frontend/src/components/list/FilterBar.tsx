@@ -12,11 +12,13 @@
  *  hand-written `?votecount=>=100` survives every click here untouched. */
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { one, withParams, type Params } from "@/lib/href"
+import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useDismiss } from "@/hooks/useDismiss"
 import type { Choice, Filter } from "@/lib/filters"
 
 /** The values of one filter currently in the address. */
@@ -121,40 +123,8 @@ function FilterMenu({
   chosen: string[]
 }) {
   const [open, setOpen] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
-  const menu = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const close = (e: MouseEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const escape = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
-    document.addEventListener("mousedown", close)
-    document.addEventListener("keydown", escape)
-    return () => {
-      document.removeEventListener("mousedown", close)
-      document.removeEventListener("keydown", escape)
-    }
-  }, [open])
-
-  // The menu hangs from its own button, and the last button in a row of seven
-  // is near the right edge -- on a phone its menu would open past the screen.
-  // Nudged back on afterwards rather than positioned by a rule, because which
-  // side has room is a fact about this button at this width, and no CSS
-  // expression knows it. Written straight to the node: the browser is the
-  // external thing being kept in step here, not any state of ours.
-  useEffect(() => {
-    const el = menu.current
-    if (!open || !el) return
-    el.style.transform = ""
-    const box = el.getBoundingClientRect()
-    const margin = 8
-    const over = box.right - (window.innerWidth - margin)
-    if (over > 0) {
-      el.style.transform = `translateX(${-Math.min(over, Math.max(box.left - margin, 0))}px)`
-    }
-  }, [open])
+  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
+  const menu = useKeptOnScreen<HTMLDivElement>(open)
 
   return (
     <div ref={box} className="relative">
