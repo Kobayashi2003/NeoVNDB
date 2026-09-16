@@ -54,6 +54,8 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("DELETE /collections/{id}", s.signedIn(s.deleteCollection))
 
 	mux.HandleFunc("GET /collections/{id}/marks", s.signedIn(s.listMarks))
+	// The whole list at once, for handing to the read API to sort or search.
+	mux.HandleFunc("GET /collections/{id}/items", s.signedIn(s.items))
 	mux.HandleFunc("PUT /collections/{id}/marks/{item}", s.signedIn(s.addMark))
 	mux.HandleFunc("DELETE /collections/{id}/marks/{item}", s.signedIn(s.removeMark))
 
