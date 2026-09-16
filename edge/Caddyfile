@@ -1,0 +1,35 @@
+# The edge, and the only address anything is reached at.
+#
+# A local checkout goes through here too. That is the point: the frontend asks
+# for `/vndbserve/vn` whether it is running on this machine or behind a public
+# name, the allowlist below is exercised every day rather than discovered in
+# production, and there is no second set of URLs that only works in one of the
+# two places.
+#
+#   cd edge && caddy run
+#
+# Started from this directory because the image roots in the snippet are
+# relative to it. A deployment sets them absolute (see Caddyfile.snippet) and
+# can then run from anywhere.
+#
+# The routes themselves live in Caddyfile.snippet, which is the single source of
+# truth and is what a shared edge fronting several projects imports. This file
+# is only the site block around them.
+{
+	auto_https off
+
+	# Never used, and leaving it on binds 127.0.0.1:2019 -- which collides with
+	# any second Caddy on the box.
+	admin off
+}
+
+{$NEOVNDB_BIND::5090} {
+	import Caddyfile.snippet
+
+	# Everything the snippet did not claim is the site itself. It lives here
+	# rather than in the snippet because a catch-all belongs to whoever owns the
+	# address, and a shared edge owns its own.
+	handle {
+		reverse_proxy {$NEXT_UPSTREAM:127.0.0.1:3000}
+	}
+}

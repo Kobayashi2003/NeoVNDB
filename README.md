@@ -34,6 +34,7 @@ seconds.
 ```
 backend/vndb/    the mirror: read API, image mirror, importer, data layer
 backend/users/   accounts, sessions and the lists a reader keeps
+edge/            the Caddy config: the one address everything is reached at
 frontend/        the web client
 docs/            design and structure notes
 data/            archives and mirrored images, reproducible and not in git
@@ -46,9 +47,36 @@ modules are what stops the second from reaching into the first.
 
 Every command below runs from `backend/vndb/`.
 
+## The edge
+
+Nothing is reached on its own port. Four processes run -- the read API on
+:5100, the image mirror on :5101, the user service on :5102 and Next on :3000
+-- and Caddy is the only one anything talks to:
+
+```sh
+cd edge && caddy run              # http://127.0.0.1:5090
+```
+
+A local checkout goes through it too, so there is one set of addresses rather
+than one that works here and another that works when served. `/vndbserve/*`,
+`/imgserve/*` and `/userserve/*` reach the three services; everything else is
+the site.
+
+Each prefix exposes an allowlist of the routes the frontend uses and refuses
+the rest without forwarding them, which is why `backend/vndb` contains no
+notion of who may call it: its whole surface stays reachable on :5100, and
+which part of it the world can reach is a question the edge answers. Images
+that are already on disk are served by the file server and never reach the
+mirror process at all.
+
+`frontend/` asks for `/vndbserve/...` from the browser and
+`NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
+server, so a deployment points that one variable at its own edge.
+
 ## Setup
 
-Requires Go 1.24+, PostgreSQL 15+ and `sqlc` to regenerate the query layer.
+Requires Go 1.24+, PostgreSQL 15+, Caddy 2 for the edge, and `sqlc` to
+regenerate the query layer.
 
 ```sh
 cd backend/vndb
