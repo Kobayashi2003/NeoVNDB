@@ -1,35 +1,28 @@
 /** The bar every page hangs under.
  *
- *  Seven links, because the database has seven kinds of thing in it and until
- *  now the only way between them was to type the address. The one the reader
- *  is looking at is marked, which on a detail page means the kind that page is
- *  about: arriving at a character from a visual novel should still say which
- *  shelf you are standing in front of.
+ *  Seven shelves, because the database has seven kinds of thing in it and
+ *  until now the only way between them was to type the address. The one the
+ *  reader is looking at is marked, which on a detail page means the kind that
+ *  page is about: arriving at a character from a visual novel should still say
+ *  which shelf you are standing in front of.
  *
- *  One row at every width. The strip scrolls sideways on a phone rather than
- *  wrapping, so the bar's height is a constant the page layout can subtract --
- *  which is what `--header-h` is for. The reader's own end of the bar sits
- *  outside that scroller, so it stays reachable however narrow the screen. */
+ *  Two forms of the same row. All seven fit side by side from 800px -- they
+ *  need 473px, and the worst case, a name at its full cap, still leaves them
+ *  514px. Below that they collapse into one menu rather than a strip that
+ *  scrolls sideways: a strip fit, in the sense that nothing overflowed, but
+ *  the last shelves sat off the end of a bar nobody would think to drag.
+ *
+ *  Either way it is one row at every width, which is what lets a page subtract
+ *  `--header-h` from the viewport and trust the answer. */
 "use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
+import { SHORT, TYPES } from "./shelves"
+import { BrowseMenu } from "./BrowseMenu"
 import { UserMenu } from "@/components/user/UserMenu"
-
-const TYPES = ["v", "c", "r", "p", "s", "g", "i"] as const
-
-/** Short enough to fit seven of them on a phone. */
-const SHORT: Record<string, string> = {
-  v: "Novels",
-  c: "Characters",
-  r: "Releases",
-  p: "Producers",
-  s: "Staff",
-  g: "Tags",
-  i: "Traits",
-}
 
 export function Header() {
   const pathname = usePathname()
@@ -46,11 +39,11 @@ export function Header() {
           NeoVNDB
         </Link>
 
-        {/* Its own scroller, so a narrow screen scrolls the links rather than
-            wrapping them onto a second row and changing the bar's height. */}
+        <BrowseMenu here={here} className="min-[800px]:hidden" />
+
         <nav
           aria-label="Browse"
-          className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="hidden min-w-0 flex-1 items-center gap-1 min-[800px]:flex"
         >
           {TYPES.map((type) => (
             <Link
