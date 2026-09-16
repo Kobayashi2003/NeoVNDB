@@ -155,7 +155,15 @@ function Shelf({
       )}
 
       {lists === null ? (
-        <div className="h-9 animate-pulse rounded-lg bg-white/5" aria-hidden />
+        // Built from the same parts a row is rather than given a height of its
+        // own: a placeholder even a few pixels off moves every shelf below it
+        // when the real rows arrive. What sets a row's height is its icon
+        // buttons, not its text, so the spacer is one of those.
+        <div className="flex animate-pulse items-center rounded-lg bg-white/5 px-3 py-1.5" aria-hidden>
+          <span className="p-1">
+            <span className="block h-3.5 w-3.5" />
+          </span>
+        </div>
       ) : lists.length === 0 ? (
         <p className="text-xs text-muted">No lists yet.</p>
       ) : (

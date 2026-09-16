@@ -185,26 +185,39 @@ export function CollectionPanel({
     }
   }, [session.status, id, page, sort, reverse, search, reloads, router, path, params])
 
-  if (session.status === "unknown") {
-    return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
-  }
-  if (session.status === "out") {
-    return <SignInFirst next={path}>This is one of your lists, so it needs you.</SignInFirst>
-  }
-  if (error) {
+  // Every state below is drawn inside the same frame, and that is deliberate.
+  // React reconciles by position, so a bare placeholder here and the real
+  // panel there are one element wearing two sets of classes -- and when the
+  // classes changed, that element moved, which is a layout shift of the whole
+  // page. Keeping the frame and swapping only its insides leaves nothing to
+  // move.
+  if (session.status === "unknown" || (held === null && !error)) {
     return (
-      <div className="w-full max-w-sm rounded-lg border border-white/5 bg-surface p-6 text-sm">
-        <p role="alert" className="text-red-400">
-          {error}
-        </p>
-        <Link href="/u" className="mt-3 inline-block text-accent hover:underline">
-          All lists
-        </Link>
-      </div>
+      <Frame>
+        <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+      </Frame>
     )
   }
-  if (held === null) {
-    return <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+  if (session.status === "out") {
+    return (
+      <Frame>
+        <SignInFirst next={path}>This is one of your lists, so it needs you.</SignInFirst>
+      </Frame>
+    )
+  }
+  if (error || held === null) {
+    return (
+      <Frame>
+        <div className="w-full max-w-sm rounded-lg border border-white/5 bg-surface p-6 text-sm">
+          <p role="alert" className="text-red-400">
+            {error ?? "Something went wrong."}
+          </p>
+          <Link href="/u" className="mt-3 inline-block text-accent hover:underline">
+            All lists
+          </Link>
+        </div>
+      </Frame>
+    )
   }
 
   const here = held.rows.map((r) => r.id)
@@ -237,6 +250,7 @@ export function CollectionPanel({
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <h1 className="truncate text-xl font-bold sm:text-2xl">{held.list.name}</h1>
@@ -356,6 +370,19 @@ export function CollectionPanel({
           }}
         />
       )}
+    </div>
+  )
+}
+
+/** The shape every state of this page has: room for the column of lists where
+ *  there is room for one, and the page itself beside it. Drawn even before
+ *  there are any lists to put in the column, so that what arrives fills a
+ *  space that was already the right size. */
+function Frame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex w-full gap-6">
+      <div className="hidden w-52 shrink-0 lg:block" aria-hidden />
+      <div className="flex min-w-0 flex-1 flex-col gap-4">{children}</div>
     </div>
   )
 }
