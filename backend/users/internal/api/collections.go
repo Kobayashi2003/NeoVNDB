@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,8 +18,13 @@ import (
 const kinds = "vrcpsgi"
 
 const (
-	maxName  = 64
-	pageSize = 100
+	maxName = 64
+	// What one page of marks holds by default, and the most it will hold when
+	// a caller names its own size. The ceiling is the read API's id-list limit:
+	// a page of marks is turned back into things by handing those ids to it,
+	// so a page it could not resolve in one request would be no use.
+	pageSize    = 24
+	maxPageSize = 100
 )
 
 func parseID(raw string) (kind string, num int32, ok bool) {
@@ -38,6 +44,27 @@ func pathInt(r *http.Request, name string) (int32, bool) {
 		return 0, false
 	}
 	return int32(n), true
+}
+
+// positive reads a whole number from the query, or leaves it at fallback. A
+// max of 0 means there is no ceiling; above one, asking for more is refused
+// rather than quietly reduced, so a caller is never told it got what it asked
+// for when it did not.
+func positive(w http.ResponseWriter, r *http.Request, name string, fallback, max int) (int, bool) {
+	raw := r.URL.Query().Get(name)
+	if raw == "" {
+		return fallback, true
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 1 {
+		fail(w, http.StatusBadRequest, name+" must be a positive number.")
+		return 0, false
+	}
+	if max > 0 && n > max {
+		fail(w, http.StatusBadRequest, fmt.Sprintf("%s may be at most %d.", name, max))
+		return 0, false
+	}
+	return n, true
 }
 
 func validName(name string) error {
@@ -144,24 +171,23 @@ func (s *Server) listMarks(w http.ResponseWriter, r *http.Request, userID int32)
 		fail(w, http.StatusBadRequest, "That is not a list.")
 		return
 	}
-	page := 1
-	if raw := r.URL.Query().Get("page"); raw != "" {
-		n, err := strconv.Atoi(raw)
-		if err != nil || n < 1 {
-			fail(w, http.StatusBadRequest, "page must be a positive number.")
-			return
-		}
-		page = n
+	page, ok := positive(w, r, "page", 1, 0)
+	if !ok {
+		return
+	}
+	limit, ok := positive(w, r, "limit", pageSize, maxPageSize)
+	if !ok {
+		return
 	}
 
-	marks, total, err := s.store.Marks(r.Context(), userID, id, pageSize, (page-1)*pageSize)
+	marks, total, err := s.store.Marks(r.Context(), userID, id, limit, (page-1)*limit)
 	if !s.answer(w, "reading marks", err) {
 		return
 	}
 	send(w, http.StatusOK, map[string]any{
 		"results": marks,
 		"count":   total,
-		"more":    page*pageSize < total,
+		"more":    page*limit < total,
 	})
 }
 
