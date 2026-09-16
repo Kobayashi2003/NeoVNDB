@@ -21,7 +21,7 @@ import { Collapsible } from "@/components/ui/Collapsible"
 import { Icon } from "@/components/ui/Icon"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
 import { Name } from "@/components/ui/Name"
-import { CollectionButton } from "@/components/user/CollectionButton"
+import { DetailControls } from "@/components/ui/DetailControls"
 import { CatalogPage } from "./CatalogPage"
 import type { StaffDetail } from "@/lib/types"
 
@@ -52,7 +52,7 @@ export async function StaffPage({
         { value: "credited", label: "Credited on", count: credited, type: "v", filters: { staff: s.id } },
         { value: "voiced", label: "Voice roles", count: voiced, type: "v", filters: { seiyuu: s.id } },
       ]}
-      action={<CollectionButton id={s.id} />}
+      action={<DetailControls id={s.id} />}
       aside={
         <>
           <InfoCard>
