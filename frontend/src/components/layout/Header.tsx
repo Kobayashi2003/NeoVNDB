@@ -34,7 +34,7 @@ export function Header() {
       <div className="mx-auto flex h-full max-w-7xl items-center gap-3 px-4">
         <Link
           href="/"
-          className="shrink-0 text-lg font-black italic tracking-tight transition-opacity hover:opacity-80"
+          className="shrink-0 font-display text-lg tracking-tight transition-opacity hover:opacity-80"
         >
           NeoVNDB
         </Link>

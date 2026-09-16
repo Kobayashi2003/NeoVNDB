@@ -39,6 +39,10 @@
   --color-accent-hover: var(--accent-hover);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  /* The wordmark's face. Latin-only and decorative, so it is named here and
+     used on one element rather than let anywhere near running text. */
+  --font-display: var(--font-display-src), ui-sans-serif, system-ui, sans-serif;
+
   /* Titles and names are mostly Japanese, so the stack leads with what the
      platform has for CJK rather than with a Latin-only face. */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
