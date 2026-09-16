@@ -8,13 +8,15 @@
  *
  *  One row at every width. The strip scrolls sideways on a phone rather than
  *  wrapping, so the bar's height is a constant the page layout can subtract --
- *  which is what `--header-h` is for. */
+ *  which is what `--header-h` is for. The reader's own end of the bar sits
+ *  outside that scroller, so it stays reachable however narrow the screen. */
 "use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
+import { UserMenu } from "@/components/user/UserMenu"
 
 const TYPES = ["v", "c", "r", "p", "s", "g", "i"] as const
 
@@ -67,6 +69,8 @@ export function Header() {
             </Link>
           ))}
         </nav>
+
+        <UserMenu />
       </div>
     </header>
   )
