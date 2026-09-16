@@ -7,6 +7,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { ControlLabel } from "@/components/ui/ControlLabel"
 import { withParams, type Params } from "@/lib/href"
 import type { Sort } from "@/lib/list"
 
@@ -25,7 +26,7 @@ export function SortLinks({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
-      <span className="mr-1 text-xs text-muted">Sort</span>
+      <ControlLabel>Sort</ControlLabel>
       {sorts.map((sort) => {
         const here = sort.value === active
         // Changing the page's contents invalidates which page you were on.
