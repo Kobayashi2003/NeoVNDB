@@ -24,6 +24,11 @@ export async function fetchResults(
   type: string,
   params: Params,
   filters: Record<string, string>,
+  /** What to order by when the reader has not said. The type's own default
+   *  suits its listing; a page built around a different question can want a
+   *  different answer -- the front page asks what came out, so it starts by
+   *  when rather than by how well liked. */
+  fallbackSort?: string,
 ): Promise<Results> {
   const spec = LIST[type]
   const page = Math.max(1, Number(one(params, "page") ?? 1) || 1)
@@ -31,7 +36,7 @@ export async function fetchResults(
 
   // A search term brings its own order: how well each row matched. Asking for
   // it without one would sort by nothing at all.
-  const sort = one(params, "sort") ?? (search ? "searchrank" : spec.defaultSort)
+  const sort = one(params, "sort") ?? (search ? "searchrank" : (fallbackSort ?? spec.defaultSort))
 
   // An order that is only interesting from one end starts at that end, whether
   // the reader chose it or arrived at it. Sorting by rating and getting the
