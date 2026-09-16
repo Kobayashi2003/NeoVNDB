@@ -1,13 +1,20 @@
 /** The one place that talks to the API. Callers name the fields they want;
  *  nothing is fetched that a page did not ask for. */
 
-/** Through the edge, like everything else -- including from here, where a
- *  direct hop to the service would be shorter. Going around it would mean the
- *  pages exercise a route surface no browser can reach, so the first thing to
- *  find a gap in the edge's allowlist would be a deployment rather than a
- *  page load. Absolute because this runs in Node, where a path has no origin
- *  to be relative to. */
-const BASE = process.env.NEOVNDB_API_BASE ?? "http://127.0.0.1:5090/vndbserve"
+/** Through the edge, like everything else -- including from the server, where
+ *  a direct hop to the service would be shorter. Going around it would mean
+ *  the pages exercise a route surface no browser can reach, so the first thing
+ *  to find a gap in the edge's allowlist would be a deployment rather than a
+ *  page load.
+ *
+ *  A path in the browser and an address on the server. The browser resolves it
+ *  against whatever name the page was served under, which is the only answer
+ *  that is right for every reader; Node has no such origin to resolve against,
+ *  so there it has to be told one. */
+const BASE =
+  typeof window === "undefined"
+    ? (process.env.NEOVNDB_API_BASE ?? "http://127.0.0.1:5090/vndbserve")
+    : "/vndbserve"
 
 export interface Page<T> {
   results: T[]
