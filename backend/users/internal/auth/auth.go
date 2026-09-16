@@ -52,8 +52,15 @@ func Hash(password string, cost int) (string, error) {
 
 // Check reports whether the password matches. It takes the same time either
 // way, which is bcrypt's doing rather than ours.
-func Check(hash, password string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+// Check reports whether the password matches, and whether the hash it matched
+// is in a form this service no longer writes. See legacy.go: a caller that can
+// save is expected to re-hash when `stale` comes back true, which is what
+// retires the old format one sign-in at a time.
+func Check(hash, password string) (ok, stale bool) {
+	if ok, isLegacy := checkLegacy(hash, password); isLegacy {
+		return ok, ok
+	}
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil, false
 }
 
 // SetCookie writes the session cookie. HttpOnly because no script on the page
