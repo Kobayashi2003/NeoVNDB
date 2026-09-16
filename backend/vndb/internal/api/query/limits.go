@@ -15,7 +15,7 @@ type Limits struct {
 // DefaultLimits apply when nothing is configured, which is the case in tests.
 func DefaultLimits() Limits {
 	return Limits{
-		PageSize: 24, MaxPageSize: 100, MaxIDs: 100,
+		PageSize: 24, MaxPageSize: 100, MaxIDs: 1000,
 		MaxFieldDepth: 3, MaxCost: 100_000,
 	}
 }

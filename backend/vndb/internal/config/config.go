@@ -30,7 +30,7 @@ const (
 	// instance serving one frontend can afford far more than a public one.
 	defaultPageSize      = 24
 	defaultMaxPageSize   = 100
-	defaultMaxIDs        = 100
+	defaultMaxIDs        = 1000
 	defaultMaxFieldDepth = 3
 	// Estimated field values in a response, priced from each level's declared
 	// fan-out before the request runs. Follows vndb's own ceiling.

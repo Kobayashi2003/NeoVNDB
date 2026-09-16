@@ -25,6 +25,10 @@ const (
 	// so a page it could not resolve in one request would be no use.
 	pageSize    = 24
 	maxPageSize = 100
+	// How much of a list can be handed over at once for the read API to sort
+	// or search. The ceiling is its id-list limit, and past it a collection
+	// can still be read in the order it was made -- which needs no such trick.
+	maxItems = 1000
 )
 
 func parseID(raw string) (kind string, num int32, ok bool) {
@@ -219,6 +223,25 @@ func (s *Server) mark(
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// items hands over the whole list, so that the read API can be asked to sort
+// or search it. See store.Items for why this service cannot do either itself.
+//
+// Capped, because it all has to fit in one request to the read API afterwards,
+// and that request carries the ids in its address. A caller that gets fewer
+// than `count` knows this list is past what the trick supports.
+func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
+	id, ok := pathInt(r, "id")
+	if !ok {
+		fail(w, http.StatusBadRequest, "That is not a list.")
+		return
+	}
+	items, total, err := s.store.Items(r.Context(), userID, id, maxItems)
+	if !s.answer(w, "reading a collection", err) {
+		return
+	}
+	send(w, http.StatusOK, map[string]any{"items": items, "count": total})
 }
 
 // removeMarks and moveMarks are the page-at-a-time forms of the two singular

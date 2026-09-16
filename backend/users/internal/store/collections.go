@@ -162,6 +162,49 @@ func (s *Store) RemoveMark(ctx context.Context, userID, id int32, kind string, i
 	return err
 }
 
+// Items is every id on a list, in the order they were added, for a caller
+// that has to hand the whole list to somebody else.
+//
+// Sorting a collection by anything vndb knows -- a title, a rating, a release
+// date -- is a question this service cannot answer: it keeps ids and the day
+// they were written down, and nothing else. What it can do is say what the
+// whole list is, so the read API can be asked to sort and search it. That only
+// works while the list is small enough to pass along in one request, so the
+// caller is told the true count as well as what it got, and can see for itself
+// when it has been given only part.
+func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []string, total int, err error) {
+	kind, err := s.owned(ctx, userID, id)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM marks WHERE collection_id = $1`, id).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT item FROM marks
+		 WHERE collection_id = $1
+		 ORDER BY marked_at DESC, item DESC
+		 LIMIT $2`, id, max)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	// Full ids, the way Marks hands them back: rebuilt from the list's type and
+	// the stored number, because that is what the read API is given.
+	items = []string{}
+	for rows.Next() {
+		var item int32
+		if err := rows.Scan(&item); err != nil {
+			return nil, 0, err
+		}
+		items = append(items, kind+itoa(item))
+	}
+	return items, total, rows.Err()
+}
+
 // RemoveMarks takes several off one list at once, and MoveMarks carries them
 // from one list to another.
 //
