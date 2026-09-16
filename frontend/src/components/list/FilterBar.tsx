@@ -16,6 +16,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ControlLabel } from "@/components/ui/ControlLabel"
 import { one, withParams, type Params } from "@/lib/href"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
 import { useDismiss } from "@/hooks/useDismiss"
@@ -66,7 +67,7 @@ export function FilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-1">
-      <span className="mr-1 text-xs text-muted">Filter</span>
+      <ControlLabel>Filter</ControlLabel>
 
       {filters.map((filter) => (
         <FilterMenu
