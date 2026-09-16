@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { CollectionPanel } from "@/components/user/CollectionPanel"
+import { one } from "@/lib/href"
 
 export const metadata: Metadata = { title: "A list - NeoVNDB" }
 
@@ -18,9 +19,16 @@ export default async function CollectionPage({ params, searchParams }: PageProps
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 pb-12 animate-slide-up-fade">
-      {/* Keyed, so turning a page starts a fresh panel rather than leaving the
-          last page's rows on screen while the next ones are fetched. */}
-      <CollectionPanel key={`${list}:${page}`} id={list} page={page} params={query} />
+      {/* Keyed on everything that decides what is on the page, so changing any
+          of them starts a fresh panel rather than leaving the last answer on
+          screen while the next one is fetched -- and drops a selection that
+          was made against rows no longer shown. */}
+      <CollectionPanel
+        key={`${list}:${page}:${one(query, "sort") ?? ""}:${one(query, "reverse") ?? ""}:${one(query, "q") ?? ""}`}
+        id={list}
+        page={page}
+        params={query}
+      />
     </main>
   )
 }

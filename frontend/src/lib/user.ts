@@ -118,6 +118,16 @@ export const addMark = (list: number, item: string) =>
 export const removeMark = (list: number, item: string) =>
   call<void>("DELETE", `/collections/${list}/marks/${item}`)
 
+/** Every id on a list, for handing to the read API so it can sort or search
+ *  the whole thing -- neither of which this service can do, since it keeps ids
+ *  and the day they were written down and nothing else.
+ *
+ *  `count` is the list's true length. Fewer items than that means the list is
+ *  past what fits in one request to the read API, and only the order it was
+ *  made in is available for it. */
+export const items = (list: number) =>
+  call<{ items: string[]; count: number }>("GET", `/collections/${list}/items`)
+
 /** A page at a time, for a reader tidying a list rather than saving one thing.
  *  Both answer how many marks actually changed, which is not always how many
  *  were named: a page can be a moment out of date. */
