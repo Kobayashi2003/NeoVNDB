@@ -14,6 +14,7 @@ import type { Params } from "@/lib/href"
 import { countOf } from "@/lib/results"
 import { Collapsible } from "@/components/ui/Collapsible"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
+import { CollectionButton } from "@/components/user/CollectionButton"
 import { CatalogPage } from "./CatalogPage"
 import type { TraitDetail } from "@/lib/types"
 
@@ -45,6 +46,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
         { value: "all", label: "Including child traits", count: inherited, type: "c", filters: { trait: t.id } },
         { value: "direct", label: "Assigned directly", count: direct, type: "c", filters: { dtrait: t.id } },
       ]}
+      action={<CollectionButton id={t.id} />}
       aside={
         <>
           <InfoCard>

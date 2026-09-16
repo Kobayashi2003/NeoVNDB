@@ -22,6 +22,7 @@ export async function CatalogPage({
   title,
   subtitle,
   aside,
+  action,
   tabs,
   path,
   params,
@@ -30,6 +31,7 @@ export async function CatalogPage({
   title: React.ReactNode
   subtitle?: React.ReactNode
   aside: React.ReactNode
+  action?: React.ReactNode
   /** At least one. The first is the default and is left out of the address. */
   tabs: [Tab, ...Tab[]]
   path: string
@@ -42,7 +44,7 @@ export async function CatalogPage({
 
   return (
     <DetailShell
-      header={<DetailHeader title={title} subtitle={subtitle} />}
+      header={<DetailHeader title={title} subtitle={subtitle} action={action} />}
       aside={
         <>
           <PrefsControls className="flex-col items-stretch" />

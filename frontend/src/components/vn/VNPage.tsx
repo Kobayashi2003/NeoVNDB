@@ -17,6 +17,7 @@ import { InfoCard } from "@/components/ui/InfoCard"
 import { Section } from "@/components/ui/Section"
 import { VNInfoPanel } from "./VNInfoPanel"
 import { PrefsControls } from "@/components/ui/PrefsControls"
+import { CollectionButton } from "@/components/user/CollectionButton"
 import { usePrefs } from "@/hooks/usePrefs"
 import { VNTags } from "./VNTags"
 import { VNCharacters } from "./VNCharacters"
@@ -45,6 +46,7 @@ export function VNPage({ vn }: { vn: VN }) {
               </p>
             )
           }
+          action={<CollectionButton id={vn.id} />}
         />
       }
       aside={

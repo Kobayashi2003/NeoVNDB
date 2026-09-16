@@ -19,6 +19,16 @@ export interface User {
   created_at: string
 }
 
+export interface Collection {
+  id: number
+  /** One of vndb's seven letters. A list holds one kind of thing, which is
+   *  why the button on a page only ever offers that page's own lists. */
+  type: string
+  name: string
+  count: number
+  created_at: string
+}
+
 /** What the service said went wrong. Its messages are written to be read by
  *  the person who caused them, so they are shown rather than replaced. */
 export class UserError extends Error {
@@ -65,8 +75,28 @@ export const logoutEverywhere = () => call<void>("POST", "/logout-everywhere")
 export const changePassword = (current: string, next: string) =>
   call<void>("POST", "/me/password", { current, new: next })
 
+/* --- The lists a reader keeps --------------------------------------------- */
+
+export const collections = (type: string) =>
+  call<{ results: Collection[] }>("GET", `/collections?type=${type}`).then((r) => r.results)
+
+export const createCollection = (type: string, name: string) =>
+  call<Collection>("POST", "/collections", { type, name })
+
+/** Which of the reader's lists hold this item. What a detail page asks. */
+export const holding = (item: string) =>
+  call<{ collections: number[] }>("GET", `/holding/${item}`).then((r) => r.collections)
+
+/** Both are idempotent at the service, so a double click is not an error. */
+export const addMark = (list: number, item: string) =>
+  call<void>("PUT", `/collections/${list}/marks/${item}`)
+
+export const removeMark = (list: number, item: string) =>
+  call<void>("DELETE", `/collections/${list}/marks/${item}`)
+
 /** What the service will refuse, said before it has to. */
 export const RULES = {
   username: "2 to 32 characters: letters, digits, - and _",
   password: "at least 8 characters",
+  listName: 64,
 } as const
