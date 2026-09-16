@@ -14,6 +14,7 @@ import type { Params } from "@/lib/href"
 import { countOf } from "@/lib/results"
 import { Collapsible } from "@/components/ui/Collapsible"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
+import { CollectionButton } from "@/components/user/CollectionButton"
 import { CatalogPage } from "./CatalogPage"
 import type { TagDetail } from "@/lib/types"
 
@@ -34,6 +35,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
         { value: "all", label: "Including child tags", count: inherited, type: "v", filters: { tag: t.id } },
         { value: "direct", label: "Tagged directly", count: direct, type: "v", filters: { dtag: t.id } },
       ]}
+      action={<CollectionButton id={t.id} />}
       aside={
         <>
           <InfoCard>

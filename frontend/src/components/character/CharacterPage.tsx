@@ -19,6 +19,7 @@ import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
 import { InfoCard } from "@/components/ui/InfoCard"
 import { Section } from "@/components/ui/Section"
 import { PrefsControls } from "@/components/ui/PrefsControls"
+import { CollectionButton } from "@/components/user/CollectionButton"
 import { usePrefs } from "@/hooks/usePrefs"
 import { useSpoilerLevel } from "@/hooks/useSpoilerLevel"
 import { CharacterAppearances } from "./CharacterAppearances"
@@ -56,14 +57,17 @@ export function CharacterPage({
             )
           }
           action={
-            spoiler.any && (
-              <button
-                onClick={spoiler.cycle}
-                className={cn("shrink-0 pt-1 text-xs transition-colors", spoiler.className)}
-              >
-                {spoiler.label}
-              </button>
-            )
+            <div className="flex items-center gap-3">
+              {spoiler.any && (
+                <button
+                  onClick={spoiler.cycle}
+                  className={cn("shrink-0 text-xs transition-colors", spoiler.className)}
+                >
+                  {spoiler.label}
+                </button>
+              )}
+              <CollectionButton id={character.id} />
+            </div>
           }
         />
       }

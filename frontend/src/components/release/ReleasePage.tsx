@@ -18,6 +18,7 @@ import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
 import { Icon } from "@/components/ui/Icon"
 import { InfoCard } from "@/components/ui/InfoCard"
 import { PrefsControls } from "@/components/ui/PrefsControls"
+import { CollectionButton } from "@/components/user/CollectionButton"
 import { Section } from "@/components/ui/Section"
 import { usePrefs } from "@/hooks/usePrefs"
 import { ReleaseDRM } from "./ReleaseDRM"
@@ -49,6 +50,7 @@ export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
               <p className="mt-1 text-sm text-muted">{display(r.alttitle, r.title, original)}</p>
             )
           }
+          action={<CollectionButton id={r.id} />}
         />
       }
       aside={
