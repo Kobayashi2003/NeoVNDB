@@ -57,6 +57,11 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("PUT /collections/{id}/marks/{item}", s.signedIn(s.addMark))
 	mux.HandleFunc("DELETE /collections/{id}/marks/{item}", s.signedIn(s.removeMark))
 
+	// The page-at-a-time forms, for a reader tidying a list rather than
+	// saving one thing.
+	mux.HandleFunc("POST /collections/{id}/marks/remove", s.signedIn(s.removeMarks))
+	mux.HandleFunc("POST /collections/{id}/marks/move", s.signedIn(s.moveMarks))
+
 	// "Which of my lists hold this", which is what a detail page asks.
 	mux.HandleFunc("GET /holding/{item}", s.signedIn(s.holding))
 

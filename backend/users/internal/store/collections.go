@@ -162,6 +162,67 @@ func (s *Store) RemoveMark(ctx context.Context, userID, id int32, kind string, i
 	return err
 }
 
+// RemoveMarks takes several off one list at once, and MoveMarks carries them
+// from one list to another.
+//
+// One statement each rather than a loop of the singular forms, because a
+// reader who selected a page of a list and pressed a button meant one thing,
+// and half of it happening is not a smaller version of that thing. A move in
+// particular has to be both halves or neither: the pair done separately can
+// leave an item on both lists, or on none.
+//
+// Both silently pass over items the list does not hold. The reader is working
+// from a page that may be a moment out of date, and an item already gone is
+// the outcome they asked for.
+func (s *Store) RemoveMarks(ctx context.Context, userID, id int32, kind string, items []int32) (int64, error) {
+	if err := s.holds(ctx, userID, id, kind); err != nil {
+		return 0, err
+	}
+	tag, err := s.pool.Exec(ctx,
+		`DELETE FROM marks WHERE collection_id = $1 AND item = ANY($2)`, id, items)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
+// MoveMarks needs both lists to be the reader's own and to hold the same kind
+// of thing -- which the type check on each gives, since a list's type is what
+// says what may go on it.
+func (s *Store) MoveMarks(ctx context.Context, userID, from, to int32, kind string, items []int32) (int64, error) {
+	if err := s.holds(ctx, userID, from, kind); err != nil {
+		return 0, err
+	}
+	if err := s.holds(ctx, userID, to, kind); err != nil {
+		return 0, err
+	}
+	if from == to {
+		return 0, nil
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	// The target may already hold some of them, and arriving twice is not an
+	// error -- it is the same answer the singular add gives.
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO marks (collection_id, item, marked_at)
+		SELECT $1, item, marked_at FROM marks
+		 WHERE collection_id = $2 AND item = ANY($3)
+		ON CONFLICT (collection_id, item) DO NOTHING`, to, from, items); err != nil {
+		return 0, err
+	}
+	tag, err := tx.Exec(ctx,
+		`DELETE FROM marks WHERE collection_id = $1 AND item = ANY($2)`, from, items)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), tx.Commit(ctx)
+}
+
 // holds is owned plus the type check. A list of the wrong type reads as no
 // such list, because to the caller it is: the one they named cannot hold this.
 func (s *Store) holds(ctx context.Context, userID, id int32, kind string) error {

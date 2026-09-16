@@ -221,6 +221,95 @@ func (s *Server) mark(
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// removeMarks and moveMarks are the page-at-a-time forms of the two singular
+// routes above. A reader clearing out a list works in handfuls, and a handful
+// of round trips is both slower and less certain than one -- half a move is a
+// state nobody asked for.
+func (s *Server) removeMarks(w http.ResponseWriter, r *http.Request, userID int32) {
+	b, ok := s.batch(w, r)
+	if !ok {
+		return
+	}
+	n, err := s.store.RemoveMarks(r.Context(), userID, b.list, b.kind, b.items)
+	if !s.answer(w, "removing marks", err) {
+		return
+	}
+	send(w, http.StatusOK, map[string]any{"changed": n})
+}
+
+func (s *Server) moveMarks(w http.ResponseWriter, r *http.Request, userID int32) {
+	b, ok := s.batch(w, r)
+	if !ok {
+		return
+	}
+	if b.to < 1 {
+		fail(w, http.StatusBadRequest, "That is not a list to move to.")
+		return
+	}
+	n, err := s.store.MoveMarks(r.Context(), userID, b.list, b.to, b.kind, b.items)
+	if !s.answer(w, "moving marks", err) {
+		return
+	}
+	send(w, http.StatusOK, map[string]any{"changed": n})
+}
+
+// A page-at-a-time request: the list it is about, the ids, and for a move the
+// list they are going to.
+type batchOf struct {
+	list  int32
+	to    int32
+	kind  string
+	items []int32
+}
+
+// batch reads what both routes above read identically. Every id has to be the
+// one kind -- they are going onto or off a list that holds one kind -- so the
+// kind is taken from the first and the rest are held to it.
+func (s *Server) batch(w http.ResponseWriter, r *http.Request) (batchOf, bool) {
+	var b batchOf
+
+	list, ok := pathInt(r, "id")
+	if !ok {
+		fail(w, http.StatusBadRequest, "That is not a list.")
+		return b, false
+	}
+	b.list = list
+
+	body, ok := read[struct {
+		Items []string `json:"items"`
+		To    int32    `json:"to"`
+	}](w, r)
+	if !ok {
+		return b, false
+	}
+	b.to = body.To
+
+	switch {
+	case len(body.Items) == 0:
+		fail(w, http.StatusBadRequest, "Name at least one thing to act on.")
+		return b, false
+	case len(body.Items) > maxPageSize:
+		fail(w, http.StatusBadRequest, fmt.Sprintf("At most %d at a time.", maxPageSize))
+		return b, false
+	}
+
+	for _, raw := range body.Items {
+		kind, num, valid := parseID(raw)
+		if !valid {
+			fail(w, http.StatusBadRequest, fmt.Sprintf("%q is not an id.", raw))
+			return b, false
+		}
+		if b.kind == "" {
+			b.kind = kind
+		} else if kind != b.kind {
+			fail(w, http.StatusBadRequest, "Those are not all the same kind of thing.")
+			return b, false
+		}
+		b.items = append(b.items, num)
+	}
+	return b, true
+}
+
 func (s *Server) holding(w http.ResponseWriter, r *http.Request, userID int32) {
 	kind, item, ok := parseID(r.PathValue("item"))
 	if !ok {
