@@ -6,13 +6,14 @@
  *  after it appears. */
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, KeyRound, LogOut, MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserError } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
+import { useDismiss } from "@/hooks/useDismiss"
 
 export function UserMenu() {
   const session = useSession()
@@ -53,21 +54,7 @@ function SignedIn() {
   const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const close = (e: MouseEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const escape = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
-    document.addEventListener("mousedown", close)
-    document.addEventListener("keydown", escape)
-    return () => {
-      document.removeEventListener("mousedown", close)
-      document.removeEventListener("keydown", escape)
-    }
-  }, [open])
+  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
 
   async function leave(everywhere: boolean) {
     setOpen(false)
@@ -92,7 +79,11 @@ function SignedIn() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex max-w-36 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/20"
+        // The tight cap is for the narrow end only, where the type strip is the
+        // one thing in the bar that gives way and a long name squeezed it down
+        // to nothing. Past 420px there is room for the whole name, and cutting
+        // it there would be trading a real name for space nobody needed.
+        className="flex max-w-20 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/20 min-[420px]:max-w-36"
       >
         <span className="truncate">{session.user?.username}</span>
         <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
