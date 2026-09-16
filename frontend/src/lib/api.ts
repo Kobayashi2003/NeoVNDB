@@ -1,7 +1,13 @@
 /** The one place that talks to the API. Callers name the fields they want;
  *  nothing is fetched that a page did not ask for. */
 
-const BASE = process.env.NEXT_PUBLIC_API ?? "http://127.0.0.1:5100"
+/** Through the edge, like everything else -- including from here, where a
+ *  direct hop to the service would be shorter. Going around it would mean the
+ *  pages exercise a route surface no browser can reach, so the first thing to
+ *  find a gap in the edge's allowlist would be a deployment rather than a
+ *  page load. Absolute because this runs in Node, where a path has no origin
+ *  to be relative to. */
+const BASE = process.env.NEOVNDB_API_BASE ?? "http://127.0.0.1:5090/vndbserve"
 
 export interface Page<T> {
   results: T[]

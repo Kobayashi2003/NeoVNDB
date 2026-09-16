@@ -6,13 +6,17 @@
  *  address also makes "load images straight from vndb" cost nothing to
  *  support -- it is the case where this function does not run.
  *
- *  The rewrite inserts a width and swaps the host, leaving vndb's own path
- *  untouched. That matters: the mirror stores files at exactly that path, so a
- *  reverse proxy can answer a cached image with a plain file server and the
- *  mirror process never wakes up. A query parameter could not do that -- a
- *  file matcher cannot see one. */
+ *  The rewrite inserts a width and swaps the host for the mirror's prefix,
+ *  leaving vndb's own path untouched. That matters: the mirror stores files at
+ *  exactly that path, so the edge can answer a cached image with a plain file
+ *  server and the mirror process never wakes up. A query parameter could not
+ *  do that -- a file matcher cannot see one. */
 
-const MIRROR = process.env.NEXT_PUBLIC_IMAGE_BASE ?? "http://127.0.0.1:5101/img"
+/** A path, not an address: these end up in `src` attributes, so the browser
+ *  resolves them against whatever name the page was served under and the
+ *  mirror is reachable from every one of them. The edge answers a file it
+ *  already holds without waking the mirror at all. */
+const MIRROR = "/imgserve/img"
 
 /** The widths the mirror will produce. Asking for anything else is rounded up
  *  there, but naming one of these keeps a URL stable across readers, which is

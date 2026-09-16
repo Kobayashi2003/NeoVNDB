@@ -1,0 +1,150 @@
+# Route definitions for NeoVNDB's backends -- the single source of truth,
+# imported by ./Caddyfile (a local checkout, or a standalone edge) and by any
+# shared edge that serves this project alongside others.
+#
+# Upstreams and the image roots come from the environment, so the same routes
+# serve loopback ports and container names alike. Defaults are the local ones,
+# and they are 127.0.0.1 rather than localhost: on Windows localhost resolves to
+# ::1 first, and every cold connection to an IPv4-only listener would eat a ~20s
+# IPv6 timeout before falling back.
+#
+#   VNDBSERVE_UPSTREAM / IMGSERVE_UPSTREAM / USERSERVE_UPSTREAM / NEXT_UPSTREAM
+#   NEOVNDB_IMAGE_DIR / NEOVNDB_IMAGE_DERIVED_DIR
+#       imgserve's two stores, read straight off disk on a hit. Same names the
+#       service itself uses, because there should be one answer to where the
+#       images are -- but a relative value is resolved against each process's
+#       working directory, and they differ, so a deployment sets them absolute.
+#
+# Each backend prefix exposes an explicit allowlist of the routes the frontend
+# uses; anything else answers 403 without being forwarded. That is what keeps
+# the services free of any notion of who may call them. vndbserve and imgserve
+# hold no auth code at all: their whole surface stays reachable on their
+# loopback ports, and which part of it the world can reach is decided here.
+#
+# userserve is passed through whole, because every one of its routes already
+# guards itself -- it is the thing the others would have to ask.
+#
+# The browse surface is public, as vndb's own is. If this mirror should instead
+# be readable only by people who have signed in, that is one directive at the
+# top of each gated prefix and no change to any service:
+#
+#   forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+#       uri /auth/verify
+#   }
+#
+# Under /imgserve it would have to go inside a `route`, because Caddy orders
+# bare directives by kind rather than by the order they were written, and the
+# file_server fast path would otherwise answer a cached image without ever
+# asking -- and the two `Cache-Control: public` below would have to become
+# `private`, since an image behind a session is no longer one a shared proxy
+# may keep. Pages rendered on the server would need the reader's cookie
+# carried with them too, which frontend/src/lib/api.ts does not do today.
+#
+# Rules for anything added here:
+#   - No matcher-less `handle` at top level. Whoever owns the address owns the
+#     catch-all, and claiming it here would swallow another project's routes.
+#     (One nested inside a handle_path is fine -- it is scoped to it, like the
+#     403s below.)
+#   - Prefix named matchers with the project (@neovndb_*). A shared edge imports
+#     every project's snippet into one site block, and matcher names are scoped
+#     to that block, not to the file they were written in.
+#   - Backend prefixes stay at the top level rather than under the frontend's,
+#     so a page can reach them by an absolute path from any route.
+#
+# handle_path strips the prefix, so each service sees its own route shape
+# (/vn, /img/..., /login).
+
+handle_path /vndbserve/* {
+	# The read surface the frontend uses. The relation graph, the admin and
+	# import commands and anything else the binary grows are not here, and are
+	# therefore loopback-only until someone adds them on purpose.
+	@neovndb_read {
+		method GET HEAD
+		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|meta/(generation|fields/[a-z]+)|health)$
+	}
+	handle @neovndb_read {
+		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}
+	}
+	handle {
+		respond 403
+	}
+}
+
+handle_path /imgserve/* {
+	# imgserve's own /img prefix comes off as well, because what is left is then
+	# exactly the path inside the store -- which is what lets the matchers below
+	# ask "is this already on disk?" without reassembling anything. It goes back
+	# on for the one case that reaches the service.
+	@neovndb_img {
+		method GET HEAD
+		path /img/*
+	}
+	handle @neovndb_img {
+		uri strip_prefix /img
+
+		# A hit is a file, and a file needs no process: these two blocks answer
+		# straight off disk and imgserve never wakes up. The URL was given the
+		# same shape as the path on disk precisely so this could work -- a width
+		# carried as a query parameter would be invisible to a file matcher.
+		#
+		# The shape is checked as well as the file's existence, because a store
+		# also holds the half-written temporaries a fetch is landing, and those
+		# are nobody's image.
+		@neovndb_img_derived {
+			path_regexp ^/\d+/(cv|ch|sf|st)/\d+/\d+\.jpg$
+			file {
+				root {$NEOVNDB_IMAGE_DERIVED_DIR:../data/images-derived}
+			}
+		}
+		handle @neovndb_img_derived {
+			root * {$NEOVNDB_IMAGE_DERIVED_DIR:../data/images-derived}
+			header Cache-Control "public, max-age=31536000, immutable"
+			file_server
+		}
+
+		@neovndb_img_original {
+			path_regexp ^/(cv|ch|sf|st)/\d+/\d+\.jpg$
+			file {
+				root {$NEOVNDB_IMAGE_DIR:../data/images}
+			}
+		}
+		handle @neovndb_img_original {
+			root * {$NEOVNDB_IMAGE_DIR:../data/images}
+			header Cache-Control "public, max-age=31536000, immutable"
+			file_server
+		}
+
+		# A miss, and every width whose copy was never written because the
+		# original was already narrower than it. imgserve fetches from vndb,
+		# stores, resizes and answers; the next request is a hit above.
+		handle {
+			rewrite * /img{path}
+			reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101} {
+				# A cold image is a round trip to t.vndb.org and can take seconds.
+				transport http {
+					read_timeout 30s
+					write_timeout 30s
+				}
+			}
+		}
+	}
+
+	@neovndb_img_health {
+		method GET HEAD
+		path /health
+	}
+	handle @neovndb_img_health {
+		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101}
+	}
+
+	handle {
+		respond 403
+	}
+}
+
+# No allowlist: userserve has no route that does not already decide for itself
+# whether the caller may use it, and the session cookie it sets is the thing
+# every other prefix would be gated on.
+handle_path /userserve/* {
+	reverse_proxy {$USERSERVE_UPSTREAM:127.0.0.1:5102}
+}
