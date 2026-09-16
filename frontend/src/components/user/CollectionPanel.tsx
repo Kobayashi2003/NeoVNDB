@@ -2,34 +2,40 @@
  *
  *  A list holds ids and nothing else -- the user service keeps no copy of what
  *  vndb says, so that a weekly import can replace the whole mirror underneath
- *  it without touching anyone's lists. Which means drawing one is two steps:
- *  ask the service what is on it, then hand those ids to the read API, which
- *  answers a whole page of them in one request. That is what the id-list limit
- *  was for, and it is why a page of marks is no bigger than it.
+ *  it without touching anyone's lists. Drawing one is therefore always two
+ *  steps: find out what is on it, then ask the read API what those ids are.
  *
- *  The read API answers in its own order, so the rows are put back into the
- *  order the reader made: most recently added first. A collection is a record
- *  of what someone did, and when they did it is the only order that is theirs
- *  rather than the data's.
+ *  Which two steps depends on what was asked for, and the difference is worth
+ *  stating because it decides what a list can be sorted by:
  *
- *  It is also where things come off a list. Saving happens on the page of the
- *  thing being saved, one at a time, which is the shape of that wish; getting
- *  rid of things is the opposite -- a reader tidying up is looking at the list
- *  and means several at once -- so this is the only place that works in
- *  handfuls. */
+ *    - In the order the reader made it, the user service pages the marks and
+ *      only a page of ids is ever fetched. This works at any size.
+ *    - By anything vndb knows -- a title, a rating, a date -- or with a search
+ *      term, the whole list has to go to the read API at once, because neither
+ *      the order nor the matching can be worked out a page at a time. That
+ *      only holds while the list fits in one request, so past that size those
+ *      orders are not offered rather than quietly answered wrong.
+ *
+ *  Taking things off a list lives here too. Saving happens on the page of the
+ *  thing being saved, one at a time, which is the shape of that wish; tidying
+ *  up is the opposite -- the reader is looking at the list and means several
+ *  at once. */
 "use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ListChecks } from "lucide-react"
+import { ListChecks, Search, X } from "lucide-react"
 import { list as query } from "@/lib/api"
-import { LIST, PAGE_SIZE } from "@/lib/list"
-import type { Params } from "@/lib/href"
+import { LIST, PAGE_SIZE, type Sort } from "@/lib/list"
+import { one, withParams, type Params } from "@/lib/href"
 import { Results } from "@/components/list/Results"
 import { Pagination } from "@/components/list/Pagination"
+import { SortLinks } from "@/components/list/SortLinks"
+import { ControlLabel } from "@/components/ui/ControlLabel"
 import {
   collections,
+  items as allItems,
   marks,
   moveMarks,
   removeMarks,
@@ -39,13 +45,34 @@ import {
 import { useSession } from "@/hooks/useSession"
 import { SignInFirst } from "./SignInFirst"
 import { SelectBar, Selectable } from "./SelectBar"
+import { CollectionColumn, CollectionPicker } from "./CollectionSwitcher"
+
+/** The order the reader put the list in, which is this page's own and not one
+ *  the read API has ever heard of. Newest first, because a list is a record of
+ *  what someone did and the last thing they did is the interesting end. */
+const ADDED = { value: "added", label: "Added", descending: true } as const
+
+/** Which way an order runs when the reader has not said. Looked up across the
+ *  types rather than within one, because the list's own type is not known
+ *  until it has been read, and a sort name means the same thing in all of
+ *  them. */
+function orderOf(sort: string): Sort | undefined {
+  if (sort === ADDED.value) return ADDED
+  for (const spec of Object.values(LIST)) {
+    const found = spec.sorts.find((s) => s.value === sort)
+    if (found) return found
+  }
+  return undefined
+}
 
 interface Held {
   list: Collection
-  /** The reader's other lists of this kind, which is where a move can go. */
-  elsewhere: Collection[]
+  mine: Collection[]
   rows: { id: string }[]
   count: number
+  /** True when the list is longer than can be handed over in one request, so
+   *  only ADDED is on offer. */
+  tooBig: boolean
 }
 
 function message(err: unknown): string {
@@ -63,12 +90,19 @@ export function CollectionPanel({
 }) {
   const session = useSession()
   const router = useRouter()
+  const path = `/u/${id}`
+
+  const search = one(params, "q") ?? ""
+  const sort = one(params, "sort") ?? ADDED.value
+  // Each order starts at the end worth looking at, and which end that is
+  // belongs to the order: newest first for when it was added, best first for a
+  // rating, but A before Z for a title. One default for all of them had every
+  // list reading backwards the moment it was sorted by anything.
+  const asked = one(params, "reverse")
+  const reverse = asked !== undefined ? asked === "true" : (orderOf(sort)?.descending ?? false)
+
   const [held, setHeld] = useState<Held | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  // Bumped after a change, to ask for the page again. What is on the page and
-  // what the counts are have both moved, and working the new state out here
-  // would be guessing at what the service did.
   const [reloads, setReloads] = useState(0)
   const [selecting, setSelecting] = useState(false)
   const [chosen, setChosen] = useState<string[]>([])
@@ -79,28 +113,55 @@ export function CollectionPanel({
     if (session.status !== "in") return
     let live = true
 
-    const read = async (): Promise<Held> => {
-      const [mine, page1] = await Promise.all([collections(), marks(id, page, PAGE_SIZE)])
-      const list = mine.find((l) => l.id === id)
-      if (!list) throw new UserError(404, "No such list.")
-      const elsewhere = mine.filter((l) => l.type === list.type && l.id !== id)
-      if (page1.results.length === 0) {
-        return { list, elsewhere, rows: [], count: page1.count }
-      }
-
-      const order = page1.results.map((m) => m.id)
-      const spec = LIST[list.type]
+    const hydrate = async (ids: string[], type: string, spec = LIST[type]) => {
+      if (ids.length === 0) return []
       const answer = await query<{ id: string }>(spec.type, {
         fields: spec.fields,
-        limit: order.length,
-        filters: { id: order.join(",") },
+        limit: ids.length,
+        filters: { id: ids.join(",") },
       })
       const byId = new Map(answer.results.map((r) => [r.id, r]))
       // An id with nothing behind it is not an error: vndb hides entries, and
       // a hidden one leaves a mark pointing at nothing until the reader
       // removes it. Better a list one short than a list that will not draw.
-      const rows = order.filter((mark) => byId.has(mark)).map((mark) => byId.get(mark)!)
-      return { list, elsewhere, rows, count: page1.count }
+      return ids.filter((x) => byId.has(x)).map((x) => byId.get(x)!)
+    }
+
+    const read = async (): Promise<Held> => {
+      const mine = await collections()
+      const list = mine.find((l) => l.id === id)
+      if (!list) throw new UserError(404, "No such list.")
+      const spec = LIST[list.type]
+
+      // The whole list is needed to sort or search it; in the reader's own
+      // order it never is, and that is what lets a long list still be read.
+      if (sort === ADDED.value && !search) {
+        const held = await marks(id, page, PAGE_SIZE)
+        const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
+        return { list, mine, rows, count: held.count, tooBig: false }
+      }
+
+      const whole = await allItems(id)
+      if (whole.items.length < whole.count) {
+        // Too long to hand over. Say so by falling back rather than showing an
+        // order that would silently be of part of the list.
+        const held = await marks(id, page, PAGE_SIZE)
+        const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
+        return { list, mine, rows, count: held.count, tooBig: true }
+      }
+      if (whole.items.length === 0) {
+        return { list, mine, rows: [], count: 0, tooBig: false }
+      }
+
+      const answer = await query<{ id: string }>(spec.type, {
+        fields: spec.fields,
+        page,
+        limit: PAGE_SIZE,
+        sort: sort === ADDED.value ? spec.defaultSort : sort,
+        reverse,
+        filters: { id: whole.items.join(","), ...(search ? { search } : {}) },
+      })
+      return { list, mine, rows: answer.results, count: answer.count, tooBig: false }
     }
 
     read().then(
@@ -110,12 +171,10 @@ export function CollectionPanel({
         // on a page that no longer exists.
         const last = Math.max(1, Math.ceil(got.count / PAGE_SIZE))
         if (page > last) {
-          router.replace(last === 1 ? `/u/${id}` : `/u/${id}?page=${last}`)
+          router.replace(withParams(path, params, { page: last === 1 ? null : String(last) }))
           return
         }
         setHeld(got)
-        const here = got.rows.map((r) => r.id)
-        setChosen((now) => now.filter((x) => here.includes(x)))
       },
       (err) => {
         if (live) setError(message(err))
@@ -124,13 +183,13 @@ export function CollectionPanel({
     return () => {
       live = false
     }
-  }, [session.status, id, page, reloads, router])
+  }, [session.status, id, page, sort, reverse, search, reloads, router, path, params])
 
   if (session.status === "unknown") {
     return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
   }
   if (session.status === "out") {
-    return <SignInFirst next={`/u/${id}`}>This is one of your lists, so it needs you.</SignInFirst>
+    return <SignInFirst next={path}>This is one of your lists, so it needs you.</SignInFirst>
   }
   if (error) {
     return (
@@ -138,7 +197,9 @@ export function CollectionPanel({
         <p role="alert" className="text-red-400">
           {error}
         </p>
-        <Back />
+        <Link href="/u" className="mt-3 inline-block text-accent hover:underline">
+          All lists
+        </Link>
       </div>
     )
   }
@@ -148,6 +209,11 @@ export function CollectionPanel({
 
   const here = held.rows.map((r) => r.id)
   const allOnPage = here.length > 0 && here.every((x) => chosen.includes(x))
+  // ADDED first: it is the one this page owns, and the one that always works.
+  const sorts: Sort[] = [ADDED, ...(held.tooBig ? [] : LIST[held.list.type].sorts)]
+  // On a list too long to hand over, an order named in the address was not the
+  // one used. Marking the one that was is the only honest thing to highlight.
+  const showing = held.tooBig ? ADDED.value : sort
 
   async function act(change: () => Promise<unknown>) {
     setBusy(true)
@@ -163,78 +229,121 @@ export function CollectionPanel({
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-xl font-bold sm:text-2xl">
-          {held.list.name}
-          <span className="ml-2 text-sm font-normal tabular-nums text-muted">
-            {held.count.toLocaleString()}
-          </span>
-        </h1>
-        <div className="flex shrink-0 items-center gap-3">
-          {held.rows.length > 0 && !selecting && (
-            <button
-              type="button"
-              onClick={() => setSelecting(true)}
-              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-white"
-            >
-              <ListChecks className="h-3 w-3" aria-hidden />
-              Select
-            </button>
-          )}
-          <Back />
-        </div>
-      </div>
+    <div className="flex w-full gap-6">
+      <CollectionColumn
+        lists={held.mine}
+        current={id}
+        className="hidden w-52 shrink-0 overflow-y-auto lg:flex"
+      />
 
-      {held.rows.length === 0 ? (
-        <p className="text-sm text-muted">
-          Nothing on this list yet. Saving something from its own page puts it here --{" "}
-          <Link href={`/${held.list.type}`} className="text-accent hover:underline">
-            browse {LIST[held.list.type].label.toLowerCase()}
-          </Link>
-          .
-        </p>
-      ) : (
-        <>
-          <Results
-            type={held.list.type}
-            rows={held.rows}
-            wrap={
-              selecting
-                ? (card) => (
-                    <Selectable
-                      on={chosen.includes(card.id)}
-                      grid={card.grid}
-                      onToggle={() =>
-                        setChosen((now) =>
-                          now.includes(card.id)
-                            ? now.filter((x) => x !== card.id)
-                            : [...now, card.id],
-                        )
-                      }
-                    >
-                      {card.node}
-                    </Selectable>
-                  )
-                : undefined
-            }
-          />
-          <Pagination
-            path={`/u/${id}`}
-            params={params}
-            page={page}
-            count={held.count}
-            pageSize={PAGE_SIZE}
-          />
-        </>
-      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="truncate text-xl font-bold sm:text-2xl">{held.list.name}</h1>
+            <span className="shrink-0 text-sm tabular-nums text-muted">
+              {held.count.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <CollectionPicker lists={held.mine} current={id} className="lg:hidden" />
+            {held.rows.length > 0 && !selecting && (
+              <button
+                type="button"
+                onClick={() => setSelecting(true)}
+                className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <ListChecks className="h-3.5 w-3.5" aria-hidden />
+                Select
+              </button>
+            )}
+          </div>
+        </div>
+
+        {(held.count > 0 || search) && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SortLinks
+              path={path}
+              params={params}
+              sorts={sorts}
+              active={showing}
+              reverse={reverse}
+            />
+            <SearchInList path={path} params={params} initial={search} />
+          </div>
+        )}
+
+        {held.tooBig && (
+          <p className="text-xs text-muted">
+            This list is longer than can be sorted or searched here, so it stays in the order you
+            made it.
+          </p>
+        )}
+
+        {held.rows.length === 0 ? (
+          <p className="text-sm text-muted">
+            {search ? (
+              <>
+                Nothing on this list matches that.{" "}
+                <Link
+                  href={withParams(path, params, { q: null, page: null })}
+                  className="text-accent hover:underline"
+                >
+                  Clear the search
+                </Link>
+                .
+              </>
+            ) : (
+              <>
+                Nothing on this list yet. Saving something from its own page puts it here --{" "}
+                <Link href={`/${held.list.type}`} className="text-accent hover:underline">
+                  browse {LIST[held.list.type].label.toLowerCase()}
+                </Link>
+                .
+              </>
+            )}
+          </p>
+        ) : (
+          <>
+            <Results
+              type={held.list.type}
+              rows={held.rows}
+              wrap={
+                selecting
+                  ? (card) => (
+                      <Selectable
+                        on={chosen.includes(card.id)}
+                        grid={card.grid}
+                        onToggle={() =>
+                          setChosen((now) =>
+                            now.includes(card.id)
+                              ? now.filter((x) => x !== card.id)
+                              : [...now, card.id],
+                          )
+                        }
+                      >
+                        {card.node}
+                      </Selectable>
+                    )
+                  : undefined
+              }
+            />
+            <Pagination
+              path={path}
+              params={params}
+              page={page}
+              count={held.count}
+              pageSize={PAGE_SIZE}
+            />
+          </>
+        )}
+      </div>
 
       {selecting && (
         <SelectBar
           chosen={chosen.length}
           pageSize={here.length}
           allOnPage={allOnPage}
-          lists={held.elsewhere}
+          lists={held.mine.filter((l) => l.type === held.list.type && l.id !== id)}
           busy={busy}
           error={trouble}
           onAll={() => setChosen(allOnPage ? [] : here)}
@@ -251,14 +360,48 @@ export function CollectionPanel({
   )
 }
 
-function Back() {
+/** Searching inside one list. Like the listings' own search box it navigates
+ *  on submit rather than on every keystroke, and for the same reason: each
+ *  query is a round trip, and a reader typing a title does not want seven. */
+function SearchInList({
+  path,
+  params,
+  initial,
+}: {
+  path: string
+  params: Params
+  initial: string
+}) {
+  const router = useRouter()
+
   return (
-    <Link
-      href="/u"
-      className="flex shrink-0 items-center gap-1 text-xs text-muted transition-colors hover:text-white"
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        const term = String(new FormData(e.currentTarget).get("q") ?? "")
+        router.push(withParams(path, params, { q: term || null, page: null }))
+      }}
+      className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5"
     >
-      <ArrowLeft className="h-3 w-3" aria-hidden />
-      All lists
-    </Link>
+      <ControlLabel className="mr-0">In list</ControlLabel>
+      <Search className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+      <input
+        name="q"
+        type="search"
+        defaultValue={initial}
+        placeholder="Search"
+        aria-label="Search this list"
+        className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted"
+      />
+      {initial && (
+        <Link
+          href={withParams(path, params, { q: null, page: null })}
+          aria-label="Clear the search"
+          className="shrink-0 text-muted transition-colors hover:text-white"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      )}
+    </form>
   )
 }
