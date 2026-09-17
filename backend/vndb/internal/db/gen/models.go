@@ -349,6 +349,22 @@ type TraitsParent struct {
 	Main   bool  `db:"main" json:"main"`
 }
 
+type TransPassage struct {
+	TargetLang string  `db:"target_lang" json:"target_lang"`
+	SourceHash []byte  `db:"source_hash" json:"source_hash"`
+	SourceText string  `db:"source_text" json:"source_text"`
+	TargetText string  `db:"target_text" json:"target_text"`
+	EntityType *string `db:"entity_type" json:"entity_type"`
+}
+
+type TransTerm struct {
+	TargetLang string  `db:"target_lang" json:"target_lang"`
+	SourceKey  string  `db:"source_key" json:"source_key"`
+	SourceText string  `db:"source_text" json:"source_text"`
+	TargetText string  `db:"target_text" json:"target_text"`
+	Category   *string `db:"category" json:"category"`
+}
+
 type Vn struct {
 	ID          int32    `db:"id" json:"id"`
 	Image       *int32   `db:"image" json:"image"`

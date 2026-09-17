@@ -1,7 +1,11 @@
 version: "2"
 sql:
   - engine: postgresql
-    schema: internal/db/ddl
+    # The trans schema is not part of a generation, so its DDL lives apart
+    # from the mirror's -- but sqlc still has to know the tables exist.
+    schema:
+      - internal/db/ddl
+      - internal/trans/ddl
     queries: internal/db/sql
     gen:
       go:

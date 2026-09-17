@@ -29,7 +29,10 @@ const usage = `neovndb
   db promote [--force]   run db check, then swap vndb_next into place (atomic)
   db rollback            swap vndb_prev back
   db drop <schema>       drop one generation schema
-  db verify              round-trip the generated query layer, then roll back`
+  db verify              round-trip the generated query layer, then roll back
+
+  trans status           what the translation corpus holds
+  trans seed <file>      load a corpus; refuses the file if any markup is lost`
 
 func main() {
 	if err := run(); err != nil {
@@ -59,6 +62,8 @@ func run() error {
 		return runUpdate(ctx, args[1:])
 	case "db":
 		return runDB(ctx, args[1:])
+	case "trans":
+		return runTrans(ctx, args[1:])
 	case "help", "-h", "--help":
 		fmt.Println(usage)
 		return nil

@@ -82,14 +82,16 @@ export const LIST: Record<string, ListSpec> = {
   g: {
     type: "tag",
     label: "Tags",
-    fields: ["name", "category", "description", "vn_count"].join(","),
+    fields: ["name", "category", "description", "vn_count",
+      "translation.name", "translation.description"].join(","),
     sorts: [BY_NAME, { value: "vn_count", label: "Visual novels", descending: true }],
     defaultSort: "vn_count",
   },
   i: {
     type: "trait",
     label: "Traits",
-    fields: ["name", "group_name", "description", "char_count", "sexual"].join(","),
+    fields: ["name", "group_name", "description", "char_count", "sexual",
+      "translation.name", "translation.description", "group_translation"].join(","),
     sorts: [BY_NAME, { value: "char_count", label: "Characters", descending: true }],
     defaultSort: "char_count",
   },
