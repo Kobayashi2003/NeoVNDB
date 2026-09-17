@@ -95,8 +95,11 @@ func importLegacy(ctx context.Context, st *store.Store, oldURL string, log *slog
 	if err != nil {
 		return err
 	}
-	log.Info("imported", "users", report.Users,
-		"collections", report.Collections, "marks", report.Marks)
+	log.Info("imported", "users", report.Users, "collections", report.Collections,
+		"marks", report.Marks, "ratings", report.Ratings)
+	if report.Unfit > 0 {
+		log.Warn("left behind: ratings the schema here cannot hold", "rows", report.Unfit)
+	}
 	for _, name := range report.Skipped {
 		log.Warn("left alone: that username is already taken here", "username", name)
 	}

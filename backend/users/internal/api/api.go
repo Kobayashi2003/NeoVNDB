@@ -67,6 +67,11 @@ func (s *Server) Routes() http.Handler {
 	// "Which of my lists hold this", which is what a detail page asks.
 	mux.HandleFunc("GET /holding/{item}", s.signedIn(s.holding))
 
+	// And what the reader thought of it, which the same page asks next.
+	mux.HandleFunc("GET /ratings/{item}", s.signedIn(s.rating))
+	mux.HandleFunc("PUT /ratings/{item}", s.signedIn(s.setRating))
+	mux.HandleFunc("DELETE /ratings/{item}", s.signedIn(s.clearRating))
+
 	return mux
 }
 
