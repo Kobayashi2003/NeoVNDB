@@ -7,7 +7,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ICON } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
@@ -129,7 +129,18 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
       </div>
 
       {vn.relations.length > 0 && (
-        <TitledCard title="Relations">
+        <TitledCard
+          title="Relations"
+          action={
+            <Link
+              href={`/${vn.id}/rg`}
+              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
+            >
+              <Share2 className="h-3 w-3" aria-hidden />
+              Graph
+            </Link>
+          }
+        >
           <VNRelations relations={vn.relations} />
         </TitledCard>
       )}

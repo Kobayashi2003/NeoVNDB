@@ -55,12 +55,12 @@
 # (/vn, /img/..., /login).
 
 handle_path /vndbserve/* {
-	# The read surface the frontend uses. The relation graph, the admin and
-	# import commands and anything else the binary grows are not here, and are
-	# therefore loopback-only until someone adds them on purpose.
+	# The read surface the frontend uses. The admin and import commands, and
+	# anything else the binary grows, are not here and are therefore
+	# loopback-only until someone adds them on purpose.
 	@neovndb_read {
 		method GET HEAD
-		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|meta/(generation|fields/[a-z]+)|health)$
+		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|meta/(generation|fields/[a-z]+)|health)$
 	}
 	handle @neovndb_read {
 		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}

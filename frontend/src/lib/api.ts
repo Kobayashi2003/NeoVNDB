@@ -76,4 +76,10 @@ export async function list<T>(
   return get<Page<T>>(`/${type}`, params)
 }
 
+/** The relation graph, which is a shape of its own rather than a page of rows
+ *  -- so it has its own route on the API and its own call here. */
+export async function relationGraph<T>(id: string, depth: number): Promise<T> {
+  return get<T>(`/vn/${id}/relations`, { depth: String(depth) })
+}
+
 export { ApiError }
