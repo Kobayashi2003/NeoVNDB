@@ -10,7 +10,7 @@
  *  that only moves when dragged is one they have to discover. */
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { VN_RELATION } from "@/lib/enums"
@@ -35,8 +35,13 @@ const OTHER = "#9ca3af"
 
 export function RelationGraph({ graph }: { graph: Graph }) {
   const { original } = usePrefs()
-  const edges = tidyEdges(graph.edges)
-  const box = layout(graph, edges)
+  // Toggling which script names are shown re-renders this, and the layout does
+  // not depend on it -- so it is worked out once per graph rather than once
+  // per render.
+  const { edges, box } = useMemo(() => {
+    const edges = tidyEdges(graph.edges)
+    return { edges, box: layout(graph, edges) }
+  }, [graph])
 
   // Room for the arrowheads and the cards' own outlines at the edges.
   const pad = 24
@@ -67,7 +72,10 @@ export function RelationGraph({ graph }: { graph: Graph }) {
           height={box.height + pad * 2}
           viewBox={`${-pad} ${-pad} ${box.width + pad * 2} ${box.height + pad * 2}`}
           className="block"
-          role="img"
+          // No role="img": that makes the whole subtree presentational, and
+          // every title in here is a link. It is a group of links with a name,
+          // which is what it says it is.
+          role="group"
           aria-label={`${graph.nodes.length} related visual novels`}
         >
           <defs>

@@ -82,6 +82,9 @@ export const NODE_W = 184
 export const NODE_H = 54
 const GAP_X = 20
 const GAP_Y = 76
+/** How far a line joining two nodes in the same row bows out of it. Kept
+ *  under GAP_Y so such a line stays inside the gap below its own row. */
+const MAX_BOW = 60
 
 export interface Placed extends GraphNode {
   x: number
@@ -149,7 +152,9 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
     sweep(last - 1, -1, -1)
   }
 
-  const widest = Math.max(...rows.map((r) => r?.length ?? 0))
+  // Max of an empty list is -Infinity, and one node wide would make the gap
+  // count negative. Neither should be able to produce a size.
+  const widest = Math.max(1, ...rows.map((r) => r?.length ?? 0))
   const width = widest * NODE_W + (widest - 1) * GAP_X
   const nodes: Placed[] = []
   rows.forEach((row, depth) => {
@@ -161,11 +166,15 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
     })
   })
 
+  // Room under the last row for a line that bows. The walk does not return
+  // edges between two nodes on the frontier, so today nothing bows down there
+  // -- but the height should not be the reason it looks right.
+  const depthCount = Math.max(1, rows.length)
   return {
     nodes,
     at: new Map(nodes.map((n) => [n.id, n])),
     width,
-    height: rows.length * NODE_H + (rows.length - 1) * GAP_Y,
+    height: depthCount * NODE_H + (depthCount - 1) * GAP_Y + MAX_BOW,
     rows: rows.map((r) => r?.length ?? 0),
   }
 }
@@ -186,7 +195,7 @@ export function edgePath(a: Placed, b: Placed): string {
 
   if (a.y === b.y) {
     const y = a.y + NODE_H / 2
-    const lift = Math.min(60, 20 + Math.abs(bx - ax) / 6)
+    const lift = Math.min(MAX_BOW, 20 + Math.abs(bx - ax) / 6)
     return `M ${ax} ${y} C ${ax} ${y + lift}, ${bx} ${y + lift}, ${bx} ${y}`
   }
 
