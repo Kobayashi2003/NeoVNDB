@@ -97,6 +97,23 @@ SELECT s.id AS vn_id, s.scr, s.rid,
  WHERE s.id = ANY(@ids::int[])
  ORDER BY s.id, s.scr;
 
+-- name: VNEditionList :many
+-- The named versions of a work. They are what vn_staff.eid points at, so a
+-- credit can say which version of the game it was on.
+SELECT id AS vn_id, eid, lang, official, name
+  FROM vn_editions
+ WHERE id = ANY(@ids::int[])
+ ORDER BY id, eid;
+
+-- name: VNAnimeList :many
+-- Anime adapted from a work. vn_anime holds only the pairing, so the anime
+-- itself is joined for anything worth showing.
+SELECT va.id AS vn_id, a.id, a.type, a.year, a.title_romaji, a.title_kanji
+  FROM vn_anime va
+  JOIN anime a ON a.id = va.aid
+ WHERE va.id = ANY(@ids::int[])
+ ORDER BY va.id, a.year NULLS LAST, a.id;
+
 -- name: VNStaffList :many
 -- aid names the pen name credited on this work, so the alias row is joined
 -- rather than the person's main name.

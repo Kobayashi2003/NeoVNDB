@@ -13,7 +13,7 @@ import { ICON } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { shouldBlur } from "@/lib/content"
 import { publishers } from "@/lib/vn"
-import { length, releaseDate, score } from "@/lib/format"
+import { display, length, releaseDate, score } from "@/lib/format"
 import { Cover } from "@/components/ui/Cover"
 import { Icon } from "@/components/ui/Icon"
 import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoCard"
@@ -33,7 +33,7 @@ const DEVSTATUS_CLASS: Record<number, string> = {
 }
 
 export function VNInfoPanel({ vn }: { vn: VN }) {
-  const { sexual, violence } = usePrefs()
+  const { original, sexual, violence } = usePrefs()
   const blur = !!vn.image && shouldBlur(vn.image.sexual, vn.image.violence, sexual, violence)
   const published = publishers(vn.releases)
 
@@ -142,6 +142,27 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           }
         >
           <VNRelations relations={vn.relations} />
+        </TitledCard>
+      )}
+
+      {vn.anime.length > 0 && (
+        <TitledCard title="Anime">
+          {/* Not links: an anime is not a thing this database holds, so there
+              is nowhere here to send a reader who clicks one. */}
+          <ul className="flex flex-col gap-1 text-xs">
+            {vn.anime.map((a) => (
+              <li key={a.id} className="flex items-baseline gap-2">
+                <span className="min-w-0 flex-1 text-white/90">
+                  {display(a.title, a.original, original)}
+                </span>
+                <span className="shrink-0 text-muted">
+                  {a.type && enumLabel("ANIME_TYPE", a.type)}
+                  {a.type && a.year ? " " : ""}
+                  {a.year ?? ""}
+                </span>
+              </li>
+            ))}
+          </ul>
         </TitledCard>
       )}
 

@@ -231,6 +231,52 @@ func (q *Queries) GetVNs(ctx context.Context, ids []int32) ([]Vn, error) {
 	return items, nil
 }
 
+const vNAnimeList = `-- name: VNAnimeList :many
+SELECT va.id AS vn_id, a.id, a.type, a.year, a.title_romaji, a.title_kanji
+  FROM vn_anime va
+  JOIN anime a ON a.id = va.aid
+ WHERE va.id = ANY($1::int[])
+ ORDER BY va.id, a.year NULLS LAST, a.id
+`
+
+type VNAnimeListRow struct {
+	VnID        int32   `db:"vn_id" json:"vn_id"`
+	ID          int32   `db:"id" json:"id"`
+	Type        *string `db:"type" json:"type"`
+	Year        *int16  `db:"year" json:"year"`
+	TitleRomaji *string `db:"title_romaji" json:"title_romaji"`
+	TitleKanji  *string `db:"title_kanji" json:"title_kanji"`
+}
+
+// Anime adapted from a work. vn_anime holds only the pairing, so the anime
+// itself is joined for anything worth showing.
+func (q *Queries) VNAnimeList(ctx context.Context, ids []int32) ([]VNAnimeListRow, error) {
+	rows, err := q.db.Query(ctx, vNAnimeList, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VNAnimeListRow{}
+	for rows.Next() {
+		var i VNAnimeListRow
+		if err := rows.Scan(
+			&i.VnID,
+			&i.ID,
+			&i.Type,
+			&i.Year,
+			&i.TitleRomaji,
+			&i.TitleKanji,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const vNCharacterList = `-- name: VNCharacterList :many
 SELECT cv.vid AS vn_id, cv.role, cv.spoil, c.id, c.c_lang, c.image, c.sex
   FROM chars_vns cv
@@ -308,6 +354,49 @@ func (q *Queries) VNDevelopers(ctx context.Context, ids []int32) ([]VNDevelopers
 			&i.ID,
 			&i.Name,
 			&i.Latin,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const vNEditionList = `-- name: VNEditionList :many
+SELECT id AS vn_id, eid, lang, official, name
+  FROM vn_editions
+ WHERE id = ANY($1::int[])
+ ORDER BY id, eid
+`
+
+type VNEditionListRow struct {
+	VnID     int32   `db:"vn_id" json:"vn_id"`
+	Eid      int16   `db:"eid" json:"eid"`
+	Lang     *string `db:"lang" json:"lang"`
+	Official bool    `db:"official" json:"official"`
+	Name     string  `db:"name" json:"name"`
+}
+
+// The named versions of a work. They are what vn_staff.eid points at, so a
+// credit can say which version of the game it was on.
+func (q *Queries) VNEditionList(ctx context.Context, ids []int32) ([]VNEditionListRow, error) {
+	rows, err := q.db.Query(ctx, vNEditionList, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VNEditionListRow{}
+	for rows.Next() {
+		var i VNEditionListRow
+		if err := rows.Scan(
+			&i.VnID,
+			&i.Eid,
+			&i.Lang,
+			&i.Official,
+			&i.Name,
 		); err != nil {
 			return nil, err
 		}

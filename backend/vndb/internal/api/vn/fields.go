@@ -68,6 +68,17 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"extlinks": {Kind: query.Fragment, Source: "extlinks", Num: 5, // LIST vn_extlinks JOIN extlinks
 			Subfields: []string{"site", "label", "url"}},
 
+		// LIST -- the named versions of a work. Small and worth asking for
+		// beside staff, which is the only thing that refers to them.
+		"editions": {Kind: query.Fragment, Source: "editions", Num: 3, // LIST vn_editions
+			Subfields: []string{"eid", "name", "lang", "official"}},
+
+		// LIST + JOIN1 -- vn_anime holds only the pairing; everything shown
+		// comes from the anime row it points at. title/original are the usual
+		// romanisation-and-original pair, folded as everywhere else.
+		"anime": {Kind: query.Fragment, Source: "anime", Num: 2, // LIST vn_anime JOIN anime
+			Subfields: []string{"id", "type", "year", "title", "original"}},
+
 		// REL -- another entity, plus whatever the relation table holds itself.
 		"tags": {Kind: query.Fragment, Source: "tags", Num: 50, // REL tags_vn_direct -> tags
 			Edge: []string{"rating", "spoiler", "lie"}, Target: vndb.TypeTag},
@@ -96,6 +107,8 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"tags":        loadTags,
 		"relations":   loadRelations,
 		"developers":  loadDevelopers,
+		"editions":    loadEditions,
+		"anime":       loadAnime,
 		"staff":       loadStaff,
 		"releases":    loadReleases,
 		"characters":  loadCharacters,

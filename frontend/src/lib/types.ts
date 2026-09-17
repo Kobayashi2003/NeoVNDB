@@ -122,6 +122,27 @@ export interface StaffCredit {
   original: string | null
   role: string
   note: string | null
+  /** Which named version of the work this credit is for; null is the work
+   *  itself. It matches an Edition's eid on the same VN. */
+  eid: number | null
+}
+
+/** A named version of a work -- a port, a premium edition, a translation.
+ *  Worth having mostly because the staff credits point at these. */
+export interface Edition {
+  eid: number
+  name: string
+  /** The language the edition is in, where that is what sets it apart. */
+  lang: string | null
+  official: boolean
+}
+
+export interface Anime {
+  id: number
+  type: string | null
+  year: number | null
+  title: string
+  original: string | null
 }
 
 export interface Medium {
@@ -272,6 +293,8 @@ export interface VN {
   tags: Tag[]
   characters: Character[]
   staff: StaffCredit[]
+  editions: Edition[]
+  anime: Anime[]
   releases: Release[]
   screenshots: Screenshot[]
   relations: Relation[]

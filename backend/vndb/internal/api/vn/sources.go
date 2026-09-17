@@ -202,6 +202,73 @@ func loadDevelopers(ctx context.Context, r *Resolver, page []gen.Vn,
 	return query.Relate(ctx, r.cat, vndb.TypeVN, "developers", edges, sel, byID)
 }
 
+// loadEditions reads the named versions of a work. They are worth returning on
+// their own only because the staff credits point at them: a credit carries an
+// eid and nothing else could say which version that is.
+func loadEditions(ctx context.Context, r *Resolver, page []gen.Vn,
+	_ query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.VNEditionList(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	grouped := map[int32][]map[string]any{}
+	for _, e := range rows {
+		grouped[e.VnID] = append(grouped[e.VnID], map[string]any{
+			"eid": e.Eid, "name": e.Name, "lang": e.Lang, "official": e.Official,
+		})
+	}
+	for id, obj := range byID {
+		obj["editions"] = query.OrEmpty(grouped[id])
+	}
+	return nil
+}
+
+// loadAnime reads what a work was adapted into.
+//
+// The two titles are the pair every name here is -- a romanisation and the
+// original script -- but they are folded by hand rather than through
+// PreferLatin and OriginalOf. Those take the original as a plain string, and
+// this table is the other way round from vn_titles: the romanisation is always
+// there and the original is not. An absent one would reach them as "" and come
+// back out as "", which is a different answer from "there isn't one".
+func loadAnime(ctx context.Context, r *Resolver, page []gen.Vn,
+	_ query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.VNAnimeList(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	grouped := map[int32][]map[string]any{}
+	for _, a := range rows {
+		title := ""
+		if a.TitleRomaji != nil {
+			title = *a.TitleRomaji
+		}
+		grouped[a.VnID] = append(grouped[a.VnID], map[string]any{
+			"id":       a.ID,
+			"type":     blankToNil(a.Type),
+			"year":     a.Year,
+			"title":    title,
+			"original": blankToNil(a.TitleKanji),
+		})
+	}
+	for id, obj := range byID {
+		obj["anime"] = query.OrEmpty(grouped[id])
+	}
+	return nil
+}
+
+// blankToNil is EmptyToNil for a column that is already nullable: absent and
+// present-but-empty are the same thing to a reader, and only one of them
+// should reach one.
+func blankToNil(s *string) *string {
+	if s == nil || *s == "" {
+		return nil
+	}
+	return s
+}
+
 func loadStaff(ctx context.Context, r *Resolver, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 

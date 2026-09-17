@@ -95,7 +95,7 @@ export function VNPage({ vn }: { vn: VN }) {
 
           {vn.staff.length > 0 && (
             <Section title="Staff" count={vn.staff.length}>
-              <VNStaff staff={vn.staff} />
+              <VNStaff staff={vn.staff} editions={vn.editions} />
             </Section>
           )}
 
