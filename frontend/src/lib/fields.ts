@@ -16,7 +16,12 @@ export const VN_PAGE = [
   "anime.id", "anime.type", "anime.year", "anime.title", "anime.original",
 
   // Tags, with the score and spoiler level the page filters on.
+  // translation.name is what the chip shows in original-text mode; tags have
+  // no original script of their own, so this is the only thing that toggle
+  // can put there. The description is not asked for: nothing on this page
+  // shows it.
   "tags.name", "tags.category", "tags.rating", "tags.spoiler", "tags.lie",
+  "tags.translation.name",
 
   // Characters. The physical details are all columns on the character row,
   // so asking for them costs the same read as asking for the name.
@@ -29,6 +34,7 @@ export const VN_PAGE = [
   "characters.aliases.name", "characters.aliases.latin", "characters.aliases.spoiler",
   "characters.traits.name", "characters.traits.group_name",
   "characters.traits.spoiler", "characters.traits.lie",
+  "characters.traits.translation.name", "characters.traits.group_translation",
   "characters.seiyuu.name", "characters.seiyuu.note", "characters.seiyuu.vn",
 
   // Staff, credited under the name used on this work.
@@ -64,6 +70,7 @@ export const CHARACTER_PAGE = [
   "aliases.name", "aliases.latin", "aliases.spoiler",
 
   "traits.name", "traits.group_name", "traits.spoiler", "traits.lie",
+  "traits.translation.name", "traits.group_translation",
 
   // Appearances. released comes from the visual novel itself, which is what
   // the list offers to sort by.
@@ -130,14 +137,17 @@ export const STAFF_PAGE = [
 /** The tag page. */
 export const TAG_PAGE = [
   "name", "aliases", "description", "category", "searchable", "applicable", "vn_count",
-  "parents.name", "parents.main",
-  "children.name", "children.vn_count",
+  // Both halves here: this is the one page that shows the description.
+  "translation.name", "translation.description",
+  "parents.name", "parents.main", "parents.translation.name",
+  "children.name", "children.vn_count", "children.translation.name",
 ].join(",")
 
 /** The trait page. */
 export const TRAIT_PAGE = [
   "name", "aliases", "description", "searchable", "applicable", "sexual", "char_count",
-  "group_id", "group_name",
-  "parents.name", "parents.main",
-  "children.name", "children.char_count",
+  "group_id", "group_name", "group_translation",
+  "translation.name", "translation.description",
+  "parents.name", "parents.main", "parents.translation.name",
+  "children.name", "children.char_count", "children.translation.name",
 ].join(",")

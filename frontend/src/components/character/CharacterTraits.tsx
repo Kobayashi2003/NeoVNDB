@@ -9,6 +9,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { groupTraits } from "@/lib/traits"
 import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
+import { display } from "@/lib/format"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { SpoilerControl } from "@/hooks/useSpoilerLevel"
 import type { Trait } from "@/lib/types"
@@ -20,7 +21,7 @@ export function CharacterTraits({
   traits: Trait[]
   spoiler: SpoilerControl
 }) {
-  const { explicit } = usePrefs()
+  const { explicit, original } = usePrefs()
   const grouped = groupTraits(traits, spoiler.level, explicit)
 
   return (
@@ -30,7 +31,10 @@ export function CharacterTraits({
         // down the headings without reading the traits beside them.
         <div key={group} className="flex flex-col gap-1 sm:flex-row sm:gap-3">
           <p className="shrink-0 pt-1 text-xs font-semibold uppercase tracking-wider text-muted sm:w-32">
-            {group}
+            {/* Grouping stays keyed on the English name -- the group order and
+                the sexual gate are written in it -- and only the heading
+                changes, taken from any trait in the group. */}
+            {display(group, list[0]?.group_translation ?? null, original)}
           </p>
           <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
             {list.map((t) => (
@@ -49,7 +53,7 @@ export function CharacterTraits({
                   t.spoiler === 2 && "border border-orange-500/40",
                 )}
               >
-                {t.name}
+                {display(t.name, t.translation?.name ?? null, original)}
               </Link>
             ))}
           </div>

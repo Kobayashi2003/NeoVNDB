@@ -189,12 +189,17 @@ export function StaffCard({ row }: { row: StaffRow }) {
 }
 
 export function TagCard({ row }: { row: TagRow }) {
+  const { original } = usePrefs()
+  const description = (original && row.translation?.description) || row.description
+
   return (
     <Row href={`/${row.id}`}>
       <span className="min-w-0 flex-1">
-        <span className="text-sm">{row.name}</span>
-        {row.description && (
-          <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(row.description)}</span>
+        <span className="text-sm">
+          {display(row.name, row.translation?.name ?? null, original)}
+        </span>
+        {description && (
+          <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(description)}</span>
         )}
       </span>
       <span className="shrink-0 text-xs text-muted">{enumLabel("CATEGORY", row.category)}</span>
@@ -206,15 +211,22 @@ export function TagCard({ row }: { row: TagRow }) {
 }
 
 export function TraitCard({ row }: { row: TraitRow }) {
+  const { original } = usePrefs()
+  const description = (original && row.translation?.description) || row.description
+
   return (
     <Row href={`/${row.id}`}>
       <span className="min-w-0 flex-1">
         <span className="text-sm">
-          {row.group_name && <span className="text-muted">{row.group_name} / </span>}
-          {row.name}
+          {row.group_name && (
+            <span className="text-muted">
+              {display(row.group_name, row.group_translation, original)} /{" "}
+            </span>
+          )}
+          {display(row.name, row.translation?.name ?? null, original)}
         </span>
-        {row.description && (
-          <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(row.description)}</span>
+        {description && (
+          <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(description)}</span>
         )}
       </span>
       {row.sexual && <span className="shrink-0 text-xs text-rose-400/80">sexual</span>}

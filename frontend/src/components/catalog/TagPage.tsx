@@ -8,13 +8,14 @@
  *  checking their work means. */
 
 import Link from "next/link"
-import { BBCode } from "@/lib/bbcode"
 import { enumLabel } from "@/lib/enums"
 import type { Params } from "@/lib/href"
 import { countOf } from "@/lib/results"
 import { Collapsible } from "@/components/ui/Collapsible"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
 import { DetailControls } from "@/components/ui/DetailControls"
+import { Description } from "@/components/ui/Description"
+import { Name } from "@/components/ui/Name"
 import { CatalogPage } from "./CatalogPage"
 import type { TagDetail } from "@/lib/types"
 
@@ -27,7 +28,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
 
   return (
     <CatalogPage
-      title={t.name}
+      title={<Name name={t.name} original={t.translation?.name ?? null} />}
       path={path}
       params={params}
       empty="No visual novels carry this tag."
@@ -66,7 +67,10 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
           {t.description && (
             <TitledCard title="About">
               <Collapsible>
-                <BBCode text={t.description} />
+                <Description
+                  text={t.description}
+                  translation={t.translation?.description}
+                />
               </Collapsible>
             </TitledCard>
           )}
@@ -76,7 +80,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
               <div className="flex flex-col gap-0.5 text-xs">
                 {t.parents.map((p) => (
                   <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent">
-                    {p.name}
+                    <Name name={p.name} original={p.translation?.name ?? null} />
                     {/* Several parents are possible; one of them is the one the
                         tag is filed under. */}
                     {p.main && t.parents.length > 1 && (
@@ -97,7 +101,9 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
                     href={`/${c.id}`}
                     className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent"
                   >
-                    <span className="truncate">{c.name}</span>
+                    <span className="truncate">
+                      <Name name={c.name} original={c.translation?.name ?? null} />
+                    </span>
                     <span className="shrink-0 tabular-nums text-muted">
                       {c.vn_count.toLocaleString()}
                     </span>

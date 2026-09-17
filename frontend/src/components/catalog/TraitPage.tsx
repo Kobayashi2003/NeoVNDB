@@ -9,12 +9,13 @@
  *  group is a trait in its own right that can be opened. */
 
 import Link from "next/link"
-import { BBCode } from "@/lib/bbcode"
 import type { Params } from "@/lib/href"
 import { countOf } from "@/lib/results"
 import { Collapsible } from "@/components/ui/Collapsible"
 import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
 import { DetailControls } from "@/components/ui/DetailControls"
+import { Description } from "@/components/ui/Description"
+import { Name } from "@/components/ui/Name"
 import { CatalogPage } from "./CatalogPage"
 import type { TraitDetail } from "@/lib/types"
 
@@ -27,14 +28,14 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
 
   return (
     <CatalogPage
-      title={t.name}
+      title={<Name name={t.name} original={t.translation?.name ?? null} />}
       subtitle={
         t.group_name &&
         t.group_id && (
           <p className="mt-1 text-sm text-muted">
             in{" "}
             <Link href={`/${t.group_id}`} className="hover:text-accent">
-              {t.group_name}
+              <Name name={t.group_name} original={t.group_translation} />
             </Link>
           </p>
         )
@@ -81,7 +82,10 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           {t.description && (
             <TitledCard title="About">
               <Collapsible>
-                <BBCode text={t.description} />
+                <Description
+                  text={t.description}
+                  translation={t.translation?.description}
+                />
               </Collapsible>
             </TitledCard>
           )}
@@ -91,7 +95,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
               <div className="flex flex-col gap-0.5 text-xs">
                 {t.parents.map((p) => (
                   <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent">
-                    {p.name}
+                    <Name name={p.name} original={p.translation?.name ?? null} />
                     {p.main && t.parents.length > 1 && (
                       <span className="ml-1.5 text-muted">(main)</span>
                     )}
@@ -110,7 +114,9 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
                     href={`/${c.id}`}
                     className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent"
                   >
-                    <span className="truncate">{c.name}</span>
+                    <span className="truncate">
+                      <Name name={c.name} original={c.translation?.name ?? null} />
+                    </span>
                     <span className="shrink-0 tabular-nums text-muted">
                       {c.char_count.toLocaleString()}
                     </span>

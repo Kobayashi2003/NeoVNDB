@@ -11,13 +11,14 @@ import { cn } from "@/lib/utils"
 import { enumLabel } from "@/lib/enums"
 import { useSpoilerLevel } from "@/hooks/useSpoilerLevel"
 import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
+import { display } from "@/lib/format"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Tag } from "@/lib/types"
 
 const CATEGORIES = ["cont", "ero", "tech"] as const
 
 export function VNTags({ tags }: { tags: Tag[] }) {
-  const { explicit } = usePrefs()
+  const { explicit, original } = usePrefs()
   const spoiler = useSpoilerLevel(
     tags.some((t) => t.spoiler === 1),
     tags.some((t) => t.spoiler === 2),
@@ -69,7 +70,7 @@ export function VNTags({ tags }: { tags: Tag[] }) {
                     tag.spoiler === 2 && "border border-orange-500/40",
                   )}
                 >
-                  <span>{tag.name}</span>
+                  <span>{display(tag.name, tag.translation?.name ?? null, original)}</span>
                   <span
                     className={cn(
                       "font-mono",

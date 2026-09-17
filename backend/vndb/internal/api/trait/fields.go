@@ -29,6 +29,15 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Trait]{
 		"aliases":     {Row: func(t gen.Trait) any { return query.SplitLines(t.Alias) }},       // traits.alias, newline-separated -> array
 		"description": {Row: func(t gen.Trait) any { return query.EmptyToNil(t.Description) }}, // traits.description; '' -> null
 
+		// JOIN1 -- what this is called in the language the trans schema holds.
+		// vndb writes these names and descriptions in English only, so unlike
+		// a VN title there is no original script to fall back to: the value
+		// here is something this project supplies, and it is absent until
+		// somebody supplies it. Keyed by the English text, not by id, so it
+		// survives a re-import; see internal/trans.
+		"translation": {Kind: query.Fragment, Source: "translation", Num: 1, // JOIN1 trans.terms + trans.passages
+			Subfields: []string{"lang", "name", "description"}},
+
 		// DERIV -- on the traits row, but filled by derive/03_traits.sql: a
 		// count over chars_traits_inherit, a table this import builds. It
 		// reads like a stored total and is really "how many characters carry
@@ -40,6 +49,8 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Trait]{
 		// rather than "Blonde").
 		"group_id":   {Source: "group"}, // JOIN1 traits g WHERE g.id = traits.gid
 		"group_name": {Source: "group"}, // JOIN1 traits g WHERE g.id = traits.gid
+		// JOIN1 -- the group's name in the target language; see "translation".
+		"group_translation": {Source: "group"}, // JOIN1 traits g -> trans.terms
 
 		// REL -- traits_parents read both ways. main marks the parent a trait
 		// is filed under when it has several.
@@ -49,9 +60,10 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Trait]{
 			Edge: []string{"main"}, Target: vndb.TypeTrait},
 	},
 	Sources: map[string]source{
-		"group":    loadGroup,
-		"parents":  loadParents,
-		"children": loadChildren,
+		"translation": loadTranslation,
+		"group":       loadGroup,
+		"parents":     loadParents,
+		"children":    loadChildren,
 	},
 })
 

@@ -180,7 +180,7 @@ export function VNCharacterCard({
             {traits.groups.map(([group, list]) => (
               <div key={group}>
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  {group}
+                  {display(group, list[0]?.group_translation ?? null, original)}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {list.map((t) => (
@@ -197,7 +197,7 @@ export function VNCharacterCard({
                         t.spoiler === 2 && "border border-orange-500/40",
                       )}
                     >
-                      {t.name}
+                      {display(t.name, t.translation?.name ?? null, original)}
                     </Link>
                   ))}
                 </div>

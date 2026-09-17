@@ -28,8 +28,12 @@ const (
 	// What one request may ask for. These bound work, not correctness, so they
 	// are settings: what a deployment can afford differs, and a private
 	// instance serving one frontend can afford far more than a public one.
-	defaultPageSize      = 24
-	defaultMaxPageSize   = 100
+	defaultPageSize    = 24
+	defaultMaxPageSize = 100
+	// The language the trans schema holds translations into. vndb writes tag
+	// and trait text in English only, and this is what a reader who wants it
+	// in their own language gets instead.
+	defaultTransLang     = "ja"
 	defaultMaxIDs        = 1000
 	defaultMaxFieldDepth = 3
 	// Estimated field values in a response, priced from each level's declared
@@ -97,6 +101,7 @@ type Config struct {
 	// Bounds on a single request.
 	PageSize      int
 	MaxPageSize   int
+	TransLang     string
 	MaxIDs        int
 	MaxFieldDepth int
 	MaxCost       int
@@ -150,6 +155,7 @@ func Load() (*Config, error) {
 
 		PageSize:      envInt("NEOVNDB_PAGE_SIZE", defaultPageSize),
 		MaxPageSize:   envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
+		TransLang:     envString("NEOVNDB_TRANS_LANG", defaultTransLang),
 		MaxIDs:        envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
 		MaxFieldDepth: envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
 		MaxCost:       envInt("NEOVNDB_MAX_COST", defaultMaxCost),

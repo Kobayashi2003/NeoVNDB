@@ -16,9 +16,20 @@ export interface ExtLink {
   url: string
 }
 
+/** What something is called in the language the mirror holds translations
+ *  into. vndb writes tag and trait text in English only, so there is no
+ *  original script to fall back to: this is null until somebody supplies it,
+ *  and the reader's original-text toggle is what asks for it. */
+export interface Translation {
+  lang: string
+  name?: string | null
+  description?: string | null
+}
+
 export interface Tag {
   id: string
   name: string
+  translation: Translation | null
   category: "cont" | "ero" | "tech" | string
   /** 0 to 3. */
   rating: number
@@ -30,7 +41,9 @@ export interface Tag {
 export interface Trait {
   id: string
   name: string
+  translation: Translation | null
   group_name: string | null
+  group_translation: string | null
   spoiler: number
   /** Flagged as untrue of this character -- kept visible but struck, because
    *  it is part of what was assigned. */
@@ -356,6 +369,7 @@ export interface StaffRow {
 export interface TagRow {
   id: string
   name: string
+  translation: Translation | null
   category: string
   description: string | null
   vn_count: number
@@ -364,7 +378,9 @@ export interface TagRow {
 export interface TraitRow {
   id: string
   name: string
+  translation: Translation | null
   group_name: string | null
+  group_translation: string | null
   description: string | null
   char_count: number
   sexual: boolean
@@ -410,19 +426,21 @@ export interface StaffDetail {
 export interface TagDetail {
   id: string
   name: string
+  translation: Translation | null
   aliases: string[]
   description: string | null
   category: string
   searchable: boolean
   applicable: boolean
   vn_count: number
-  parents: { id: string; name: string; main: boolean }[]
-  children: { id: string; name: string; vn_count: number }[]
+  parents: { id: string; name: string; main: boolean; translation: Translation | null }[]
+  children: { id: string; name: string; vn_count: number; translation: Translation | null }[]
 }
 
 export interface TraitDetail {
   id: string
   name: string
+  translation: Translation | null
   aliases: string[]
   description: string | null
   searchable: boolean
@@ -431,6 +449,7 @@ export interface TraitDetail {
   char_count: number
   group_id: string | null
   group_name: string | null
-  parents: { id: string; name: string; main: boolean }[]
-  children: { id: string; name: string; char_count: number }[]
+  group_translation: string | null
+  parents: { id: string; name: string; main: boolean; translation: Translation | null }[]
+  children: { id: string; name: string; char_count: number; translation: Translation | null }[]
 }
