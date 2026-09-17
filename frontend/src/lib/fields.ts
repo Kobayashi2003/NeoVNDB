@@ -12,6 +12,9 @@ export const VN_PAGE = [
   "developers.name", "developers.original",
   "extlinks.site", "extlinks.label", "extlinks.url",
 
+  // What the work was adapted into. Small, and shown beside the relations.
+  "anime.id", "anime.type", "anime.year", "anime.title", "anime.original",
+
   // Tags, with the score and spoiler level the page filters on.
   "tags.name", "tags.category", "tags.rating", "tags.spoiler", "tags.lie",
 
@@ -29,7 +32,10 @@ export const VN_PAGE = [
   "characters.seiyuu.name", "characters.seiyuu.note", "characters.seiyuu.vn",
 
   // Staff, credited under the name used on this work.
-  "staff.name", "staff.original", "staff.role", "staff.note",
+  // eid says which named version a credit is for, and editions says what that
+  // version is; neither means much without the other.
+  "staff.name", "staff.original", "staff.role", "staff.note", "staff.eid",
+  "editions.eid", "editions.name", "editions.lang", "editions.official",
 
   // Releases: everything the row's icons are drawn from.
   "releases.title", "releases.released", "releases.rtype", "releases.minage",

@@ -19,6 +19,19 @@ export const ENUMS = {
     staff: "Staff",
   },
 
+  /* What an anime adaptation is (VNDB `anime.type`).
+     `mv` is the older spelling of `mov` and survives on a couple of rows, so
+     both are here rather than one of them showing as a code. */
+  "ANIME_TYPE": {
+    tv: "TV series",
+    ova: "OVA",
+    mov: "Movie",
+    mv: "Movie",
+    web: "Web",
+    spe: "Special",
+    oth: "Other",
+  },
+
   /* VN-to-VN relationship kinds (VNDB `relations.relation`) */
   'RELATION': {
     ser: "Same series",
