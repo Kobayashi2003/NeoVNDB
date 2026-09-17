@@ -65,3 +65,19 @@ CREATE TABLE IF NOT EXISTS marks (
 -- per page, and this is what makes it one index seek rather than a scan of
 -- everything the reader has ever saved.
 CREATE INDEX IF NOT EXISTS marks_item_idx ON marks (item);
+
+-- What a reader thought of something, one to five.
+--
+-- Not hung off a collection the way a mark is. A thing can sit on several
+-- lists at once and the reader still has exactly one opinion of it, so the
+-- type has to live on this row rather than being implied by a list -- which is
+-- also what makes "my rating" a property of the thing rather than of where it
+-- was filed.
+CREATE TABLE IF NOT EXISTS ratings (
+    user_id  integer     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    type     char(1)     NOT NULL,
+    item     integer     NOT NULL,
+    rating   smallint    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    rated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, type, item)
+);

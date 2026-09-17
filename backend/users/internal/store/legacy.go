@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -23,8 +24,7 @@ import (
 //
 // Passwords come across verbatim. They are in Werkzeug's scrypt format, which
 // internal/auth reads and retires on the owner's next sign-in; see legacy.go
-// there. Ratings are not brought across, because there is nothing here that
-// keeps one.
+// there.
 
 // LegacyReport says what an import did, so the operator can compare it with
 // what was in the old database rather than trust that it worked.
@@ -33,6 +33,10 @@ type LegacyReport struct {
 	Skipped     []string
 	Collections int
 	Marks       int
+	Ratings     int
+	// Rating rows this schema cannot hold. Counted rather than dropped in
+	// silence: an import that quietly loses rows is one nobody can check.
+	Unfit int
 }
 
 // The old table per type, and the letter this schema files it under.
@@ -126,6 +130,13 @@ func (s *Store) ImportLegacy(ctx context.Context, oldURL string) (*LegacyReport,
 		}
 		report.Collections += lists
 		report.Marks += marks
+
+		ratings, unfit, err := importRatings(ctx, old, tx, u.id, newID)
+		if err != nil {
+			return nil, fmt.Errorf("importing %s: %w", u.username, err)
+		}
+		report.Ratings += ratings
+		report.Unfit += unfit
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -152,6 +163,59 @@ func readLegacyUsers(ctx context.Context, old *pgxpool.Pool) ([]legacyUser, erro
 		out = append(out, u)
 	}
 	return out, rows.Err()
+}
+
+// importRatings copies what one reader thought of things. The old table is
+// already keyed the way this one is -- reader, kind, id -- so there is nothing
+// to transpose; only the range is checked, because a row outside it would be
+// refused by the column and take the whole import down with it.
+func importRatings(
+	ctx context.Context, old *pgxpool.Pool, tx pgx.Tx, oldUser, newUser int32,
+) (kept, unfit int, err error) {
+	rows, err := old.Query(ctx, `
+		SELECT type, mark_id, rating, created_at
+		  FROM ratings WHERE user_id = $1 ORDER BY id`, oldUser)
+	if err != nil {
+		return 0, 0, fmt.Errorf("reading ratings: %w", err)
+	}
+	type held struct {
+		kind   string
+		item   int32
+		rating int16
+		at     time.Time
+	}
+	var found []held
+	for rows.Next() {
+		var h held
+		if err := rows.Scan(&h.kind, &h.item, &h.rating, &h.at); err != nil {
+			rows.Close()
+			return 0, 0, err
+		}
+		found = append(found, h)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, 0, err
+	}
+
+	for _, h := range found {
+		if h.rating < 1 || h.rating > 5 || !slices.Contains(kinds, h.kind) {
+			// Not something this schema can hold. Skipped rather than made to
+			// fit, because there is no honest value to put in its place -- and
+			// counted, so the operator is told it happened.
+			unfit++
+			continue
+		}
+		tag, err := tx.Exec(ctx, `
+			INSERT INTO ratings (user_id, type, item, rating, rated_at)
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT DO NOTHING`, newUser, h.kind, h.item, h.rating, h.at)
+		if err != nil {
+			return kept, unfit, fmt.Errorf("rating %s%d: %w", h.kind, h.item, err)
+		}
+		kept += int(tag.RowsAffected())
+	}
+	return kept, unfit, nil
 }
 
 // importLists walks one reader's seven old tables and writes what it finds.

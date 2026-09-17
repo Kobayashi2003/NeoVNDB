@@ -137,6 +137,19 @@ export const removeMarks = (list: number, items: string[]) =>
 export const moveMarks = (from: number, to: number, items: string[]) =>
   call<{ changed: number }>("POST", `/collections/${from}/marks/move`, { items, to })
 
+/* --- What a reader thought of something ----------------------------------- */
+
+/** One to five, or null where they have not said. A rating is about the thing
+ *  rather than about any list it sits on, so it is asked for by id alone. */
+export const rating = (item: string) =>
+  call<{ rating: number | null }>("GET", `/ratings/${item}`).then((r) => r.rating)
+
+export const setRating = (item: string, value: number) =>
+  call<void>("PUT", `/ratings/${item}`, { rating: value })
+
+/** Taking an opinion back, which is not the same as giving it a low one. */
+export const clearRating = (item: string) => call<void>("DELETE", `/ratings/${item}`)
+
 /** What the service will refuse, said before it has to. */
 export const RULES = {
   username: "2 to 32 characters: letters, digits, - and _",
