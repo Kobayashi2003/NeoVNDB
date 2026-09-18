@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 import { Righteous } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/layout/Header"
+import { PrefsRendered } from "@/hooks/usePrefs"
+import { PREFS_COOKIE, readPrefs } from "@/lib/prefs"
 
 /** The wordmark, and nothing else. A display face is the wrong thing to read a
  *  paragraph in, so it is bound to a variable rather than to the page, and the
@@ -25,12 +28,20 @@ export const metadata: Metadata = {
   description: "A local mirror of the VNDB database.",
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/** Reading the reader's preferences here is what lets every page be rendered
+ *  in the script they asked for, rather than in English and then corrected.
+ *  It costs the static rendering of the three pages that had it -- a cookie is
+ *  per reader, so a page that depends on one cannot be one file for everybody. */
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const prefs = readPrefs((await cookies()).get(PREFS_COOKIE)?.value)
+
   return (
     <html lang="en" className={`${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <Header />
-        {children}
+        <PrefsRendered value={prefs}>
+          <Header />
+          {children}
+        </PrefsRendered>
       </body>
     </html>
   )
