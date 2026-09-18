@@ -13,10 +13,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ChevronDown, Library } from "lucide-react"
+import { ChevronDown, Library, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
-import { MenuPanel, menuItem } from "@/components/ui/Menu"
+import { MenuDivider, MenuPanel, menuItem } from "@/components/ui/Menu"
 import { SHORT, TYPES } from "./shelves"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
@@ -50,6 +50,20 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
 
       {open && (
         <MenuPanel ref={menu}>
+          {/* Below sm this is the only way to the search page: the bar has no
+              room for even an icon there. */}
+          <Link
+            href="/q"
+            onClick={() => setOpen(false)}
+            className={cn(menuItem(), "sm:hidden")}
+          >
+            <Search className="size-3.5 shrink-0 text-muted" aria-hidden />
+            Search everything
+          </Link>
+          <div className="sm:hidden">
+            <MenuDivider />
+          </div>
+
           {TYPES.map((type) => {
             const on = type === here
             return (

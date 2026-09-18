@@ -6,12 +6,16 @@
  *  page is about: arriving at a character from a visual novel should still say
  *  which shelf you are standing in front of.
  *
- *  Two forms of the same row. All seven fit side by side from 800px -- they
- *  need 465px, and the worst case, a name at its full cap beside the view
- *  button, still leaves them 476px. Measured, not estimated: 11px spare is too
- *  little to trust arithmetic with, so re-measure before adding anything here. Below that they collapse into one menu rather than a strip that
- *  scrolls sideways: a strip fit, in the sense that nothing overflowed, but
- *  the last shelves sat off the end of a bar nobody would think to drag.
+ *  Two forms of the same row. All seven fit side by side from 840px. Below
+ *  that they collapse into one menu rather than a strip that scrolls
+ *  sideways: a strip fit, in the sense that nothing overflowed, but the last
+ *  shelves sat off the end of a bar nobody would think to drag.
+ *
+ *  That 840 has moved twice, because every control added to the right of the
+ *  shelves takes width from the same place. At 840 the worst case -- a name at
+ *  its full cap, beside the view button and the search control -- leaves them
+ *  11px. It was 800 until a search icon cost 40 and left them 29 short.
+ *  Measured, never estimated: re-measure before adding anything here.
  *
  *  Either way it is one row at every width, which is what lets a page subtract
  *  `--header-h` from the viewport and trust the answer. */
@@ -19,10 +23,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
 import { SHORT, TYPES } from "./shelves"
 import { BrowseMenu } from "./BrowseMenu"
+import { SearchField } from "./SearchField"
 import { ViewMenu } from "./ViewMenu"
 import { UserMenu } from "@/components/user/UserMenu"
 
@@ -41,11 +47,11 @@ export function Header() {
           NeoVNDB
         </Link>
 
-        <BrowseMenu here={here} className="min-[800px]:hidden" />
+        <BrowseMenu here={here} className="min-[840px]:hidden" />
 
         <nav
           aria-label="Browse"
-          className="hidden min-w-0 flex-1 items-center gap-1 min-[800px]:flex"
+          className="hidden min-w-0 flex-1 items-center gap-1 min-[840px]:flex"
         >
           {TYPES.map((type) => (
             <Link
@@ -64,6 +70,20 @@ export function Header() {
             </Link>
           ))}
         </nav>
+
+        {/* The box where there is room for one, an icon where there is room
+            only for that, and on the narrowest screens neither: below sm the
+            browse menu carries it, because 40px is the difference between the
+            bar fitting and not at 320 with a name at its full cap. */}
+        <SearchField className="hidden lg:flex lg:w-52 xl:w-64" />
+        <Link
+          href="/q"
+          aria-label="Search everything"
+          title="Search everything"
+          className="hidden size-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/10 hover:text-white sm:flex lg:hidden"
+        >
+          <Search className="size-4" aria-hidden />
+        </Link>
 
         <ViewMenu />
         <UserMenu />
