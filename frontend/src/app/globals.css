@@ -73,6 +73,13 @@ body {
 .bg-surface:hover { background-color: var(--surface-hover); }
 .bg-elevated:hover { background-color: var(--elevated-hover); }
 
+/* The gutter is kept whether or not there is anything to scroll. Otherwise a
+   page that grows past the window after it is drawn -- a list that arrives
+   from the user service, a filter that is relaxed -- gains a scrollbar, and
+   everything centred on the page, header included, steps sideways by half
+   its width. Measured: 4px on /u, the moment a long list arrived. */
+html { scrollbar-gutter: stable; }
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--elevated); border-radius: 4px; }
@@ -99,7 +106,20 @@ body {
   animation: slide-up-fade 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
+/* A menu opening. It moves with `translate`, not `transform`: a menu near the
+   edge of the screen is pushed back by writing a transform on it (see
+   useKeptOnScreen), and an animated transform would override that while it
+   ran and then snap sideways when it stopped. The two properties compose. */
+@keyframes menu-in {
+  from { opacity: 0; translate: 0 -4px; }
+  to { opacity: 1; translate: 0 0; }
+}
+.animate-menu-in {
+  animation: menu-in 140ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
 /* Entrance animation is decorative; drop it when motion is unwelcome. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-slide-up-fade { animation: none; }
+  .animate-slide-up-fade,
+  .animate-menu-in { animation: none; }
 }

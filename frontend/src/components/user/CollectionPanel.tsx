@@ -47,6 +47,23 @@ import { SignInFirst } from "./SignInFirst"
 import { SelectBar, Selectable } from "./SelectBar"
 import { CollectionColumn, CollectionPicker } from "./CollectionSwitcher"
 
+/** The page's two columns. From lg up each scrolls on its own inside a
+ *  viewport-high box, as a detail page's do (see DetailShell): a long list of
+ *  lists should not scroll away the list being read, nor the other way round.
+ *
+ *  Both keep their scrollbar's gutter, so that a search or a page that turns
+ *  up fewer results does not widen the column the moment its scrollbar goes.
+ *  Both also carry a little padding cancelled by a negative margin: a scroll
+ *  box clips sideways too, and a focused row or a selected card's ring would
+ *  otherwise lose an edge. The list column pays for its padding and gutter
+ *  with width, so what is left for the rows is the 13rem it always had. */
+const ROW = "flex w-full gap-6 lg:h-full"
+const LISTS = "-mx-1 hidden w-56 shrink-0 overflow-y-auto overscroll-contain px-1 py-6 [scrollbar-gutter:stable] lg:flex"
+/** What the list column occupies once its margins are taken back. */
+const LISTS_SPACE = "hidden w-[13.5rem] shrink-0 lg:block"
+const BODY =
+  "flex min-w-0 flex-1 flex-col gap-4 lg:-ml-1 lg:overflow-y-auto lg:overscroll-contain lg:pb-12 lg:pl-1 lg:pr-3 lg:pt-6 lg:[scrollbar-gutter:stable]"
+
 /** The order the reader put the list in, which is this page's own and not one
  *  the read API has ever heard of. Newest first, because a list is a record of
  *  what someone did and the last thing they did is the interesting end. */
@@ -242,14 +259,10 @@ export function CollectionPanel({
   }
 
   return (
-    <div className="flex w-full gap-6">
-      <CollectionColumn
-        lists={held.mine}
-        current={id}
-        className="hidden w-52 shrink-0 overflow-y-auto lg:flex"
-      />
+    <div className={ROW}>
+      <CollectionColumn lists={held.mine} current={id} className={LISTS} />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className={BODY}>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -380,9 +393,9 @@ export function CollectionPanel({
  *  space that was already the right size. */
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex w-full gap-6">
-      <div className="hidden w-52 shrink-0 lg:block" aria-hidden />
-      <div className="flex min-w-0 flex-1 flex-col gap-4">{children}</div>
+    <div className={ROW}>
+      <div className={LISTS_SPACE} aria-hidden />
+      <div className={BODY}>{children}</div>
     </div>
   )
 }
