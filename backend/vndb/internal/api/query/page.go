@@ -41,7 +41,9 @@ type PageSpec struct {
 func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	req *Request, scan pgx.RowToFunc[T]) ([]T, int, error) {
 
-	b := &Builder{Limits: req.Limits}
+	// One budget for the whole request: an expression nested in another spends
+	// from it too, so nesting cannot multiply what may be asked.
+	b := &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget}
 
 	byID := false
 	if raw, ok := req.Filters[idFilter]; ok {

@@ -24,6 +24,10 @@ type Builder struct {
 	// The bounds this request was validated against, for the filters that
 	// have one of their own to apply.
 	Limits Limits
+	// What a condition about a related type needs: the types themselves, and
+	// the conditions still left to spend on all of them together.
+	Types  *Catalog
+	Budget *int
 }
 
 // arg records a value and returns its placeholder.
@@ -53,7 +57,7 @@ func (b *Builder) AnyOf(value string, one func(*Builder, string) error) error {
 
 	var alternatives []string
 	for _, p := range parts {
-		sub := &Builder{Args: b.Args, Limits: b.Limits}
+		sub := b.sub()
 		if err := one(sub, p); err != nil {
 			return err
 		}
@@ -65,6 +69,14 @@ func (b *Builder) AnyOf(value string, one func(*Builder, string) error) error {
 	}
 	b.Conds = append(b.Conds, "("+strings.Join(alternatives, " OR ")+")")
 	return nil
+}
+
+// sub is a builder whose conditions can be picked up and combined rather than
+// landing in the AND-list. Everything travels with it: arguments so their
+// numbering stays in step, and the rest so a nested condition is answered the
+// same way a top-level one is.
+func (b *Builder) sub() *Builder {
+	return &Builder{Args: b.Args, Limits: b.Limits, Types: b.Types, Budget: b.Budget}
 }
 
 func (b *Builder) SQL() string {
@@ -245,6 +257,100 @@ func (r Related) Filter() FilterFunc {
 			return nil
 		}
 	})
+}
+
+// Relation is a link to another type that can be asked about by id or by
+// condition.
+//
+//	release=r1234                          this release
+//	release=(lang=en+freeware=true)        one release that is both
+//
+// The difference matters more than it looks. Asking for English releases and
+// free releases as two parameters asks whether the work has an English release
+// and, separately, a free one -- which two different releases can satisfy
+// between them. Only the second form asks for one release that is both, and
+// until now it could not be asked at all.
+//
+// The conditions inside are the related type's own, looked up when they are
+// compiled rather than declared here, so a filter added to releases can be
+// used from a query about visual novels without either side being told.
+//
+// Each level brings the related table in under the alias that type's filters
+// are written against, and a level nested inside another therefore reuses that
+// alias. SQL scoping makes the inner one win, which is what is wanted -- every
+// filter refers to its own type and nothing else -- but it does mean a filter
+// that reached for an outer row would silently find the inner one instead. No
+// filter does; one that wanted to would need aliases numbered per level.
+type Relation struct {
+	// The type this points at: what an id is parsed as, and whose filters
+	// apply inside the brackets. They are the same name, so it is one field --
+	// two that had to agree would be one more thing to get wrong.
+	Type string
+	// The tables that link the related rows to this one, how they link, and
+	// the column holding the related id.
+	From  string
+	Owner string
+	ID    string
+	// What brings the related type's own row into scope, under the alias its
+	// filters are written against. Empty where From already has it.
+	Join string
+}
+
+func (rel Relation) Filter() FilterFunc {
+	return func(b *Builder, value string) error {
+		// Written as a parameter rather than inside an expression, the text
+		// arrives exactly as it was typed, so the brackets are checked here
+		// too: `release=(lang=en` is a mistake, not a condition.
+		trimmed := strings.TrimSpace(value)
+		nested := strings.HasPrefix(trimmed, "(")
+		if nested && !strings.HasSuffix(trimmed, ")") {
+			return BadRequest("filter: a bracket was opened and not closed")
+		}
+		if !nested {
+			// An id, or a list of them, exactly as before.
+			return Match(func(b *Builder, v string) error {
+				id, err := vndb.ParseID(rel.Type, v)
+				if err != nil {
+					return BadRequest("%v", err)
+				}
+				b.Where("EXISTS (SELECT 1 FROM "+rel.From+
+					" WHERE "+rel.Owner+" AND "+rel.ID+" = %s)", id)
+				return nil
+			})(b, value)
+		}
+
+		inner := trimmed[1 : len(trimmed)-1]
+		if b.Types == nil {
+			return BadRequest("conditions about a related type are not available here")
+		}
+		target := b.Types.Get(rel.Type)
+		if target == nil {
+			return BadRequest("nothing is known about %s", rel.Type)
+		}
+
+		expr, err := ParseExpr(inner, b.Budget)
+		if err != nil {
+			return err
+		}
+		if expr == nil {
+			return BadRequest("%s needs a condition between its brackets", rel.Type)
+		}
+
+		sub := b.sub()
+		cond, err := expr.compile(sub, target.Filters())
+		if err != nil {
+			return err
+		}
+		b.Args = sub.Args
+
+		from := rel.From
+		if rel.Join != "" {
+			from += " JOIN " + rel.Join
+		}
+		b.Conds = append(b.Conds,
+			"EXISTS (SELECT 1 FROM "+from+" WHERE "+rel.Owner+" AND "+cond+")")
+		return nil
+	}
 }
 
 // relatedID matches ids of another entity through an EXISTS clause. The

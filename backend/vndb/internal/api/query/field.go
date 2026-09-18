@@ -37,6 +37,10 @@ type Nested interface {
 	// reading it.
 	Type() string
 	Objects(ctx context.Context, ids []int32, sel Selection) (map[int32]map[string]any, error)
+	// Filters is what this type can be narrowed by, for when a condition on
+	// another type is written in terms of this one: "a release that is English
+	// and free" asks the release type, from inside a query about visual novels.
+	Filters() map[string]FilterFunc
 }
 
 // Where a value comes from

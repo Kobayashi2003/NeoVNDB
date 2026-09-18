@@ -39,11 +39,12 @@ var filters = map[string]query.FilterFunc{
 
 	// developers are a cached array on the row; publishers are not, so that
 	// one goes through the releases.
-	"developer": query.RelatedID(vndb.TypeProducer, "%s = ANY(vn.c_developers)"),
-	"producer": query.RelatedID(vndb.TypeProducer, `EXISTS (
-		SELECT 1 FROM releases_vn rv
-		  JOIN releases_producers rp ON rp.id = rv.id
-		 WHERE rv.vid = vn.id AND rp.pid = %s)`),
+	"developer": query.Relation{Type: vndb.TypeProducer,
+		From: "producers p", Owner: "p.id = ANY(vn.c_developers)", ID: "p.id"}.Filter(),
+	"producer": query.Relation{Type: vndb.TypeProducer,
+		From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
+		Owner: "rv.vid = vn.id", ID: "rp.pid",
+		Join: "producers p ON p.id = rp.pid"}.Filter(),
 
 	"staff": query.RelatedID(vndb.TypeStaff, `EXISTS (
 		SELECT 1 FROM vn_staff vs
@@ -54,15 +55,17 @@ var filters = map[string]query.FilterFunc{
 		  JOIN staff_alias sa ON sa.aid = vs.aid
 		 WHERE vs.id = vn.id AND sa.id = %s)`),
 
-	"character": query.RelatedID(vndb.TypeCharacter, `EXISTS (
-		SELECT 1 FROM chars_vns cv WHERE cv.vid = vn.id AND cv.id = %s)`),
+	"character": query.Relation{Type: vndb.TypeCharacter,
+		From: "chars_vns cv", Owner: "cv.vid = vn.id", ID: "cv.id",
+		Join: "chars c ON c.id = cv.id"}.Filter(),
 	"trait": query.RelatedID(vndb.TypeTrait, `EXISTS (
 		SELECT 1 FROM chars_vns cv
 		  JOIN chars_traits_inherit ct ON ct.id = cv.id
 		 WHERE cv.vid = vn.id AND ct.tid = %s)`),
 
-	"release": query.RelatedID(vndb.TypeRelease, `EXISTS (
-		SELECT 1 FROM releases_vn rv WHERE rv.vid = vn.id AND rv.id = %s)`),
+	"release": query.Relation{Type: vndb.TypeRelease,
+		From: "releases_vn rv", Owner: "rv.vid = vn.id", ID: "rv.id",
+		Join: "releases r ON r.id = rv.id"}.Filter(),
 	"medium": query.Match(func(b *query.Builder, v string) error {
 		b.Where(`EXISTS (
 			SELECT 1 FROM releases_vn rv

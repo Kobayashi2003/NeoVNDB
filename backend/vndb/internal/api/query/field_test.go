@@ -16,6 +16,8 @@ func (r *testResolver) Registry() Registry { return testTable.Registry() }
 
 func (r *testResolver) Type() string { return "vn" }
 
+func (r *testResolver) Filters() map[string]FilterFunc { return nil }
+
 func (r *testResolver) Objects(ctx context.Context, ids []int32,
 	sel Selection) (map[int32]map[string]any, error) {
 	return testTable.Objects(ctx, r, ids, sel)
@@ -60,6 +62,8 @@ func record(name string) Source[*testResolver, testRow] {
 type tagType struct{}
 
 func (tagType) Type() string { return "tag" }
+
+func (tagType) Filters() map[string]FilterFunc { return nil }
 
 func (tagType) Registry() Registry {
 	return Registry{

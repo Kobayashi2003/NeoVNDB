@@ -28,8 +28,9 @@ var filters = map[string]query.FilterFunc{
 	"dtrait": query.Related{Entity: vndb.TypeTrait, From: "chars_traits ct",
 		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil"}.Filter(),
 
-	"vn": query.RelatedID(vndb.TypeVN, `EXISTS (
-		SELECT 1 FROM chars_vns cv WHERE cv.id = c.id AND cv.vid = %s)`),
+	"vn": query.Relation{Type: vndb.TypeVN,
+		From: "chars_vns cv", Owner: "cv.id = c.id", ID: "cv.vid",
+		Join: "vn ON vn.id = cv.vid"}.Filter(),
 	"seiyuu": query.RelatedID(vndb.TypeStaff, `EXISTS (
 		SELECT 1 FROM vn_seiyuu vs
 		  JOIN staff_alias sa ON sa.aid = vs.aid

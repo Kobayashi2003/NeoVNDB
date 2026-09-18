@@ -51,16 +51,18 @@ var filters = map[string]query.FilterFunc{
 		return nil
 	}),
 
-	"vn": query.RelatedID(vndb.TypeVN, `EXISTS (
-		SELECT 1 FROM releases_vn rv WHERE rv.id = r.id AND rv.vid = %s)`),
-	"producer": query.RelatedID(vndb.TypeProducer, `EXISTS (
-		SELECT 1 FROM releases_producers rp WHERE rp.id = r.id AND rp.pid = %s)`),
-	"developer": query.RelatedID(vndb.TypeProducer, `EXISTS (
-		SELECT 1 FROM releases_producers rp
-		 WHERE rp.id = r.id AND rp.developer AND rp.pid = %s)`),
-	"publisher": query.RelatedID(vndb.TypeProducer, `EXISTS (
-		SELECT 1 FROM releases_producers rp
-		 WHERE rp.id = r.id AND rp.publisher AND rp.pid = %s)`),
+	"vn": query.Relation{Type: vndb.TypeVN,
+		From: "releases_vn rv", Owner: "rv.id = r.id", ID: "rv.vid",
+		Join: "vn ON vn.id = rv.vid"}.Filter(),
+	"producer": query.Relation{Type: vndb.TypeProducer,
+		From: "releases_producers rp", Owner: "rp.id = r.id", ID: "rp.pid",
+		Join: "producers p ON p.id = rp.pid"}.Filter(),
+	"developer": query.Relation{Type: vndb.TypeProducer,
+		From: "releases_producers rp", Owner: "rp.id = r.id AND rp.developer", ID: "rp.pid",
+		Join: "producers p ON p.id = rp.pid"}.Filter(),
+	"publisher": query.Relation{Type: vndb.TypeProducer,
+		From: "releases_producers rp", Owner: "rp.id = r.id AND rp.publisher", ID: "rp.pid",
+		Join: "producers p ON p.id = rp.pid"}.Filter(),
 	"supersedes": query.RelatedID(vndb.TypeRelease, `EXISTS (
 		SELECT 1 FROM releases_supersedes rs WHERE rs.id = r.id AND rs.rid = %s)`),
 }

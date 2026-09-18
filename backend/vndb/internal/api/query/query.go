@@ -27,8 +27,14 @@ type Request struct {
 	Filters map[string]string
 	// The condition expression, as written and as parsed. The text is what
 	// two equivalent requests are compared by; the tree is what runs.
-	Filter  string
-	expr    node
+	Filter string
+	expr   node
+	// The types, so that a condition written about a related one can be
+	// answered by asking it, and what is left of this request's allowance of
+	// conditions -- the expression above has already spent from it, and the
+	// ones nested inside it spend from the same one when they are compiled.
+	cat     *Catalog
+	budget  *int
 	Sort    string
 	Reverse bool
 	Page    int
@@ -78,8 +84,9 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		}
 		req.Limit = n
 	}
+	req.cat, req.budget = cat, Budget(lim.MaxFilterNodes)
 	if raw := values.Get("f"); raw != "" {
-		expr, err := ParseExpr(raw, lim.MaxFilterNodes)
+		expr, err := ParseExpr(raw, req.budget)
 		if err != nil {
 			return nil, err
 		}
