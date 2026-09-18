@@ -186,7 +186,9 @@ func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []s
 		SELECT item FROM marks
 		 WHERE collection_id = $1
 		 ORDER BY marked_at DESC, item DESC
-		 LIMIT $2`, id, max)
+		 -- NULLIF so that a ceiling of 0 means no ceiling, as it does
+		 -- everywhere else here: LIMIT NULL is LIMIT ALL, LIMIT 0 is nothing.
+		 LIMIT NULLIF($2, 0)`, id, max)
 	if err != nil {
 		return nil, 0, err
 	}

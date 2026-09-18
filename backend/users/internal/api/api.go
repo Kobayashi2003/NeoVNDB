@@ -27,10 +27,22 @@ type Server struct {
 	store *store.Store
 	cfg   *config.Config
 	log   *slog.Logger
+	// Counted separately: an address is who is asking, a username is what is
+	// being guessed at. One attacker spread over many addresses still runs
+	// into the second; one address working through many usernames runs into
+	// the first.
+	signInFrom *tries
+	signInFor  *tries
+	signUpFrom *tries
 }
 
 func NewServer(s *store.Store, cfg *config.Config, log *slog.Logger) *Server {
-	return &Server{store: s, cfg: cfg, log: log}
+	return &Server{
+		store: s, cfg: cfg, log: log,
+		signInFrom: newTries(cfg.SignInTries, cfg.SignInWindow),
+		signInFor:  newTries(cfg.SignInTries, cfg.SignInWindow),
+		signUpFrom: newTries(cfg.SignUpTries, cfg.SignUpWindow),
+	}
 }
 
 func (s *Server) Routes() http.Handler {
@@ -202,6 +214,14 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		email = &body.Email
 	}
 
+	// Counted here rather than at the top: everything above is the form being
+	// filled in wrongly, which costs nothing and is what a person does. From
+	// here on it is an account being made, which is the thing worth limiting.
+	if ok, wait := s.signUpFrom.take(caller(r)); !ok {
+		refuseTooMany(w, wait)
+		return
+	}
+
 	hash, err := auth.Hash(body.Password, s.cfg.BcryptCost)
 	if err != nil {
 		s.oops(w, "hashing password", err)
@@ -234,7 +254,22 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	// turns the sign-in form into a way to find out who has an account here.
 	const refuse = "That username and password do not match."
 
-	user, hash, err := s.store.UserByName(r.Context(), strings.TrimSpace(body.Username))
+	// Counted before the row is read and long before a hash is compared, so a
+	// refusal past the limit costs this service nothing. It does not make the
+	// two failures take the same time -- an unknown name still answers sooner
+	// than a wrong password does.
+	name := strings.TrimSpace(body.Username)
+	from := caller(r)
+	if ok, wait := s.signInFrom.take(from); !ok {
+		refuseTooMany(w, wait)
+		return
+	}
+	if ok, wait := s.signInFor.take(strings.ToLower(name)); !ok {
+		refuseTooMany(w, wait)
+		return
+	}
+
+	user, hash, err := s.store.UserByName(r.Context(), name)
 	if errors.Is(err, store.ErrNotFound) {
 		fail(w, http.StatusUnauthorized, refuse)
 		return
@@ -248,6 +283,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}
+	// Somebody who knows their own password was not guessing, so the attempts
+	// that got them here are dropped rather than left to lock them out of
+	// their next sign-in.
+	s.signInFrom.forget(from)
+	s.signInFor.forget(strings.ToLower(name))
 
 	// The password was right and the hash was the old service's. Now is the
 	// only moment the plaintext is in hand, so it is the only moment this row

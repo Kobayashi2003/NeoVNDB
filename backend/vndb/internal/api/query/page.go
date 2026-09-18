@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,7 +41,7 @@ type PageSpec struct {
 func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	req *Request, scan pgx.RowToFunc[T]) ([]T, int, error) {
 
-	b := &Builder{}
+	b := &Builder{Limits: req.Limits}
 
 	byID := false
 	if raw, ok := req.Filters["id"]; ok {
@@ -139,19 +140,63 @@ func orderBy(spec PageSpec, req *Request) (string, error) {
 	return expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, nil
 }
 
-// SearchFilter builds the search condition for one entity type. The input runs
+// SearchTerms splits a query into the parts that must each be found.
+//
+// Every word, in any order: somebody who remembers "ever" and "infinity" but
+// not what sits between them is describing a title they have seen, and should
+// be given it. Anything inside double quotes stays one part, for when the
+// order is the point -- a title that is a common word next to another one.
+func SearchTerms(query string) []string {
+	var terms []string
+	var word strings.Builder
+	quoted := false
+
+	flush := func() {
+		if t := strings.TrimSpace(word.String()); t != "" {
+			terms = append(terms, t)
+		}
+		word.Reset()
+	}
+	for _, r := range query {
+		switch {
+		case r == '"':
+			// A closing quote ends the phrase; an opening one ends whatever
+			// was being typed before it.
+			flush()
+			quoted = !quoted
+		case !quoted && unicode.IsSpace(r):
+			flush()
+		default:
+			word.WriteRune(r)
+		}
+	}
+	flush()
+	return terms
+}
+
+// SearchFilter builds the search condition for one entity type. Each word runs
 // through the same normaliser that built the index, so punctuation, case and
 // width differences all fall away.
+//
+// One condition per word rather than one for the whole query, and they are
+// ANDed: the words may land on different labels of the same entity, so a title
+// and an alias can each answer for part of what was typed.
 func SearchFilter(entity, alias string) FilterFunc {
 	condition := fmt.Sprintf(`EXISTS (
 		SELECT 1 FROM search_cache sc
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
 		   AND sc.label LIKE '%%%%' || search_norm_term(%%s) || '%%%%')`, entity, alias)
 	return func(b *Builder, value string) error {
-		if strings.TrimSpace(value) == "" {
+		terms := SearchTerms(value)
+		if len(terms) == 0 {
 			return BadRequest("search needs a term")
 		}
-		b.Where(condition, value)
+		if max := b.Limits.MaxSearchTerms; max > 0 && len(terms) > max {
+			return BadRequest("a search may have at most %d words", max)
+		}
+		for _, term := range terms {
+			b.Where(condition, term)
+		}
 		return nil
 	}
 }

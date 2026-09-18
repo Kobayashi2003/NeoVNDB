@@ -62,11 +62,12 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 	return &Server{
 		store: store, log: log, cfg: cfg,
 		limits: query.Limits{
-			PageSize:      cfg.PageSize,
-			MaxPageSize:   cfg.MaxPageSize,
-			MaxIDs:        cfg.MaxIDs,
-			MaxFieldDepth: cfg.MaxFieldDepth,
-			MaxCost:       cfg.MaxCost,
+			PageSize:       cfg.PageSize,
+			MaxPageSize:    cfg.MaxPageSize,
+			MaxIDs:         cfg.MaxIDs,
+			MaxFieldDepth:  cfg.MaxFieldDepth,
+			MaxCost:        cfg.MaxCost,
+			MaxSearchTerms: cfg.MaxSearchTerms,
 		},
 		cat: cat, resolvers: resolvers,
 		cache: responses,

@@ -33,9 +33,12 @@ const (
 	// The language the trans schema holds translations into. vndb writes tag
 	// and trait text in English only, and this is what a reader who wants it
 	// in their own language gets instead.
-	defaultTransLang     = "ja"
-	defaultMaxIDs        = 1000
-	defaultMaxFieldDepth = 3
+	defaultTransLang = "ja"
+	// The most words one search may be made of. Each costs its own index
+	// lookup. 0 lifts the cap.
+	defaultMaxSearchTerms = 8
+	defaultMaxIDs         = 1000
+	defaultMaxFieldDepth  = 3
 	// Estimated field values in a response, priced from each level's declared
 	// fan-out before the request runs. Follows vndb's own ceiling.
 	defaultMaxCost = 100_000
@@ -99,12 +102,13 @@ type Config struct {
 	ConnectTimeout time.Duration
 
 	// Bounds on a single request.
-	PageSize      int
-	MaxPageSize   int
-	TransLang     string
-	MaxIDs        int
-	MaxFieldDepth int
-	MaxCost       int
+	PageSize       int
+	MaxPageSize    int
+	TransLang      string
+	MaxSearchTerms int
+	MaxIDs         int
+	MaxFieldDepth  int
+	MaxCost        int
 
 	// Bounds on the VN relation graph, which is a walk rather than a page and
 	// so is bounded by depth and node count instead.
@@ -153,12 +157,13 @@ func Load() (*Config, error) {
 		ConnLifetime:   envDuration("NEOVNDB_DB_CONN_LIFETIME", defaultConnLifetime),
 		ConnectTimeout: envDuration("NEOVNDB_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
 
-		PageSize:      envInt("NEOVNDB_PAGE_SIZE", defaultPageSize),
-		MaxPageSize:   envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
-		TransLang:     envString("NEOVNDB_TRANS_LANG", defaultTransLang),
-		MaxIDs:        envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
-		MaxFieldDepth: envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
-		MaxCost:       envInt("NEOVNDB_MAX_COST", defaultMaxCost),
+		PageSize:       envInt("NEOVNDB_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:    envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
+		TransLang:      envString("NEOVNDB_TRANS_LANG", defaultTransLang),
+		MaxSearchTerms: envInt("NEOVNDB_MAX_SEARCH_TERMS", defaultMaxSearchTerms),
+		MaxIDs:         envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
+		MaxFieldDepth:  envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
+		MaxCost:        envInt("NEOVNDB_MAX_COST", defaultMaxCost),
 
 		GraphDepth:    envInt("NEOVNDB_GRAPH_DEPTH", defaultGraphDepth),
 		MaxGraphDepth: envInt("NEOVNDB_MAX_GRAPH_DEPTH", defaultMaxGraphDepth),

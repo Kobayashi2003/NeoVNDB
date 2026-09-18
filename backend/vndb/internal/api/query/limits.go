@@ -10,12 +10,14 @@ type Limits struct {
 	MaxFieldDepth int
 	// Estimated field values in a response, not rows.
 	MaxCost int
+	// Words in one search. Each costs its own index lookup.
+	MaxSearchTerms int
 }
 
 // DefaultLimits apply when nothing is configured, which is the case in tests.
 func DefaultLimits() Limits {
 	return Limits{
 		PageSize: 24, MaxPageSize: 100, MaxIDs: 1000,
-		MaxFieldDepth: 3, MaxCost: 100_000,
+		MaxFieldDepth: 3, MaxCost: 100_000, MaxSearchTerms: 8,
 	}
 }

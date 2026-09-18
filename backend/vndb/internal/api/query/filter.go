@@ -21,6 +21,9 @@ import (
 type Builder struct {
 	Conds []string
 	Args  []any
+	// The bounds this request was validated against, for the filters that
+	// have one of their own to apply.
+	Limits Limits
 }
 
 // arg records a value and returns its placeholder.
@@ -50,7 +53,7 @@ func (b *Builder) AnyOf(value string, one func(*Builder, string) error) error {
 
 	var alternatives []string
 	for _, p := range parts {
-		sub := &Builder{Args: b.Args}
+		sub := &Builder{Args: b.Args, Limits: b.Limits}
 		if err := one(sub, p); err != nil {
 			return err
 		}

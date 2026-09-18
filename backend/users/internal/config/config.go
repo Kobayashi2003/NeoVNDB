@@ -30,6 +30,26 @@ const (
 	// anyone working through a list.
 	defaultBcryptCost = 12
 
+	// How often one address, or one username, may be tried before the answer
+	// is no. Ten in five minutes is more than a person who has forgotten which
+	// password they used, and nothing at all to anyone working through a list.
+	defaultSignInTries  = 10
+	defaultSignInWindow = 5 * time.Minute
+	// Accounts are cheap to make and there is no email step yet, so this is
+	// the only thing standing between the sign-up form and a thousand of them.
+	defaultSignUpTries  = 5
+	defaultSignUpWindow = time.Hour
+
+	// One page of marks by default, and the most one request may ask for. The
+	// ceiling is the read API's id-list limit: a page of marks is turned back
+	// into things by handing those ids to it, so a page it could not resolve
+	// in one request would be no use. 0 lifts it.
+	defaultPageSize    = 24
+	defaultMaxPageSize = 100
+	// How much of a list may be handed over at once for the read API to sort
+	// or search. Same ceiling, same reason.
+	defaultMaxItems = 1000
+
 	defaultReadHeaderTimeout = 10 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
 )
@@ -43,9 +63,16 @@ type Config struct {
 	MaxConns       int32
 	ConnectTimeout time.Duration
 
-	SessionLife time.Duration
-	SweepEvery  time.Duration
-	BcryptCost  int
+	SessionLife  time.Duration
+	PageSize     int
+	MaxPageSize  int
+	MaxItems     int
+	SignInTries  int
+	SignInWindow time.Duration
+	SignUpTries  int
+	SignUpWindow time.Duration
+	SweepEvery   time.Duration
+	BcryptCost   int
 
 	// Whether the session cookie may only travel over https. Off by default so
 	// a local checkout works; on wherever this is actually served.
@@ -66,9 +93,16 @@ func Load() (*Config, error) {
 		MaxConns:       int32(envInt("NEOVNDB_USERS_DB_MAX_CONNS", defaultMaxConns)),
 		ConnectTimeout: envDuration("NEOVNDB_USERS_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
 
-		SessionLife: envDuration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
-		SweepEvery:  envDuration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
-		BcryptCost:  envInt("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
+		SessionLife:  envDuration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
+		PageSize:     envInt("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:  envInt("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
+		MaxItems:     envInt("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
+		SignInTries:  envInt("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
+		SignInWindow: envDuration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
+		SignUpTries:  envInt("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),
+		SignUpWindow: envDuration("NEOVNDB_USERS_SIGNUP_WINDOW", defaultSignUpWindow),
+		SweepEvery:   envDuration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
+		BcryptCost:   envInt("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
 
 		SecureCookie: envBool("NEOVNDB_USERS_SECURE_COOKIE", false),
 
