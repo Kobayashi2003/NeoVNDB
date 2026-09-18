@@ -22,10 +22,11 @@ var filters = map[string]query.FilterFunc{
 	// trait expands through the closure, so a parent trait also matches
 	// characters carrying any of its children; dtrait matches only what was
 	// assigned directly.
-	"trait": query.RelatedID(vndb.TypeTrait, `EXISTS (
-		SELECT 1 FROM chars_traits_inherit ct WHERE ct.id = c.id AND ct.tid = %s)`),
-	"dtrait": query.RelatedID(vndb.TypeTrait, `EXISTS (
-		SELECT 1 FROM chars_traits ct WHERE ct.id = c.id AND ct.tid = %s)`),
+	// Traits carry no score, so a second part is the spoiler ceiling.
+	"trait": query.Related{Entity: vndb.TypeTrait, From: "chars_traits_inherit ct",
+		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil"}.Filter(),
+	"dtrait": query.Related{Entity: vndb.TypeTrait, From: "chars_traits ct",
+		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil"}.Filter(),
 
 	"vn": query.RelatedID(vndb.TypeVN, `EXISTS (
 		SELECT 1 FROM chars_vns cv WHERE cv.id = c.id AND cv.vid = %s)`),
@@ -36,13 +37,11 @@ var filters = map[string]query.FilterFunc{
 
 	// A role belongs to an appearance, not to the character, so it only makes
 	// sense as a condition on some VN.
-	"role": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM chars_vns cv WHERE cv.id = c.id AND cv.role = %s)`, v)
-			return nil
-		})
-	},
+	"role": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM chars_vns cv WHERE cv.id = c.id AND cv.role = %s)`, v)
+		return nil
+	}),
 }
 
 var sorts = map[string]string{

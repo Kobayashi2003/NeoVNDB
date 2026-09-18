@@ -44,7 +44,7 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	b := &Builder{Limits: req.Limits}
 
 	byID := false
-	if raw, ok := req.Filters["id"]; ok {
+	if raw, ok := req.Filters[idFilter]; ok {
 		ids, err := vndb.ParseIDs(spec.IDType, raw, req.Limits.MaxIDs)
 		if err != nil {
 			return nil, 0, BadRequest("%v", err)
@@ -53,7 +53,7 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		byID = true
 	}
 	for name, value := range req.Filters {
-		if name == "id" {
+		if name == idFilter {
 			continue
 		}
 		apply, ok := spec.Filters[name]
@@ -63,6 +63,13 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		if err := apply(b, value); err != nil {
 			return nil, 0, err
 		}
+	}
+
+	// The expression is one more condition, ANDed with the parameters: a
+	// reader who narrows with the controls and then writes an expression
+	// means both, the same way two controls mean both.
+	if err := b.Expr(req.expr, spec.Filters); err != nil {
+		return nil, 0, err
 	}
 
 	ordering, err := orderBy(spec, req)
@@ -174,6 +181,10 @@ func SearchTerms(query string) []string {
 	return terms
 }
 
+// The one parameter that is not a filter: it names rows rather than narrowing
+// them, and so is answered before any condition is built.
+const idFilter = "id"
+
 // SearchFilter builds the search condition for one entity type. Each word runs
 // through the same normaliser that built the index, so punctuation, case and
 // width differences all fall away.
@@ -187,6 +198,12 @@ func SearchFilter(entity, alias string) FilterFunc {
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
 		   AND sc.label LIKE '%%%%' || search_norm_term(%%s) || '%%%%')`, entity, alias)
 	return func(b *Builder, value string) error {
+		// A search matches; ">=ever" is not a term, it is an operator that
+		// wandered in from an expression.
+		value, err := matchOnly(value)
+		if err != nil {
+			return err
+		}
 		terms := SearchTerms(value)
 		if len(terms) == 0 {
 			return BadRequest("search needs a term")

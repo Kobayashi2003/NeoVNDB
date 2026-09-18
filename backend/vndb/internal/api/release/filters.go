@@ -21,45 +21,35 @@ var filters = map[string]query.FilterFunc{
 
 	// A language is recorded as a title row, so "released in" and "titled in"
 	// are the same question here. mtl excludes machine translations.
-	"lang": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM releases_titles rt
-				 WHERE rt.id = r.id AND NOT rt.mtl AND rt.lang = %s)`, v)
-			return nil
-		})
-	},
-	"platform": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM releases_platforms rp
-				 WHERE rp.id = r.id AND rp.platform = %s)`, v)
-			return nil
-		})
-	},
-	"medium": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM releases_media rm
-				 WHERE rm.id = r.id AND rm.medium = %s)`, v)
-			return nil
-		})
-	},
+	"lang": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM releases_titles rt
+			 WHERE rt.id = r.id AND NOT rt.mtl AND rt.lang = %s)`, v)
+		return nil
+	}),
+	"platform": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM releases_platforms rp
+			 WHERE rp.id = r.id AND rp.platform = %s)`, v)
+		return nil
+	}),
+	"medium": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM releases_media rm
+			 WHERE rm.id = r.id AND rm.medium = %s)`, v)
+		return nil
+	}),
 	// The row stores an engine id, so the filter matches on its name.
-	"engine": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM engines e WHERE e.id = r.engine AND e.name = %s)`, v)
-			return nil
-		})
-	},
-	"rtype": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM releases_vn rv WHERE rv.id = r.id AND rv.rtype = %s)`, v)
-			return nil
-		})
-	},
+	"engine": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM engines e WHERE e.id = r.engine AND e.name = %s)`, v)
+		return nil
+	}),
+	"rtype": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM releases_vn rv WHERE rv.id = r.id AND rv.rtype = %s)`, v)
+		return nil
+	}),
 
 	"vn": query.RelatedID(vndb.TypeVN, `EXISTS (
 		SELECT 1 FROM releases_vn rv WHERE rv.id = r.id AND rv.vid = %s)`),

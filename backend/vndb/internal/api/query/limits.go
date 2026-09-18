@@ -12,12 +12,15 @@ type Limits struct {
 	MaxCost int
 	// Words in one search. Each costs its own index lookup.
 	MaxSearchTerms int
+	// Conditions in one filter expression. Each is a clause, and several are
+	// a subquery apiece.
+	MaxFilterNodes int
 }
 
 // DefaultLimits apply when nothing is configured, which is the case in tests.
 func DefaultLimits() Limits {
 	return Limits{
 		PageSize: 24, MaxPageSize: 100, MaxIDs: 1000,
-		MaxFieldDepth: 3, MaxCost: 100_000, MaxSearchTerms: 8,
+		MaxFieldDepth: 3, MaxCost: 100_000, MaxSearchTerms: 8, MaxFilterNodes: 64,
 	}
 }

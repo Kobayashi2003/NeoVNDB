@@ -37,6 +37,8 @@ const (
 	// The most words one search may be made of. Each costs its own index
 	// lookup. 0 lifts the cap.
 	defaultMaxSearchTerms = 8
+	// Conditions in one filter expression. 0 lifts the cap.
+	defaultMaxFilterNodes = 64
 	defaultMaxIDs         = 1000
 	defaultMaxFieldDepth  = 3
 	// Estimated field values in a response, priced from each level's declared
@@ -106,6 +108,7 @@ type Config struct {
 	MaxPageSize    int
 	TransLang      string
 	MaxSearchTerms int
+	MaxFilterNodes int
 	MaxIDs         int
 	MaxFieldDepth  int
 	MaxCost        int
@@ -161,6 +164,7 @@ func Load() (*Config, error) {
 		MaxPageSize:    envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
 		TransLang:      envString("NEOVNDB_TRANS_LANG", defaultTransLang),
 		MaxSearchTerms: envInt("NEOVNDB_MAX_SEARCH_TERMS", defaultMaxSearchTerms),
+		MaxFilterNodes: envInt("NEOVNDB_MAX_FILTER_NODES", defaultMaxFilterNodes),
 		MaxIDs:         envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
 		MaxFieldDepth:  envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
 		MaxCost:        envInt("NEOVNDB_MAX_COST", defaultMaxCost),

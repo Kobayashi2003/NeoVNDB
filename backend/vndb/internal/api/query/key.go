@@ -31,6 +31,9 @@ func (r *Request) Canonical(entity string) string {
 		b.WriteByte(';')
 	}
 
+	b.WriteString("|e=")
+	b.WriteString(r.Filter)
+
 	b.WriteString("|s=")
 	b.WriteString(r.Sort)
 	if r.Reverse {
@@ -46,7 +49,8 @@ func (r *Request) Canonical(entity string) string {
 
 	b.WriteString("|l=")
 	for _, n := range []int{r.Limits.MaxPageSize, r.Limits.MaxIDs,
-		r.Limits.MaxFieldDepth, r.Limits.MaxCost, r.Limits.MaxSearchTerms} {
+		r.Limits.MaxFieldDepth, r.Limits.MaxCost, r.Limits.MaxSearchTerms,
+		r.Limits.MaxFilterNodes} {
 		b.WriteString(strconv.Itoa(n))
 		b.WriteByte(',')
 	}
