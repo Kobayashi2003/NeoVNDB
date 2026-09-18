@@ -25,6 +25,10 @@ type Resolver interface {
 type Request struct {
 	Fields  Selection
 	Filters map[string]string
+	// The condition expression, as written and as parsed. The text is what
+	// two equivalent requests are compared by; the tree is what runs.
+	Filter  string
+	expr    node
 	Sort    string
 	Reverse bool
 	Page    int
@@ -37,6 +41,7 @@ type Request struct {
 // Reserved parameter names; everything else in the query string is a filter.
 var reserved = map[string]bool{
 	"fields": true, "sort": true, "reverse": true, "page": true, "limit": true,
+	"f": true,
 }
 
 func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, error) {
@@ -72,6 +77,13 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 			return nil, BadRequest("limit may not exceed %d", lim.MaxPageSize)
 		}
 		req.Limit = n
+	}
+	if raw := values.Get("f"); raw != "" {
+		expr, err := ParseExpr(raw, lim.MaxFilterNodes)
+		if err != nil {
+			return nil, err
+		}
+		req.Filter, req.expr = raw, expr
 	}
 	if cost := Cost(cat, reg, fields, req.Limit); lim.MaxCost > 0 && cost > lim.MaxCost {
 		return nil, BadRequest("too much data selected (estimated %d values, limit %d); "+

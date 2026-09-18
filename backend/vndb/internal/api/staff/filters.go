@@ -16,15 +16,13 @@ var filters = map[string]query.FilterFunc{
 		SELECT 1 FROM vn_staff vs
 		  JOIN staff_alias sa ON sa.aid = vs.aid
 		 WHERE sa.id = s.id AND vs.id = %s)`),
-	"role": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM vn_staff vs
-				  JOIN staff_alias sa ON sa.aid = vs.aid
-				 WHERE sa.id = s.id AND vs.role = %s)`, v)
-			return nil
-		})
-	},
+	"role": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM vn_staff vs
+			  JOIN staff_alias sa ON sa.aid = vs.aid
+			 WHERE sa.id = s.id AND vs.role = %s)`, v)
+		return nil
+	}),
 	// Voice work is kept apart from the credit table.
 	"character": query.RelatedID(vndb.TypeCharacter, `EXISTS (
 		SELECT 1 FROM vn_seiyuu vs

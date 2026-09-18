@@ -32,10 +32,10 @@ var filters = map[string]query.FilterFunc{
 	// The derive step already propagates each score up the parent DAG, so
 	// tags_vn_inherit holds a row for every ancestor and matching on it is the
 	// expansion. Joining tags_closure on top would be a second, redundant one.
-	"tag": query.RelatedID(vndb.TypeTag, `EXISTS (
-		SELECT 1 FROM tags_vn_inherit t WHERE t.vid = vn.id AND t.tag = %s)`),
-	"dtag": query.RelatedID(vndb.TypeTag, `EXISTS (
-		SELECT 1 FROM tags_vn_direct t WHERE t.vid = vn.id AND t.tag = %s)`),
+	"tag": query.Related{Entity: vndb.TypeTag, From: "tags_vn_inherit t",
+		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler"}.Filter(),
+	"dtag": query.Related{Entity: vndb.TypeTag, From: "tags_vn_direct t",
+		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler"}.Filter(),
 
 	// developers are a cached array on the row; publishers are not, so that
 	// one goes through the releases.
@@ -63,15 +63,13 @@ var filters = map[string]query.FilterFunc{
 
 	"release": query.RelatedID(vndb.TypeRelease, `EXISTS (
 		SELECT 1 FROM releases_vn rv WHERE rv.vid = vn.id AND rv.id = %s)`),
-	"medium": func(b *query.Builder, value string) error {
-		return b.AnyOf(value, func(b *query.Builder, v string) error {
-			b.Where(`EXISTS (
-				SELECT 1 FROM releases_vn rv
-				  JOIN releases_media rm ON rm.id = rv.id
-				 WHERE rv.vid = vn.id AND rm.medium = %s)`, v)
-			return nil
-		})
-	},
+	"medium": query.Match(func(b *query.Builder, v string) error {
+		b.Where(`EXISTS (
+			SELECT 1 FROM releases_vn rv
+			  JOIN releases_media rm ON rm.id = rv.id
+			 WHERE rv.vid = vn.id AND rm.medium = %s)`, v)
+		return nil
+	}),
 }
 
 // releasedFilter reads a whole year or month as the range it covers, so

@@ -68,6 +68,7 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 			MaxFieldDepth:  cfg.MaxFieldDepth,
 			MaxCost:        cfg.MaxCost,
 			MaxSearchTerms: cfg.MaxSearchTerms,
+			MaxFilterNodes: cfg.MaxFilterNodes,
 		},
 		cat: cat, resolvers: resolvers,
 		cache: responses,
