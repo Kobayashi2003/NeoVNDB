@@ -15,6 +15,7 @@ import { FILTERS } from "@/lib/filters"
 import { withParams, type Params } from "@/lib/href"
 import { LIST } from "@/lib/list"
 import { fetchResults } from "@/lib/results"
+import { DataAge } from "@/components/layout/DataAge"
 import { FilterBar } from "./FilterBar"
 import { ResultsPanel } from "./ResultsPanel"
 import { SearchBox } from "./SearchBox"
@@ -73,6 +74,8 @@ export async function ListPage({ type, params }: { type: string; params: Params 
           </>
         }
       />
+
+      <DataAge />
     </div>
   )
 }

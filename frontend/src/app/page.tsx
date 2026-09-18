@@ -17,6 +17,7 @@ import { one, withParams, type Params } from "@/lib/href"
 import { LIST } from "@/lib/list"
 import { countOf, fetchResults } from "@/lib/results"
 import { ResultsPanel } from "@/components/list/ResultsPanel"
+import { DataAge } from "@/components/layout/DataAge"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { MonthPicker } from "@/components/home/MonthPicker"
 import { monthName } from "@/lib/months"
@@ -99,6 +100,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </>
         }
       />
+
+      <DataAge />
     </main>
   )
 }
