@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react"
 import { Bookmark, BookmarkCheck, Check, Loader2, Plus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from "@/components/ui/Menu"
 import {
   addMark,
   collections,
@@ -136,12 +137,13 @@ export function CollectionButton({ id }: { id: string }) {
       </button>
 
       {open && (
-        <div
-          ref={menu}
-          className="absolute right-0 top-full z-30 mt-1 max-h-80 w-60 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl"
-        >
+        // A fixed width, unlike most menus: the last row turns into a text
+        // field, and a panel sized to its contents would resize under the
+        // reader's cursor when it did.
+        <MenuPanel ref={menu} align="end" scroll className="w-60">
+          <MenuLabel>Save to</MenuLabel>
           {lists === null ? (
-            <p className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted">
+            <p className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted">
               <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
               Reading your lists
             </p>
@@ -156,18 +158,18 @@ export function CollectionButton({ id }: { id: string }) {
                 />
               ))}
               {lists.length === 0 && !error && (
-                <p className="px-2 py-1.5 text-xs text-muted">No lists for this yet.</p>
+                <p className="px-2.5 py-1.5 text-xs text-muted">No lists for this yet.</p>
               )}
               <NewList onCreate={create} onError={setError} />
             </>
           )}
 
           {error && (
-            <p role="alert" className="px-2 py-1.5 text-xs text-red-400">
+            <p role="alert" className="px-2.5 py-1.5 text-xs text-red-400">
               {error}
             </p>
           )}
-        </div>
+        </MenuPanel>
       )}
     </div>
   )
@@ -183,16 +185,9 @@ function Row({ list, on, onPick }: { list: Collection; on: boolean; onPick: () =
       type="button"
       onClick={onPick}
       aria-pressed={on}
-      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-white/10"
+      className={menuItem({ className: on ? "text-white" : undefined })}
     >
-      <span
-        className={cn(
-          "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors",
-          on ? "border-accent bg-accent" : "border-white/25",
-        )}
-      >
-        {on && <Check className="h-2.5 w-2.5 text-background" strokeWidth={4} aria-hidden />}
-      </span>
+      <MenuMark kind="check" on={on} />
       <span className="min-w-0 flex-1 truncate">{list.name}</span>
       <span className="shrink-0 tabular-nums text-muted">{list.count}</span>
     </button>
@@ -229,19 +224,24 @@ function NewList({
 
   if (!naming) {
     return (
-      <button
-        type="button"
-        onClick={() => setNaming(true)}
-        className="mt-1 flex w-full items-center gap-2 border-t border-white/10 px-2 py-1.5 pt-2 text-xs text-muted transition-colors hover:text-white"
-      >
-        <Plus className="h-3 w-3 shrink-0" aria-hidden />
-        New list
-      </button>
+      <>
+        <MenuDivider />
+        <button
+          type="button"
+          onClick={() => setNaming(true)}
+          className={menuItem({ className: "text-muted" })}
+        >
+          <Plus className="size-3.5 shrink-0" aria-hidden />
+          New list
+        </button>
+      </>
     )
   }
 
   return (
-    <form onSubmit={submit} className="mt-1 flex items-center gap-1 border-t border-white/10 pt-2">
+    <>
+      <MenuDivider />
+      <form onSubmit={submit} className="flex items-center gap-1 px-1 py-0.5">
       {/* autoFocus because opening this form is the whole of the intent to
           type into it, and it is one click deep inside a menu. */}
       <input
@@ -250,7 +250,7 @@ function NewList({
         maxLength={RULES.listName}
         placeholder="List name"
         aria-label="New list name"
-        className="min-w-0 flex-1 rounded border border-white/10 bg-background/40 px-2 py-1 text-xs outline-none transition-colors focus:border-white/30"
+        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-background/40 px-2 py-1 text-xs outline-none transition-colors focus:border-white/30"
       />
       <button
         type="submit"
@@ -275,6 +275,7 @@ function NewList({
       >
         <X className="h-3.5 w-3.5" aria-hidden />
       </button>
-    </form>
+      </form>
+    </>
   )
 }

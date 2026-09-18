@@ -18,7 +18,6 @@ import { Collapsible } from "@/components/ui/Collapsible"
 import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
 import { InfoCard } from "@/components/ui/InfoCard"
 import { Section } from "@/components/ui/Section"
-import { ContentLevels } from "@/components/ui/PrefsControls"
 import { DetailControls } from "@/components/ui/DetailControls"
 import { usePrefs } from "@/hooks/usePrefs"
 import { useSpoilerLevel } from "@/hooks/useSpoilerLevel"
@@ -72,7 +71,6 @@ export function CharacterPage({
       }
       aside={
         <>
-          <ContentLevels className="flex-col items-stretch" />
           <CharacterInfoPanel character={character} spoiler={spoiler} />
         </>
       }

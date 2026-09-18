@@ -14,7 +14,6 @@
 import { one, type Params } from "@/lib/href"
 import { fetchResults } from "@/lib/results"
 import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
-import { ContentLevels } from "@/components/ui/PrefsControls"
 import { ResultsPanel } from "@/components/list/ResultsPanel"
 import { Tabs, type Tab } from "@/components/list/Tabs"
 
@@ -47,7 +46,6 @@ export async function CatalogPage({
       header={<DetailHeader title={title} subtitle={subtitle} action={action} />}
       aside={
         <>
-          <ContentLevels className="flex-col items-stretch" />
           {aside}
         </>
       }

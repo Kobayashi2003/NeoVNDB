@@ -15,7 +15,6 @@ import { FILTERS } from "@/lib/filters"
 import { withParams, type Params } from "@/lib/href"
 import { LIST } from "@/lib/list"
 import { fetchResults } from "@/lib/results"
-import { PrefsControls } from "@/components/ui/PrefsControls"
 import { FilterBar } from "./FilterBar"
 import { ResultsPanel } from "./ResultsPanel"
 import { SearchBox } from "./SearchBox"
@@ -60,7 +59,6 @@ export async function ListPage({ type, params }: { type: string; params: Params 
         path={path}
         params={params}
         data={data}
-        action={<PrefsControls />}
         empty={
           <>
             Nothing matched.{" "}

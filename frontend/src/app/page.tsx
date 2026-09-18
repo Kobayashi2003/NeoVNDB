@@ -17,7 +17,6 @@ import { one, withParams, type Params } from "@/lib/href"
 import { LIST } from "@/lib/list"
 import { countOf, fetchResults } from "@/lib/results"
 import { ResultsPanel } from "@/components/list/ResultsPanel"
-import { PrefsControls } from "@/components/ui/PrefsControls"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { MonthPicker } from "@/components/home/MonthPicker"
 import { monthName } from "@/lib/months"
@@ -93,7 +92,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         path="/"
         params={params}
         data={data}
-        action={<PrefsControls />}
         empty={
           <>
             Nothing came out in {monthName(month)} {year}

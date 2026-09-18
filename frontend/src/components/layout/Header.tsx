@@ -7,8 +7,9 @@
  *  which shelf you are standing in front of.
  *
  *  Two forms of the same row. All seven fit side by side from 800px -- they
- *  need 473px, and the worst case, a name at its full cap, still leaves them
- *  514px. Below that they collapse into one menu rather than a strip that
+ *  need 465px, and the worst case, a name at its full cap beside the view
+ *  button, still leaves them 476px. Measured, not estimated: 11px spare is too
+ *  little to trust arithmetic with, so re-measure before adding anything here. Below that they collapse into one menu rather than a strip that
  *  scrolls sideways: a strip fit, in the sense that nothing overflowed, but
  *  the last shelves sat off the end of a bar nobody would think to drag.
  *
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
 import { SHORT, TYPES } from "./shelves"
 import { BrowseMenu } from "./BrowseMenu"
+import { ViewMenu } from "./ViewMenu"
 import { UserMenu } from "@/components/user/UserMenu"
 
 export function Header() {
@@ -63,6 +65,7 @@ export function Header() {
           ))}
         </nav>
 
+        <ViewMenu />
         <UserMenu />
       </div>
     </header>
