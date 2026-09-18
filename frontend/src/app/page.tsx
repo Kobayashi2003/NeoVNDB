@@ -75,31 +75,33 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <ControlLabel>Released in</ControlLabel>
-          <MonthPicker path="/" params={params} year={year} month={month} />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1">
-          <ControlLabel>Originally</ControlLabel>
-          <Origin path="/" params={params} on={japanese} value={null} label="Japanese" />
-          <Origin path="/" params={params} on={!japanese} value="all" label="Any language" />
-        </div>
-      </div>
-
-      <ResultsPanel
-        type="v"
-        path="/"
-        params={params}
-        data={data}
+      <div className="border-t border-white/5 pt-5">
+        <ResultsPanel
+          type="v"
+          path="/"
+          params={params}
+          data={data}
+          controls={
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <ControlLabel>Released in</ControlLabel>
+                <MonthPicker path="/" params={params} year={year} month={month} />
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                <ControlLabel>Originally</ControlLabel>
+                <Origin path="/" params={params} on={japanese} value={null} label="Japanese" />
+                <Origin path="/" params={params} on={!japanese} value="all" label="Any language" />
+              </div>
+            </>
+          }
         empty={
           <>
             Nothing came out in {monthName(month)} {year}
             {japanese && " that was originally in Japanese"}.
           </>
         }
-      />
+        />
+      </div>
 
       <DataAge />
     </main>

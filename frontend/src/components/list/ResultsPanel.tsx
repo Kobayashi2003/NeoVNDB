@@ -21,6 +21,7 @@ export function ResultsPanel({
   params,
   data,
   empty = "Nothing matched.",
+  controls,
   action,
 }: {
   /** The type letter, which names both the spec and the result shape. */
@@ -29,12 +30,20 @@ export function ResultsPanel({
   params: Params
   data: ResultsData
   empty?: React.ReactNode
-  /** Rendered opposite the sort links -- the reading preferences, or tabs. */
+  /** The page's own controls, on the same line as the sorts and before them:
+   *  what is being looked at reads first, how it is ordered second. They share
+   *  a row rather than stacking because they are one bar of controls, and two
+   *  rows of five things each is harder to take in than one row of ten. */
+  controls?: React.ReactNode
+  /** Rendered opposite the sort links -- tabs, or a count. */
   action?: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* One row that wraps: each group stays whole and drops to the next
+          line entire, rather than a label parting from what it labels. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        {controls}
         <SortLinks
           path={path}
           params={params}
@@ -42,7 +51,7 @@ export function ResultsPanel({
           active={data.sort}
           reverse={data.reverse}
         />
-        {action}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
 
       {data.failure ? (
