@@ -1,6 +1,9 @@
 # Archives are large and reproducible from upstream.
 /data/
 
+# What start.ps1 is holding open.
+/.running.json
+
 # Editor and OS noise.
 .DS_Store
 Thumbs.db

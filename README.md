@@ -73,6 +73,54 @@ mirror process at all.
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
 
+## Running it
+
+```powershell
+.\start.ps1            # builds, starts all five, Ctrl+C stops them again
+.\start.ps1 -Prod      # a production build of the frontend instead of the dev server
+.\start.ps1 -NoImages  # draw the site without fetching a single cover
+.\start.ps1 -Stop      # stop a run that was left behind
+.\start.ps1 -Force     # take the ports from whatever already holds them
+```
+
+`-NoImages` is for working on the site away from the machine holding the image
+mirror: no cover or screenshot is requested at all, and each one's box is still
+drawn at the size it would have taken, so the layout being worked on is the
+real one. The interface's own sprite icons -- flags, platforms -- are local and
+still appear.
+
+It refuses to start on a port that is already in use rather than guessing, waits
+until each service actually answers, and prints the tail of a log for any that
+does not. Ports come from the `.env` files, not from the script.
+
+By hand it is five processes, each from its own directory, each reading the
+`.env` beside it -- which is also why the script sets a working directory per
+process rather than running them all from the root:
+
+```sh
+cd backend/vndb  && go run ./cmd/neovndb serve     # :5100  the read API
+cd backend/vndb  && go run ./cmd/neovndb images    # :5101  the image mirror
+cd backend/users && go run ./cmd/users             # :5102  accounts and lists
+cd frontend      && npm run dev                    # :3000  the site
+cd edge          && caddy run                      # :5090  the only address
+```
+
+Then open <http://127.0.0.1:5090>.
+
+`caddy run` must start from `edge/`, because the image roots in the snippet are
+written relative to it. Open the site on :5090, never :3000: nothing but the
+edge serves `/imgserve` and `/userserve`, and the dev server only accepts its
+hot-reload connection from the edge's origin because `next.config.ts` names it
+-- without that no page hydrates, which looks like images that never appear
+and a header that never learns who is signed in. `npm run dev` is the one to use while editing; `npm run
+build && npm start` serves a production build, which is what the numbers in
+the CLS notes were measured against -- and which will not pick up a source
+change until it is rebuilt.
+
+Nothing here starts PostgreSQL. The read API also expects a promoted
+generation: without one it starts and says so, and every query fails until
+`db promote` has run.
+
 ## Accounts carried over
 
 `backend/users` can take on the database of the service this project replaces:
@@ -118,6 +166,8 @@ go run ./cmd/neovndb db verify
 | `db drop <schema>` | Drop one generation; refuses the live one |
 | `db check` | Compare `vndb_next` with the live generation and report what objects |
 | `db verify` | Write and read through the generated queries, then roll back |
+| `trans status` | What the translation corpus holds, and the language it is in |
+| `trans seed <file>` | Load a corpus; refuses the whole file if any row loses its markup |
 
 ## Updating
 

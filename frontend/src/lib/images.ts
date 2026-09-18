@@ -12,6 +12,19 @@
  *  server and the mirror process never wakes up. A query parameter could not
  *  do that -- a file matcher cannot see one. */
 
+/** Whether to fetch images at all.
+ *
+ *  Off is for working on the site away from the mirror: every cover and
+ *  screenshot would otherwise be a request to an image service that is not
+ *  there, and the page spends its time waiting to find that out. The boxes are
+ *  still drawn at the size the image would have taken, so what is being worked
+ *  on -- the layout -- is the same layout.
+ *
+ *  Read at build time from the environment, which is what NEXT_PUBLIC_ means:
+ *  in `next dev` that is the dev server's own environment, so `start.ps1
+ *  -NoImages` is enough; a production build bakes it in. */
+export const IMAGES_OFF = process.env.NEXT_PUBLIC_NO_IMAGES === "1"
+
 /** A path, not an address: these end up in `src` attributes, so the browser
  *  resolves them against whatever name the page was served under and the
  *  mirror is reachable from every one of them. The edge answers a file it
