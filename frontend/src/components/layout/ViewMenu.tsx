@@ -13,13 +13,13 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, Flame, Languages, Swords } from "lucide-react"
+import { Eye, EyeOff, Flame, Languages, Swords } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePrefs } from "@/hooks/usePrefs"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
 import { Segmented, type Option } from "@/components/ui/Segmented"
-import type { SexualLevel, ViolenceLevel } from "@/lib/content"
+import type { SexualLevel, SpoilerLevel, ViolenceLevel } from "@/lib/content"
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from "@/components/ui/Menu"
 
 /** The two scales. Their colours climb with them, so a raised one is
@@ -34,6 +34,14 @@ const VIOLENCE: Option<ViolenceLevel>[] = [
   { value: "tame", label: "Tame" },
   { value: "violent", label: "Violent", short: "Viol", activeClass: "bg-orange-500/80 text-black" },
   { value: "brutal", label: "Brutal", short: "Brut", activeClass: "bg-red-800/80 text-white" },
+]
+
+/** Written as strings because that is what a row of options is keyed by; the
+ *  level itself is a number, and the two are one step apart. */
+const SPOILERS: Option<string>[] = [
+  { value: "0", label: "None" },
+  { value: "1", label: "Minor", activeClass: "bg-yellow-500/80 text-black" },
+  { value: "2", label: "All", activeClass: "bg-orange-500/80 text-black" },
 ]
 
 export function ViewMenu() {
@@ -90,6 +98,16 @@ export function ViewMenu() {
               value={p.violence}
               options={VIOLENCE}
               onChange={(violence) => p.set({ violence })}
+              className="w-full"
+            />
+          </div>
+          <MenuLabel icon={<EyeOff className="size-3.5" aria-hidden />}>Spoilers</MenuLabel>
+          <div className="px-1 pb-1">
+            <Segmented
+              label="Spoilers"
+              value={String(p.spoiler)}
+              options={SPOILERS}
+              onChange={(level) => p.set({ spoiler: Number(level) as SpoilerLevel })}
               className="w-full"
             />
           </div>

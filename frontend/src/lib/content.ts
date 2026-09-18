@@ -8,6 +8,12 @@
 export type SexualLevel = "safe" | "suggestive" | "explicit"
 export type ViolenceLevel = "tame" | "violent" | "brutal"
 
+/** How much of the story a reader is willing to have given away: none, the
+ *  minor turns, or everything. Unlike the two above it is also a per-section
+ *  control, because a spoiler warning belongs where the spoilers are -- this
+ *  is only where each section starts. */
+export type SpoilerLevel = 0 | 1 | 2
+
 /** Whether an image's votes put it past what the reader asked for.
  *
  *  A null score means nobody voted, which is not the same as safe -- an
