@@ -26,6 +26,10 @@ func New(store *db.Store, cat *query.Catalog) *Resolver {
 
 func (r *Resolver) Registry() query.Registry { return fields.Registry() }
 
+// Filters is what this type can be narrowed by, for a condition written about
+// it from inside a query about something else.
+func (r *Resolver) Filters() map[string]query.FilterFunc { return spec.Filters }
+
 func (r *Resolver) Type() string { return vndb.TypeTag }
 
 // Objects renders these entities for another type that nests them.

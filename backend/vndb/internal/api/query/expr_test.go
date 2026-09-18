@@ -49,9 +49,16 @@ func TestParseExpr(t *testing.T) {
 		{`search="ever, out"`, "search=ever, out"},
 		{`search="say \"no\""`, `search=say "no"`},
 		{"released>=2010-01-01", "released>=2010-01-01"},
+		// A bracketed value is a condition about a related type, handed over
+		// whole for that type's own filters to read.
+		{"release=(lang=en)", "release=(lang=en)"},
+		{"release=(lang=en+freeware=true)", "release=(lang=en+freeware=true)"},
+		{"release=(vn=(lang=en))", "release=(vn=(lang=en))"},
+		{"a=1+release=(lang=en)", "(a=1&release=(lang=en))"},
+		{"!release=(lang=en)", "!release=(lang=en)"},
 	}
 	for _, c := range cases {
-		got, err := ParseExpr(c.in, 0)
+		got, err := ParseExpr(c.in, nil)
 		if err != nil {
 			t.Errorf("ParseExpr(%q): %v", c.in, err)
 			continue
@@ -74,9 +81,10 @@ func TestParseExprRefuses(t *testing.T) {
 		`search="unclosed`, // unclosed quote
 		"!",                // nothing to negate
 		"Lang=en",          // names are lower case, so this is not one
+		"release=(lang=en", // a bracketed value left open
 	}
 	for _, in := range cases {
-		if _, err := ParseExpr(in, 0); err == nil {
+		if _, err := ParseExpr(in, nil); err == nil {
 			t.Errorf("ParseExpr(%q) was accepted", in)
 		} else if !IsClientError(err) {
 			t.Errorf("ParseExpr(%q) failed with %v, which is not a client error", in, err)
@@ -85,17 +93,27 @@ func TestParseExprRefuses(t *testing.T) {
 }
 
 func TestParseExprBudget(t *testing.T) {
-	if _, err := ParseExpr("a=1,b=2,c=3", 2); err == nil {
+	if _, err := ParseExpr("a=1,b=2,c=3", Budget(2)); err == nil {
 		t.Error("three conditions were accepted with a budget of two")
 	}
-	if _, err := ParseExpr("a=1,b=2,c=3", 3); err != nil {
+	if _, err := ParseExpr("a=1,b=2,c=3", Budget(3)); err != nil {
 		t.Errorf("three conditions with a budget of three: %v", err)
 	}
-	if _, err := ParseExpr("a=1,b=2,c=3", 0); err != nil {
+	if _, err := ParseExpr("a=1,b=2,c=3", Budget(0)); err != nil {
 		t.Errorf("no budget should mean no ceiling: %v", err)
 	}
-	if _, err := ParseExpr(strings.Repeat("(", 200)+"a=1", 0); err == nil {
+	if _, err := ParseExpr(strings.Repeat("(", 200)+"a=1", nil); err == nil {
 		t.Error("a tree deeper than the stack guard was accepted")
+	}
+
+	// One budget, spent by everything it is passed to: two expressions that
+	// each fit on their own do not both fit together.
+	shared := Budget(3)
+	if _, err := ParseExpr("a=1,b=2", shared); err != nil {
+		t.Errorf("first expression: %v", err)
+	}
+	if _, err := ParseExpr("c=3,d=4", shared); err == nil {
+		t.Error("a second expression was allowed to spend the budget twice")
 	}
 }
 
@@ -116,7 +134,7 @@ func TestCompileExpr(t *testing.T) {
 		{"!(lang=en,lang=ja)", "NOT (($1 = ANY(vn.c_languages) OR $2 = ANY(vn.c_languages)))"},
 	}
 	for _, c := range cases {
-		n, err := ParseExpr(c.in, 0)
+		n, err := ParseExpr(c.in, nil)
 		if err != nil {
 			t.Errorf("ParseExpr(%q): %v", c.in, err)
 			continue
@@ -138,7 +156,7 @@ func TestCompileExprRefuses(t *testing.T) {
 		"nosuch=1", // not a filter
 		"lang>=en", // this one matches rather than compares
 	} {
-		n, err := ParseExpr(in, 0)
+		n, err := ParseExpr(in, nil)
 		if err != nil {
 			continue // refused earlier, which is also a refusal
 		}

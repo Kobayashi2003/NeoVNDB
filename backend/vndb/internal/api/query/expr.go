@@ -55,19 +55,18 @@ type negation struct{ inner node }
 
 // ParseExpr reads an expression, or returns nil when there is nothing to read.
 //
-// `nodes` bounds the work a single request can ask for; 0 lifts it. Depth is
-// bounded by the same number, since a tree cannot be deeper than it is large,
-// and by a fixed ceiling besides -- that one is not policy but a guard on this
-// process's own stack, which an unbounded setting would otherwise hand to
-// whoever writes the query string.
-func ParseExpr(text string, nodes int) (node, error) {
+// `budget` is how many conditions are left to spend, counted down as they are
+// read; nil lifts the ceiling. One request shares one budget, so an expression
+// nested inside another draws from the same pool and nesting cannot multiply
+// what a single query may ask for. Depth is bounded by it too -- a tree cannot
+// be deeper than it is large -- and by a fixed ceiling besides, which is not
+// policy but a refusal to hand this process's stack to whoever writes the
+// query string.
+func ParseExpr(text string, budget *int) (node, error) {
 	if strings.TrimSpace(text) == "" {
 		return nil, nil
 	}
-	p := &parser{in: []rune(text), budget: nodes}
-	if p.budget <= 0 {
-		p.budget = -1
-	}
+	p := &parser{in: []rune(text), budget: budget}
 	n, err := p.expression(0)
 	if err != nil {
 		return nil, err
@@ -83,17 +82,28 @@ const maxExprDepth = 64
 type parser struct {
 	in     []rune
 	at     int
-	budget int // nodes left, or -1 for no ceiling
+	budget *int // conditions left to spend, or nil for no ceiling
+}
+
+// Budget hands out a counter for one request, or nil where there is no
+// ceiling. It is a pointer because an expression nested in another spends from
+// the same one.
+func Budget(nodes int) *int {
+	if nodes <= 0 {
+		return nil
+	}
+	n := nodes
+	return &n
 }
 
 func (p *parser) spend() error {
-	if p.budget < 0 {
+	if p.budget == nil {
 		return nil
 	}
-	if p.budget == 0 {
+	if *p.budget == 0 {
 		return BadRequest("filter: too many conditions")
 	}
-	p.budget--
+	*p.budget--
 	return nil
 }
 
@@ -228,9 +238,33 @@ func (p *parser) leaf() (node, error) {
 }
 
 // A value runs to the next thing that means something to this grammar, or is
-// quoted and runs to its closing quote.
+// quoted and runs to its closing quote -- or is itself bracketed, which is how
+// a condition about a related thing is written:
+//
+//	release=(lang=en+freeware=true)
+//
+// The brackets and what is between them are handed over whole. Which filters
+// that text is about is not known here and does not need to be: the filter it
+// belongs to knows what it relates to, and reads it when it is compiled.
 func (p *parser) value() (string, error) {
 	p.skipSpace()
+	if p.at < len(p.in) && p.in[p.at] == '(' {
+		start := p.at
+		depth := 0
+		for p.at < len(p.in) {
+			switch p.in[p.at] {
+			case '(':
+				depth++
+			case ')':
+				depth--
+			}
+			p.at++
+			if depth == 0 {
+				return string(p.in[start:p.at]), nil
+			}
+		}
+		return "", BadRequest("filter: a bracket was opened and not closed")
+	}
 	if p.at < len(p.in) && p.in[p.at] == '"' {
 		p.at++
 		var out strings.Builder
@@ -305,7 +339,7 @@ func (l *leaf) compile(b *Builder, filters map[string]FilterFunc) (string, error
 	// A sub-builder so the filter's conditions can be picked up and combined,
 	// rather than landing in the AND-list at the top. Arguments are threaded
 	// through so their numbering stays in step.
-	sub := &Builder{Args: b.Args, Limits: b.Limits}
+	sub := b.sub()
 	if err := apply(sub, value); err != nil {
 		return "", err
 	}
