@@ -44,6 +44,25 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T> 
   return body as T
 }
 
+/** Which dump is being served, and when it was taken and loaded.
+ *
+ *  Null rather than a throw when the API cannot say: a page that is otherwise
+ *  fine should not fail over the line that dates it. */
+export async function generation(): Promise<Generation | null> {
+  try {
+    return await get<Generation>("/meta/generation", {})
+  } catch {
+    return null
+  }
+}
+
+export interface Generation {
+  /** The dump's own date, as vndb numbers it: 20260907. */
+  code: string
+  imported_at: string
+  published_at: string
+}
+
 /** byId returns the single entity, or null when the id matches nothing. */
 export async function byId<T>(type: string, id: string, fields: string): Promise<T | null> {
   const page = await get<Page<T>>(`/${type}`, { id, fields, limit: "1" })
