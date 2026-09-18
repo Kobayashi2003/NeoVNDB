@@ -2,12 +2,21 @@
  *
  *  It cycles rather than offering three buttons, and skips a level with
  *  nothing behind it, so the control can say what the next click will actually
- *  reveal. A section with no spoilers at all shows no control. */
+ *  reveal. A section with no spoilers at all shows no control.
+ *
+ *  Where it starts is a saved preference, because somebody who has finished a
+ *  work was answering the same question on every page they opened. A section
+ *  the reader has actually touched keeps their answer for as long as they are
+ *  on the page; one they have not follows the preference, so changing it in
+ *  the header changes what is in front of them rather than only what comes
+ *  next. */
 "use client"
 
 import { useState } from "react"
+import { usePrefs } from "./usePrefs"
+import type { SpoilerLevel } from "@/lib/content"
 
-export type SpoilerLevel = 0 | 1 | 2
+export type { SpoilerLevel } from "@/lib/content"
 
 export interface SpoilerControl {
   level: SpoilerLevel
@@ -23,7 +32,9 @@ export interface SpoilerControl {
 }
 
 export function useSpoilerLevel(hasMinor: boolean, hasMajor: boolean): SpoilerControl {
-  const [level, set] = useState<SpoilerLevel>(0)
+  const { spoiler } = usePrefs()
+  const [touched, set] = useState<SpoilerLevel | null>(null)
+  const level = touched ?? spoiler
 
   const next = (): SpoilerLevel => {
     if (level === 0) return hasMinor ? 1 : 2

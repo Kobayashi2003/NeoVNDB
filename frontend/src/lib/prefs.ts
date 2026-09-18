@@ -8,10 +8,15 @@
  *  0.1676 on a visual novel page, by a distance the largest layout shift on
  *  the site. A cookie rides along with the request that renders the page.
  *
- *  Small enough to send on every request: four short fields, under a hundred
- *  bytes. Not httpOnly -- the browser half is the half that writes it. */
+ *  Five short fields, 147 bytes on the wire once the JSON is percent-encoded
+ *  -- and it rides along with everything on this origin, images included, so
+ *  a page of covers carries it a couple of dozen times. Small enough to be
+ *  worth the page rendering correctly the first time; if it ever stops being
+ *  so, the fix is a compact encoding rather than a second home for it.
+ *
+ *  Not httpOnly: the browser half is the half that writes it. */
 
-import type { SexualLevel, ViolenceLevel } from "./content"
+import type { SexualLevel, SpoilerLevel, ViolenceLevel } from "./content"
 
 /** How the character section lays its cards out. */
 export type CharacterLayout = "grid" | "slider"
@@ -22,6 +27,9 @@ export interface Prefs {
   original: boolean
   sexual: SexualLevel
   violence: ViolenceLevel
+  /** Where every section starts. A reader who has finished a work should not
+   *  have to reveal it again on every page. */
+  spoiler: SpoilerLevel
   layout: CharacterLayout
 }
 
@@ -29,6 +37,7 @@ export const DEFAULTS: Prefs = {
   original: false,
   sexual: "safe",
   violence: "tame",
+  spoiler: 0,
   layout: "grid",
 }
 
@@ -53,6 +62,9 @@ export function readPrefs(raw: string | undefined | null): Prefs {
       original: typeof saved.original === "boolean" ? saved.original : DEFAULTS.original,
       sexual: pick(saved.sexual, ["safe", "suggestive", "explicit"], DEFAULTS.sexual),
       violence: pick(saved.violence, ["tame", "violent", "brutal"], DEFAULTS.violence),
+      spoiler: ([0, 1, 2] as const).includes(saved.spoiler as 0 | 1 | 2)
+        ? (saved.spoiler as SpoilerLevel)
+        : DEFAULTS.spoiler,
       layout: pick(saved.layout, ["grid", "slider"], DEFAULTS.layout),
     }
   } catch {
