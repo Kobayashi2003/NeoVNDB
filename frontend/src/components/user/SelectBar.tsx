@@ -10,6 +10,7 @@
 import { useState } from "react"
 import { Check, CheckSquare, FolderInput, Loader2, Square, Trash2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
 import type { Collection } from "@/lib/user"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
@@ -135,10 +136,9 @@ export function SelectBar({
             </button>
 
             {picking && (
-              <div
-                ref={menu}
-                className="absolute bottom-full left-0 z-30 mb-2 max-h-64 w-56 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl"
-              >
+              // Upward: the bar sits at the foot of the screen.
+              <MenuPanel ref={menu} above scroll>
+                <MenuLabel>Move to</MenuLabel>
                 {lists.map((list) => (
                   <button
                     key={list.id}
@@ -147,13 +147,13 @@ export function SelectBar({
                       setPicking(false)
                       onMove(list.id)
                     }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-white/10"
+                    className={menuItem()}
                   >
                     <span className="min-w-0 flex-1 truncate">{list.name}</span>
                     <span className="shrink-0 tabular-nums text-muted">{list.count}</span>
                   </button>
                 ))}
-              </div>
+              </MenuPanel>
             )}
           </div>
 

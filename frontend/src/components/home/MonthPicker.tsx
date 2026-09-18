@@ -13,6 +13,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MenuPanel } from "@/components/ui/Menu"
 import { withParams, type Params } from "@/lib/href"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
@@ -84,10 +85,7 @@ export function MonthPicker({
       </Link>
 
       {open && (
-        <div
-          ref={menu}
-          className="absolute left-0 top-full z-30 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-white/10 bg-[var(--overlay)] p-2 shadow-xl"
-        >
+        <MenuPanel ref={menu} className="w-64 p-2">
           <div className="mb-2 flex items-center justify-between">
             <button
               type="button"
@@ -127,7 +125,7 @@ export function MonthPicker({
               )
             })}
           </div>
-        </div>
+        </MenuPanel>
       )}
     </div>
   )

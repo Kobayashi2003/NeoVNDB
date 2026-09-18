@@ -15,6 +15,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { ChevronDown, Library } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MenuDivider, MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
 import { LIST } from "@/lib/list"
 import { TYPES } from "@/components/layout/shelves"
 import type { Collection } from "@/lib/user"
@@ -33,10 +34,7 @@ function Row({ list, here, onGo }: { list: Collection; here: boolean; onGo?: () 
       href={`/u/${list.id}`}
       onClick={onGo}
       aria-current={here ? "page" : undefined}
-      className={cn(
-        "flex items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors",
-        here ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10",
-      )}
+      className={menuItem({ current: here })}
     >
       <span className="min-w-0 flex-1 truncate">{list.name}</span>
       <span className="shrink-0 tabular-nums text-muted">{list.count}</span>
@@ -58,7 +56,7 @@ export function CollectionColumn({
     <nav aria-label="Your lists" className={cn("flex flex-col gap-4", className)}>
       {byType(lists).map(({ type, mine }) => (
         <div key={type} className="flex flex-col gap-0.5">
-          <p className="px-2 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
+          <p className="px-2.5 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
             {LIST[type].label}
           </p>
           {mine.map((list) => (
@@ -68,7 +66,7 @@ export function CollectionColumn({
       ))}
       <Link
         href="/u"
-        className="px-2 text-xs text-muted transition-colors hover:text-white"
+        className="px-2.5 text-xs text-muted transition-colors hover:text-white"
       >
         Manage lists
       </Link>
@@ -108,15 +106,10 @@ export function CollectionPicker({
       </button>
 
       {open && (
-        <div
-          ref={menu}
-          className="absolute left-0 top-full z-30 mt-1 max-h-80 w-60 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl"
-        >
+        <MenuPanel ref={menu} scroll>
           {byType(lists).map(({ type, mine }) => (
-            <div key={type} className="mb-1 flex flex-col gap-0.5 last:mb-0">
-              <p className="px-2 pt-1 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
-                {LIST[type].label}
-              </p>
+            <div key={type}>
+              <MenuLabel>{LIST[type].label}</MenuLabel>
               {mine.map((list) => (
                 <Row
                   key={list.id}
@@ -127,14 +120,11 @@ export function CollectionPicker({
               ))}
             </div>
           ))}
-          <Link
-            href="/u"
-            onClick={() => setOpen(false)}
-            className="mt-1 block border-t border-white/10 px-2 py-1.5 pt-2 text-xs text-muted transition-colors hover:text-white"
-          >
+          <MenuDivider />
+          <Link href="/u" onClick={() => setOpen(false)} className={menuItem({ className: "text-muted" })}>
             Manage lists
           </Link>
-        </div>
+        </MenuPanel>
       )}
     </div>
   )

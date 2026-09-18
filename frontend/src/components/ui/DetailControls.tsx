@@ -1,18 +1,18 @@
 /** The controls that act on the thing a detail page is about.
  *
  *  They sit together in the header, in one order everywhere: whatever the page
- *  adds of its own first, then what the reader thought of it, then the script
- *  toggle, then saving. The last three are on every one of the seven pages, so
- *  a reader who learns where they are once has learnt it for all of them.
+ *  adds of its own first, then what the reader thought of it, then saving.
+ *  The last two are on every one of the seven pages, so a reader who learns
+ *  where they are once has learnt it for all of them.
  *
- *  There is a second reason they share a row. Whether there is a save button
- *  is not known until the session comes back, and on a narrow screen these
- *  controls are a row of their own -- so a row that appeared only then would
- *  push the whole page down a moment after it was drawn. The script toggle
- *  needs no session and is always here, which gives the row its height from
- *  the first paint and leaves the save button nothing to grow. */
+ *  Both of them wait for the session, and on a narrow screen these controls
+ *  are a row of their own -- so a row that arrived with the session would push
+ *  the whole page down a moment after it was drawn. The row therefore holds
+ *  the height of the tallest thing that can land in it from the first paint.
+ *  The script toggle used to do that job by being here and needing no session;
+ *  it now lives in the header bar, with the rest of what the reader has chosen
+ *  to see. */
 
-import { OriginalToggle } from "./PrefsControls"
 import { RatingStars } from "@/components/user/RatingStars"
 import { CollectionButton } from "@/components/user/CollectionButton"
 
@@ -27,10 +27,9 @@ export function DetailControls({
   children?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="flex min-h-7 flex-wrap items-center justify-end gap-2">
       {children}
       <RatingStars id={id} />
-      <OriginalToggle />
       <CollectionButton id={id} />
     </div>
   )

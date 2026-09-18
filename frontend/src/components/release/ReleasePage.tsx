@@ -17,7 +17,6 @@ import { Collapsible } from "@/components/ui/Collapsible"
 import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
 import { Icon } from "@/components/ui/Icon"
 import { InfoCard } from "@/components/ui/InfoCard"
-import { ContentLevels } from "@/components/ui/PrefsControls"
 import { DetailControls } from "@/components/ui/DetailControls"
 import { Section } from "@/components/ui/Section"
 import { usePrefs } from "@/hooks/usePrefs"
@@ -55,7 +54,6 @@ export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
       }
       aside={
         <>
-          <ContentLevels className="flex-col items-stretch" />
           <ReleaseInfoPanel release={r} />
         </>
       }

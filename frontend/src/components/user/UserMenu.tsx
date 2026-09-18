@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { UserError } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 import { useDismiss } from "@/hooks/useDismiss"
+import { MenuDivider, MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
 
 export function UserMenu() {
   const session = useSession()
@@ -89,40 +90,32 @@ function SignedIn() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-52 rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl">
-          <Link
-            href="/u"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
-          >
-            <ListChecks className="h-3 w-3 shrink-0" aria-hidden />
+        <MenuPanel align="end">
+          <MenuLabel>
+            {/* The name as it was chosen: the label's capitals would change it. */}
+            Signed in as{" "}
+            <span className="break-all font-medium normal-case tracking-normal text-white/80">
+              {session.user?.username}
+            </span>
+          </MenuLabel>
+          <Link href="/u" onClick={() => setOpen(false)} className={menuItem()}>
+            <ListChecks className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Your lists
           </Link>
-          <Link
-            href="/account"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
-          >
-            <KeyRound className="h-3 w-3 shrink-0" aria-hidden />
+          <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
+            <KeyRound className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Change password
           </Link>
-          <button
-            type="button"
-            onClick={() => leave(false)}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
-          >
-            <LogOut className="h-3 w-3 shrink-0" aria-hidden />
+          <MenuDivider />
+          <button type="button" onClick={() => leave(false)} className={menuItem()}>
+            <LogOut className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out
           </button>
-          <button
-            type="button"
-            onClick={() => leave(true)}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-white/80 transition-colors hover:bg-white/10"
-          >
-            <MonitorSmartphone className="h-3 w-3 shrink-0" aria-hidden />
+          <button type="button" onClick={() => leave(true)} className={menuItem()}>
+            <MonitorSmartphone className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out everywhere
           </button>
-        </div>
+        </MenuPanel>
       )}
     </div>
   )

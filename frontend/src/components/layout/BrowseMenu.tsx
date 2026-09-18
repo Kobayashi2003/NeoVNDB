@@ -13,9 +13,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Check, ChevronDown, Library } from "lucide-react"
+import { ChevronDown, Library } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
+import { MenuPanel, menuItem } from "@/components/ui/Menu"
 import { SHORT, TYPES } from "./shelves"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
@@ -48,10 +49,7 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
       </button>
 
       {open && (
-        <div
-          ref={menu}
-          className="absolute left-0 top-full z-30 mt-1 w-52 max-w-[calc(100vw-2rem)] rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl"
-        >
+        <MenuPanel ref={menu}>
           {TYPES.map((type) => {
             const on = type === here
             return (
@@ -60,17 +58,13 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
                 href={`/${type}`}
                 onClick={() => setOpen(false)}
                 aria-current={on ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors",
-                  on ? "text-accent" : "text-white/80 hover:bg-white/10",
-                )}
+                className={menuItem({ current: on })}
               >
-                <Check className={cn("h-3 w-3 shrink-0", !on && "invisible")} aria-hidden />
                 <span className="truncate">{LIST[type].label}</span>
               </Link>
             )
           })}
-        </div>
+        </MenuPanel>
       )}
     </div>
   )

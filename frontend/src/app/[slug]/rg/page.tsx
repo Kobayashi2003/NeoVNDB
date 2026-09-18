@@ -12,7 +12,6 @@ import { one, withParams } from "@/lib/href"
 import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { Name } from "@/components/ui/Name"
-import { OriginalToggle } from "@/components/ui/PrefsControls"
 import { RelationGraph } from "@/components/vn/RelationGraph"
 import type { RelationGraph as Graph } from "@/lib/graph"
 
@@ -60,7 +59,6 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
             Related to <Name name={vn.title} original={vn.alttitle} fallback={slug} />
           </h1>
         </div>
-        <OriginalToggle />
       </div>
 
       <div className="flex flex-wrap items-center gap-1">

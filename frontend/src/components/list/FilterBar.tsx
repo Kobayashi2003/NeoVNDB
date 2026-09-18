@@ -14,9 +14,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Check, ChevronDown, X } from "lucide-react"
+import { ChevronDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
+import { MenuLabel, MenuMark, MenuPanel, menuAction, menuItem } from "@/components/ui/Menu"
 import { one, withParams, type Params } from "@/lib/href"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
 import { useDismiss } from "@/hooks/useDismiss"
@@ -85,8 +86,12 @@ export function FilterBar({
         <Link
           key={`${filter.key}-${value}`}
           href={toggled(path, params, filter, value)}
+          aria-label={`Remove ${filter.label}: ${labelOf(filter, value)}`}
           className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs text-accent transition-colors hover:bg-accent/25"
         >
+          {/* Named with its filter: "No" on its own could be any of the
+              yes/no filters, and two of them on at once read as the same. */}
+          <span className="text-accent/60">{filter.label}</span>
           {labelOf(filter, value)}
           <X className="h-3 w-3" aria-hidden />
         </Link>
@@ -126,6 +131,7 @@ function FilterMenu({
   const [open, setOpen] = useState(false)
   const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
   const menu = useKeptOnScreen<HTMLDivElement>(open)
+  const cleared = withParams(path, params, { [filter.key]: null, page: null })
 
   return (
     <div ref={box} className="relative">
@@ -141,41 +147,60 @@ function FilterMenu({
         )}
       >
         {filter.label}
-        {chosen.length > 0 && <span className="tabular-nums text-muted">{chosen.length}</span>}
+        {/* One value says itself; several are counted, and listed beside. */}
+        {chosen.length === 1 && !filter.multiple && (
+          <span className="font-normal text-white/70">{labelOf(filter, chosen[0])}</span>
+        )}
+        {filter.multiple && chosen.length > 0 && (
+          <span className="tabular-nums text-muted">{chosen.length}</span>
+        )}
         <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} aria-hidden />
       </button>
 
       {open && (
-        // Capped and scrolling: there are fifty languages, and a menu that
-        // ran off the screen would be worse than one you have to scroll.
-        <div
-          ref={menu}
-          className="absolute left-0 top-full z-30 mt-1 max-h-80 w-56 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-lg border border-white/10 bg-[var(--overlay)] p-1 shadow-xl"
-        >
+        // Scrolling: there are fifty languages, and a menu that ran off the
+        // screen would be worse than one you have to scroll.
+        <MenuPanel ref={menu} scroll>
+          <MenuLabel
+            action={
+              chosen.length > 0 && (
+                <Link href={cleared} onClick={() => setOpen(false)} className={menuAction}>
+                  Clear
+                </Link>
+              )
+            }
+          >
+            {filter.multiple ? `${filter.label} · any of` : filter.label}
+          </MenuLabel>
           {filter.choices.map((choice) => (
             <Option
               key={choice.value}
               href={toggled(path, params, filter, choice.value)}
               choice={choice}
               on={chosen.includes(choice.value)}
+              multiple={!!filter.multiple}
             />
           ))}
-        </div>
+        </MenuPanel>
       )}
     </div>
   )
 }
 
-function Option({ href, choice, on }: { href: string; choice: Choice; on: boolean }) {
+function Option({
+  href,
+  choice,
+  on,
+  multiple,
+}: {
+  href: string
+  choice: Choice
+  on: boolean
+  multiple: boolean
+}) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors",
-        on ? "text-accent" : "text-white/80 hover:bg-white/10",
-      )}
-    >
-      <Check className={cn("h-3 w-3 shrink-0", !on && "invisible")} aria-hidden />
+    <Link href={href} className={menuItem({ className: on ? "text-white" : undefined })} aria-current={on || undefined}>
+      <MenuMark kind={multiple ? "check" : "radio"} on={on} />
       {choice.icon && <span className={cn(choice.icon, "shrink-0")} aria-hidden />}
       <span className="truncate">{choice.label}</span>
     </Link>
