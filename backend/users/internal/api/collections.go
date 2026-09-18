@@ -17,19 +17,9 @@ import (
 // by which column the number sits in.
 const kinds = "vrcpsgi"
 
-const (
-	maxName = 64
-	// What one page of marks holds by default, and the most it will hold when
-	// a caller names its own size. The ceiling is the read API's id-list limit:
-	// a page of marks is turned back into things by handing those ids to it,
-	// so a page it could not resolve in one request would be no use.
-	pageSize    = 24
-	maxPageSize = 100
-	// How much of a list can be handed over at once for the read API to sort
-	// or search. The ceiling is its id-list limit, and past it a collection
-	// can still be read in the order it was made -- which needs no such trick.
-	maxItems = 1000
-)
+// The longest a list's name may be. Not a limit on work, so not a setting:
+// it is what the column holds.
+const maxName = 64
 
 func parseID(raw string) (kind string, num int32, ok bool) {
 	if len(raw) < 2 || !strings.ContainsAny(raw[:1], kinds) {
@@ -179,7 +169,7 @@ func (s *Server) listMarks(w http.ResponseWriter, r *http.Request, userID int32)
 	if !ok {
 		return
 	}
-	limit, ok := positive(w, r, "limit", pageSize, maxPageSize)
+	limit, ok := positive(w, r, "limit", s.cfg.PageSize, s.cfg.MaxPageSize)
 	if !ok {
 		return
 	}
@@ -237,7 +227,7 @@ func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
 		fail(w, http.StatusBadRequest, "That is not a list.")
 		return
 	}
-	items, total, err := s.store.Items(r.Context(), userID, id, maxItems)
+	items, total, err := s.store.Items(r.Context(), userID, id, s.cfg.MaxItems)
 	if !s.answer(w, "reading a collection", err) {
 		return
 	}
@@ -311,8 +301,8 @@ func (s *Server) batch(w http.ResponseWriter, r *http.Request) (batchOf, bool) {
 	case len(body.Items) == 0:
 		fail(w, http.StatusBadRequest, "Name at least one thing to act on.")
 		return b, false
-	case len(body.Items) > maxPageSize:
-		fail(w, http.StatusBadRequest, fmt.Sprintf("At most %d at a time.", maxPageSize))
+	case s.cfg.MaxPageSize > 0 && len(body.Items) > s.cfg.MaxPageSize:
+		fail(w, http.StatusBadRequest, fmt.Sprintf("At most %d at a time.", s.cfg.MaxPageSize))
 		return b, false
 	}
 
