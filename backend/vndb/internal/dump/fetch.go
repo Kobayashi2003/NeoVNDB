@@ -27,17 +27,11 @@ type Release struct {
 // to learn which day is current without downloading anything.
 var datePattern = regexp.MustCompile(`vndb-db-(\d{4})-(\d{2})-(\d{2})\.tar\.zst`)
 
-// The index names archives in two places: as links to files that exist, and as
-// plain text saying where `latest` is meant to point. Those disagree while a
-// dump is being published, and only the links can be fetched, so only hrefs
-// are considered.
+// Only hrefs count: the index's plain text can name a dump still being published.
 var hrefPattern = regexp.MustCompile(`href="(vndb-db-\d{4}-\d{2}-\d{2}\.tar\.zst)"`)
 
-// Latest resolves the newest published archive.
-//
-// The `latest` link has redirected two different ways over time: straight at
-// the dated archive, and at the directory that holds them. Either is handled,
-// because which one upstream serves is not ours to decide.
+// Latest resolves the newest archive. `latest` has redirected both to the
+// archive itself and to its directory; both are handled.
 func Latest(ctx context.Context, latestURL string) (*Release, error) {
 	target, err := redirectTarget(ctx, latestURL)
 	if err != nil {
@@ -49,8 +43,7 @@ func Latest(ctx context.Context, latestURL string) (*Release, error) {
 		return describe(ctx, target, m)
 	}
 
-	// It named a directory instead, so the newest archive listed there is the
-	// one meant.
+	// It named a directory: take the newest archive listed there.
 	name, err := newestListed(ctx, target)
 	if err != nil {
 		return nil, err
@@ -148,9 +141,8 @@ func describe(ctx context.Context, archiveURL string, date []string) (*Release, 
 		return nil, err
 	}
 	head.Body.Close()
-	// Without this an archive that is advertised but not yet published comes
-	// back as a zero-byte release dated year one, and the failure only shows
-	// up later as a 404 on the download.
+	// An advertised but unpublished archive would otherwise look like an empty
+	// release and fail later as a 404.
 	if head.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s: %s", archiveURL, head.Status)
 	}
@@ -163,9 +155,8 @@ func describe(ctx context.Context, archiveURL string, date []string) (*Release, 
 	return rel, nil
 }
 
-// Download fetches the release into dir unless it is already there, and
-// returns the local path and its digest. Downloads land on a temporary name
-// first so an interrupted run cannot leave a half file that looks complete.
+// Download fetches the release into dir unless present, via a temporary name
+// so an interrupted run leaves no complete-looking half file.
 func Download(ctx context.Context, rel *Release, dir string) (path, sum string, err error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", "", err

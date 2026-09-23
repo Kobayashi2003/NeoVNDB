@@ -23,9 +23,7 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, fmt.Sprintf("unknown type %q", entity))
 		return
 	}
-	// Checked before parsing: an unserved type has no field registry, so every
-	// field would otherwise be reported as unknown rather than as the type not
-	// being ready.
+	// Before parsing, or every field would be reported unknown.
 	resolver, ok := s.resolvers[entity]
 	if !ok {
 		fail(w, http.StatusNotImplemented, fmt.Sprintf("%s is not served yet", entity))
@@ -38,14 +36,11 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// A nested request runs several queries in sequence, so the bound is on
-	// the request as a whole rather than on any one of them.
+	// Bounds the whole request, which may run several queries.
 	ctx, cancel := s.withTimeout(r.Context())
 	defer cancel()
 
-	// Cached after parsing, so the key is built from the parsed request rather
-	// than the query string: two requests that differ only in the order they
-	// listed their fields are one entry.
+	// Keyed on the parsed request, so field order doesn't split entries.
 	key := cache.Key(s.gen.current(ctx), req.Canonical(entity))
 	if body, ok := s.cache.Get(ctx, key); ok {
 		w.Header().Set("X-Cache", "hit")
@@ -133,9 +128,8 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, body)
 }
 
-// fields answers what one type can be asked for. A fragment that points at
-// another type reports that rather than its fields, because those belong to
-// the other type and the graph has cycles.
+// fields lists one type's fields; a fragment names its target type rather
+// than inlining it (the graph has cycles).
 func (s *Server) fields(w http.ResponseWriter, r *http.Request) {
 	entity := r.PathValue("type")
 	resolver, ok := s.resolvers[entity]
@@ -162,8 +156,7 @@ func (s *Server) fields(w http.ResponseWriter, r *http.Request) {
 		}
 		out[name] = field
 	}
-	// A ceiling of zero means there is none, which reads better as null than
-	// as a depth of nothing.
+	// 0 (no ceiling) is reported as null.
 	var maxDepth any
 	if s.limits.MaxFieldDepth > 0 {
 		maxDepth = s.limits.MaxFieldDepth
@@ -197,9 +190,8 @@ func (s *Server) generation(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// remember keeps a rendered response unless it is too big to be worth the room.
-// With the ceilings switched off a single response can be enormous, and one of
-// those would evict everything else.
+// remember caches a response unless it is too big; with ceilings off one huge
+// response could evict everything else.
 func (s *Server) remember(ctx context.Context, key string, body []byte) {
 	if s.cfg.CacheMaxEntry > 0 && len(body) > s.cfg.CacheMaxEntry {
 		return
@@ -217,8 +209,7 @@ func writeJSON(w http.ResponseWriter, status int, body []byte) {
 func respond(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	// The status line is already out, so a failure here is a broken pipe and
-	// there is nowhere left to report it.
+	// Headers are sent; a failure here is a broken pipe.
 	_ = json.NewEncoder(w).Encode(body)
 }
 

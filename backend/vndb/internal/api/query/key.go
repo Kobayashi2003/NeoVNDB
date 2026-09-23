@@ -6,14 +6,9 @@ import (
 	"strings"
 )
 
-// Canonical renders a request in a form two equivalent requests share, so
-// `fields=a,b` and `fields=b,a` are one cache entry rather than two. It is
-// built from the parsed request rather than the query string, which is what
-// makes that possible: by this point the selection is a tree and the filters
-// are a map, both of which have a canonical ordering.
-//
-// The limits go in as well. Raising a ceiling should let a request through
-// that was refused before, not serve the refusal back out of the cache.
+// Canonical is the cache key: built from the parsed request so equivalent
+// requests (fields=a,b and fields=b,a) share one entry. The limits are part of
+// it so raising a ceiling doesn't serve a cached refusal.
 func (r *Request) Canonical(entity string) string {
 	var b strings.Builder
 	b.WriteString(entity)

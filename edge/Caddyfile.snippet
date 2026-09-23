@@ -1,63 +1,34 @@
-# Route definitions for NeoVNDB's backends -- the single source of truth,
-# imported by ./Caddyfile (a local checkout, or a standalone edge) and by any
-# shared edge that serves this project alongside others.
+# NeoVNDB's routes, imported by ./Caddyfile and by any shared edge.
 #
-# Upstreams and the image roots come from the environment, so the same routes
-# serve loopback ports and container names alike. Defaults are the local ones,
-# and they are 127.0.0.1 rather than localhost: on Windows localhost resolves to
-# ::1 first, and every cold connection to an IPv4-only listener would eat a ~20s
-# IPv6 timeout before falling back.
+# Upstreams come from the environment (VNDBSERVE_UPSTREAM, IMGSERVE_UPSTREAM,
+# USERSERVE_UPSTREAM, NEXT_UPSTREAM). Defaults use 127.0.0.1, not localhost: on
+# Windows localhost tries ::1 first and each cold connection eats a ~20s IPv6
+# timeout. NEOVNDB_IMAGE_DIR / NEOVNDB_IMAGE_DERIVED_DIR are imgserve's stores;
+# relative values resolve per process, so deployments set them absolute.
 #
-#   VNDBSERVE_UPSTREAM / IMGSERVE_UPSTREAM / USERSERVE_UPSTREAM / NEXT_UPSTREAM
-#   NEOVNDB_IMAGE_DIR / NEOVNDB_IMAGE_DERIVED_DIR
-#       imgserve's two stores, read straight off disk on a hit. Same names the
-#       service itself uses, because there should be one answer to where the
-#       images are -- but a relative value is resolved against each process's
-#       working directory, and they differ, so a deployment sets them absolute.
+# Each backend prefix allowlists the routes the frontend uses and answers 403
+# otherwise, which is why vndbserve and imgserve hold no auth code. userserve
+# guards its own routes and passes through whole.
 #
-# Each backend prefix exposes an explicit allowlist of the routes the frontend
-# uses; anything else answers 403 without being forwarded. That is what keeps
-# the services free of any notion of who may call them. vndbserve and imgserve
-# hold no auth code at all: their whole surface stays reachable on their
-# loopback ports, and which part of it the world can reach is decided here.
-#
-# userserve is passed through whole, because every one of its routes already
-# guards itself -- it is the thing the others would have to ask.
-#
-# The browse surface is public, as vndb's own is. If this mirror should instead
-# be readable only by people who have signed in, that is one directive at the
-# top of each gated prefix and no change to any service:
+# To gate browsing behind sign-in, put this at the top of each gated prefix:
 #
 #   forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
 #       uri /auth/verify
 #   }
 #
-# Under /imgserve it would have to go inside a `route`, because Caddy orders
-# bare directives by kind rather than by the order they were written, and the
-# file_server fast path would otherwise answer a cached image without ever
-# asking -- and the two `Cache-Control: public` below would have to become
-# `private`, since an image behind a session is no longer one a shared proxy
-# may keep. Pages rendered on the server would need the reader's cookie
-# carried with them too, which frontend/src/lib/api.ts does not do today.
+# Under /imgserve it must go inside a `route` (Caddy orders directives by kind,
+# so file_server would answer first), Cache-Control must become private, and
+# server-rendered pages would need to forward the cookie (lib/api.ts doesn't).
 #
-# Rules for anything added here:
-#   - No matcher-less `handle` at top level. Whoever owns the address owns the
-#     catch-all, and claiming it here would swallow another project's routes.
-#     (One nested inside a handle_path is fine -- it is scoped to it, like the
-#     403s below.)
-#   - Prefix named matchers with the project (@neovndb_*). A shared edge imports
-#     every project's snippet into one site block, and matcher names are scoped
-#     to that block, not to the file they were written in.
-#   - Backend prefixes stay at the top level rather than under the frontend's,
-#     so a page can reach them by an absolute path from any route.
-#
-# handle_path strips the prefix, so each service sees its own route shape
-# (/vn, /img/..., /login).
+# Rules:
+#   - No matcher-less top-level `handle`: it would swallow other projects'
+#     routes on a shared edge. Nested inside handle_path is fine.
+#   - Prefix matcher names with @neovndb_; a shared edge puts every snippet in
+#     one site block, where matcher names share a scope.
+#   - Backend prefixes stay top-level so pages reach them from any route.
 
 handle_path /vndbserve/* {
-	# The read surface the frontend uses. The admin and import commands, and
-	# anything else the binary grows, are not here and are therefore
-	# loopback-only until someone adds them on purpose.
+	# Anything not listed stays loopback-only.
 	@neovndb_read {
 		method GET HEAD
 		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|meta/(generation|fields/[a-z]+)|health)$
@@ -71,10 +42,8 @@ handle_path /vndbserve/* {
 }
 
 handle_path /imgserve/* {
-	# imgserve's own /img prefix comes off as well, because what is left is then
-	# exactly the path inside the store -- which is what lets the matchers below
-	# ask "is this already on disk?" without reassembling anything. It goes back
-	# on for the one case that reaches the service.
+	# /img comes off too, leaving exactly the path inside the store for the file
+	# matchers; it goes back on for the miss that reaches imgserve.
 	@neovndb_img {
 		method GET HEAD
 		path /img/*
@@ -82,14 +51,8 @@ handle_path /imgserve/* {
 	handle @neovndb_img {
 		uri strip_prefix /img
 
-		# A hit is a file, and a file needs no process: these two blocks answer
-		# straight off disk and imgserve never wakes up. The URL was given the
-		# same shape as the path on disk precisely so this could work -- a width
-		# carried as a query parameter would be invisible to a file matcher.
-		#
-		# The shape is checked as well as the file's existence, because a store
-		# also holds the half-written temporaries a fetch is landing, and those
-		# are nobody's image.
+		# A hit is served straight off disk; imgserve never wakes up. The shape is
+		# checked too, since a store also holds half-written temporaries.
 		@neovndb_img_derived {
 			path_regexp ^/\d+/(cv|ch|sf|st)/\d+/\d+\.jpg$
 			file {
@@ -114,9 +77,7 @@ handle_path /imgserve/* {
 			file_server
 		}
 
-		# A miss, and every width whose copy was never written because the
-		# original was already narrower than it. imgserve fetches from vndb,
-		# stores, resizes and answers; the next request is a hit above.
+		# A miss, or a width never written because the original is narrower.
 		handle {
 			rewrite * /img{path}
 			reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101} {
@@ -142,9 +103,6 @@ handle_path /imgserve/* {
 	}
 }
 
-# No allowlist: userserve has no route that does not already decide for itself
-# whether the caller may use it, and the session cookie it sets is the thing
-# every other prefix would be gated on.
 handle_path /userserve/* {
 	reverse_proxy {$USERSERVE_UPSTREAM:127.0.0.1:5102}
 }

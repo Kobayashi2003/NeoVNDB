@@ -4,25 +4,15 @@
 :root {
   --background: #0e0e10;
 
-  /* Two tiers of translucent surface, each with a hover step. With the
-     backdrop-filter below they read as frosted glass over the page gradient
-     rather than flat panels, and stay opaque enough for text to hold up.
-       surface  — cards and inputs
-       elevated — what floats above them: dialogs, menus, popovers */
+  /* Frosted surfaces: surface for cards and inputs, elevated for dialogs. */
   --surface: rgba(28, 28, 32, 0.74);
   --surface-hover: rgba(32, 32, 36, 0.88);
   --elevated: rgba(42, 42, 47, 0.88);
   --elevated-hover: rgba(42, 42, 47, 0.95);
-  /* What floats over the page and has to be read against whatever is behind
-     it. The frosted tiers above are a texture for panels that sit in the
-     layout; a menu that lets the controls underneath show through is just
-     harder to read. */
+  /* Opaque, for menus: see-through ones are hard to read. */
   --overlay: #232327;
 
-  /* The header's height, which the detail pages subtract from the viewport to
-     size their two scrolling columns. Fixed rather than measured: the bar is
-     one row at every width, and a layout that had to wait for a measurement
-     would jump on first paint. */
+  /* Fixed, not measured, so detail columns don't jump on first paint. */
   --header-h: 3.25rem;
 
   --accent: #1db954;
@@ -62,8 +52,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Every element painted with a surface token gets the blur, so the whole app
-   reads as one material without each component asking for it. */
 .bg-surface,
 .bg-elevated {
   backdrop-filter: blur(16px) saturate(135%);
@@ -73,11 +61,8 @@ body {
 .bg-surface:hover { background-color: var(--surface-hover); }
 .bg-elevated:hover { background-color: var(--elevated-hover); }
 
-/* The gutter is kept whether or not there is anything to scroll. Otherwise a
-   page that grows past the window after it is drawn -- a list that arrives
-   from the user service, a filter that is relaxed -- gains a scrollbar, and
-   everything centred on the page, header included, steps sideways by half
-   its width. Measured: 4px on /u, the moment a long list arrived. */
+/* Always reserve the gutter: a scrollbar appearing late shifted centred
+   content (measured 4px on /u). */
 html { scrollbar-gutter: stable; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -97,19 +82,14 @@ html { scrollbar-gutter: stable; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-/* `backwards`, not `both`: `both` keeps the final transform on the element for
-   good, and a transform makes that element the containing block for any fixed
-   descendant -- an overlay inside it would then size itself to the column
-   rather than the screen. The end state here is the natural one, so dropping
-   it changes nothing visible. */
+/* `backwards`, not `both`: a retained transform would make this element the
+   containing block for fixed overlays inside it. */
 .animate-slide-up-fade {
   animation: slide-up-fade 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* A menu opening. It moves with `translate`, not `transform`: a menu near the
-   edge of the screen is pushed back by writing a transform on it (see
-   useKeptOnScreen), and an animated transform would override that while it
-   ran and then snap sideways when it stopped. The two properties compose. */
+/* `translate`, not `transform`: useKeptOnScreen writes a transform, and the
+   two compose instead of fighting. */
 @keyframes menu-in {
   from { opacity: 0; translate: 0 -4px; }
   to { opacity: 1; translate: 0 0; }
@@ -118,7 +98,6 @@ html { scrollbar-gutter: stable; }
   animation: menu-in 140ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Entrance animation is decorative; drop it when motion is unwelcome. */
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up-fade,
   .animate-menu-in { animation: none; }

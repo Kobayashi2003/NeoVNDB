@@ -1,10 +1,6 @@
-// Package auth turns a password into a stored hash and a sign-in into a
-// session cookie.
-//
-// Sessions are opaque random strings kept in a table, not signed tokens. A
-// signed token carries its own claim and so cannot be taken back without a
-// second table listing the ones that were revoked -- which is this table with
-// an extra step and an inverted meaning. A row can simply be deleted.
+// Package auth handles password hashes and session cookies. Sessions are
+// opaque tokens in a table rather than signed tokens, so revoking one is a
+// delete.
 package auth
 
 import (
@@ -19,12 +15,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Cookie is the name the browser holds the session under. Prefixed so it is
-// never sent anywhere but the origin that set it, in browsers that enforce it.
 const Cookie = "__Host-neovndb_session"
 
-// The cookie prefix demands Secure, which a plain-http checkout cannot set. On
-// those, a plain name.
+// The __Host- prefix requires Secure, so plain-http setups use a plain name.
 const insecureCookie = "neovndb_session"
 
 func CookieName(secure bool) string {
@@ -34,9 +27,7 @@ func CookieName(secure bool) string {
 	return insecureCookie
 }
 
-// NewToken returns a session token. 32 bytes from the system source: long
-// enough that guessing is not a strategy, and opaque so it says nothing about
-// whose it is.
+// NewToken returns 32 random bytes, encoded.
 func NewToken() (string, error) {
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -50,12 +41,8 @@ func Hash(password string, cost int) (string, error) {
 	return string(h), err
 }
 
-// Check reports whether the password matches. It takes the same time either
-// way, which is bcrypt's doing rather than ours.
-// Check reports whether the password matches, and whether the hash it matched
-// is in a form this service no longer writes. See legacy.go: a caller that can
-// save is expected to re-hash when `stale` comes back true, which is what
-// retires the old format one sign-in at a time.
+// Check reports whether the password matches, and whether the hash is a
+// legacy format the caller should replace (see legacy.go).
 func Check(hash, password string) (ok, stale bool) {
 	if ok, isLegacy := checkLegacy(hash, password); isLegacy {
 		return ok, ok
@@ -63,9 +50,6 @@ func Check(hash, password string) (ok, stale bool) {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil, false
 }
 
-// SetCookie writes the session cookie. HttpOnly because no script on the page
-// has any use for the value, and SameSite=Lax because every request that needs
-// it is a navigation or a same-site fetch.
 func SetCookie(w http.ResponseWriter, secure bool, token string, life time.Duration) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName(secure),
@@ -94,8 +78,7 @@ func TokenFrom(r *http.Request, secure bool) string {
 	if c, err := r.Cookie(CookieName(secure)); err == nil {
 		return c.Value
 	}
-	// The prefixed and plain names are both read whatever the setting says, so
-	// flipping it does not sign everyone out.
+	// Both names are read, so flipping the setting signs nobody out.
 	for _, name := range []string{Cookie, insecureCookie} {
 		if c, err := r.Cookie(name); err == nil {
 			return c.Value
@@ -112,9 +95,7 @@ const (
 	maxUsername = 32
 )
 
-// ValidUsername keeps names to what can appear in a URL and be told apart from
-// another. The rules are narrow on purpose: widening them later takes nothing
-// away from anyone, narrowing them takes away names people are using.
+// ValidUsername is narrow on purpose: widening later is free, narrowing isn't.
 func ValidUsername(name string) error {
 	if len(name) < 2 || len(name) > maxUsername {
 		return fmt.Errorf("a username is between 2 and %d characters", maxUsername)
@@ -129,24 +110,19 @@ func ValidUsername(name string) error {
 	return nil
 }
 
-// ValidPassword checks length and nothing else. Rules about which characters
-// must appear push people towards the shortest password that satisfies them,
-// which is the opposite of the intent.
+// ValidPassword checks length only; composition rules make passwords worse.
 func ValidPassword(password string) error {
 	if len(password) < minPassword {
 		return fmt.Errorf("a password is at least %d characters", minPassword)
 	}
 	if len(password) > maxPassword {
-		// bcrypt reads the first 72 bytes and ignores the rest, so a very long
-		// password is not the extra security it looks like. Refused rather
-		// than silently truncated.
+		// bcrypt ignores bytes past 72; refuse rather than silently truncate.
 		return fmt.Errorf("a password is at most %d characters", maxPassword)
 	}
 	return nil
 }
 
-// ValidEmail is a shape check, not a proof of delivery. Nothing here sends
-// mail, so the address is somewhere to write down and nothing more.
+// ValidEmail is a shape check only; nothing sends mail yet.
 func ValidEmail(email string) error {
 	at := strings.IndexByte(email, '@')
 	if at <= 0 || at == len(email)-1 || strings.Count(email, "@") != 1 {

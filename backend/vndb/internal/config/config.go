@@ -19,68 +19,47 @@ const (
 	defaultMinConns       = 2
 	defaultConnLifetime   = time.Hour
 	defaultConnectTimeout = 10 * time.Second
-	// Archives live at the repository root, beside the services rather than
-	// inside any of them, because they are neither source nor Go module
-	// content -- and because two modules now read them.
+	// At the repository root: not source, and read by two modules.
 	defaultDumpDir = "../../data/dumps"
 	defaultDumpURL = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
 
-	// What one request may ask for. These bound work, not correctness, so they
-	// are settings: what a deployment can afford differs, and a private
-	// instance serving one frontend can afford far more than a public one.
+	// Request bounds; 0 lifts a cap.
 	defaultPageSize    = 24
 	defaultMaxPageSize = 100
-	// The language the trans schema holds translations into. vndb writes tag
-	// and trait text in English only, and this is what a reader who wants it
-	// in their own language gets instead.
-	defaultTransLang = "ja"
-	// The most words one search may be made of. Each costs its own index
-	// lookup. 0 lifts the cap.
+	// Target language of the trans schema (tag/trait text).
+	defaultTransLang      = "ja"
 	defaultMaxSearchTerms = 8
-	// Conditions in one filter expression. 0 lifts the cap.
 	defaultMaxFilterNodes = 64
 	defaultMaxIDs         = 1000
 	defaultMaxFieldDepth  = 3
-	// Estimated field values in a response, priced from each level's declared
-	// fan-out before the request runs. Follows vndb's own ceiling.
+	// Estimated field values per response; follows vndb's ceiling.
 	defaultMaxCost = 100_000
 
 	defaultGraphDepth    = 3
 	defaultMaxGraphDepth = 8
 	defaultMaxGraphNodes = 300
 
-	// The database only changes when an import is promoted, so a cached
-	// response stays correct until then and the TTL is a memory bound rather
-	// than a freshness one.
+	// Data only changes on promote, so the TTL bounds memory, not staleness.
 	defaultCacheBackend  = "memory"
 	defaultCacheTTL      = time.Hour
 	defaultCacheEntries  = 10000
 	defaultCacheMaxEntry = 1 << 20
 
-	// How much of a table may disappear between generations before promoting
-	// is refused. vndb only grows -- entries are hidden rather than deleted,
-	// and hidden ones never reach the dump -- so any real shrink means a
-	// truncated archive or an import that stopped partway.
+	// Max table shrink before promote is refused. vndb only grows, so a real
+	// shrink means a truncated archive or a partial import.
 	defaultGuardMaxLoss = 0.02
 
-	// The image mirror lives beside the archives, and for the same reason:
-	// neither is source nor Go module content. Derived copies are kept apart
-	// from it so that "deleting this loses nothing" is visible from the path.
+	// Derived copies live apart from originals: deleting them loses nothing.
 	defaultImageDir        = "../../data/images"
 	defaultImageDerivedDir = "../../data/images-derived"
 	defaultImagePort       = 5101
-	// The widths pages actually render at. An unlisted width would be a new
-	// decode and a new file on disk for anyone who asked, so a request is
-	// rounded up to one of these rather than honoured as given.
+	// Requests round up to one of these, so arbitrary widths can't fill the disk.
 	defaultImageWidths = "128,256,512"
-	// A cover can be 15158x15189 upstream. Decoding one is expensive enough to
-	// be worth refusing rather than serving slowly.
+	// Upstream covers reach 15158x15189; decoding those is refused.
 	defaultImageMaxPixels  = 40_000_000
 	defaultImageMaxBytes   = 32 << 20
 	defaultImageFetchLimit = 30 * time.Second
-	// How many images may be fetched from vndb at once. The point of holding
-	// a mirror is to stop leaning on their CDN; opening a hundred connections
-	// to it while filling the mirror would be a poor way to start.
+	// Concurrent fetches from vndb's CDN.
 	defaultImageFetchParallel = 8
 
 	defaultRequestTimeout    = 5 * time.Second
@@ -94,7 +73,6 @@ type Config struct {
 	Host string
 	Port int
 
-	// Where archives are kept, and where the latest one is fetched from.
 	DumpDir string
 	DumpURL string
 
@@ -103,7 +81,6 @@ type Config struct {
 	ConnLifetime   time.Duration
 	ConnectTimeout time.Duration
 
-	// Bounds on a single request.
 	PageSize       int
 	MaxPageSize    int
 	TransLang      string
@@ -113,8 +90,7 @@ type Config struct {
 	MaxFieldDepth  int
 	MaxCost        int
 
-	// Bounds on the VN relation graph, which is a walk rather than a page and
-	// so is bounded by depth and node count instead.
+	// The relation graph is a walk, bounded by depth and node count.
 	GraphDepth    int
 	MaxGraphDepth int
 	MaxGraphNodes int
@@ -133,8 +109,6 @@ type Config struct {
 	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
 	GuardMaxLoss float64
 
-	// The image mirror: where originals are kept, where resized copies go, and
-	// what a caller may ask for.
 	ImageDir           string
 	ImageDerivedDir    string
 	ImagePort          int
@@ -234,8 +208,7 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 	return fallback
 }
 
-// envInts reads a comma-separated list. A malformed entry drops out rather
-// than failing the load: a typo in one width should not stop the server.
+// envInts reads a comma-separated list, skipping malformed entries.
 func envInts(key, fallback string) []int {
 	raw := envString(key, fallback)
 	out := []int{}

@@ -8,38 +8,23 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// A Table is one entity type's whole field surface and, for each field, how it
-// is produced. Declaring both in one place means a field cannot be offered
-// without a way to fill it: the registry that validates a request is derived
-// from this table rather than maintained beside it.
-//
-// A field is filled one of two ways. Row reads it straight off the entity's
-// own row, needing no query. Source names a page-level loader that fetches it
-// for the whole page at once -- and several fields may name the same Source,
-// which then runs once however many of them were asked for.
-//
-// The table is data, so a type declares it as a package-level value. R is the
-// type's resolver, threaded to the loaders that need a database handle; T is
-// its row.
+// A Table declares a type's fields and how each is produced, so the registry
+// that validates requests is derived from it and cannot drift. Row reads a
+// field off the entity's own row; Source loads it for a whole page, running
+// once however many of its fields were asked for.
 
-// Source fills its fields for a whole page in one batched query. It receives
-// the page rather than a row, which is what keeps the query count independent
-// of how many rows came back.
+// Source fills its fields for a whole page in one query, which keeps the query
+// count independent of the number of rows.
 type Source[R, T any] func(ctx context.Context, r R, page []T, sel Selection,
 	byID map[int32]map[string]any) error
 
-// Nested is one entity type seen from another: enough to validate a nested
-// field and to render the objects at the end of a relation, without the
-// nesting type knowing anything about its row type. A resolver implements it.
+// Nested is one entity type seen from another, without the other knowing its
+// row type. A resolver implements it.
 type Nested interface {
 	Registry() Registry
-	// Type is the entity's id prefix, which is enough to name a row without
-	// reading it.
 	Type() string
 	Objects(ctx context.Context, ids []int32, sel Selection) (map[int32]map[string]any, error)
-	// Filters is what this type can be narrowed by, for when a condition on
-	// another type is written in terms of this one: "a release that is English
-	// and free" asks the release type, from inside a query about visual novels.
+	// Filters serves nested conditions: release=(lang=en) from a vn query.
 	Filters() map[string]FilterFunc
 }
 
@@ -74,32 +59,23 @@ type Nested interface {
 // itself.
 
 type Field[T any] struct {
-	// Kind is Column unless the field is a fragment.
 	Kind FieldKind
 	// Row and Source are mutually exclusive.
-	Row func(T) any
-	// Source names the loader in Table.Sources.
+	Row    func(T) any
 	Source string
-	// Subfields a self-contained fragment understands. Leave empty when Target
-	// supplies the surface instead.
+	// Subfields of a self-contained fragment; empty when Target supplies them.
 	Subfields []string
-	// Edge names the attributes this relation carries itself.
-	Edge []string
-	// Target is the entity type at the end of this relation; its whole field
-	// surface becomes reachable through this fragment.
+	// Edge names the attributes the relation row carries itself.
+	Edge   []string
 	Target string
-	// Num estimates how many of these one parent carries, for pricing a
-	// request before running it.
+	// Num estimates how many one parent carries, for pricing a request.
 	Num int
 }
 
 type Table[R, T any] struct {
-	// IDType and ID say how to address a row: the id is always returned and is
-	// never one of the declared fields.
 	IDType string
 	ID     func(T) int32
-	// Fetch reads base rows by id, which is how another type reaches this one
-	// through a relation. A type with no Fetch cannot be nested.
+	// Fetch reads rows by id; a type without one cannot be nested.
 	Fetch func(ctx context.Context, r R, ids []int32) ([]T, error)
 
 	Fields  map[string]Field[T]
@@ -108,9 +84,8 @@ type Table[R, T any] struct {
 	reg Registry
 }
 
-// NewTable validates the table and caches its registry. A table is a
-// compile-time constant in all but form, so a mistake in one is a programming
-// error: declared as a package-level value, it fails at startup.
+// NewTable validates the table and caches its registry. Tables are package
+// values, so a mistake panics at startup.
 func NewTable[R, T any](t Table[R, T]) *Table[R, T] {
 	if t.ID == nil || t.IDType == "" {
 		panic("field table: ID and IDType are required")
@@ -143,9 +118,8 @@ func (t *Table[R, T]) Registry() Registry { return t.reg }
 
 func (t *Table[R, T]) Type() string { return t.IDType }
 
-// Objects renders rows this type owns for another type's relation, keyed by
-// id. It is the same work Apply does for a page, which is what makes a nested
-// field cost one query for the whole level rather than one per parent row.
+// Objects renders rows for another type's relation, keyed by id: one query for
+// the whole level rather than one per parent.
 func (t *Table[R, T]) Objects(ctx context.Context, r R, ids []int32, sel Selection) (map[int32]map[string]any, error) {
 	if t.Fetch == nil {
 		return nil, fmt.Errorf("%s cannot be nested: no Fetch", t.IDType)
@@ -165,12 +139,9 @@ func (t *Table[R, T]) Objects(ctx context.Context, r R, ids []int32, sel Selecti
 	return out, nil
 }
 
-// Apply turns a page of rows into the objects a client asked for.
-//
-// Row fields are read first, and a field waiting on a Source is left null
-// meanwhile, so a requested field is always present whether or not its source
-// finds anything. Fragments are left to their source, which knows whether the
-// empty answer is a list or a null.
+// Apply turns a page of rows into objects. A column waiting on a Source starts
+// null so a requested field is always present; fragments are left to their
+// source, which knows whether empty means a list or a null.
 func (t *Table[R, T]) Apply(ctx context.Context, r R, page []T, sel Selection) ([]map[string]any, error) {
 	if sel.All {
 		sel = t.allColumns(sel)
@@ -180,9 +151,7 @@ func (t *Table[R, T]) Apply(ctx context.Context, r R, page []T, sel Selection) (
 
 	for i, row := range page {
 		id := t.ID(row)
-		// id is CONV and is on every object without being declared: the mirror
-		// stores the numeric part and the prefix is implied by the table, so
-		// the dump's own 'v17' spelling is put back here.
+		// CONV: the mirror stores 17, the API answers v17.
 		obj := map[string]any{"id": vndb.FormatID(t.IDType, id)}
 		for _, name := range sel.Columns {
 			if f := t.Fields[name]; f.Row != nil {
@@ -205,8 +174,7 @@ func (t *Table[R, T]) Apply(ctx context.Context, r R, page []T, sel Selection) (
 	return out, nil
 }
 
-// allColumns expands a selection that named this type as a whole, which is
-// what a bare fragment means one level up.
+// allColumns expands a fragment named on its own to every column.
 func (t *Table[R, T]) allColumns(sel Selection) Selection {
 	out := newSelection()
 	for name, def := range t.reg {
@@ -221,8 +189,8 @@ func (t *Table[R, T]) allColumns(sel Selection) Selection {
 	return out
 }
 
-// sourcesFor lists the sources the selection needs, each once and in a stable
-// order so the queries a request runs are reproducible.
+// sourcesFor lists the needed sources once each, sorted so queries are
+// reproducible.
 func (t *Table[R, T]) sourcesFor(sel Selection) []string {
 	wanted := map[string]bool{}
 	for _, name := range sel.Columns {
@@ -244,36 +212,29 @@ func (t *Table[R, T]) sourcesFor(sel Selection) []string {
 	return names
 }
 
-// An Edge is one row of a relation: which parent it hangs off, which target it
-// points at, and whatever the relation itself records about the pairing.
+// An Edge is one relation row: parent, target, and the row's own attributes.
 type Edge struct {
 	Parent int32
 	Child  int32
 	Attrs  map[string]any
 }
 
-// Sub is the selection inside one of a type's fragments, expanded against
-// whatever that fragment reaches. It goes through the catalog rather than the
-// type's own table, so a source never has to name the table it belongs to --
-// which for a package-level table would be an initialization cycle.
+// Sub is the selection inside a fragment. It goes through the catalog because a
+// source naming its own package-level table would be an initialization cycle.
 func Sub(cat *Catalog, self, fragment string, sel Selection) Selection {
 	return sel.Sub(fragment, cat.Get(self).Registry()[fragment].children(cat))
 }
 
-// Relate assembles a fragment from a batch of edges: the target type renders
-// itself once for every id the edges point at, and each edge's own attributes
-// are merged over its copy. One query for the level, whatever the fan-out.
-//
-// Which type the edges point at and which attributes belong to the edge are
-// read back from the declaration, so a source cannot disagree with it.
+// Relate builds a fragment from edges: the target renders every id once, then
+// each edge's attributes are merged over its copy. Target and edge attributes
+// come from the declaration, so a source cannot disagree with it.
 func Relate(ctx context.Context, cat *Catalog, self, field string,
 	edges []Edge, sel Selection, byID map[int32]map[string]any) error {
 
 	def := cat.Get(self).Registry()[field]
 	sel = Sub(cat, self, field, sel)
 
-	// The target knows nothing about the edge's attributes, so they are held
-	// back from the selection handed to it.
+	// Edge attributes are not the target's fields.
 	pass := newSelection()
 	pass.All = sel.All
 	pass.Columns = make([]string, 0, len(sel.Columns))
@@ -305,9 +266,8 @@ func Relate(ctx context.Context, cat *Catalog, self, field string,
 			return err
 		}
 	default:
-		// Only the edge's own attributes were asked for, so the entity at the
-		// other end is never read: its id is all that is needed and the
-		// relation row already carries it.
+		// Only edge attributes were asked for: the id is on the relation row,
+		// so the target is not read at all.
 		for _, id := range ids {
 			objs[id] = map[string]any{"id": vndb.FormatID(target.Type(), id)}
 		}
@@ -319,7 +279,7 @@ func Relate(ctx context.Context, cat *Catalog, self, field string,
 		for k, v := range objs[e.Child] {
 			obj[k] = v
 		}
-		// Edge attributes win: they describe this pairing, not the entity.
+		// Edge attributes win: they describe the pairing.
 		for k, v := range e.Attrs {
 			if sel.All || contains(sel.Columns, k) {
 				obj[k] = v

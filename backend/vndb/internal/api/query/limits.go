@@ -5,15 +5,13 @@ package query
 type Limits struct {
 	PageSize    int
 	MaxPageSize int
-	// Looking rows up by id skips paging, so this is that shape's page size.
+	// A lookup by id skips paging; this is its page size.
 	MaxIDs        int
 	MaxFieldDepth int
 	// Estimated field values in a response, not rows.
-	MaxCost int
-	// Words in one search. Each costs its own index lookup.
+	MaxCost        int
 	MaxSearchTerms int
-	// Conditions in one filter expression. Each is a clause, and several are
-	// a subquery apiece.
+	// Conditions per request, nested ones included.
 	MaxFilterNodes int
 }
 

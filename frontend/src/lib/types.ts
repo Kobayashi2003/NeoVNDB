@@ -16,10 +16,8 @@ export interface ExtLink {
   url: string
 }
 
-/** What something is called in the language the mirror holds translations
- *  into. vndb writes tag and trait text in English only, so there is no
- *  original script to fall back to: this is null until somebody supplies it,
- *  and the reader's original-text toggle is what asks for it. */
+/** Tag/trait text in the translated language; vndb has English only, so this
+ *  is what original-text mode shows. Null until supplied. */
 export interface Translation {
   lang: string
   name?: string | null
@@ -45,8 +43,7 @@ export interface Trait {
   group_name: string | null
   group_translation: string | null
   spoiler: number
-  /** Flagged as untrue of this character -- kept visible but struck, because
-   *  it is part of what was assigned. */
+  /** Flagged untrue; shown struck through. */
   lie: boolean
 }
 
@@ -55,8 +52,7 @@ export interface Seiyuu {
   /** The alias credited for this voice role, not the person's own name. */
   name: string
   note: string | null
-  /** The visual novel this credit is for. A character carries the credits
-   *  from every work they appear in, so this is what tells them apart. */
+  /** The VN this credit is for; characters carry credits from every work. */
   vn: string
 }
 
@@ -73,9 +69,7 @@ export interface Character {
   /** main, primary, side or appears. */
   role: string
   spoiler: number
-  /** What the character appears to be; `spoil_sex` is what they turn out to
-   *  be, kept apart because revealing it spoils the first. `gender` is the
-   *  separate self-identification axis, spoiled the same way. */
+  /** Apparent; `spoil_sex` is what they turn out to be. Same for gender. */
   sex: string | null
   spoil_sex: string | null
   gender: string | null
@@ -100,7 +94,6 @@ export interface Character {
   seiyuu: Seiyuu[]
 }
 
-/** One work this character appears in, with what they are in it. */
 export interface Appearance {
   id: string
   title: string
@@ -122,7 +115,6 @@ export interface Instance {
   spoiler: number
 }
 
-/** A character read on its own page, rather than through a visual novel. */
 export interface CharacterDetail extends Character {
   vns: Appearance[]
   instances: Instance[]
@@ -135,13 +127,11 @@ export interface StaffCredit {
   original: string | null
   role: string
   note: string | null
-  /** Which named version of the work this credit is for; null is the work
-   *  itself. It matches an Edition's eid on the same VN. */
+  /** An Edition's eid on the same VN; null is the work itself. */
   eid: number | null
 }
 
-/** A named version of a work -- a port, a premium edition, a translation.
- *  Worth having mostly because the staff credits point at these. */
+/** A named version of a work (port, edition, translation). */
 export interface Edition {
   eid: number
   name: string
@@ -216,7 +206,6 @@ export interface Release {
   producers: ReleaseProducer[]
 }
 
-/** A release read on its own page. */
 export interface ReleaseDetail extends Release {
   alttitle: string | null
   olang: string
@@ -227,9 +216,7 @@ export interface ReleaseDetail extends Release {
   supersedes: { id: string; title: string }[]
 }
 
-/** A picture of the release itself: a package scan, or the store artwork for a
- *  download. Unlike a screenshot these are cover-kind images, which vndb
- *  serves at one size only. */
+/** Package scans or store art; cover-kind, so one size only. */
 export interface ReleaseImage {
   url: string
   dims: [number, number]
@@ -242,9 +229,7 @@ export interface ReleaseImage {
   violence: number | null
 }
 
-/** One work this release publishes, and what it publishes of it. rtype sits on
- *  the link rather than on the release: the same disc can be a complete
- *  edition of one work and a trial of another. */
+/** rtype is per VN: a disc can be complete for one work and a trial of another. */
 export interface ReleasedVN {
   id: string
   title: string
@@ -253,8 +238,7 @@ export interface ReleasedVN {
 
 export interface Screenshot {
   url: string
-  /** The same image at thumbnail size; dims describes both, since vndb keeps
-   *  the aspect ratio. */
+  /** dims applies to both; the aspect ratio is kept. */
   thumbnail: string
   dims: [number, number]
   sexual: number | null
@@ -313,10 +297,7 @@ export interface VN {
   relations: Relation[]
 }
 
-/* ─── List rows ─────────────────────────────────────────────────────────────
- * What a search result carries, which is a fraction of what a detail page
- * asks for. One per type, because the seven look nothing alike in a list.
- */
+/* ─── List rows ─────────────────────────────────────────────────────────── */
 
 export interface VNRow {
   id: string
@@ -386,9 +367,7 @@ export interface TraitRow {
   sexual: boolean
 }
 
-/* ─── Catalogue entities ────────────────────────────────────────────────────
- * The four types whose page is mostly a listing of what they apply to.
- */
+/* ─── Catalogue entities ────────────────────────────────────────────────── */
 
 export interface ProducerDetail {
   id: string

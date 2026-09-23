@@ -1,13 +1,6 @@
-// Package api is this service's HTTP surface.
-//
-// Two audiences. The edge asks one question on every request -- whose session
-// is this -- at /auth/verify, and gets a 204 with the answer in headers or a
-// 401. Everything else is the reader's own: their account, and the lists they
-// keep.
-//
-// Every route here guards itself, unlike the read API and the image mirror,
-// which hold no auth code at all and are gated at the edge instead. This one
-// cannot delegate: it is what the edge would be asking.
+// Package api is the user service's HTTP surface: /auth/verify for the edge,
+// and the reader's account and lists. Unlike the other services every route
+// guards itself, since this is what the edge would ask.
 package api
 
 import (
@@ -27,10 +20,7 @@ type Server struct {
 	store *store.Store
 	cfg   *config.Config
 	log   *slog.Logger
-	// Counted separately: an address is who is asking, a username is what is
-	// being guessed at. One attacker spread over many addresses still runs
-	// into the second; one address working through many usernames runs into
-	// the first.
+	// Per address and per username, so spreading over either still hits a limit.
 	signInFrom *tries
 	signInFor  *tries
 	signUpFrom *tries
@@ -66,20 +56,15 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("DELETE /collections/{id}", s.signedIn(s.deleteCollection))
 
 	mux.HandleFunc("GET /collections/{id}/marks", s.signedIn(s.listMarks))
-	// The whole list at once, for handing to the read API to sort or search.
 	mux.HandleFunc("GET /collections/{id}/items", s.signedIn(s.items))
 	mux.HandleFunc("PUT /collections/{id}/marks/{item}", s.signedIn(s.addMark))
 	mux.HandleFunc("DELETE /collections/{id}/marks/{item}", s.signedIn(s.removeMark))
 
-	// The page-at-a-time forms, for a reader tidying a list rather than
-	// saving one thing.
 	mux.HandleFunc("POST /collections/{id}/marks/remove", s.signedIn(s.removeMarks))
 	mux.HandleFunc("POST /collections/{id}/marks/move", s.signedIn(s.moveMarks))
 
-	// "Which of my lists hold this", which is what a detail page asks.
 	mux.HandleFunc("GET /holding/{item}", s.signedIn(s.holding))
 
-	// And what the reader thought of it, which the same page asks next.
 	mux.HandleFunc("GET /ratings/{item}", s.signedIn(s.rating))
 	mux.HandleFunc("PUT /ratings/{item}", s.signedIn(s.setRating))
 	mux.HandleFunc("DELETE /ratings/{item}", s.signedIn(s.clearRating))
@@ -91,9 +76,8 @@ func (s *Server) Routes() http.Handler {
 
 type ctxKey struct{}
 
-// signedIn refuses anyone without a live session and hands the rest their own
-// id. Wrapping rather than a middleware over the whole mux, because two routes
-// here are deliberately open and a default-open list is one edit from leaking.
+// signedIn wraps each private route rather than the whole mux, so a new route
+// is closed unless opened on purpose.
 func (s *Server) signedIn(next func(http.ResponseWriter, *http.Request, int32)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := auth.TokenFrom(r, s.cfg.SecureCookie)
@@ -133,8 +117,7 @@ func (s *Server) oops(w http.ResponseWriter, doing string, err error) {
 	fail(w, http.StatusInternalServerError, "Something went wrong.")
 }
 
-// read decodes a JSON body, refusing anything unreasonably large or shaped
-// wrong before a handler has to think about it.
+// read decodes a size-limited JSON body.
 func read[T any](w http.ResponseWriter, r *http.Request) (T, bool) {
 	var body T
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16))
@@ -156,11 +139,8 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 
 /* ─── The edge's probe ─────────────────────────────────────────────────────── */
 
-// verify is the one route the edge calls, before every request it guards --
-// including every image on a page. It answers from one indexed lookup and
-// nothing else: no body, no work, and the answer in headers the edge copies
-// upstream, so the services behind it can know who is asking without holding
-// any auth code of their own.
+// verify is called by the edge before every guarded request, images included,
+// so it is one indexed lookup answering in headers.
 func (s *Server) verify(w http.ResponseWriter, r *http.Request) {
 	token := auth.TokenFrom(r, s.cfg.SecureCookie)
 	if token == "" {
@@ -214,9 +194,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		email = &body.Email
 	}
 
-	// Counted here rather than at the top: everything above is the form being
-	// filled in wrongly, which costs nothing and is what a person does. From
-	// here on it is an account being made, which is the thing worth limiting.
+	// Only real sign-up attempts count, not validation failures above.
 	if ok, wait := s.signUpFrom.take(caller(r)); !ok {
 		refuseTooMany(w, wait)
 		return
@@ -249,15 +227,11 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// One answer for two different failures, said in both places rather than
-	// funnelled through one: telling an unknown name from a wrong password
-	// turns the sign-in form into a way to find out who has an account here.
+	// One message for unknown name and wrong password, so accounts can't be probed.
 	const refuse = "That username and password do not match."
 
-	// Counted before the row is read and long before a hash is compared, so a
-	// refusal past the limit costs this service nothing. It does not make the
-	// two failures take the same time -- an unknown name still answers sooner
-	// than a wrong password does.
+	// Counted before any lookup, so refusals are cheap. Timing still differs
+	// between unknown name and wrong password.
 	name := strings.TrimSpace(body.Username)
 	from := caller(r)
 	if ok, wait := s.signInFrom.take(from); !ok {
@@ -283,16 +257,12 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}
-	// Somebody who knows their own password was not guessing, so the attempts
-	// that got them here are dropped rather than left to lock them out of
-	// their next sign-in.
+	// A correct password clears earlier failed attempts.
 	s.signInFrom.forget(from)
 	s.signInFor.forget(strings.ToLower(name))
 
-	// The password was right and the hash was the old service's. Now is the
-	// only moment the plaintext is in hand, so it is the only moment this row
-	// can be moved to bcrypt. Failing to is not the reader's problem -- they
-	// signed in -- so it is logged and the sign-in goes through.
+	// Legacy hash: rehash to bcrypt while the plaintext is in hand. A failure
+	// is only logged; the sign-in still succeeds.
 	if stale {
 		if next, err := auth.Hash(body.Password, s.cfg.BcryptCost); err != nil {
 			s.log.Error("rehashing a migrated password", "user", user.ID, "err", err)
@@ -367,8 +337,6 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, userID i
 		s.oops(w, "reading user", err)
 		return
 	}
-	// The new password is hashed afresh below whatever the old one was in, so
-	// changing it retires a migrated hash as surely as signing in does.
 	if ok, _ := auth.Check(hash, body.Current); !ok {
 		fail(w, http.StatusForbidden, "That is not your current password.")
 		return
@@ -386,8 +354,7 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, userID i
 		s.oops(w, "saving password", err)
 		return
 	}
-	// Whoever knew the old password should stop being signed in, which means
-	// this browser too -- so a new session is started for the one that asked.
+	// End every session, this one included, then start a fresh one here.
 	if err := s.store.DeleteSessionsOf(r.Context(), userID); err != nil {
 		s.oops(w, "ending sessions", err)
 		return

@@ -1,18 +1,6 @@
-/** Putting the thing a page is about on one of the reader's lists.
- *
- *  It sits in the detail header's action slot rather than in the sidebar,
- *  because the sidebar is rendered twice -- once for the wide layout and once
- *  for the narrow one -- and two of these would each ask the service what
- *  holds this item, then disagree the moment one of them was used.
- *
- *  Signed out it is not there at all. The browse surface is public and a
- *  reader without an account has nothing to put anything on; the header is
- *  where signing in is offered, and offering it again on every page would be
- *  noise.
- *
- *  A list holds one kind of thing, so the only lists offered are the ones that
- *  can hold this. The type is read off the id -- v17 is a visual novel -- for
- *  the same reason the routes read it there: the id already says it. */
+/** Adds the page's item to the reader's lists. Lives in the header, not the
+ *  sidebar, which renders twice (wide and narrow) and would hold two copies.
+ *  Hidden when signed out; only lists of the id's type are offered. */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -42,13 +30,9 @@ export function CollectionButton({ id }: { id: string }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
-  // Hung from the right of the button, which on a character page is not at the
-  // right edge -- the spoiler control is beside it.
   const menu = useKeptOnScreen<HTMLDivElement>(open)
 
-  // Only which lists hold it, which is all the button itself has to say. The
-  // lists are not read until the menu is opened, so a reader walking through
-  // pages pays one small request each rather than two.
+  // The lists themselves load on open; each page pays one small request.
   useEffect(() => {
     if (!signedIn) return
     let live = true
@@ -57,8 +41,7 @@ export function CollectionButton({ id }: { id: string }) {
         if (live) setHeld(ids)
       },
       () => {
-        // The label is not worth an error message. Whatever went wrong will
-        // say so again, out loud, the moment the reader opens the menu.
+        // Silent; opening the menu surfaces the error.
       },
     )
     return () => {
@@ -70,9 +53,7 @@ export function CollectionButton({ id }: { id: string }) {
 
   const saved = held.length > 0
 
-  // Read again on every open rather than once: another tab, or the same reader
-  // on their phone, may have moved things since. It is also what corrects the
-  // counts this component adds up locally while the menu is in use.
+  // Re-read on every open: other tabs or devices may have changed things.
   async function reveal() {
     setOpen(true)
     setError(null)
@@ -89,8 +70,7 @@ export function CollectionButton({ id }: { id: string }) {
   async function toggle(list: Collection) {
     const on = held.includes(list.id)
     setError(null)
-    // Moved first and put back if the service disagrees: a checkbox that waits
-    // for a round trip before it moves reads as a broken one.
+    // Optimistic; rolled back on failure.
     setHeld((now) => (on ? now.filter((x) => x !== list.id) : [...now, list.id]))
     setLists((now) =>
       now?.map((l) => (l.id === list.id ? { ...l, count: l.count + (on ? -1 : 1) } : l)) ?? null,
@@ -106,8 +86,7 @@ export function CollectionButton({ id }: { id: string }) {
     }
   }
 
-  /** A new list is made and joined in one step: naming a list is something a
-   *  reader does because they want this on it. */
+  /** Creates a list and adds the item to it. */
   async function create(name: string) {
     const made = await createCollection(id[0], name)
     await addMark(made.id, id)
@@ -137,9 +116,7 @@ export function CollectionButton({ id }: { id: string }) {
       </button>
 
       {open && (
-        // A fixed width, unlike most menus: the last row turns into a text
-        // field, and a panel sized to its contents would resize under the
-        // reader's cursor when it did.
+        // Fixed width: the last row becomes a text field and must not resize the panel.
         <MenuPanel ref={menu} align="end" scroll className="w-60">
           <MenuLabel>Save to</MenuLabel>
           {lists === null ? (

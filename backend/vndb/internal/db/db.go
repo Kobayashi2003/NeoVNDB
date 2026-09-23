@@ -1,9 +1,6 @@
-// Package db owns the connection pool, the generation lifecycle and the
-// generated query layer.
-//
-// All data lives in generation schemas. The live one is always named `vndb`,
-// so the application never has to discover which generation it is talking to;
-// an import builds `vndb_next` and swaps the names when it is done.
+// Package db owns the pool, the generation lifecycle and the generated
+// queries. The live generation is always schema `vndb`; an import builds
+// `vndb_next` and swaps names.
 package db
 
 import (
@@ -25,19 +22,15 @@ const (
 	SchemaNext = "vndb_next"
 )
 
-// Store is the handle the rest of the application takes: the generated queries
-// plus the pool they run on.
 type Store struct {
 	*gen.Queries
 	pool *pgxpool.Pool
-	// The language trans.terms and trans.passages hold. It belongs to the
-	// database rather than to a request: one corpus, one target language.
+	// One translation corpus, one target language.
 	transLang string
 }
 
-// Open builds a pool pinned to the live schema and verifies it can reach the
-// database. pgxpool connects lazily, so without the ping a bad URL would only
-// surface on the first query.
+// Open builds a pool pinned to the live schema and pings, since pgxpool
+// connects lazily.
 func Open(ctx context.Context, cfg *config.Config) (*Store, error) {
 	pc, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
@@ -62,10 +55,7 @@ func Open(ctx context.Context, cfg *config.Config) (*Store, error) {
 		return nil, fmt.Errorf("ping: %w", err)
 	}
 	store := &Store{Queries: gen.New(pool), pool: pool, transLang: cfg.TransLang}
-	// The trans schema is not a generation and an import never touches it, so
-	// there is no moment in the lifecycle that would create it. Creating it
-	// here is what makes a fresh database work without a setup step; the DDL
-	// is idempotent, so every later start is a no-op.
+	// trans lives outside the lifecycle, so it is created here (idempotent).
 	if err := store.ensureTrans(ctx); err != nil {
 		pool.Close()
 		return nil, err

@@ -1,10 +1,6 @@
-// Package query holds the machinery every entity type shares: parsing a
-// request, validating the fields it asks for, and assembling the dynamic half
-// of a SQL statement.
-//
-// It knows nothing about any particular type. Each type package declares its
-// own field surface and filter table and implements Resolver; the HTTP layer
-// only ever sees that interface.
+// Package query is the machinery every entity type shares: request parsing,
+// field validation and the dynamic half of the SQL. Type packages implement
+// Resolver; the HTTP layer only sees that interface.
 package query
 
 import (
@@ -25,23 +21,17 @@ type Resolver interface {
 type Request struct {
 	Fields  Selection
 	Filters map[string]string
-	// The condition expression, as written and as parsed. The text is what
-	// two equivalent requests are compared by; the tree is what runs.
+	// The f= expression as written (the cache key) and as parsed.
 	Filter string
 	expr   node
-	// The types, so that a condition written about a related one can be
-	// answered by asking it, and what is left of this request's allowance of
-	// conditions -- the expression above has already spent from it, and the
-	// ones nested inside it spend from the same one when they are compiled.
+	// budget is shared by the expression and every condition nested in it.
 	cat     *Catalog
 	budget  *int
 	Sort    string
 	Reverse bool
 	Page    int
 	Limit   int
-	// Limits are the bounds this request was validated against, carried so the
-	// stages after parsing hold to the same ones.
-	Limits Limits
+	Limits  Limits
 }
 
 // Reserved parameter names; everything else in the query string is a filter.
@@ -108,9 +98,8 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 
 func (r *Request) Offset() int { return (r.Page - 1) * r.Limit }
 
-// ClientError is a request the caller can fix: an unknown field, a malformed
-// id, a filter that does not exist. It reaches the client verbatim as a 400,
-// unlike an internal failure, which is logged and reported as a bare 500.
+// ClientError reaches the client verbatim as a 400; anything else is logged
+// and reported as a bare 500.
 type ClientError struct{ msg string }
 
 func (e *ClientError) Error() string { return e.msg }

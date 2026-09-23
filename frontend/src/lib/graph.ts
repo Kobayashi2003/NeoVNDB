@@ -1,20 +1,5 @@
-/** Turning a relation graph into positions, apart from drawing it.
- *
- *  Laying out a graph is normally two hard steps -- decide which row each node
- *  belongs to, then order each row so the lines between them cross as little
- *  as possible. The first one is already done: the API walks outward from one
- *  title and says how many steps away each node is, and that is exactly a row
- *  number. What is left is the ordering, which is the usual barycentre sweep:
- *  put each node near the average position of the neighbours it is joined to,
- *  a few times, alternating which direction is being read from.
- *
- *  That is why there is no layout library here. The expensive half of what one
- *  would do arrives with the data.
- *
- *  Nothing in this file touches the DOM, so what the geometry does can be
- *  worked out by reading it. */
-
-/* --- What the API sends ---------------------------------------------------- */
+/** Relation graph layout. The API's depth is already the row, so only the
+ *  in-row ordering remains (barycentre sweeps) and no layout library is needed. */
 
 export interface GraphNode {
   id: string
@@ -41,16 +26,11 @@ export interface RelationGraph {
   edges: GraphEdge[]
 }
 
-/* --- Relations ------------------------------------------------------------- */
-
-/** vndb stores both halves of every relation: A is B's sequel and B is A's
- *  prequel are two rows. Drawn as two lines they would be one line drawn
- *  twice, so one of each pair is dropped -- the one that reads backwards.
- *  These are the pairs, given as inverse -> forward. */
+/** vndb stores both halves of each relation; the backward half (inverse ->
+ *  forward) is dropped so each pair draws once. */
 const INVERSE: Record<string, string> = { preq: "seq", par: "side", orig: "fan" }
 
-/** Relations where neither end is first. They get no arrowhead, because there
- *  is nothing for it to mean. */
+/** No direction, so no arrowhead. */
 const SYMMETRIC = new Set(["ser", "char", "alt", "set"])
 
 export function isSymmetric(relation: string): boolean {
@@ -64,7 +44,6 @@ export function tidyEdges(edges: GraphEdge[]): GraphEdge[] {
 
   for (const raw of edges) {
     const forward = INVERSE[raw.relation]
-    // A prequel edge is a sequel edge read from the other end.
     const e = forward ? { ...raw, from: raw.to, to: raw.from, relation: forward } : raw
 
     const pair = e.from < e.to ? `${e.from}|${e.to}` : `${e.to}|${e.from}`
@@ -76,14 +55,11 @@ export function tidyEdges(edges: GraphEdge[]): GraphEdge[] {
   return out
 }
 
-/* --- Layout ---------------------------------------------------------------- */
-
 export const NODE_W = 184
 export const NODE_H = 54
 const GAP_X = 20
 const GAP_Y = 76
-/** How far a line joining two nodes in the same row bows out of it. Kept
- *  under GAP_Y so such a line stays inside the gap below its own row. */
+/** Bow of a same-row line; under GAP_Y so it stays in its row's gap. */
 const MAX_BOW = 60
 
 export interface Placed extends GraphNode {
@@ -107,7 +83,6 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
   }
   for (const row of rows) if (row) row.sort(byReleaseThenTitle)
 
-  // Who each node is joined to, so a row can be read against its neighbours.
   const joined = new Map<string, string[]>()
   for (const e of edges) {
     if (!joined.has(e.from)) joined.set(e.from, [])
@@ -116,10 +91,7 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
     joined.get(e.to)!.push(e.from)
   }
 
-  // Barycentre sweeps: down the rows, then back up, twice. Each pass puts a
-  // node near the average position of its neighbours in the row just read, so
-  // the lines between two rows straighten out. Two passes is where it stops
-  // paying for itself on graphs this size.
+  // Barycentre sweeps, down then up, twice; more stops paying off at this size.
   const order = new Map<string, number>()
   const reindex = () => {
     for (const row of rows) {
@@ -138,8 +110,7 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
       const mean = new Map<string, number>()
       for (const n of row) {
         const near = (joined.get(n.id) ?? []).map((id) => place.get(id)).filter((i) => i !== undefined)
-        // A node joined to nothing in that row keeps where it was, rather than
-        // being swept to one end for no reason.
+        // Unjoined nodes keep their place instead of drifting to one end.
         mean.set(n.id, near.length ? near.reduce((a, b) => a + b, 0) / near.length : (order.get(n.id) ?? 0))
       }
       row.sort((a, b) => mean.get(a.id)! - mean.get(b.id)! || byReleaseThenTitle(a, b))
@@ -152,8 +123,7 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
     sweep(last - 1, -1, -1)
   }
 
-  // Max of an empty list is -Infinity, and one node wide would make the gap
-  // count negative. Neither should be able to produce a size.
+  // Floor of 1: Math.max() of nothing is -Infinity.
   const widest = Math.max(1, ...rows.map((r) => r?.length ?? 0))
   const width = widest * NODE_W + (widest - 1) * GAP_X
   const nodes: Placed[] = []
@@ -166,9 +136,7 @@ export function layout(graph: RelationGraph, edges: GraphEdge[]): Layout {
     })
   })
 
-  // Room under the last row for a line that bows. The walk does not return
-  // edges between two nodes on the frontier, so today nothing bows down there
-  // -- but the height should not be the reason it looks right.
+  // Room under the last row for a bowing line.
   const depthCount = Math.max(1, rows.length)
   return {
     nodes,
@@ -183,12 +151,8 @@ function byReleaseThenTitle(a: GraphNode, b: GraphNode): number {
   return (a.released || "").localeCompare(b.released || "") || a.title.localeCompare(b.title)
 }
 
-/** The line between two placed nodes.
- *
- *  Between rows it leaves the bottom of one and arrives at the top of the
- *  next, bending only near the ends so a steep line does not cut across the
- *  cards between. Within a row it bows out sideways instead, because a
- *  straight line there would run through everything in between. */
+/** Between rows: bottom to top, bending near the ends. Within a row: a bow,
+ *  since a straight line would cross the cards between. */
 export function edgePath(a: Placed, b: Placed): string {
   const ax = a.x + NODE_W / 2
   const bx = b.x + NODE_W / 2

@@ -1,13 +1,5 @@
-/** The one place that talks to the user service.
- *
- *  Everything here runs in the browser and nowhere else. A mirror page is the
- *  same page for every reader, and is rendered and cached on that basis; who
- *  is reading it is asked afterwards, by the page itself, so that knowing the
- *  answer never makes a page unshareable. Reading the session on the server
- *  would turn every route into a per-reader one and throw that away.
- *
- *  Which is also why this is a path and not an address: same origin as the
- *  page, so the session cookie rides along with nothing arranged. */
+/** The user service client. Browser-only: server-rendered pages stay the same
+ *  for every reader, so they can be cached. Same origin, so the cookie rides. */
 
 const BASE = "/userserve"
 
@@ -21,16 +13,14 @@ export interface User {
 
 export interface Collection {
   id: number
-  /** One of vndb's seven letters. A list holds one kind of thing, which is
-   *  why the button on a page only ever offers that page's own lists. */
+  /** One of vndb's seven letters; a list holds one kind of thing. */
   type: string
   name: string
   count: number
   created_at: string
 }
 
-/** What the service said went wrong. Its messages are written to be read by
- *  the person who caused them, so they are shown rather than replaced. */
+/** The service's messages are written for the reader and shown as-is. */
 export class UserError extends Error {
   constructor(
     readonly status: number,
@@ -44,12 +34,10 @@ export class UserError extends Error {
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(BASE + path, {
     method,
-    // The default, said out loud: the whole design rests on the cookie going.
     credentials: "same-origin",
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  // Everything that changes something answers 204 and says nothing.
   if (res.status === 204) return undefined as T
 
   const answer = (await res.json().catch(() => null)) as { error?: string } | null
@@ -64,7 +52,7 @@ export const me = () => call<User>("GET", "/me")
 export const login = (username: string, password: string) =>
   call<User>("POST", "/login", { username, password })
 
-/** An empty email is no email: the service takes the account without one. */
+/** An empty email registers without one. */
 export const register = (username: string, password: string, email: string) =>
   call<User>("POST", "/register", { username, password, email })
 
@@ -75,9 +63,6 @@ export const logoutEverywhere = () => call<void>("POST", "/logout-everywhere")
 export const changePassword = (current: string, next: string) =>
   call<void>("POST", "/me/password", { current, new: next })
 
-/* --- The lists a reader keeps --------------------------------------------- */
-
-/** The reader's lists: one type's, or every one they keep. */
 export const collections = (type?: string) =>
   call<{ results: Collection[] }>("GET", type ? `/collections?type=${type}` : "/collections").then(
     (r) => r.results,
@@ -86,20 +71,16 @@ export const collections = (type?: string) =>
 export const createCollection = (type: string, name: string) =>
   call<Collection>("POST", "/collections", { type, name })
 
-/** Which of the reader's lists hold this item. What a detail page asks. */
+/** Which of the reader's lists hold this item. */
 export const holding = (item: string) =>
   call<{ collections: number[] }>("GET", `/holding/${item}`).then((r) => r.collections)
 
 export interface Mark {
-  /** The full vndb id, which is what the read API is handed to turn a list
-   *  back into things. */
   id: string
   marked_at: string
 }
 
-/** One page of what a list holds, newest first. The size is named so that a
- *  collection pages like every other listing on the site rather than at
- *  whatever the service happens to default to. */
+/** Newest first. */
 export const marks = (list: number, page: number, limit: number) =>
   call<{ results: Mark[]; count: number; more: boolean }>(
     "GET",
@@ -111,46 +92,35 @@ export const renameCollection = (list: number, name: string) =>
 
 export const deleteCollection = (list: number) => call<void>("DELETE", `/collections/${list}`)
 
-/** Both are idempotent at the service, so a double click is not an error. */
+/** Idempotent, so a double click is harmless. */
 export const addMark = (list: number, item: string) =>
   call<void>("PUT", `/collections/${list}/marks/${item}`)
 
 export const removeMark = (list: number, item: string) =>
   call<void>("DELETE", `/collections/${list}/marks/${item}`)
 
-/** Every id on a list, for handing to the read API so it can sort or search
- *  the whole thing -- neither of which this service can do, since it keeps ids
- *  and the day they were written down and nothing else.
- *
- *  `count` is the list's true length. Fewer items than that means the list is
- *  past what fits in one request to the read API, and only the order it was
- *  made in is available for it. */
+/** Every id on a list, so the read API can sort or search it. Fewer items
+ *  than `count` means the list is too long for that; only saved order works. */
 export const items = (list: number) =>
   call<{ items: string[]; count: number }>("GET", `/collections/${list}/items`)
 
-/** A page at a time, for a reader tidying a list rather than saving one thing.
- *  Both answer how many marks actually changed, which is not always how many
- *  were named: a page can be a moment out of date. */
+/** `changed` can be less than asked when the page is out of date. */
 export const removeMarks = (list: number, items: string[]) =>
   call<{ changed: number }>("POST", `/collections/${list}/marks/remove`, { items })
 
 export const moveMarks = (from: number, to: number, items: string[]) =>
   call<{ changed: number }>("POST", `/collections/${from}/marks/move`, { items, to })
 
-/* --- What a reader thought of something ----------------------------------- */
-
-/** One to five, or null where they have not said. A rating is about the thing
- *  rather than about any list it sits on, so it is asked for by id alone. */
+/** 1-5 or null; per item, not per list. */
 export const rating = (item: string) =>
   call<{ rating: number | null }>("GET", `/ratings/${item}`).then((r) => r.rating)
 
 export const setRating = (item: string, value: number) =>
   call<void>("PUT", `/ratings/${item}`, { rating: value })
 
-/** Taking an opinion back, which is not the same as giving it a low one. */
 export const clearRating = (item: string) => call<void>("DELETE", `/ratings/${item}`)
 
-/** What the service will refuse, said before it has to. */
+/** Mirrors the service's validation. */
 export const RULES = {
   username: "2 to 32 characters: letters, digits, - and _",
   password: "at least 8 characters",
