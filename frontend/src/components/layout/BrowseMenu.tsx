@@ -40,10 +40,10 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
           here ? "bg-white/15 text-white" : "text-muted hover:bg-white/10 hover:text-white",
         )}
       >
-        <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <Library className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="truncate">{here ? SHORT[here] : "Browse"}</span>
         <ChevronDown
-          className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")}
+          className={cn("icon-text h-3 w-3 shrink-0 transition-transform", open && "rotate-180")}
           aria-hidden
         />
       </button>
@@ -57,7 +57,7 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
             onClick={() => setOpen(false)}
             className={cn(menuItem(), "sm:hidden")}
           >
-            <Search className="size-3.5 shrink-0 text-muted" aria-hidden />
+            <Search className="icon-text size-3.5 shrink-0 text-muted" aria-hidden />
             Search everything
           </Link>
           <div className="sm:hidden">

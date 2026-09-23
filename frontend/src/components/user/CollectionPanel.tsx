@@ -233,7 +233,7 @@ export function CollectionPanel({
                 onClick={() => setSelecting(true)}
                 className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
               >
-                <ListChecks className="h-3.5 w-3.5" aria-hidden />
+                <ListChecks className="icon-text h-3.5 w-3.5" aria-hidden />
                 Select
               </button>
             )}
@@ -373,7 +373,7 @@ function SearchInList({
       className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5"
     >
       <ControlLabel className="mr-0">In list</ControlLabel>
-      <Search className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+      <Search className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
       <input
         name="q"
         type="search"

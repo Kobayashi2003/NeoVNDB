@@ -130,7 +130,7 @@ function Shelf({
           onClick={() => setNaming((on) => !on)}
           className="flex shrink-0 items-center gap-1 text-xs text-muted transition-colors hover:text-white"
         >
-          <Plus className="h-3 w-3" aria-hidden />
+          <Plus className="icon-text h-3 w-3" aria-hidden />
           New list
         </button>
       </div>

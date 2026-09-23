@@ -82,6 +82,13 @@ html { scrollbar-gutter: stable; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Icons beside text. On this font stack the visible middle of mixed-case text
+   (between x-height and cap height) sits 0.1em below the line box's middle,
+   and of all-caps text 0.04em below; flex centring aligns icons to the box,
+   so they read as floating high. `translate` composes with rotate-180. */
+.icon-text { translate: 0 0.1em; }
+.icon-caps { translate: 0 0.04em; }
+
 /* `backwards`, not `both`: a retained transform would make this element the
    containing block for fixed overlays inside it. */
 .animate-slide-up-fade {

@@ -136,7 +136,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
               href={`/${vn.id}/rg`}
               className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
             >
-              <Share2 className="h-3 w-3" aria-hidden />
+              <Share2 className="icon-text h-3 w-3" aria-hidden />
               Graph
             </Link>
           }
@@ -212,7 +212,7 @@ function Rating({ value, votes }: { value: number | null; votes: number }) {
         onClick={() => setHidden((on) => !on)}
         title={hidden ? "Show rating" : "Hide rating"}
         aria-label={hidden ? "Show rating" : "Hide rating"}
-        className="ml-auto rounded p-0.5 text-muted transition-colors hover:text-white"
+        className="icon-text ml-auto rounded p-0.5 text-muted transition-colors hover:text-white"
       >
         {hidden ? <Eye className="h-3.5 w-3.5" aria-hidden /> : <EyeOff className="h-3.5 w-3.5" aria-hidden />}
       </button>

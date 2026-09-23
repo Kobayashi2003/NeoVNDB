@@ -61,7 +61,7 @@ export function VNReleases({ releases, olang }: { releases: Release[]; olang: st
               aria-expanded={isOpen}
             >
               <ChevronRight
-                className={`h-4 w-4 shrink-0 text-muted transition-transform ${
+                className={`icon-caps h-4 w-4 shrink-0 text-muted transition-transform ${
                   isOpen ? "rotate-90" : ""
                 }`}
                 aria-hidden

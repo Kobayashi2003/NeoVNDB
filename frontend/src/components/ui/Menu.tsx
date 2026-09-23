@@ -98,7 +98,7 @@ export function MenuLabel({
   return (
     <div className="flex items-center justify-between gap-4 px-2.5 pb-1 pt-1.5">
       <span className="flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
-        {icon}
+        {icon && <span className="icon-caps flex">{icon}</span>}
         {children}
       </span>
       {action}

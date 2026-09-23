@@ -97,10 +97,10 @@ export function CollectionPicker({
         aria-expanded={open}
         className="flex max-w-full items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/20"
       >
-        <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <Library className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="truncate">{here?.name ?? "Your lists"}</span>
         <ChevronDown
-          className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")}
+          className={cn("icon-text h-3 w-3 shrink-0 transition-transform", open && "rotate-180")}
           aria-hidden
         />
       </button>

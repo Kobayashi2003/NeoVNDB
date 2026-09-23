@@ -34,7 +34,7 @@ export function SearchBox({
       }}
       className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5"
     >
-      <Search className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+      <Search className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
       <input
         name="search"
         type="search"

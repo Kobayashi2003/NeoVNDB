@@ -37,7 +37,7 @@ export function SearchField({
         className,
       )}
     >
-      <Search className="size-3.5 shrink-0 text-muted" aria-hidden />
+      <Search className="icon-text size-3.5 shrink-0 text-muted" aria-hidden />
       <input
         name="q"
         type="search"
