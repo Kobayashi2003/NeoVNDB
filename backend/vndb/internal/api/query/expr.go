@@ -16,8 +16,8 @@ import (
 //	!  not   highest
 //	() grouping
 //
-// lang=en,fr keeps its meaning: two leaves joined by or. A value containing a
-// comma, bracket or space is double-quoted; \" and \\ escape inside quotes.
+// A plain parameter's lang=en,fr is lang=en,lang=fr here, or lang="en,fr": a
+// value containing a comma, plus or bracket is double-quoted; \" and \\ escape.
 // Leaves are handed to the type's own filter table, so any filter works here.
 
 type node interface {
