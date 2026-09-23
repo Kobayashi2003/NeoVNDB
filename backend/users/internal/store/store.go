@@ -1,11 +1,5 @@
-// Package store is this service's database: accounts, sessions and the lists
-// a reader keeps.
-//
-// Nothing here reaches into the mirror. A saved item is an id and a type and
-// nothing more, because the mirror is rebuilt from the dump every week and a
-// reference into it would be a promise this service cannot keep. Turning
-// `v17` back into a visual novel is the caller's job, and one the read API
-// already answers in a single request.
+// Package store holds accounts, sessions and lists. Saved items are bare ids;
+// the mirror is rebuilt every import, so nothing references it.
 package store
 
 import (
@@ -32,8 +26,7 @@ var (
 	ErrTaken    = errors.New("already taken")
 )
 
-// Open connects and brings the schema up to date. The schema is idempotent, so
-// a fresh database and an existing one take the same path.
+// Open connects and applies the idempotent schema.
 func Open(ctx context.Context, cfg *config.Config) (*Store, error) {
 	pc, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
@@ -77,15 +70,12 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// The seven kinds of thing a reader can keep a list of, and the one list each
-// account starts with. Without it the first thing a new reader sees on every
-// page is a control that needs a list made before it can do anything.
+// Every account starts with one list per type, so saving works immediately.
 var kinds = []string{"v", "r", "c", "p", "s", "g", "i"}
 
 const defaultCollection = "Favourites"
 
-// CreateUser makes the account and its starting lists together, so an account
-// never exists in the half-made state where it has nowhere to save anything.
+// CreateUser makes the account and its starting lists in one transaction.
 func (s *Store) CreateUser(ctx context.Context, username string, email *string, hash string) (*User, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -155,9 +145,7 @@ func (s *Store) CreateSession(ctx context.Context, token string, userID int32, l
 	return err
 }
 
-// Session answers the only question the edge asks on every request: whose is
-// this, if anyone's. Expiry is checked here rather than by the sweep, so a
-// session stops working the moment it should and not whenever the sweep runs.
+// Session resolves a token. Expiry is checked here, not left to the sweep.
 func (s *Store) Session(ctx context.Context, token string) (int32, bool, error) {
 	var userID int32
 	var isAdmin bool
@@ -177,8 +165,7 @@ func (s *Store) DeleteSession(ctx context.Context, token string) error {
 	return err
 }
 
-// DeleteSessionsOf is "sign out everywhere", and is also what a password
-// change does: whoever knew the old one should stop being signed in.
+// DeleteSessionsOf backs sign-out-everywhere and password changes.
 func (s *Store) DeleteSessionsOf(ctx context.Context, userID int32) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, userID)
 	return err

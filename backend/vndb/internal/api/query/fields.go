@@ -5,45 +5,32 @@ import (
 	"strings"
 )
 
-// Parsing and validating a `fields` parameter. Anything not named is not
-// fetched, which is what keeps a list query from paying for a detail page's
-// worth of joins. The surface it validates against is derived from a Table;
-// see field.go for how a field is declared.
+// Parsing and validating the fields parameter. Only named fields are fetched.
 
 type FieldKind int
 
 const (
-	// Column is read from the entity's own row.
 	Column FieldKind = iota
-	// Fragment is a related collection with its own loader.
 	Fragment
 )
 
 type FieldDef struct {
 	Kind FieldKind
-	// Subfields a self-contained fragment understands, for one that carries
-	// values rather than pointing at another entity.
+	// Subfields of a fragment that carries values rather than another entity.
 	Subfields []string
-	// Edge names the attributes the relation itself carries, which exist only
-	// in the context of this one edge: a tag's rating on this VN, a staff
-	// member's role on this credit.
+	// Edge names attributes of the relation itself: a tag's rating on this VN.
 	Edge []string
-	// Target names the entity type this fragment points at. It is a name
-	// rather than a reference because the type graph has cycles -- a VN
-	// reaches characters, which reach VNs -- so it is resolved through the
-	// catalog per request rather than at wiring time.
+	// Target is a type name, resolved per request through the catalog because
+	// the type graph has cycles (vn -> character -> vn).
 	Target string
-	// Num estimates how many of these a parent carries, used to price a
-	// request before running it. Zero means one.
+	// Num estimates how many one parent carries, for pricing. Zero means one.
 	Num int
 }
 
-// Registry is the whole field surface of one entity type.
 type Registry map[string]FieldDef
 
-// children is what a subfield of this field is validated against: the edge
-// attributes plus, when the fragment points at an entity, that entity's own
-// fields.
+// children is what a subfield is validated against: edge attributes plus the
+// target's own fields.
 func (d FieldDef) children(cat *Catalog) Registry {
 	reg := make(Registry, len(d.Subfields)+len(d.Edge))
 	for _, name := range d.Subfields {
@@ -54,21 +41,16 @@ func (d FieldDef) children(cat *Catalog) Registry {
 			reg[name] = def
 		}
 	}
-	// Edge attributes win: they are about this relation, not about the entity
-	// at the end of it.
+	// Edge attributes win over the target's fields of the same name.
 	for _, name := range d.Edge {
 		reg[name] = FieldDef{}
 	}
 	return reg
 }
 
-// Selection is a parsed and validated `fields` parameter. It nests, because
-// fields do.
 type Selection struct {
-	// All is a fragment named on its own, which means every column the target
-	// carries. It stops at columns: a nested fragment is never pulled in
-	// implicitly, both because it costs a query and because the type graph has
-	// cycles that would not terminate.
+	// All means a fragment named on its own: every column, but no nested
+	// fragment, since each costs a query and the type graph has cycles.
 	All       bool
 	Columns   []string
 	Fragments map[string]Selection
@@ -94,9 +76,8 @@ func (s Selection) Wants(fragment, sub string) bool {
 	return sel.All || sel.Has(sub)
 }
 
-// Sub returns the selection inside a fragment. A fragment named on its own
-// carries every column its target declares, and any nested fragment named
-// explicitly is kept alongside those.
+// Sub returns the selection inside a fragment, expanding All to every column
+// while keeping explicitly named nested fragments.
 func (s Selection) Sub(fragment string, reg Registry) Selection {
 	sel := s.Fragments[fragment]
 	if !sel.All {
@@ -115,9 +96,8 @@ func (s Selection) Sub(fragment string, reg Registry) Selection {
 	return out
 }
 
-// ParseFields validates a comma-separated list against a registry. The id is
-// always returned and never has to be named, so an empty parameter is legal
-// and yields ids alone.
+// ParseFields validates a comma-separated list. id is always returned, so an
+// empty list is legal.
 func ParseFields(cat *Catalog, reg Registry, maxDepth int, value string) (Selection, error) {
 	sel := newSelection()
 	for _, raw := range strings.Split(value, ",") {
@@ -136,11 +116,9 @@ func ParseFields(cat *Catalog, reg Registry, maxDepth int, value string) (Select
 	return sel, nil
 }
 
-// add walks one dotted path into the selection, creating the levels it passes
-// through and validating each against that level's registry.
+// add walks one dotted path into the selection, validating each level.
 func add(cat *Catalog, sel *Selection, reg Registry, parts []string, full string) error {
-	// The id comes back at every level whether or not it was named, so naming
-	// it is allowed and means nothing.
+	// id is implicit at every level.
 	if len(parts) == 1 && parts[0] == "id" {
 		return nil
 	}
@@ -156,9 +134,6 @@ func add(cat *Catalog, sel *Selection, reg Registry, parts []string, full string
 			}
 			return nil
 		}
-		// A fragment named on its own means every column its target has.
-		// Nested fragments are never implied -- each costs a query, and the
-		// type graph has cycles that would not terminate.
 		sub := sel.Fragments[parts[0]]
 		sub.All = true
 		if sub.Fragments == nil {
@@ -182,16 +157,14 @@ func add(cat *Catalog, sel *Selection, reg Registry, parts []string, full string
 	return nil
 }
 
-// Cost estimates how many field values a response will carry, following
-// vndb's own approach: multiply a level's field count by how many rows that
-// level is expected to hold, and sum the nested levels in. It prices a request
-// from declared fan-out rather than from measurement, so it can refuse one
+// Cost estimates the field values a response will carry, as vndb does: each
+// level's field count times its declared fan-out, summed. It prices a request
 // before running any of it.
 func Cost(cat *Catalog, reg Registry, sel Selection, rows int) int {
 	if rows <= 0 {
 		rows = 1
 	}
-	n := 1 // the id is always returned
+	n := 1 // the id
 	if sel.All {
 		for _, def := range reg {
 			if def.Kind == Column {
@@ -208,8 +181,8 @@ func Cost(cat *Catalog, reg Registry, sel Selection, rows int) int {
 	return n * rows
 }
 
-// Names lists the field names a type accepts. It stops at one level: below
-// that the surface belongs to another type, and the graph has cycles.
+// Names lists one level of field names; below that the surface is another
+// type's.
 func (r Registry) Names() []string {
 	names := make([]string, 0, len(r))
 	for name := range r {

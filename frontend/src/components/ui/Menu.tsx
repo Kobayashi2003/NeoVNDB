@@ -1,14 +1,5 @@
-/** What every popover menu on the site is made of.
- *
- *  There were seven, each with its own copy of the same surface and slightly
- *  different widths, margins and scroll caps. They are one thing to a reader,
- *  so they are one thing here: a panel, the rows in it, and the few pieces a
- *  row can carry.
- *
- *  The rows are not a component of their own, because a row is sometimes a
- *  link and sometimes a button and the difference matters -- a link can be
- *  opened in a new tab, a button cannot. So a row keeps its own element and
- *  takes its look from `menuItem`. */
+/** Shared popover menu pieces. Rows are a class helper (`menuItem`), not a
+ *  component, since a row may be a link or a button. */
 
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -36,8 +27,6 @@ export function MenuPanel({
     <div
       ref={ref}
       className={cn(
-        // Sized to what is in it, within bounds: two short words should not
-        // sit in a panel built for fifty languages.
         "absolute z-30 w-max min-w-40 max-w-[min(18rem,calc(100vw-2rem))]",
         "rounded-xl border border-white/10 bg-[var(--overlay)] p-1 shadow-xl shadow-black/50 animate-menu-in",
         align === "start" ? "left-0" : "right-0",

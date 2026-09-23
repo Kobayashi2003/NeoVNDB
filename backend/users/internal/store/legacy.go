@@ -10,32 +10,20 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Bringing across what the service this one replaces was holding.
-//
-// The old shape was seven category tables, one per type, each row carrying its
-// marks as an array of JSON objects. This one has a single collections table
-// with a type column and marks as rows, so the import is mostly a transpose --
-// the two designs disagree about where the type lives and whether a mark is a
-// row or a field, and about nothing else.
-//
-// Read-only on the old database, and everything it writes goes in one
-// transaction: a half-imported account is worse than none, because the second
-// attempt would then have to work out which half it already did.
-//
-// Passwords come across verbatim. They are in Werkzeug's scrypt format, which
-// internal/auth reads and retires on the owner's next sign-in; see legacy.go
-// there.
+// Import from the replaced service: seven per-type tables with marks as JSON
+// arrays become one collections table with marks as rows. The old database is
+// only read, and everything is written in one transaction so a retry never
+// meets a half import. Passwords (Werkzeug scrypt) come across verbatim and are
+// rehashed on next sign-in; see auth/legacy.go.
 
-// LegacyReport says what an import did, so the operator can compare it with
-// what was in the old database rather than trust that it worked.
+// LegacyReport lets the operator check the import against the old database.
 type LegacyReport struct {
 	Users       int
 	Skipped     []string
 	Collections int
 	Marks       int
 	Ratings     int
-	// Rating rows this schema cannot hold. Counted rather than dropped in
-	// silence: an import that quietly loses rows is one nobody can check.
+	// Rating rows this schema cannot hold; counted, not silently dropped.
 	Unfit int
 }
 
@@ -53,7 +41,6 @@ var legacyTables = []struct {
 	{"trait_categories", "i"},
 }
 
-// One mark as the query below rebuilds it, and one old list with its marks.
 type legacyMark struct {
 	ID int32  `json:"id"`
 	At string `json:"at"`
@@ -75,11 +62,8 @@ type legacyUser struct {
 	createdAt time.Time
 }
 
-// ImportLegacy copies accounts and lists from the old service's database.
-//
-// A username already taken here is left alone and reported rather than merged:
-// the two rows are only the same person if someone says so, and guessing wrong
-// would hand one reader another's lists.
+// ImportLegacy copies accounts and lists. A username already taken here is
+// reported, never merged: guessing wrong would hand over someone's lists.
 func (s *Store) ImportLegacy(ctx context.Context, oldURL string) (*LegacyReport, error) {
 	old, err := pgxpool.New(ctx, oldURL)
 	if err != nil {
@@ -165,10 +149,8 @@ func readLegacyUsers(ctx context.Context, old *pgxpool.Pool) ([]legacyUser, erro
 	return out, rows.Err()
 }
 
-// importRatings copies what one reader thought of things. The old table is
-// already keyed the way this one is -- reader, kind, id -- so there is nothing
-// to transpose; only the range is checked, because a row outside it would be
-// refused by the column and take the whole import down with it.
+// importRatings range-checks each row, since one the column refuses would
+// abort the whole transaction.
 func importRatings(
 	ctx context.Context, old *pgxpool.Pool, tx pgx.Tx, oldUser, newUser int32,
 ) (kept, unfit int, err error) {
@@ -200,9 +182,6 @@ func importRatings(
 
 	for _, h := range found {
 		if h.rating < 1 || h.rating > 5 || !slices.Contains(kinds, h.kind) {
-			// Not something this schema can hold. Skipped rather than made to
-			// fit, because there is no honest value to put in its place -- and
-			// counted, so the operator is told it happened.
 			unfit++
 			continue
 		}
@@ -221,8 +200,6 @@ func importRatings(
 // importLists walks one reader's seven old tables and writes what it finds.
 func importLists(ctx context.Context, old *pgxpool.Pool, tx pgx.Tx, oldUser, newUser int32) (lists, marks int, err error) {
 	for _, t := range legacyTables {
-		// The marks are unnested here rather than in Go so that a list arrives
-		// as its rows, which is the shape this schema wants anyway.
 		rows, err := old.Query(ctx, fmt.Sprintf(`
 			SELECT c.id, c.category_name, c.created_at,
 			       coalesce(m.item, '[]'::jsonb) AS items
@@ -267,8 +244,7 @@ func importLists(ctx context.Context, old *pgxpool.Pool, tx pgx.Tx, oldUser, new
 			for _, h := range r.items {
 				at, err := time.Parse(time.RFC3339, h.At)
 				if err != nil {
-					// A mark whose timestamp will not parse still belongs to
-					// the reader; only its place in the order is lost.
+					// Keep a mark with a bad timestamp; only its order is lost.
 					at = r.made
 				}
 				tag, err := tx.Exec(ctx, `

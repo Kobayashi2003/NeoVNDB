@@ -18,8 +18,7 @@ import (
 
 const nullField = `\N`
 
-// Progress is called after each table so the caller can report movement
-// without the importer knowing anything about output.
+// Progress is called after each table.
 type Progress func(table string, rows int64, took time.Duration)
 
 type Importer struct {
@@ -27,9 +26,8 @@ type Importer struct {
 	schema   string
 	progress Progress
 
-	// Voters who lost tag permission. Only about two hundred accounts, so the
-	// deny set is kept rather than the whole users table -- and an unknown
-	// voter is then allowed by construction, matching vndb's LEFT JOIN.
+	// Voters who lost tag permission (~200). A deny set means unknown voters
+	// are allowed, matching vndb's LEFT JOIN.
 	denied map[string]bool
 }
 
@@ -91,9 +89,8 @@ func (im *Importer) Load(ctx context.Context, path string) (map[string]int64, er
 	return counts, nil
 }
 
-// copyTable rewrites rows as COPY text and streams them into Postgres, which
-// parses the column types itself -- the same path the dump's own import.sql
-// takes, so no per-column conversion lives here.
+// copyTable streams rows as COPY text; Postgres parses the types, as in the
+// dump's own import.sql.
 func (im *Importer) copyTable(ctx context.Context, s spec, table *dump.Table) (int64, error) {
 	targets, transform := im.plan(s, table.Columns)
 
@@ -104,8 +101,6 @@ func (im *Importer) copyTable(ctx context.Context, s spec, table *dump.Table) (i
 	defer conn.Release()
 
 	reader, writer := io.Pipe()
-	// The count travels back over a channel rather than a shared variable, so
-	// it is read only after the writer has finished producing it.
 	counted := make(chan int64, 1)
 
 	go func() {
@@ -150,10 +145,8 @@ func (im *Importer) copyTable(ctx context.Context, s spec, table *dump.Table) (i
 	return rows, nil
 }
 
-// plan resolves a spec against the header actually present in this archive,
-// returning the target column list and the row transform. Matching by name
-// rather than position means an upstream column reorder does not corrupt a
-// load.
+// plan matches a spec to this archive's header by name, so an upstream column
+// reorder cannot corrupt a load.
 func (im *Importer) plan(s spec, header []string) ([]string, func([]string, []string) ([]string, error)) {
 	index := make(map[string]int, len(header))
 	for i, name := range header {

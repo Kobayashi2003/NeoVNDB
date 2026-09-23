@@ -2,9 +2,8 @@ package query
 
 import "fmt"
 
-// A Catalog is how one entity type reaches another. The type graph has cycles
-// -- a VN reaches characters, which reach VNs -- so a field table names the
-// type it points at and the catalog resolves that once every type exists.
+// Catalog resolves type names once every type exists; the type graph has
+// cycles (vn -> character -> vn), so field tables name their targets.
 type Catalog struct{ types map[string]Nested }
 
 func NewCatalog() *Catalog { return &Catalog{types: map[string]Nested{}} }
@@ -19,8 +18,7 @@ func (c *Catalog) Get(name string) Nested {
 	return n
 }
 
-// Check turns a Target that names no registered type into a startup failure
-// rather than a panic on whichever request first follows that field.
+// Check makes an unknown Target a startup failure rather than a request panic.
 func (c *Catalog) Check() error {
 	for name, n := range c.types {
 		for field, def := range n.Registry() {

@@ -1,25 +1,9 @@
-/** One list, and the things on it.
+/** One list and its items. Lists hold only ids, so drawing one is two steps:
+ *  ids from the user service, then the read API for what they are.
  *
- *  A list holds ids and nothing else -- the user service keeps no copy of what
- *  vndb says, so that a weekly import can replace the whole mirror underneath
- *  it without touching anyone's lists. Drawing one is therefore always two
- *  steps: find out what is on it, then ask the read API what those ids are.
- *
- *  Which two steps depends on what was asked for, and the difference is worth
- *  stating because it decides what a list can be sorted by:
- *
- *    - In the order the reader made it, the user service pages the marks and
- *      only a page of ids is ever fetched. This works at any size.
- *    - By anything vndb knows -- a title, a rating, a date -- or with a search
- *      term, the whole list has to go to the read API at once, because neither
- *      the order nor the matching can be worked out a page at a time. That
- *      only holds while the list fits in one request, so past that size those
- *      orders are not offered rather than quietly answered wrong.
- *
- *  Taking things off a list lives here too. Saving happens on the page of the
- *  thing being saved, one at a time, which is the shape of that wish; tidying
- *  up is the opposite -- the reader is looking at the list and means several
- *  at once. */
+ *    - Added order: the user service pages the ids; works at any size.
+ *    - Any vndb sort or a search: the whole list goes to the read API in one
+ *      request, so those are not offered once a list is too long for that. */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -47,32 +31,19 @@ import { SignInFirst } from "./SignInFirst"
 import { SelectBar, Selectable } from "./SelectBar"
 import { CollectionColumn, CollectionPicker } from "./CollectionSwitcher"
 
-/** The page's two columns. From lg up each scrolls on its own inside a
- *  viewport-high box, as a detail page's do (see DetailShell): a long list of
- *  lists should not scroll away the list being read, nor the other way round.
- *
- *  Both keep their scrollbar's gutter, so that a search or a page that turns
- *  up fewer results does not widen the column the moment its scrollbar goes.
- *  Both also carry a little padding cancelled by a negative margin: a scroll
- *  box clips sideways too, and a focused row or a selected card's ring would
- *  otherwise lose an edge. The list column pays for its padding and gutter
- *  with width, so what is left for the rows is the 13rem it always had. */
+/** From lg up each column scrolls on its own (as DetailShell). Stable
+ *  scrollbar gutters avoid width jumps; padding cancelled by negative margin
+ *  keeps focus rings from being clipped. */
 const ROW = "flex w-full gap-6 lg:h-full"
 const LISTS = "-mx-1 hidden w-56 shrink-0 overflow-y-auto overscroll-contain px-1 py-6 [scrollbar-gutter:stable] lg:flex"
-/** What the list column occupies once its margins are taken back. */
 const LISTS_SPACE = "hidden w-[13.5rem] shrink-0 lg:block"
 const BODY =
   "flex min-w-0 flex-1 flex-col gap-4 lg:-ml-1 lg:overflow-y-auto lg:overscroll-contain lg:pb-12 lg:pl-1 lg:pr-3 lg:pt-6 lg:[scrollbar-gutter:stable]"
 
-/** The order the reader put the list in, which is this page's own and not one
- *  the read API has ever heard of. Newest first, because a list is a record of
- *  what someone did and the last thing they did is the interesting end. */
+/** Saved order, known only to this page. */
 const ADDED = { value: "added", label: "Added", descending: true } as const
 
-/** Which way an order runs when the reader has not said. Looked up across the
- *  types rather than within one, because the list's own type is not known
- *  until it has been read, and a sort name means the same thing in all of
- *  them. */
+/** Searched across all types: the list's type is unknown until it loads. */
 function orderOf(sort: string): Sort | undefined {
   if (sort === ADDED.value) return ADDED
   for (const spec of Object.values(LIST)) {
@@ -87,8 +58,7 @@ interface Held {
   mine: Collection[]
   rows: { id: string }[]
   count: number
-  /** True when the list is longer than can be handed over in one request, so
-   *  only ADDED is on offer. */
+  /** Too long for one read API request, so only ADDED is offered. */
   tooBig: boolean
 }
 
@@ -111,10 +81,7 @@ export function CollectionPanel({
 
   const search = one(params, "q") ?? ""
   const sort = one(params, "sort") ?? ADDED.value
-  // Each order starts at the end worth looking at, and which end that is
-  // belongs to the order: newest first for when it was added, best first for a
-  // rating, but A before Z for a title. One default for all of them had every
-  // list reading backwards the moment it was sorted by anything.
+  // Each sort has its own default direction.
   const asked = one(params, "reverse")
   const reverse = asked !== undefined ? asked === "true" : (orderOf(sort)?.descending ?? false)
 
@@ -138,9 +105,7 @@ export function CollectionPanel({
         filters: { id: ids.join(",") },
       })
       const byId = new Map(answer.results.map((r) => [r.id, r]))
-      // An id with nothing behind it is not an error: vndb hides entries, and
-      // a hidden one leaves a mark pointing at nothing until the reader
-      // removes it. Better a list one short than a list that will not draw.
+      // Entries vndb hid are dropped rather than failing the list.
       return ids.filter((x) => byId.has(x)).map((x) => byId.get(x)!)
     }
 
@@ -150,8 +115,6 @@ export function CollectionPanel({
       if (!list) throw new UserError(404, "No such list.")
       const spec = LIST[list.type]
 
-      // The whole list is needed to sort or search it; in the reader's own
-      // order it never is, and that is what lets a long list still be read.
       if (sort === ADDED.value && !search) {
         const held = await marks(id, page, PAGE_SIZE)
         const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
@@ -160,8 +123,7 @@ export function CollectionPanel({
 
       const whole = await allItems(id)
       if (whole.items.length < whole.count) {
-        // Too long to hand over. Say so by falling back rather than showing an
-        // order that would silently be of part of the list.
+        // Fall back rather than sort only part of the list.
         const held = await marks(id, page, PAGE_SIZE)
         const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
         return { list, mine, rows, count: held.count, tooBig: true }
@@ -184,8 +146,7 @@ export function CollectionPanel({
     read().then(
       (got) => {
         if (!live) return
-        // Taking the last things off the last page leaves the reader standing
-        // on a page that no longer exists.
+        // Removing the last items can leave the reader past the end.
         const last = Math.max(1, Math.ceil(got.count / PAGE_SIZE))
         if (page > last) {
           router.replace(withParams(path, params, { page: last === 1 ? null : String(last) }))
@@ -202,12 +163,7 @@ export function CollectionPanel({
     }
   }, [session.status, id, page, sort, reverse, search, reloads, router, path, params])
 
-  // Every state below is drawn inside the same frame, and that is deliberate.
-  // React reconciles by position, so a bare placeholder here and the real
-  // panel there are one element wearing two sets of classes -- and when the
-  // classes changed, that element moved, which is a layout shift of the whole
-  // page. Keeping the frame and swapping only its insides leaves nothing to
-  // move.
+  // Every state shares one Frame so switching states causes no layout shift.
   if (session.status === "unknown" || (held === null && !error)) {
     return (
       <Frame>
@@ -239,10 +195,8 @@ export function CollectionPanel({
 
   const here = held.rows.map((r) => r.id)
   const allOnPage = here.length > 0 && here.every((x) => chosen.includes(x))
-  // ADDED first: it is the one this page owns, and the one that always works.
   const sorts: Sort[] = [ADDED, ...(held.tooBig ? [] : LIST[held.list.type].sorts)]
-  // On a list too long to hand over, an order named in the address was not the
-  // one used. Marking the one that was is the only honest thing to highlight.
+  // Highlight the order actually used, not the one in the URL.
   const showing = held.tooBig ? ADDED.value : sort
 
   async function act(change: () => Promise<unknown>) {
@@ -387,10 +341,7 @@ export function CollectionPanel({
   )
 }
 
-/** The shape every state of this page has: room for the column of lists where
- *  there is room for one, and the page itself beside it. Drawn even before
- *  there are any lists to put in the column, so that what arrives fills a
- *  space that was already the right size. */
+/** Reserves the list column's space before the lists arrive. */
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className={ROW}>
@@ -400,9 +351,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Searching inside one list. Like the listings' own search box it navigates
- *  on submit rather than on every keystroke, and for the same reason: each
- *  query is a round trip, and a reader typing a title does not want seven. */
+/** Navigates on submit, not per keystroke. */
 function SearchInList({
   path,
   params,

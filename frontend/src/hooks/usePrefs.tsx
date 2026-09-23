@@ -1,16 +1,6 @@
-/** Reading preferences: the ones that mean the same thing in every section,
- *  and that a reader should not have to set twice.
- *
- *  Spoilers are deliberately not among them. A spoiler control belongs where
- *  the spoilers are, so it can say what the next click reveals and disappear
- *  where there is nothing to reveal.
- *
- *  They live in one module-level store rather than in a context, because that
- *  is what they are: one saved answer, shared by every component that asks and
- *  by every tab the reader has open. What the context here carries is only the
- *  value the server already rendered with, read from the cookie on the way in
- *  -- so the first client render agrees with the markup it is hydrating, and
- *  nothing rewrites itself a second later. See lib/prefs.ts. */
+/** Site-wide reading preferences in a module-level store shared across
+ *  components and tabs. The context only carries what the server rendered with
+ *  (from the cookie), so hydration matches. See lib/prefs.ts. */
 "use client"
 
 import { createContext, useContext, useSyncExternalStore } from "react"
@@ -26,15 +16,13 @@ export type { CharacterLayout, Prefs } from "@/lib/prefs"
 
 export interface PrefsControl extends Prefs {
   set: (change: Partial<Prefs>) => void
-  /** Sexual content shown outright, which also ungates the tags and traits
-   *  that only describe it. */
+  /** Also ungates sexual tags and traits. */
   explicit: boolean
 }
 
 const listeners = new Set<() => void>()
 
-/** The snapshot must be referentially stable between changes, or every render
- *  would look like a change to React. */
+/** Must stay referentially stable between changes for useSyncExternalStore. */
 let current: Prefs | null = null
 
 function cookie(): string | null {
@@ -44,8 +32,6 @@ function cookie(): string | null {
   return found ? decodeURIComponent(found.slice(PREFS_COOKIE.length + 1)) : null
 }
 
-/** A year, because this is a preference and not a session; Lax, because it is
- *  read on ordinary navigation and has no business on a cross-site request. */
 function writeCookie(prefs: Prefs): void {
   const value = encodeURIComponent(JSON.stringify(prefs))
   document.cookie = `${PREFS_COOKIE}=${value}; path=/; max-age=31536000; samesite=lax`
@@ -55,9 +41,7 @@ function load(): Prefs {
   const raw = cookie()
   if (raw !== null) return readPrefs(raw)
 
-  // No cookie yet: either a first visit, or a reader who set these when they
-  // lived in localStorage. Taking the old value over and writing it as a
-  // cookie is what keeps the second reader's answers.
+  // Migrate prefs saved before they moved to the cookie.
   try {
     const old = window.localStorage.getItem(PREFS_STORAGE)
     if (old) {
@@ -66,7 +50,7 @@ function load(): Prefs {
       return prefs
     }
   } catch {
-    // Storage can be unreadable; there is simply nothing to carry over.
+    // Storage can be unreadable.
   }
   return DEFAULTS
 }
@@ -76,9 +60,7 @@ function snapshot(): Prefs {
   return current
 }
 
-// Another tab writing these should not leave this one disagreeing about what
-// the reader has asked to see. The cookie is what both tabs read, but only
-// localStorage announces itself, so it is still written -- as the signal.
+// Cookies fire no event, so localStorage is still written as the cross-tab signal.
 function onStorage(e: StorageEvent): void {
   if (e.key !== PREFS_STORAGE) return
   current = load()
@@ -100,13 +82,12 @@ function update(change: Partial<Prefs>): void {
   try {
     window.localStorage.setItem(PREFS_STORAGE, JSON.stringify(current))
   } catch {
-    // The cookie is the one that matters; this is only the cross-tab signal.
+    // Only the cross-tab signal; the cookie already holds the value.
   }
   for (const notify of listeners) notify()
 }
 
-/** What the server rendered with. Supplied by the root layout, which is the
- *  only place that reads the cookie. */
+/** Supplied by the root layout, the only reader of the cookie. */
 const Rendered = createContext<Prefs>(DEFAULTS)
 
 export function PrefsRendered({
@@ -121,8 +102,7 @@ export function PrefsRendered({
 
 export function usePrefs(): PrefsControl {
   const rendered = useContext(Rendered)
-  // The third argument is used on the server and again while hydrating, which
-  // is exactly when the store cannot be read and the cookie already decided.
+  // The server snapshot is used on the server and during hydration.
   const prefs = useSyncExternalStore(subscribe, snapshot, () => rendered)
   return { ...prefs, set: update, explicit: prefs.sexual === "explicit" }
 }

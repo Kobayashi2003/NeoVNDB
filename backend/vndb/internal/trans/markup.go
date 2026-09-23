@@ -15,10 +15,7 @@ import (
 //   - literal blocks: [raw]...[/raw]
 //   - bare references such as g749, i3137, v17, which vndb turns into links
 //
-// A translation must carry every one of these through unchanged; only the
-// prose around them is allowed to differ. Tokens returns what must survive, so
-// that a seed can refuse a translation that dropped a link or translated an
-// id, rather than storing text that renders wrongly forever.
+// A translation must keep all of these unchanged, or a seed refuses it.
 
 var (
 	tagRE = regexp.MustCompile(`(?i)\[(/?)(url|b|i|s|spoiler|raw)(=[^\]]*)?\]`)
@@ -28,9 +25,7 @@ var (
 	idRE = regexp.MustCompile(`\b[gicrpsvdw]\d+(?:\.\d+)?\b`)
 )
 
-// Tokens is everything in the text that is not open to translation, sorted.
-// Order is dropped because translation legitimately moves things around; what
-// must hold is that the same tokens appear the same number of times.
+// Tokens is the untranslatable parts, sorted: order may change, counts may not.
 func Tokens(text string) []string {
 	if text == "" {
 		return nil
@@ -46,8 +41,7 @@ func Tokens(text string) []string {
 	return out
 }
 
-// CheckMarkup reports whether a translation preserved everything it had to,
-// naming what diverged so a seed can say which row is wrong and how.
+// CheckMarkup reports what a translation failed to preserve.
 func CheckMarkup(source, target string) error {
 	src, tgt := Tokens(source), Tokens(target)
 	if equal(src, tgt) {

@@ -1,24 +1,9 @@
-/** The bar every page hangs under.
+/** The site header: seven type shelves, the current one marked (detail pages
+ *  included). Below 840px the shelves collapse into a menu.
  *
- *  Seven shelves, because the database has seven kinds of thing in it and
- *  until now the only way between them was to type the address. The one the
- *  reader is looking at is marked, which on a detail page means the kind that
- *  page is about: arriving at a character from a visual novel should still say
- *  which shelf you are standing in front of.
- *
- *  Two forms of the same row. All seven fit side by side from 840px. Below
- *  that they collapse into one menu rather than a strip that scrolls
- *  sideways: a strip fit, in the sense that nothing overflowed, but the last
- *  shelves sat off the end of a bar nobody would think to drag.
- *
- *  That 840 has moved twice, because every control added to the right of the
- *  shelves takes width from the same place. At 840 the worst case -- a name at
- *  its full cap, beside the view button and the search control -- leaves them
- *  11px. It was 800 until a search icon cost 40 and left them 29 short.
- *  Measured, never estimated: re-measure before adding anything here.
- *
- *  Either way it is one row at every width, which is what lets a page subtract
- *  `--header-h` from the viewport and trust the answer. */
+ *  840 is measured: the worst case (a max-length username, view button and
+ *  search control) leaves 11px spare. Re-measure before adding anything. It
+ *  stays one row at every width, which `--header-h` relies on. */
 "use client"
 
 import Link from "next/link"
@@ -34,7 +19,6 @@ import { UserMenu } from "@/components/user/UserMenu"
 
 export function Header() {
   const pathname = usePathname()
-  // Both /v and /v17 belong to the same shelf, so one rule finds either.
   const here = /^\/([vrcpsgi])\d*$/.exec(pathname)?.[1]
 
   return (

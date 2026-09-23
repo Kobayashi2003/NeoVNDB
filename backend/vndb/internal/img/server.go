@@ -1,20 +1,6 @@
-// Package img mirrors vndb's images.
-//
-// The dump this project mirrors carries every image's metadata -- kind,
-// number, dimensions, content votes -- and none of the images. So the mirror
-// is half a mirror until something fetches the files too, and that is what
-// this is: the same job internal/importer does for the data, done one image at
-// a time because there are 460,000 of them and only the ones somebody looks at
-// are worth keeping.
-//
-// What lands on disk is what vndb served, byte for byte. Resizing happens on
-// the way out and its results live in a second directory that can be deleted
-// at any time without losing anything -- the same division the database side
-// draws between the mirrored tables and the derived ones.
-//
-// Nothing here opens a database. A request names the image it wants, so there
-// is nothing to look up, and this server therefore knows nothing about
-// generations: promoting or rolling one back leaves it untouched.
+// Package img mirrors vndb's images lazily, on first request. Originals are
+// stored byte-exact; resized copies go in a separate, disposable directory.
+// No database: the URL names the image, so generations don't matter here.
 package img
 
 import (
@@ -66,13 +52,9 @@ func (s *Server) Routes() http.Handler {
 	return mux
 }
 
-// handle answers /img/<kind>/<shard>/<num>.jpg for the original, and
-// /img/<width>/<kind>/<shard>/<num>.jpg for a resized copy.
-//
-// The width is a path segment rather than a query parameter so that the URL
-// and the file on disk have the same shape. That is what lets a reverse proxy
-// answer a hit with a plain file server and never reach this process at all --
-// which is where nearly every request should end.
+// handle answers /img/<kind>/<shard>/<num>.jpg (original) and
+// /img/<width>/<kind>/<shard>/<num>.jpg. URLs mirror disk paths so the edge
+// serves hits without reaching this process.
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, "/img/")
 
@@ -100,18 +82,14 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// An image at a given id never changes upstream, so a client that has one
-	// never needs to ask again.
+	// An image id never changes upstream.
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	// ServeContent rather than Write, for the range requests a browser makes
-	// of a large image. A zero time leaves out Last-Modified, which says
-	// nothing here that immutable has not already said.
+	// ServeContent for range requests; zero time omits Last-Modified.
 	http.ServeContent(w, r, ".jpg", time.Time{}, bytes.NewReader(data))
 }
 
-// serve returns the bytes for one request, filling whatever is missing on the
-// way: the derived copy, the original it is made from, or both.
+// serve fills whatever is missing: the derived copy, its original, or both.
 func (s *Server) serve(ref Ref, width int) ([]byte, error) {
 	store, resizing := s.derived[width]
 	if !resizing {
@@ -121,10 +99,8 @@ func (s *Server) serve(ref Ref, width int) ([]byte, error) {
 		return data, nil
 	}
 
-	// Keyed on the width as well as the image, because two widths are two
-	// different pieces of work. They still share one trip upstream: the
-	// original each of them needs is fetched under its own key, one level
-	// down, so a cold page wanting a cover at two sizes asks vndb once.
+	// Keyed per width; the original is fetched under its own key, so two widths
+	// of a cold image still ask vndb once.
 	return s.flight.Do(ref.String()+"@"+strconv.Itoa(width), func() ([]byte, error) {
 		original, err := s.original(ref)
 		if err != nil {
@@ -134,9 +110,7 @@ func (s *Server) serve(ref Ref, width int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		// An image already narrower than the width asked for is served as it
-		// is and not copied: a second identical file would be a second thing
-		// to keep in step for no gain. Character portraits are all of them.
+		// Already narrower than asked (all portraits): serve the original, no copy.
 		if changed {
 			if err := store.Write(ref, scaled); err != nil {
 				return nil, err
@@ -152,8 +126,7 @@ func (s *Server) original(ref Ref) ([]byte, error) {
 		return data, nil
 	}
 	return s.flight.Do(ref.String(), func() ([]byte, error) {
-		// Checked again inside: whoever held this key before may have been
-		// fetching the very image now wanted.
+		// Recheck: the previous key holder may have just fetched it.
 		if data, err := s.mirror.Read(ref); err == nil {
 			return data, nil
 		}

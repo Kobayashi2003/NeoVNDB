@@ -11,14 +11,10 @@ import (
 	"github.com/kobayashi/neovndb-users/internal/store"
 )
 
-// The seven letters vndb gives its types, and the shape of an id: a letter
-// then a number. Parsing it here rather than storing it whole keeps this
-// service's rows the same shape as the mirror's, where the prefix is implied
-// by which column the number sits in.
+// vndb ids are stored as type letter plus number, as in the mirror.
 const kinds = "vrcpsgi"
 
-// The longest a list's name may be. Not a limit on work, so not a setting:
-// it is what the column holds.
+// What the column holds, so not a setting.
 const maxName = 64
 
 func parseID(raw string) (kind string, num int32, ok bool) {
@@ -40,10 +36,8 @@ func pathInt(r *http.Request, name string) (int32, bool) {
 	return int32(n), true
 }
 
-// positive reads a whole number from the query, or leaves it at fallback. A
-// max of 0 means there is no ceiling; above one, asking for more is refused
-// rather than quietly reduced, so a caller is never told it got what it asked
-// for when it did not.
+// positive reads a query number, or fallback. Over max (0: none) is refused,
+// not clamped.
 func positive(w http.ResponseWriter, r *http.Request, name string, fallback, max int) (int, bool) {
 	raw := r.URL.Query().Get(name)
 	if raw == "" {
@@ -72,8 +66,7 @@ func validName(name string) error {
 	return nil
 }
 
-// answer turns a store error into the right reply. Not found and taken are
-// things a caller can act on; anything else is ours.
+// answer maps store errors to replies.
 func (s *Server) answer(w http.ResponseWriter, doing string, err error) bool {
 	switch {
 	case err == nil:
@@ -193,8 +186,7 @@ func (s *Server) removeMark(w http.ResponseWriter, r *http.Request, userID int32
 	s.mark(w, r, userID, s.store.RemoveMark)
 }
 
-// mark is the half the two share: the same parsing, the same checks inside the
-// store, the same reply.
+// mark is shared by addMark and removeMark.
 func (s *Server) mark(
 	w http.ResponseWriter, r *http.Request, userID int32,
 	do func(ctx context.Context, userID, id int32, kind string, item int32) error,
@@ -215,12 +207,8 @@ func (s *Server) mark(
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// items hands over the whole list, so that the read API can be asked to sort
-// or search it. See store.Items for why this service cannot do either itself.
-//
-// Capped, because it all has to fit in one request to the read API afterwards,
-// and that request carries the ids in its address. A caller that gets fewer
-// than `count` knows this list is past what the trick supports.
+// items returns the whole list for the read API to sort or search. Capped
+// because the ids travel in one URL; fewer than `count` means too long.
 func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
 	id, ok := pathInt(r, "id")
 	if !ok {
@@ -234,10 +222,7 @@ func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
 	send(w, http.StatusOK, map[string]any{"items": items, "count": total})
 }
 
-// removeMarks and moveMarks are the page-at-a-time forms of the two singular
-// routes above. A reader clearing out a list works in handfuls, and a handful
-// of round trips is both slower and less certain than one -- half a move is a
-// state nobody asked for.
+// removeMarks and moveMarks are the bulk, all-or-nothing forms.
 func (s *Server) removeMarks(w http.ResponseWriter, r *http.Request, userID int32) {
 	b, ok := s.batch(w, r)
 	if !ok {
@@ -266,8 +251,6 @@ func (s *Server) moveMarks(w http.ResponseWriter, r *http.Request, userID int32)
 	send(w, http.StatusOK, map[string]any{"changed": n})
 }
 
-// A page-at-a-time request: the list it is about, the ids, and for a move the
-// list they are going to.
 type batchOf struct {
 	list  int32
 	to    int32
@@ -275,9 +258,7 @@ type batchOf struct {
 	items []int32
 }
 
-// batch reads what both routes above read identically. Every id has to be the
-// one kind -- they are going onto or off a list that holds one kind -- so the
-// kind is taken from the first and the rest are held to it.
+// batch parses a bulk request; every id must share the first one's type.
 func (s *Server) batch(w http.ResponseWriter, r *http.Request) (batchOf, bool) {
 	var b batchOf
 
@@ -325,13 +306,7 @@ func (s *Server) batch(w http.ResponseWriter, r *http.Request) (batchOf, bool) {
 
 /* --- What a reader thought of something ---------------------------------- */
 
-// A rating is about the thing rather than about any list it is on, so these
-// routes take an id and nothing else. Clearing one is a DELETE rather than a
-// rating of zero: "I have no opinion" is not a low score.
-//
-// They do not go through answer(): its two named cases are both about lists,
-// and neither is reachable from here. An unknown id is not an error -- there
-// is nothing to look up, only a row that is not there.
+// Ratings are per item, not per list. Clearing is a DELETE, not a zero.
 func (s *Server) rating(w http.ResponseWriter, r *http.Request, userID int32) {
 	kind, item, ok := parseID(r.PathValue("item"))
 	if !ok {

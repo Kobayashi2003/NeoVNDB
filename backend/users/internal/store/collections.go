@@ -17,15 +17,12 @@ type Collection struct {
 }
 
 type Mark struct {
-	// The full vndb id, rebuilt from the collection's type and the stored
-	// number, because that is what a caller passes back to the read API.
+	// Full vndb id, rebuilt from the collection's type and the stored number.
 	ID       string    `json:"id"`
 	MarkedAt time.Time `json:"marked_at"`
 }
 
-// Collections lists what a reader keeps, of one kind or of every kind. The
-// counts come along because a list of lists is nearly useless without them
-// and they cost one join.
+// Collections lists a reader's lists, of one type or all, with counts.
 func (s *Store) Collections(ctx context.Context, userID int32, kind string) ([]Collection, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT c.id, c.type, c.name, count(m.item), c.created_at
@@ -50,8 +47,8 @@ func (s *Store) Collections(ctx context.Context, userID int32, kind string) ([]C
 	return out, rows.Err()
 }
 
-// owned reads one collection only if it belongs to this reader. Every write
-// goes through it, so a guessed id is a 404 rather than someone else's list.
+// owned reads a collection only if it is this reader's; every write goes
+// through it, so a guessed id is a 404.
 func (s *Store) owned(ctx context.Context, userID, id int32) (string, error) {
 	var kind string
 	err := s.pool.QueryRow(ctx,
@@ -101,9 +98,8 @@ func (s *Store) DeleteCollection(ctx context.Context, userID, id int32) error {
 	return nil
 }
 
-// Marks is one page of what a list holds, newest first. The ids come back
-// whole so a caller can hand them straight to the read API, which takes up to
-// a hundred at a time -- which is why the page size here stays under that.
+// Marks is one page of a list, newest first. The page size stays within what
+// the read API takes in one id lookup.
 func (s *Store) Marks(ctx context.Context, userID, id int32, limit, offset int) ([]Mark, int, error) {
 	kind, err := s.owned(ctx, userID, id)
 	if err != nil {
@@ -138,11 +134,8 @@ func (s *Store) Marks(ctx context.Context, userID, id int32, limit, offset int) 
 	return out, total, rows.Err()
 }
 
-// AddMark is idempotent: saving something twice is a thing a reader does by
-// accident, and the second time should mean the same as the first.
-//
-// kind has to match the list's, so a character cannot be filed under novels --
-// the number alone would happily go in either, since both are just numbers.
+// AddMark is idempotent. kind must match the list's type, since the stored
+// number alone would fit any list.
 func (s *Store) AddMark(ctx context.Context, userID, id int32, kind string, item int32) error {
 	if err := s.holds(ctx, userID, id, kind); err != nil {
 		return err
@@ -162,16 +155,8 @@ func (s *Store) RemoveMark(ctx context.Context, userID, id int32, kind string, i
 	return err
 }
 
-// Items is every id on a list, in the order they were added, for a caller
-// that has to hand the whole list to somebody else.
-//
-// Sorting a collection by anything vndb knows -- a title, a rating, a release
-// date -- is a question this service cannot answer: it keeps ids and the day
-// they were written down, and nothing else. What it can do is say what the
-// whole list is, so the read API can be asked to sort and search it. That only
-// works while the list is small enough to pass along in one request, so the
-// caller is told the true count as well as what it got, and can see for itself
-// when it has been given only part.
+// Items is every id on a list, so the read API can sort or search it. The true
+// count comes back too, so a caller can tell when it got only part.
 func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []string, total int, err error) {
 	kind, err := s.owned(ctx, userID, id)
 	if err != nil {
@@ -194,8 +179,6 @@ func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []s
 	}
 	defer rows.Close()
 
-	// Full ids, the way Marks hands them back: rebuilt from the list's type and
-	// the stored number, because that is what the read API is given.
 	items = []string{}
 	for rows.Next() {
 		var item int32
@@ -207,18 +190,9 @@ func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []s
 	return items, total, rows.Err()
 }
 
-// RemoveMarks takes several off one list at once, and MoveMarks carries them
-// from one list to another.
-//
-// One statement each rather than a loop of the singular forms, because a
-// reader who selected a page of a list and pressed a button meant one thing,
-// and half of it happening is not a smaller version of that thing. A move in
-// particular has to be both halves or neither: the pair done separately can
-// leave an item on both lists, or on none.
-//
-// Both silently pass over items the list does not hold. The reader is working
-// from a page that may be a moment out of date, and an item already gone is
-// the outcome they asked for.
+// RemoveMarks and MoveMarks are one statement each so a bulk action is all or
+// nothing. Items the list no longer holds are skipped, since the reader's page
+// may be out of date.
 func (s *Store) RemoveMarks(ctx context.Context, userID, id int32, kind string, items []int32) (int64, error) {
 	if err := s.holds(ctx, userID, id, kind); err != nil {
 		return 0, err
@@ -231,9 +205,7 @@ func (s *Store) RemoveMarks(ctx context.Context, userID, id int32, kind string, 
 	return tag.RowsAffected(), nil
 }
 
-// MoveMarks needs both lists to be the reader's own and to hold the same kind
-// of thing -- which the type check on each gives, since a list's type is what
-// says what may go on it.
+// MoveMarks needs both lists owned by the reader and of the same type.
 func (s *Store) MoveMarks(ctx context.Context, userID, from, to int32, kind string, items []int32) (int64, error) {
 	if err := s.holds(ctx, userID, from, kind); err != nil {
 		return 0, err
@@ -251,8 +223,7 @@ func (s *Store) MoveMarks(ctx context.Context, userID, from, to int32, kind stri
 	}
 	defer tx.Rollback(ctx)
 
-	// The target may already hold some of them, and arriving twice is not an
-	// error -- it is the same answer the singular add gives.
+	// Already on the target is fine, as with AddMark.
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO marks (collection_id, item, marked_at)
 		SELECT $1, item, marked_at FROM marks
@@ -268,8 +239,7 @@ func (s *Store) MoveMarks(ctx context.Context, userID, from, to int32, kind stri
 	return tag.RowsAffected(), tx.Commit(ctx)
 }
 
-// holds is owned plus the type check. A list of the wrong type reads as no
-// such list, because to the caller it is: the one they named cannot hold this.
+// holds is owned plus the type check; a wrong type reads as no such list.
 func (s *Store) holds(ctx context.Context, userID, id int32, kind string) error {
 	mine, err := s.owned(ctx, userID, id)
 	if err != nil {
@@ -281,8 +251,7 @@ func (s *Store) holds(ctx context.Context, userID, id int32, kind string) error 
 	return nil
 }
 
-// Holding answers "which of my lists have this in them", which is what every
-// detail page asks once and nothing else asks at all.
+// Holding lists which of the reader's lists hold an item.
 func (s *Store) Holding(ctx context.Context, userID int32, kind string, item int32) ([]int32, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT c.id FROM collections c

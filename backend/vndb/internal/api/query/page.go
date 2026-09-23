@@ -12,37 +12,28 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// Paging, filtering and ordering are identical for every entity type: only the
-// table, the filter table and the sortable expressions differ. Page holds that
-// shared shape so a resolver is left with just its own fields and fragments.
-
-// Countable is a scanned row that carries the window-function total alongside
-// the entity, which is how one statement returns both the page and the count.
+// Countable is a row carrying the window-function total, so one statement
+// returns both the page and the count.
 type Countable interface{ Count() int32 }
 
 type PageSpec struct {
-	// Table is the FROM clause including the alias, e.g. "producers p"; Alias
-	// is that alias on its own, used for the id filter and tie-breaking.
+	// Table is the FROM clause with its alias; Alias is the alias alone.
 	Table string
 	Alias string
-	// IDType is the entity's id prefix, for parsing an id= filter.
+	// IDType parses an id= filter.
 	IDType string
-	// SearchEntity is the single letter search_cache stores, for searchrank.
+	// SearchEntity is the letter search_cache stores, for searchrank.
 	SearchEntity string
 
 	Filters map[string]FilterFunc
 	Sorts   map[string]string
 }
 
-// Page runs one filtered, ordered page and returns the rows with the total.
-//
-// A lookup by id skips paging: it is a primary-key hit and the caller asked
-// for specific rows, not a slice of them.
+// Page runs one filtered, ordered page and returns the rows with the total. A
+// lookup by id is a primary-key hit and skips paging.
 func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	req *Request, scan pgx.RowToFunc[T]) ([]T, int, error) {
 
-	// One budget for the whole request: an expression nested in another spends
-	// from it too, so nesting cannot multiply what may be asked.
 	b := &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget}
 
 	byID := false
@@ -67,9 +58,7 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		}
 	}
 
-	// The expression is one more condition, ANDed with the parameters: a
-	// reader who narrows with the controls and then writes an expression
-	// means both, the same way two controls mean both.
+	// The expression is ANDed with the plain parameters.
 	if err := b.Expr(req.expr, spec.Filters); err != nil {
 		return nil, 0, err
 	}
@@ -101,9 +90,8 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	if len(page) > 0 {
 		return page, int(page[0].Count()), nil
 	}
-	// The count rides back on the rows, so an empty page carries none -- which
-	// for a page past the end would report a filter that matches thousands as
-	// matching nothing. Only then is it worth a second statement.
+	// An empty page carries no count, so past the end a matching filter would
+	// report zero; only then is a second statement worth it.
 	if byID || req.Offset() == 0 {
 		return page, 0, nil
 	}
@@ -134,8 +122,6 @@ func orderBy(spec PageSpec, req *Request) (string, error) {
 		if _, searching := req.Filters["search"]; !searching {
 			return "", BadRequest("searchrank only orders a search")
 		}
-		// Rank by the strongest label that matched: a main title outranks an
-		// alias, which outranks an indirect hit.
 		expr = fmt.Sprintf(`(SELECT MAX(sc.prio) FROM search_cache sc
 		          WHERE sc.entity_type = '%s' AND sc.id = %s.id)`,
 			spec.SearchEntity, spec.Alias)
@@ -145,16 +131,12 @@ func orderBy(spec PageSpec, req *Request) (string, error) {
 	if req.Reverse {
 		direction = " DESC"
 	}
-	// id breaks ties so paging stays stable between requests.
+	// id breaks ties so paging is stable between requests.
 	return expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, nil
 }
 
-// SearchTerms splits a query into the parts that must each be found.
-//
-// Every word, in any order: somebody who remembers "ever" and "infinity" but
-// not what sits between them is describing a title they have seen, and should
-// be given it. Anything inside double quotes stays one part, for when the
-// order is the point -- a title that is a common word next to another one.
+// SearchTerms splits a query into words that must each match, in any order; a
+// double-quoted phrase stays one term.
 func SearchTerms(query string) []string {
 	var terms []string
 	var word strings.Builder
@@ -169,8 +151,6 @@ func SearchTerms(query string) []string {
 	for _, r := range query {
 		switch {
 		case r == '"':
-			// A closing quote ends the phrase; an opening one ends whatever
-			// was being typed before it.
 			flush()
 			quoted = !quoted
 		case !quoted && unicode.IsSpace(r):
@@ -183,25 +163,19 @@ func SearchTerms(query string) []string {
 	return terms
 }
 
-// The one parameter that is not a filter: it names rows rather than narrowing
-// them, and so is answered before any condition is built.
+// idFilter names rows rather than narrowing them, so it is handled before any
+// filter runs.
 const idFilter = "id"
 
-// SearchFilter builds the search condition for one entity type. Each word runs
-// through the same normaliser that built the index, so punctuation, case and
-// width differences all fall away.
-//
-// One condition per word rather than one for the whole query, and they are
-// ANDed: the words may land on different labels of the same entity, so a title
-// and an alias can each answer for part of what was typed.
+// SearchFilter adds one condition per word, ANDed, so a title and an alias can
+// each match part of the query. Terms go through the same normaliser as the
+// index.
 func SearchFilter(entity, alias string) FilterFunc {
 	condition := fmt.Sprintf(`EXISTS (
 		SELECT 1 FROM search_cache sc
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
 		   AND sc.label LIKE '%%%%' || search_norm_term(%%s) || '%%%%')`, entity, alias)
 	return func(b *Builder, value string) error {
-		// A search matches; ">=ever" is not a term, it is an operator that
-		// wandered in from an expression.
 		value, err := matchOnly(value)
 		if err != nil {
 			return err
