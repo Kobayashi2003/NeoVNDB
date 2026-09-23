@@ -108,9 +108,9 @@ export function CollectionButton({ id }: { id: string }) {
         )}
       >
         {saved ? (
-          <BookmarkCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <BookmarkCheck className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         ) : (
-          <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <Bookmark className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         )}
         {saved ? "Saved" : "Save"}
       </button>
@@ -208,7 +208,7 @@ function NewList({
           onClick={() => setNaming(true)}
           className={menuItem({ className: "text-muted" })}
         >
-          <Plus className="size-3.5 shrink-0" aria-hidden />
+          <Plus className="icon-text size-3.5 shrink-0" aria-hidden />
           New list
         </button>
       </>

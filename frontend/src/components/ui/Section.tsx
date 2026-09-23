@@ -24,7 +24,7 @@ export function Section({
       {count !== undefined && <span className="text-xs font-normal text-muted">{count}</span>}
       {onTitleClick && (
         <ChevronRight
-          className="h-4 w-4 text-muted transition-colors group-hover:text-accent"
+          className="icon-caps h-4 w-4 text-muted transition-colors group-hover:text-accent"
           aria-hidden
         />
       )}

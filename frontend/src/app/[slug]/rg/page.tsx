@@ -94,7 +94,7 @@ function Back({ id }: { id: string }) {
       href={`/${id}`}
       className="inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-white"
     >
-      <ArrowLeft className="h-3 w-3" aria-hidden />
+      <ArrowLeft className="icon-text h-3 w-3" aria-hidden />
       Back to the novel
     </Link>
   )

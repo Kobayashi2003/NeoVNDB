@@ -71,7 +71,7 @@ export function MonthPicker({
           {monthName(month)} {year}
         </span>
         <ChevronDown
-          className={cn("h-3 w-3 shrink-0 text-muted transition-transform", open && "rotate-180")}
+          className={cn("icon-text h-3 w-3 shrink-0 text-muted transition-transform", open && "rotate-180")}
           aria-hidden
         />
       </button>

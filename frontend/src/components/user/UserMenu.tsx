@@ -86,7 +86,7 @@ function SignedIn() {
         className="flex max-w-36 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/20"
       >
         <span className="truncate">{session.user?.username}</span>
-        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cn("icon-text h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
       </button>
 
       {open && (
@@ -99,20 +99,20 @@ function SignedIn() {
             </span>
           </MenuLabel>
           <Link href="/u" onClick={() => setOpen(false)} className={menuItem()}>
-            <ListChecks className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            <ListChecks className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Your lists
           </Link>
           <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
-            <KeyRound className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Change password
           </Link>
           <MenuDivider />
           <button type="button" onClick={() => leave(false)} className={menuItem()}>
-            <LogOut className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            <LogOut className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out
           </button>
           <button type="button" onClick={() => leave(true)} className={menuItem()}>
-            <MonitorSmartphone className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            <MonitorSmartphone className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out everywhere
           </button>
         </MenuPanel>

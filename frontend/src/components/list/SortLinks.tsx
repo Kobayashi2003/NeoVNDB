@@ -5,6 +5,7 @@
  *  looking at -- rating and vote counts start high, because nobody opens a
  *  listing to find the worst of something. */
 
+import { ArrowDown, ArrowUp } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
@@ -39,12 +40,17 @@ export function SortLinks({
             key={sort.value}
             href={withParams(path, params, next)}
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
               here ? "bg-white/20 text-white" : "text-muted hover:bg-white/10 hover:text-white",
             )}
           >
             {sort.label}
-            {here && <span className="ml-1 text-muted">{reverse ? "↓" : "↑"}</span>}
+            {here &&
+              (reverse ? (
+                <ArrowDown className="icon-text size-3 text-muted" aria-label="descending" />
+              ) : (
+                <ArrowUp className="icon-text size-3 text-muted" aria-label="ascending" />
+              ))}
           </Link>
         )
       })}
