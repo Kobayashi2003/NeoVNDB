@@ -56,6 +56,9 @@ func TestParseExpr(t *testing.T) {
 		{"release=(vn=(lang=en))", "release=(vn=(lang=en))"},
 		{"a=1+release=(lang=en)", "(a=1&release=(lang=en))"},
 		{"!release=(lang=en)", "!release=(lang=en)"},
+		// Brackets inside quotes are part of the value, not the grouping.
+		{`producer=(search="a)b")`, `producer=(search="a)b")`},
+		{`producer=(search="x \" )")`, `producer=(search="x \" )")`},
 	}
 	for _, c := range cases {
 		got, err := ParseExpr(c.in, nil)
