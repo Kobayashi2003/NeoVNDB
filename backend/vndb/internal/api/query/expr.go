@@ -5,36 +5,22 @@ import (
 	"unicode"
 )
 
-// A condition expression: the same filters the plain parameters use, combined
-// with and, or and not.
-//
-// Two parameters on their own are always ANDed, which is what a reader expects
-// of two controls and is all a row of menus can express. It cannot say "in
-// English or in Japanese, but only the ones with an anime", and it cannot say
-// "not a patch" at all. This can:
+// The f= condition expression, combining the same filters the plain
+// parameters use:
 //
 //	f=(lang=en+freeware=true),(lang=ja+has_anime=true)
 //	f=!patch=true+platform=win
 //
-//	,  or          lowest, so it binds last
+//	,  or    lowest precedence
 //	+  and
-//	!  not         highest, and applies to whatever follows it
+//	!  not   highest
 //	() grouping
 //
-// The comma keeps the meaning it already had: `lang=en,fr` was one filter with
-// two acceptable values and is now two leaves joined by or, which is the same
-// question and the same answer.
-//
-// A value that contains a comma, a bracket or a space goes in double quotes:
-// `search="ever out"`. Inside them, \" is a quote and \\ a backslash.
-//
-// Nothing here knows what any particular filter means. A leaf is handed to the
-// type's own filter table, so every filter that works as a parameter works
-// here, and one added later works here without being told to.
+// lang=en,fr keeps its meaning: two leaves joined by or. A value containing a
+// comma, bracket or space is double-quoted; \" and \\ escape inside quotes.
+// Leaves are handed to the type's own filter table, so any filter works here.
 
 type node interface {
-	// compile writes this node's condition, using the same builder so that
-	// every argument lands in one ordered list.
 	compile(b *Builder, filters map[string]FilterFunc) (string, error)
 }
 
@@ -45,23 +31,18 @@ type leaf struct {
 }
 
 type junction struct {
-	and      bool // and, or else or
+	and      bool // otherwise or
 	children []node
 }
 
 type negation struct{ inner node }
 
-/* --- Reading one ----------------------------------------------------------- */
+/* --- Parsing --------------------------------------------------------------- */
 
-// ParseExpr reads an expression, or returns nil when there is nothing to read.
-//
-// `budget` is how many conditions are left to spend, counted down as they are
-// read; nil lifts the ceiling. One request shares one budget, so an expression
-// nested inside another draws from the same pool and nesting cannot multiply
-// what a single query may ask for. Depth is bounded by it too -- a tree cannot
-// be deeper than it is large -- and by a fixed ceiling besides, which is not
-// policy but a refusal to hand this process's stack to whoever writes the
-// query string.
+// ParseExpr reads an expression, or returns nil when there is none. budget is
+// the conditions left to spend (nil: no ceiling); one request shares one, so
+// nesting cannot multiply it. maxExprDepth guards the stack when there is no
+// budget.
 func ParseExpr(text string, budget *int) (node, error) {
 	if strings.TrimSpace(text) == "" {
 		return nil, nil
@@ -82,12 +63,10 @@ const maxExprDepth = 64
 type parser struct {
 	in     []rune
 	at     int
-	budget *int // conditions left to spend, or nil for no ceiling
+	budget *int
 }
 
-// Budget hands out a counter for one request, or nil where there is no
-// ceiling. It is a pointer because an expression nested in another spends from
-// the same one.
+// Budget returns a request's condition counter, or nil for no ceiling.
 func Budget(nodes int) *int {
 	if nodes <= 0 {
 		return nil
@@ -194,8 +173,6 @@ func (p *parser) factor(depth int) (node, error) {
 	}
 }
 
-// A filter's name: what a parameter may be called, and nothing else, so that
-// the reader of an expression can see where the name ends.
 func nameRune(r rune) bool {
 	return r == '_' || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
 }
@@ -215,8 +192,6 @@ func (p *parser) leaf() (node, error) {
 	}
 	name := string(p.in[start:p.at])
 
-	// `lang = en` is how a person writes it out, so the spaces around an
-	// operator are not part of anything.
 	p.skipSpace()
 	op := ""
 	for _, candidate := range comparisons {
@@ -237,25 +212,25 @@ func (p *parser) leaf() (node, error) {
 	return &leaf{name: name, op: op, value: value}, nil
 }
 
-// A value runs to the next thing that means something to this grammar, or is
-// quoted and runs to its closing quote -- or is itself bracketed, which is how
-// a condition about a related thing is written:
-//
-//	release=(lang=en+freeware=true)
-//
-// The brackets and what is between them are handed over whole. Which filters
-// that text is about is not known here and does not need to be: the filter it
-// belongs to knows what it relates to, and reads it when it is compiled.
+// value reads a bare, quoted or bracketed value. A bracketed one is a condition
+// about a related type, release=(lang=en), and is returned whole for that
+// relation's filter to parse.
 func (p *parser) value() (string, error) {
 	p.skipSpace()
 	if p.at < len(p.in) && p.in[p.at] == '(' {
 		start := p.at
 		depth := 0
+		quoted := false
 		for p.at < len(p.in) {
-			switch p.in[p.at] {
-			case '(':
+			c := p.in[p.at]
+			switch {
+			case quoted && c == '\\':
+				p.at++ // skip the escaped character
+			case c == '"':
+				quoted = !quoted
+			case !quoted && c == '(':
 				depth++
-			case ')':
+			case !quoted && c == ')':
 				depth--
 			}
 			p.at++
@@ -300,10 +275,9 @@ func (p *parser) value() (string, error) {
 	return value, nil
 }
 
-/* --- Turning one into SQL -------------------------------------------------- */
+/* --- Compiling ------------------------------------------------------------- */
 
-// Expr compiles an expression against one type's filters and adds it as a
-// single condition.
+// Expr compiles an expression and adds it as a single condition.
 func (b *Builder) Expr(n node, filters map[string]FilterFunc) error {
 	if n == nil {
 		return nil
@@ -317,10 +291,7 @@ func (b *Builder) Expr(n node, filters map[string]FilterFunc) error {
 }
 
 func (l *leaf) compile(b *Builder, filters map[string]FilterFunc) (string, error) {
-	// Looking rows up by id is not a condition among others: it skips paging
-	// entirely, because the caller asked for particular rows rather than for a
-	// slice of them. Answering it here would quietly mean something else than
-	// the parameter of the same name does.
+	// id skips paging entirely, so it cannot be one condition among others.
 	if l.name == idFilter {
 		return "", BadRequest("id is a parameter of its own, not a condition; put it outside the expression")
 	}
@@ -329,16 +300,12 @@ func (l *leaf) compile(b *Builder, filters map[string]FilterFunc) (string, error
 		return "", BadRequest("unknown filter %q", l.name)
 	}
 
-	// Not-equal is the same question asked of the same filter, and then
-	// refused; every filter therefore supports it without knowing it does.
+	// != is the = condition negated, so every filter supports it.
 	value := l.value
 	if l.op != "=" && l.op != "!=" {
 		value = l.op + value
 	}
 
-	// A sub-builder so the filter's conditions can be picked up and combined,
-	// rather than landing in the AND-list at the top. Arguments are threaded
-	// through so their numbering stays in step.
 	sub := b.sub()
 	if err := apply(sub, value); err != nil {
 		return "", err
