@@ -1,20 +1,11 @@
-/** The controls that narrow a listing.
- *
- *  One kind of control for all of them: a button that opens its choices. Seven
- *  types with different filters could have had seven bespoke widgets; a single
- *  vocabulary is less to learn and much less to maintain, and the difference
- *  between picking one language and picking one status is not a difference a
- *  reader needs the interface to dramatise.
- *
- *  Everything a control does is a link, like the sorts and the pages. Which
- *  means a narrowed listing is an address -- the reader can send it to someone,
- *  and the API understands more of that address than this page offers: a
- *  hand-written `?votecount=>=100` survives every click here untouched. */
+/** The controls that narrow a listing: one menu per common filter, plus the
+ *  condition builder for anything else. Every control is a link, so a narrowed
+ *  listing is an address, and hand-written parameters survive every click. */
 "use client"
 
 import { useState } from "react"
 import Link from "next/link"
-import { ChevronDown, X } from "lucide-react"
+import { ChevronDown, ListFilter, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { MenuLabel, MenuMark, MenuPanel, menuAction, menuItem } from "@/components/ui/Menu"
@@ -22,6 +13,7 @@ import { one, withParams, type Params } from "@/lib/href"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
 import { useDismiss } from "@/hooks/useDismiss"
 import type { Choice, Filter } from "@/lib/filters"
+import { ConditionBuilder } from "./ConditionBuilder"
 
 /** The values of one filter currently in the address. */
 function selected(params: Params, key: string): string[] {
@@ -29,8 +21,7 @@ function selected(params: Params, key: string): string[] {
   return raw ? raw.split(",").filter(Boolean) : []
 }
 
-/** The address with one choice turned on or off. A single-valued filter
- *  replaces, a multiple one adds to or removes from the list. */
+/** A single-valued filter replaces; a multiple one toggles within the list. */
 function toggled(
   path: string,
   params: Params,
@@ -46,21 +37,22 @@ function toggled(
     : has
       ? []
       : [value]
-  // Narrowing changes what the pages contain, so whatever page the reader was
-  // on no longer means anything.
   return withParams(path, params, { [filter.key]: next.join(",") || null, page: null })
 }
 
 export function FilterBar({
+  type,
   path,
   params,
   filters,
 }: {
+  type: string
   path: string
   params: Params
   filters: Filter[]
 }) {
-  if (filters.length === 0) return null
+  const expression = one(params, "f") ?? ""
+  const [building, setBuilding] = useState(expression !== "")
 
   const active = filters.flatMap((f) =>
     selected(params, f.key).map((value) => ({ filter: f, value })),
@@ -80,8 +72,21 @@ export function FilterBar({
         />
       ))}
 
-      {/* What is on, said in words, and removable one at a time. A reader
-          should not have to reopen a menu to find out what they narrowed by. */}
+      <button
+        type="button"
+        onClick={() => setBuilding((b) => !b)}
+        aria-expanded={building}
+        className={cn(
+          "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+          expression ? "bg-white/20 text-white" : "text-muted hover:bg-white/10 hover:text-white",
+        )}
+      >
+        <ListFilter className="icon-text h-3 w-3" aria-hidden />
+        Conditions
+        <ChevronDown className={cn("icon-text h-3 w-3 transition-transform", building && "rotate-180")} aria-hidden />
+      </button>
+
+      {/* What is on, removable one at a time. */}
       {active.map(({ filter, value }) => (
         <Link
           key={`${filter.key}-${value}`}
@@ -89,25 +94,40 @@ export function FilterBar({
           aria-label={`Remove ${filter.label}: ${labelOf(filter, value)}`}
           className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs text-accent transition-colors hover:bg-accent/25"
         >
-          {/* Named with its filter: "No" on its own could be any of the
-              yes/no filters, and two of them on at once read as the same. */}
+          {/* Named with its filter: a bare "No" is ambiguous. */}
           <span className="text-accent/60">{filter.label}</span>
           {labelOf(filter, value)}
-          <X className="h-3 w-3" aria-hidden />
+          <X className="icon-text h-3 w-3" aria-hidden />
         </Link>
       ))}
 
-      {active.length > 1 && (
+      {expression && !building && (
+        <Link
+          href={withParams(path, params, { f: null, page: null })}
+          aria-label="Remove conditions"
+          title={expression}
+          className="inline-flex max-w-80 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs text-accent transition-colors hover:bg-accent/25"
+        >
+          <span className="truncate font-mono">{expression}</span>
+          <X className="icon-text h-3 w-3 shrink-0" aria-hidden />
+        </Link>
+      )}
+
+      {active.length + (expression ? 1 : 0) > 1 && (
         <Link
           href={withParams(
             path,
             params,
-            Object.fromEntries([...filters.map((f) => [f.key, null]), ["page", null]]),
+            Object.fromEntries([...filters.map((f) => [f.key, null]), ["f", null], ["page", null]]),
           )}
           className="ml-1 text-xs text-muted transition-colors hover:text-white"
         >
           Clear all
         </Link>
+      )}
+
+      {building && (
+        <ConditionBuilder key={expression} type={type} path={path} params={params} current={expression} />
       )}
     </div>
   )
@@ -147,19 +167,16 @@ function FilterMenu({
         )}
       >
         {filter.label}
-        {/* One value says itself; several are counted, and listed beside. */}
         {chosen.length === 1 && !filter.multiple && (
           <span className="font-normal text-white/70">{labelOf(filter, chosen[0])}</span>
         )}
         {filter.multiple && chosen.length > 0 && (
           <span className="tabular-nums text-muted">{chosen.length}</span>
         )}
-        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cn("icon-text h-3 w-3 transition-transform", open && "rotate-180")} aria-hidden />
       </button>
 
       {open && (
-        // Scrolling: there are fifty languages, and a menu that ran off the
-        // screen would be worse than one you have to scroll.
         <MenuPanel ref={menu} scroll>
           <MenuLabel
             action={

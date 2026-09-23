@@ -1,15 +1,6 @@
-/** What each listing offers to narrow by.
- *
- *  Every key here is a filter the API already understands, and the API
- *  understands more than this: `/v?votecount=>=100` works whether or not
- *  anything on the page offers it. What this table decides is only which ones
- *  get a control, and a control is worth having where a reader would not
- *  otherwise guess the value -- nobody types `platform=tdo` from memory.
- *
- *  The API reads a comma-separated value as "any of these", so a filter that
- *  is `multiple` is one where that reading makes sense. Two different filters
- *  are always ANDed together, which is what a reader expects of two controls.
- */
+/** The filter bar's quick menus per type; everything else is in the condition
+ *  builder (lib/conditions.ts). A `multiple` filter joins values with commas,
+ *  which the API reads as "any of". */
 
 import { ENUMS, enumLabel } from "./enums"
 import { ICON } from "./icons"
@@ -60,8 +51,6 @@ export const FILTERS: Record<string, Filter[]> = {
     { key: "platform", label: "Platform", choices: PLATFORMS(), multiple: true },
     { key: "length", label: "Length", choices: from("LENGTH"), multiple: true },
     { key: "devstatus", label: "Status", choices: from("DEVSTATUS"), multiple: true },
-    // Ratings are spoken about as 10-100, and the API takes a comparison, so
-    // these are thresholds rather than buckets.
     {
       key: "rating",
       label: "Rating",
