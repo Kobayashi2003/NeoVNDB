@@ -11,7 +11,11 @@
  *  the page is still in the address. They sit above the orders because
  *  choosing the question comes before choosing how to arrange the answer. */
 
+import Link from "next/link"
+import { ListFilter } from "lucide-react"
+import { asExpression } from "@/lib/conditions"
 import { one, type Params } from "@/lib/href"
+import { LIST } from "@/lib/list"
 import { fetchResults } from "@/lib/results"
 import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
 import { ResultsPanel } from "@/components/list/ResultsPanel"
@@ -50,7 +54,18 @@ export async function CatalogPage({
         </>
       }
     >
-      <Tabs path={path} params={params} tabs={tabs} active={active.value} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Tabs path={path} params={params} tabs={tabs} active={active.value} />
+        {/* The same list on the type's own page, as a condition that more can
+            be added to. */}
+        <Link
+          href={`/${active.type}?f=${encodeURIComponent(asExpression(active.filters))}`}
+          className="ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <ListFilter className="icon-text size-3" aria-hidden />
+          Refine in {LIST[active.type].label}
+        </Link>
+      </div>
       <ResultsPanel
         type={active.type}
         path={path}

@@ -46,14 +46,15 @@ var filters = map[string]query.FilterFunc{
 		Owner: "rv.vid = vn.id", ID: "rp.pid",
 		Join: "producers p ON p.id = rp.pid"}.Filter(),
 
-	"staff": query.RelatedID(vndb.TypeStaff, `EXISTS (
-		SELECT 1 FROM vn_staff vs
-		  JOIN staff_alias sa ON sa.aid = vs.aid
-		 WHERE vs.id = vn.id AND sa.id = %s)`),
-	"seiyuu": query.RelatedID(vndb.TypeStaff, `EXISTS (
-		SELECT 1 FROM vn_seiyuu vs
-		  JOIN staff_alias sa ON sa.aid = vs.aid
-		 WHERE vs.id = vn.id AND sa.id = %s)`),
+	// Credits name an alias, so the person is reached through staff_alias.
+	// Nested, the staff type's filters see the person; its role filter asks
+	// about any credit, not this VN's.
+	"staff": query.Relation{Type: vndb.TypeStaff,
+		From: "vn_staff vs JOIN staff_alias sa ON sa.aid = vs.aid", Owner: "vs.id = vn.id", ID: "sa.id",
+		Join: "staff s ON s.id = sa.id"}.Filter(),
+	"seiyuu": query.Relation{Type: vndb.TypeStaff,
+		From: "vn_seiyuu vs JOIN staff_alias sa ON sa.aid = vs.aid", Owner: "vs.id = vn.id", ID: "sa.id",
+		Join: "staff s ON s.id = sa.id"}.Filter(),
 
 	"character": query.Relation{Type: vndb.TypeCharacter,
 		From: "chars_vns cv", Owner: "cv.vid = vn.id", ID: "cv.id",
