@@ -2,6 +2,7 @@ package vndb
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -51,4 +52,28 @@ func formatExtLink(format, value string) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+// Site is one external link site, as the condition builder offers it.
+type Site struct {
+	Site  string `json:"site"`
+	Label string `json:"label"`
+	// Entities lists the id prefixes the site appears on, e.g. "ps".
+	Entities string `json:"entities"`
+}
+
+// Sites lists every known site by label.
+func Sites() []Site {
+	out := make([]Site, 0, len(extlinkSites))
+	for name, def := range extlinkSites {
+		out = append(out, Site{Site: name, Label: def.label, Entities: def.entities})
+	}
+	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].Label) < strings.ToLower(out[j].Label) })
+	return out
+}
+
+// KnownSite reports whether a site name is one links are stored under.
+func KnownSite(site string) bool {
+	_, ok := extlinkSites[site]
+	return ok
 }

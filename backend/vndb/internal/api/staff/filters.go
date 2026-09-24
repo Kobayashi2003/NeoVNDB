@@ -6,9 +6,10 @@ import (
 )
 
 var filters = map[string]query.FilterFunc{
-	"lang":   query.TextColumn("s.lang"),
-	"gender": query.TextColumn("s.gender"),
-	"search": query.SearchFilter("s", "s"),
+	"extlink": query.ExtLinkFilter("staff_extlinks", "s.id"),
+	"lang":    query.TextColumn("s.lang"),
+	"gender":  query.TextColumn("s.gender"),
+	"search":  query.SearchFilter("s", "s"),
 
 	// A credit is recorded against an alias, so both filters reach the person
 	// through staff_alias.

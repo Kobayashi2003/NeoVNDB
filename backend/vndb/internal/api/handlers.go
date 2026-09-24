@@ -42,36 +42,17 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 
 	// Keyed on the parsed request, so field order doesn't split entries.
 	key := cache.Key(s.gen.current(ctx), req.Canonical(entity))
-	if body, ok := s.cache.Get(ctx, key); ok {
-		w.Header().Set("X-Cache", "hit")
-		writeJSON(w, http.StatusOK, body)
-		return
-	}
-
-	results, total, err := resolver.Resolve(ctx, req)
-	if err != nil {
-		if query.IsClientError(err) {
-			fail(w, http.StatusBadRequest, err.Error())
-			return
+	s.cached(ctx, w, key, entity, func() (any, error) {
+		results, total, err := resolver.Resolve(ctx, req)
+		if err != nil {
+			return nil, err
 		}
-		s.log.Error("query failed", "type", entity, "err", err)
-		fail(w, http.StatusInternalServerError, "query failed")
-		return
-	}
-
-	body, err := json.Marshal(map[string]any{
-		"results": results,
-		"count":   total,
-		"more":    req.Offset()+len(results) < total,
+		return map[string]any{
+			"results": results,
+			"count":   total,
+			"more":    req.Offset()+len(results) < total,
+		}, nil
 	})
-	if err != nil {
-		s.log.Error("encode failed", "type", entity, "err", err)
-		fail(w, http.StatusInternalServerError, "query failed")
-		return
-	}
-	s.remember(ctx, key, body)
-	w.Header().Set("X-Cache", "miss")
-	writeJSON(w, http.StatusOK, body)
 }
 
 func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
@@ -101,31 +82,9 @@ func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 	}
 	key := cache.Key(s.gen.current(ctx), "graph", r.PathValue("id"),
 		strconv.Itoa(opts.Depth), strconv.Itoa(opts.MaxDepth), strconv.Itoa(opts.MaxNodes))
-	if body, ok := s.cache.Get(ctx, key); ok {
-		w.Header().Set("X-Cache", "hit")
-		writeJSON(w, http.StatusOK, body)
-		return
-	}
-
-	graph, err := resolver.RelationGraph(ctx, r.PathValue("id"), opts)
-	if err != nil {
-		if query.IsClientError(err) {
-			fail(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		s.log.Error("relation graph failed", "err", err)
-		fail(w, http.StatusInternalServerError, "query failed")
-		return
-	}
-	body, err := json.Marshal(graph)
-	if err != nil {
-		s.log.Error("encode failed", "err", err)
-		fail(w, http.StatusInternalServerError, "query failed")
-		return
-	}
-	s.remember(ctx, key, body)
-	w.Header().Set("X-Cache", "miss")
-	writeJSON(w, http.StatusOK, body)
+	s.cached(ctx, w, key, "relation graph", func() (any, error) {
+		return resolver.RelationGraph(ctx, r.PathValue("id"), opts)
+	})
 }
 
 // fields lists one type's fields; a fragment names its target type rather
@@ -188,6 +147,42 @@ func (s *Server) generation(w http.ResponseWriter, r *http.Request) {
 		"published_at": g.PublishedAt,
 		"imported_at":  g.FinishedAt,
 	})
+}
+
+// extlinks lists the link sites the extlink filter accepts, with labels and
+// the types each appears on.
+func (s *Server) extlinks(w http.ResponseWriter, r *http.Request) {
+	respond(w, http.StatusOK, map[string]any{"results": vndb.Sites()})
+}
+
+// cached answers from the response cache when it can; otherwise it runs
+// compute, stores the encoded result and answers with it. A client error is a
+// 400 with its message; anything else is logged and reported as a bare 500.
+func (s *Server) cached(ctx context.Context, w http.ResponseWriter, key, what string, compute func() (any, error)) {
+	if body, ok := s.cache.Get(ctx, key); ok {
+		w.Header().Set("X-Cache", "hit")
+		writeJSON(w, http.StatusOK, body)
+		return
+	}
+	value, err := compute()
+	if err != nil {
+		if query.IsClientError(err) {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		s.log.Error("request failed", "what", what, "err", err)
+		fail(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	body, err := json.Marshal(value)
+	if err != nil {
+		s.log.Error("encode failed", "what", what, "err", err)
+		fail(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	s.remember(ctx, key, body)
+	w.Header().Set("X-Cache", "miss")
+	writeJSON(w, http.StatusOK, body)
 }
 
 // remember caches a response unless it is too big; with ceilings off one huge

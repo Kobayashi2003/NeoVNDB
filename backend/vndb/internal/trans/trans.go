@@ -1,15 +1,7 @@
-// Package trans holds the translations of text vndb writes in English, and the
-// rule for how a piece of that text is looked up.
-//
-// vndb writes tag and trait names and descriptions in English only, so unlike
-// a VN title there is no original script to fall back to -- the Japanese here
-// is something this project supplies. It is therefore not dump data, does not
-// live in a generation schema, and survives a re-import untouched. See
-// ddl/schema.sql.
-//
-// The lookup rule is the whole contract between what is stored and what is
-// asked for, which is why it is one exported function rather than spelled out
-// at each call site.
+// Package trans holds translations of vndb's English-only tag and trait text.
+// It is project data, not dump data, so it lives outside the generation
+// schemas and survives imports (see ddl/schema.sql). Key is the one lookup
+// rule shared by what is stored and what is asked for.
 package trans
 
 import (

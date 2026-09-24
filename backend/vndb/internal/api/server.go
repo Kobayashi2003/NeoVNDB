@@ -81,6 +81,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /health", s.health)
 	mux.HandleFunc("GET /meta/generation", s.generation)
 	mux.HandleFunc("GET /meta/fields/{type}", s.fields)
+	mux.HandleFunc("GET /meta/extlinks", s.extlinks)
 	// The graph returns a graph rather than a page of rows, so it has its own
 	// route instead of being a filter on the unified endpoint.
 	mux.HandleFunc("GET /vn/{id}/relations", s.relationGraph)

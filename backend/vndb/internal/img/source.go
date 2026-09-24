@@ -17,10 +17,7 @@ type Source struct {
 	max    int64
 	// Where to fetch from. vndb's own host, except under test.
 	base string
-	// How many fetches may be in the air at once. The point of mirroring is
-	// to stop leaning on someone else's CDN, and opening a hundred
-	// connections to it while doing so would be a poor way to start. The
-	// flight above already collapses duplicates; this bounds the rest.
+	// Concurrent fetches from vndb's CDN; the flight already removes duplicates.
 	slots chan struct{}
 }
 
@@ -33,15 +30,10 @@ func NewSource(timeout time.Duration, maxBytes int64, parallel int) *Source {
 	}
 }
 
-// Fetch pulls one image and hands the bytes to the store untouched. Nothing is
-// re-encoded on the way in: what lands on disk is what vndb served, so the
-// mirror can be compared with upstream byte for byte, and a resized copy is
-// always a derivative of something this project did not alter.
-//
-// The context is deliberately not a caller's. One fetch answers everyone
-// waiting on the same image, so it cannot belong to whoever happened to arrive
-// first -- a reader closing their tab would otherwise take the answer away
-// from the readers still watching. The client's own timeout bounds it instead.
+// Fetch stores the bytes vndb served, unaltered, so the mirror can be
+// compared with upstream. Its context is not the caller's: one fetch answers
+// every waiter, so one reader leaving must not cancel it. The client timeout
+// bounds it instead.
 func (s *Source) Fetch(store *Store, ref Ref) ([]byte, error) {
 	s.slots <- struct{}{}
 	defer func() { <-s.slots }()

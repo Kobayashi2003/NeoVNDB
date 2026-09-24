@@ -29,19 +29,14 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Tag]{
 		"aliases":     {Row: func(t gen.Tag) any { return query.SplitLines(t.Alias) }},       // tags.alias, newline-separated -> array
 		"description": {Row: func(t gen.Tag) any { return query.EmptyToNil(t.Description) }}, // tags.description; '' -> null
 
-		// JOIN1 -- what this is called in the language the trans schema holds.
-		// vndb writes these names and descriptions in English only, so unlike
-		// a VN title there is no original script to fall back to: the value
-		// here is something this project supplies, and it is absent until
-		// somebody supplies it. Keyed by the English text, not by id, so it
-		// survives a re-import; see internal/trans.
+		// JOIN1 -- the name in the trans schema's target language. vndb has only
+		// English, so this is project-supplied and null until someone supplies it;
+		// keyed by the English text so it survives imports (see internal/trans).
 		"translation": {Kind: query.Fragment, Source: "translation", Num: 1, // JOIN1 trans.terms + trans.passages
 			Subfields: []string{"lang", "name", "description"}},
 
-		// DERIV -- on the tags row, but filled by derive/02_tags.sql: a count
-		// over tags_vn_inherit, a table this import builds. It reads like a
-		// stored total and is really "how many VNs carry this tag or anything
-		// below it", recomputed every import.
+		// DERIV -- filled by derive/02_tags.sql: VNs carrying this tag or any child,
+		// recomputed every import.
 		"vn_count": {Row: func(t gen.Tag) any { return t.CItems }}, // tags.c_items <- COUNT(*) over tags_vn_inherit
 
 		// REL -- tags_parents read both ways. main marks the parent a tag is

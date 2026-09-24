@@ -1,6 +1,9 @@
 package vndb
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // Values are real ones taken from the dump, so a change to the recipe table is
 // checked against what the data actually holds rather than an invented shape.
@@ -111,6 +114,11 @@ func TestIDRoundTrip(t *testing.T) {
 	if _, err := ParseID(TypeVN, "c17"); err == nil {
 		t.Error("ParseID accepted a character id as a vn id")
 	}
+	for _, in := range []string{"v+17", "v-17", "+17", "v99999999999", "v", ""} {
+		if id, err := ParseID(TypeVN, in); err == nil {
+			t.Errorf("ParseID(%q) = %d, want an error", in, id)
+		}
+	}
 }
 
 func TestImageURL(t *testing.T) {
@@ -123,5 +131,20 @@ func TestImageURL(t *testing.T) {
 	}
 	if got := ImageURL("sf", 5); got != "https://t.vndb.org/sf/05/5.jpg" {
 		t.Errorf("ImageURL = %q", got)
+	}
+}
+
+func TestSites(t *testing.T) {
+	sites := Sites()
+	if len(sites) != len(extlinkSites) {
+		t.Fatalf("Sites() has %d entries, the table %d", len(sites), len(extlinkSites))
+	}
+	for i := 1; i < len(sites); i++ {
+		if strings.ToLower(sites[i-1].Label) > strings.ToLower(sites[i].Label) {
+			t.Errorf("not sorted by label: %q before %q", sites[i-1].Label, sites[i].Label)
+		}
+	}
+	if !KnownSite("steam") || KnownSite("nosuchsite") {
+		t.Error("KnownSite disagrees with the table")
 	}
 }

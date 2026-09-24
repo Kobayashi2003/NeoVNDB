@@ -40,20 +40,16 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		// the instances fragment carries from the other end.
 		"instance_of_spoiler": {Row: func(c gen.Char) any { return c.MainSpoil }}, // chars.main_spoil
 
-		// CONV -- sex is what a character appears to be and spoil_sex what
-		// they turn out to be, which the dump keeps apart precisely because
-		// the second one spoils the first. gender is the separate
-		// self-identification axis, spoiled the same way.
+		// CONV -- sex is apparent, spoil_sex what they turn out to be; gender is a
+		// separate axis, spoiled the same way.
 		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},   // chars.sex; '' -> null
 		"spoil_sex":    {Row: func(c gen.Char) any { return blankToNil(c.SpoilSex) }},    // chars.spoil_sex; NULL and '' both -> null
 		"gender":       {Row: func(c gen.Char) any { return blankToNil(c.Gender) }},      // chars.gender
 		"spoil_gender": {Row: func(c gen.Char) any { return blankToNil(c.SpoilGender) }}, // chars.spoil_gender
 
-		// JOIN1 + LIST -- chars_names, one read. The row picked for name and
-		// original is the one in chars.c_lang, which is itself DERIV: the
-		// import chooses it from the VNs this character appears in (see
-		// derive/01_vncache.sql), so a name can change language without the
-		// character row changing at all.
+		// JOIN1 + LIST -- chars_names, one read. name/original use the row in
+		// chars.c_lang, which is DERIV (chosen from the character's VNs; see
+		// derive/01_vncache.sql).
 		"name":     {Source: "names"}, // JOIN1 chars_names WHERE lang = chars.c_lang, romanised form
 		"original": {Source: "names"}, // JOIN1 chars_names WHERE lang = chars.c_lang, original script
 		"names": {Kind: query.Fragment, Source: "names", Num: 2, // LIST chars_names
@@ -80,11 +76,9 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		// main_spoil, because it describes that one link.
 		"instances": {Kind: query.Fragment, Source: "instances", Num: 3, // REL chars WHERE main = this id -> chars
 			Edge: []string{"spoiler"}, Target: vndb.TypeCharacter},
-		// vn_seiyuu is keyed by (work, character, actor), so reading it from
-		// the character side returns credits from every work they appear in.
-		// The vn edge attribute is what tells them apart -- a caller showing
-		// one work has to filter; this type cannot, it does not know which.
-		// name is the alias credited for this voice role, not the person's own.
+		// vn_seiyuu is keyed by (work, character, actor), so this returns credits
+		// from every work; the vn edge attribute tells them apart. name is the
+		// alias credited for the role.
 		"seiyuu": {Kind: query.Fragment, Source: "seiyuu", Num: 2, // REL vn_seiyuu JOIN staff_alias -> staff
 			Edge:   []string{"vn", "note", "name", "original"},
 			Target: vndb.TypeStaff},

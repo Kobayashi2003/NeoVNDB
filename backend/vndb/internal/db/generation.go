@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Schema and derivation SQL travel inside the binary so a deployed build can
-// create and populate the schema it expects.
+// Schema and derivation SQL are embedded so a deployed binary can build the
+// schema it expects.
 //
 //go:embed ddl/*.sql derive/*.sql
 var sourceFS embed.FS
@@ -79,10 +79,9 @@ func (s *Store) Describe(ctx context.Context, schema string) (*Generation, error
 	return g, nil
 }
 
-// CreateNext drops any leftover `vndb_next` and builds the tables an import
-// COPYs into. Indexes are deliberately left out: maintaining seventy-odd of
-// them across seven million inserts costs far more than building them once
-// afterwards. Index applies them.
+// CreateNext drops any leftover `vndb_next` and creates the tables, without
+// indexes: building ~70 indexes once after seven million inserts is far
+// cheaper than maintaining them. Index adds them.
 func (s *Store) CreateNext(ctx context.Context, code, dumpURL string) error {
 	files, err := sqlFiles("ddl")
 	if err != nil {
@@ -267,10 +266,9 @@ func (s *Store) Index(ctx context.Context, schema string) error {
 
 func isIndexFile(name string) bool { return strings.Contains(name, "_indexes") }
 
-// Derive runs the computation SQL against one schema: the tag scores, trait
-// inheritance, closures, cached vn columns and search index that vndb keeps
-// but the dump does not export. step is called after each file with how long
-// it took.
+// Derive computes what vndb keeps but the dump omits: tag scores, trait
+// inheritance, closures, cached VN columns and the search index. step is
+// called after each file with its duration.
 func (s *Store) Derive(ctx context.Context, schema string, step func(name string, took time.Duration)) error {
 	files, err := sqlFiles("derive")
 	if err != nil {

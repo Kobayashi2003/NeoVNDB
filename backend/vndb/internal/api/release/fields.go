@@ -11,11 +11,8 @@ import (
 type field = query.Field[gen.Release]
 type source = query.Source[*Resolver, gen.Release]
 
-// animation, drm and supersedes are the three things vndb.org shows that the
-// Kana API does not carry at all. They exist here because the dump does.
-//
-// Each field is tagged with where its value comes from; the tags are defined
-// in query.Field's documentation.
+// animation, drm and supersedes come from the dump; the Kana API has none of
+// them. Tags on each field are defined in query.Field's documentation.
 var fields = query.NewTable(query.Table[*Resolver, gen.Release]{
 	IDType: vndb.TypeRelease,
 	ID:     func(r gen.Release) int32 { return r.ID },

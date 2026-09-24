@@ -8,10 +8,8 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// loadTitles serves title, alttitle and the titles fragment from one read of
-// vn_titles. title and alttitle are the row matching the VN's own language:
-// vndb prefers the romanised form there and keeps the original script as the
-// alternative.
+// loadTitles serves title, alttitle and titles from one read of vn_titles;
+// title and alttitle come from the row in the VN's own language.
 func loadTitles(ctx context.Context, r *Resolver, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
@@ -109,10 +107,8 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 	for _, s := range rows {
 		shot := map[string]any{
 			"url": vndb.ImageURL("sf", s.Scr),
-			// st is not a stored image row: vndb serves the thumbnail of a
-			// screenshot from the same id under a different kind, and the
-			// thumbnail keeps the full image's aspect ratio, so dims still
-			// describes it.
+			// st is not an image row: vndb serves a screenshot's thumbnail under a
+			// different kind with the same id and aspect ratio, so dims still applies.
 			"thumbnail": vndb.ImageURL("st", s.Scr),
 			"dims":      []int16{s.Width, s.Height},
 			"sexual":    query.ContentLevel(s.CSexualAvg, s.CVotecount),
@@ -224,14 +220,9 @@ func loadEditions(ctx context.Context, r *Resolver, page []gen.Vn,
 	return nil
 }
 
-// loadAnime reads what a work was adapted into.
-//
-// The two titles are the pair every name here is -- a romanisation and the
-// original script -- but they are folded by hand rather than through
-// PreferLatin and OriginalOf. Those take the original as a plain string, and
-// this table is the other way round from vn_titles: the romanisation is always
-// there and the original is not. An absent one would reach them as "" and come
-// back out as "", which is a different answer from "there isn't one".
+// loadAnime reads what a work was adapted into. Titles are folded by hand:
+// here the romanisation is always present and the original may be NULL, the
+// reverse of what PreferLatin/OriginalOf expect.
 func loadAnime(ctx context.Context, r *Resolver, page []gen.Vn,
 	_ query.Selection, byID map[int32]map[string]any) error {
 

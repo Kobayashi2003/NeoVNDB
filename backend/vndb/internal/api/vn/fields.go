@@ -11,13 +11,9 @@ import (
 type field = query.Field[gen.Vn]
 type source = query.Source[*Resolver, gen.Vn]
 
-// A field either reads its value off the vn row or names the source that
-// fetches it for the whole page. A fragment that reaches another entity names
-// that type rather than listing its fields, so the type gaining a field makes
-// it reachable here with no change.
-//
-// Each field is tagged with where its value comes from; the tags are defined
-// in query.Field's documentation.
+// Fields read the vn row or name a page-level source; fragments name their
+// target type, so fields added there are reachable here unchanged. Tags on
+// each field are defined in query.Field's documentation.
 var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 	IDType: vndb.TypeVN,
 	ID:     func(v gen.Vn) int32 { return v.ID },
@@ -38,10 +34,8 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"description": {Row: func(v gen.Vn) any { return query.EmptyToNil(v.Description) }}, // vn.description; '' -> null
 		"aliases":     {Row: func(v gen.Vn) any { return query.SplitLines(v.Alias) }},       // vn.alias, newline-separated -> array
 
-		// DERIV -- on the vn row, but filled by derive/01_vncache.sql rather
-		// than by the dump. Each one is an aggregate over the release tables,
-		// so it answers a question about releases while looking like a
-		// property of the work.
+		// DERIV -- on the vn row but filled by derive/01_vncache.sql: aggregates
+		// over the release tables.
 		"released":  {Row: func(v gen.Vn) any { return vndb.FormatReleased(v.CReleased) }}, // vn.c_released <- MIN(releases.released) over official, dated, non-trial; YYYYMMDD int -> string
 		"languages": {Row: func(v gen.Vn) any { return v.CLanguages }},                     // vn.c_languages <- releases_titles.lang, excluding mtl and unreleased
 		"platforms": {Row: func(v gen.Vn) any { return v.CPlatforms }},                     // vn.c_platforms <- releases_platforms.platform, excluding unreleased

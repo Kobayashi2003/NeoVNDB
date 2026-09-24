@@ -8,10 +8,8 @@ import (
 	"path/filepath"
 )
 
-// A Store is one directory of image files addressed the way vndb addresses
-// them: kind, shard, number. Two of these exist -- the mirror, holding
-// upstream bytes untouched, and the derived cache, holding a resized copy per
-// width -- and they behave identically, which is why one type serves both.
+// A Store is a directory of images addressed as vndb does (kind, shard,
+// number). Used twice: the byte-exact mirror and the resized cache.
 type Store struct{ root string }
 
 func NewStore(root string) *Store { return &Store{root: root} }
@@ -36,11 +34,8 @@ func (s *Store) Has(ref Ref) bool {
 	return err == nil
 }
 
-// Write puts the bytes at the image's path, and does it in one step as seen by
-// any other reader: a temporary file in the same directory, then a rename.
-// Without that a reverse proxy serving hits straight off disk would sooner or
-// later hand out a half-written file, since it has no way to ask whether a
-// write is in progress.
+// Write is atomic for readers (temporary file, then rename), since the edge
+// serves files straight off disk and could otherwise send a partial one.
 func (s *Store) Write(ref Ref, data []byte) error {
 	path := s.Path(ref)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
