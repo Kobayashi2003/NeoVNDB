@@ -1,5 +1,6 @@
 /** Sort links. Clicking the active sort flips direction; a new sort starts
- *  from its useful end (ratings high first). */
+ *  from its useful end (ratings high first). Below sm they collapse into
+ *  SortMenu unless the page shows that elsewhere (`menu={false}`). */
 
 import { ArrowDown, ArrowUp } from "lucide-react"
 import Link from "next/link"
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { withParams, type Params } from "@/lib/href"
 import type { Sort } from "@/lib/list"
+import { SortMenu } from "./SortMenu"
 
 export function SortLinks({
   path,
@@ -14,15 +16,23 @@ export function SortLinks({
   sorts,
   active,
   reverse,
+  menu = true,
 }: {
   path: string
   params: Params
   sorts: Sort[]
   active: string
   reverse: boolean
+  menu?: boolean
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <>
+      {menu && (
+        <div className="sm:hidden">
+          <SortMenu path={path} params={params} sorts={sorts} active={active} reverse={reverse} />
+        </div>
+      )}
+    <div className="hidden flex-wrap items-center gap-1 sm:flex">
       <ControlLabel>Sort</ControlLabel>
       {sorts.map((sort) => {
         const here = sort.value === active
@@ -51,5 +61,6 @@ export function SortLinks({
         )
       })}
     </div>
+    </>
   )
 }

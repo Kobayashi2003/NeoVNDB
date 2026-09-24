@@ -27,7 +27,7 @@ export function MenuPanel({
     <div
       ref={ref}
       className={cn(
-        "absolute z-30 w-max min-w-40 max-w-[min(18rem,calc(100vw-2rem))]",
+        "absolute z-30 w-max min-w-40 max-w-[min(18rem,calc(100vw-3rem))]",
         "rounded-xl border border-white/10 bg-[var(--overlay)] p-1 shadow-xl shadow-black/50 animate-menu-in",
         align === "start" ? "left-0" : "right-0",
         above ? "bottom-full mb-2" : "top-full mt-1.5",
