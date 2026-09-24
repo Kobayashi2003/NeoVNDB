@@ -45,7 +45,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/q">) {
   const found = groups.filter((g) => g.count > 0)
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 pb-12 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-6 pb-12 animate-slide-up-fade">
       <div className="mb-6 flex flex-col gap-3">
         <h1 className="text-xl font-bold sm:text-2xl">Search</h1>
         <SearchField initial={term} className="w-full max-w-xl" autoFocus={!term} />
@@ -78,7 +78,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/q">) {
                     <Link
                       key={v.expression}
                       href={`/v?f=${encodeURIComponent(v.expression)}`}
-                      className="inline-flex items-center gap-1 text-muted transition-colors hover:text-white"
+                      className="inline-flex items-center gap-1 text-muted transition-colors hover:text-white coarse:py-1"
                     >
                       <span className="tabular-nums text-white/80">{v.count.toLocaleString()}</span>
                       visual novels {v.label}
@@ -88,7 +88,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/q">) {
                   {count > rows.length && (
                     <Link
                       href={`/${type}?search=${encodeURIComponent(term)}`}
-                      className="shrink-0 text-accent transition-colors hover:underline"
+                      className="shrink-0 text-accent transition-colors hover:underline coarse:py-1"
                     >
                       All {count.toLocaleString()}
                     </Link>

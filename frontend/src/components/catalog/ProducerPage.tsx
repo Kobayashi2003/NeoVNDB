@@ -92,7 +92,7 @@ export async function ProducerPage({
                         <Link
                           key={r.id}
                           href={`/${r.id}`}
-                          className="truncate text-white/90 hover:text-accent"
+                          className="truncate text-white/90 hover:text-accent coarse:py-1"
                         >
                           <Name name={r.name} original={r.original} />
                         </Link>
@@ -112,7 +112,7 @@ export async function ProducerPage({
                     key={`${l.site}-${i}`}
                     href={l.url}
                     rel="noreferrer noopener"
-                    className="text-white/90 hover:text-accent"
+                    className="text-white/90 hover:text-accent coarse:py-1"
                   >
                     {l.label}
                   </a>

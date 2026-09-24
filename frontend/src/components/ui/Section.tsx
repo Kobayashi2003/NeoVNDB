@@ -39,7 +39,7 @@ export function Section({
           <button
             type="button"
             onClick={onTitleClick}
-            className="group flex cursor-pointer items-center gap-2.5"
+            className="group flex cursor-pointer items-center gap-2.5 coarse:py-1"
           >
             {heading}
           </button>

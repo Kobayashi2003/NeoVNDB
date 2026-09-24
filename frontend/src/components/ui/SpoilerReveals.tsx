@@ -32,7 +32,7 @@ export function SpoilerReveals({
           type="button"
           onClick={() => onReveal(1)}
           className={cn(
-            "inline-flex items-center rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2.5 py-0.5 text-xs text-yellow-400 transition-colors hover:bg-yellow-500/20",
+            "inline-flex items-center rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2.5 py-0.5 text-xs text-yellow-400 coarse:py-1 transition-colors hover:bg-yellow-500/20",
             className,
           )}
         >
@@ -44,7 +44,7 @@ export function SpoilerReveals({
           type="button"
           onClick={() => onReveal(2)}
           className={cn(
-            "inline-flex items-center rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs text-orange-400 transition-colors hover:bg-orange-500/20",
+            "inline-flex items-center rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs text-orange-400 coarse:py-1 transition-colors hover:bg-orange-500/20",
             className,
           )}
         >

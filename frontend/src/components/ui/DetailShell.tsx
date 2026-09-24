@@ -15,7 +15,7 @@ export function DetailShell({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-7xl gap-6 px-4",
+        "mx-auto flex w-full max-w-page gap-6 px-4",
         "lg:h-[calc(100vh-var(--header-h,0px))] lg:overflow-hidden",
       )}
     >

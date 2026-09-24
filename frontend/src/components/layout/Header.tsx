@@ -23,7 +23,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 h-(--header-h) shrink-0 border-b border-white/10 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-full max-w-7xl items-center gap-3 px-4">
+      <div className="mx-auto flex h-full max-w-page items-center gap-3 px-4">
         <Link
           href="/"
           className="shrink-0 font-display text-lg tracking-tight transition-opacity hover:opacity-80"

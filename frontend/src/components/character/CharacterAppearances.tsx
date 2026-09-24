@@ -88,7 +88,7 @@ export function CharacterAppearances({
             </span>
 
             <div className="min-w-0 flex-1">
-              <Link href={`/${a.id}`} className="text-sm leading-snug transition-colors hover:text-accent">
+              <Link href={`/${a.id}`} className="text-sm leading-snug transition-colors hover:text-accent coarse:py-1">
                 {a.title}
               </Link>
               {a.release && (
@@ -102,7 +102,7 @@ export function CharacterAppearances({
               {voices.get(a.id)?.map((s, i) => (
                 <p key={`${s.id}-${i}`} className="mt-0.5 truncate text-xs text-muted">
                   <span className="text-muted/60">CV </span>
-                  <Link href={`/${s.id}`} className="hover:text-accent">
+                  <Link href={`/${s.id}`} className="hover:text-accent coarse:py-1">
                     {s.name}
                   </Link>
                   {s.note && <span className="text-muted/60"> ({s.note})</span>}

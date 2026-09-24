@@ -39,7 +39,7 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
     // A graph the API refused to draw is not a missing page; say which it is.
     const why = e instanceof ApiError && e.status === 400 ? e.message : "Something went wrong."
     return (
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 animate-slide-up-fade">
+      <main className="mx-auto w-full max-w-page px-4 py-8 animate-slide-up-fade">
         <Back id={slug} />
         <p role="alert" className="mt-4 text-sm text-red-400">
           {why}
@@ -49,7 +49,7 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 pb-12 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 py-6 pb-12 animate-slide-up-fade">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Back id={slug} />
@@ -92,7 +92,7 @@ function Back({ id }: { id: string }) {
   return (
     <Link
       href={`/${id}`}
-      className="inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-white"
+      className="inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-white coarse:py-1"
     >
       <ArrowLeft className="icon-text h-3 w-3" aria-hidden />
       Back to the novel

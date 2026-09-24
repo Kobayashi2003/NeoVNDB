@@ -73,7 +73,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
             <TitledCard title="Parent tags">
               <div className="flex flex-col gap-0.5 text-xs">
                 {t.parents.map((p) => (
-                  <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent">
+                  <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent coarse:py-1">
                     <Name name={p.name} original={p.translation?.name ?? null} />
                     {/* Several parents are possible; one of them is the one the
                         tag is filed under. */}
@@ -93,7 +93,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
                   <Link
                     key={c.id}
                     href={`/${c.id}`}
-                    className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent"
+                    className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent coarse:py-1"
                   >
                     <span className="truncate">
                       <Name name={c.name} original={c.translation?.name ?? null} />

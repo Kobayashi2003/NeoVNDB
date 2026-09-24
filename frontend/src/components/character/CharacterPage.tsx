@@ -52,7 +52,7 @@ export function CharacterPage({
               {spoiler.any && (
                 <button
                   onClick={spoiler.cycle}
-                  className={cn("shrink-0 text-xs transition-colors", spoiler.className)}
+                  className={cn("shrink-0 text-xs transition-colors coarse:py-1", spoiler.className)}
                 >
                   {spoiler.label}
                 </button>

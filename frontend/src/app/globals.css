@@ -82,6 +82,19 @@ html { scrollbar-gutter: stable; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Touch screens: `coarse:py-1` and friends give small links and buttons a
+   24px-tall target without changing the mouse layout. */
+@custom-variant coarse (@media (pointer: coarse));
+
+/* The page's content width, shared by the header and every page so they line
+   up; wider on large screens so they are not a third empty margin. */
+@utility max-w-page {
+  max-width: 80rem;
+  @media (width >= 96rem) {
+    max-width: 100rem;
+  }
+}
+
 /* Icons beside text. On this font stack the visible middle of mixed-case text
    (between x-height and cap height) sits 0.1em below the line box's middle,
    and of all-caps text 0.04em below; flex centring aligns icons to the box,

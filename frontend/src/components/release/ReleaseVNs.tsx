@@ -30,7 +30,7 @@ export function ReleaseVNs({ vns }: { vns: ReleasedVN[] }) {
           >
             {enumLabel("RTYPE", v.rtype)}
           </span>
-          <Link href={`/${v.id}`} className="min-w-0 text-sm transition-colors hover:text-accent">
+          <Link href={`/${v.id}`} className="min-w-0 text-sm transition-colors hover:text-accent coarse:py-1">
             {v.title}
           </Link>
         </div>
