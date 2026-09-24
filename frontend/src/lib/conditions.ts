@@ -2,19 +2,24 @@
  *  api/<type>/filters.go; keep the two in step. The text view accepts any
  *  filter, so a missing entry only means it has no control here. */
 
-import { ENUMS, enumLabel } from "./enums"
+import { ENUMS, VN_RELATION, enumLabel } from "./enums"
 import { ICON } from "./icons"
 import type { Choice } from "./filters"
 import { group, leaf, print, type Op, type TidyRules } from "./expr"
 
 export type ConditionKind =
-  | { kind: "enum"; choices: Choice[] }
+  /** `ordered` choices form a scale, so they can also be compared. */
+  | { kind: "enum"; choices: Choice[]; ordered?: boolean }
   | { kind: "bool" }
-  | { kind: "number"; hint?: string }
+  | { kind: "number"; hint?: string; unit?: string }
   | { kind: "date" }
   | { kind: "text"; hint?: string }
   /** An external link site; the choices come from /meta/extlinks. */
   | { kind: "site" }
+  /** WxH, compared on both dimensions. */
+  | { kind: "resolution" }
+  /** A person credited on this item, optionally in one role: s224:scenario. */
+  | { kind: "credit"; target: "s"; roles: Choice[] }
   /** Matched by id: staff=s8. */
   | { kind: "entity"; target: string }
   /** Tag or trait with optional minimum score and spoiler ceiling. */
@@ -38,6 +43,10 @@ export function opsFor(c: ConditionKind): Op[] {
     case "number":
     case "date":
       return ["=", "!=", ">=", "<=", ">", "<"]
+    case "resolution":
+      return ["=", "!=", ">=", "<="]
+    case "enum":
+      return c.ordered ? ["=", "!=", ">=", "<="] : ["=", "!="]
     case "bool":
     case "text":
       return ["="]
@@ -60,6 +69,14 @@ const BOOL = { kind: "bool" as const }
 const SEARCH = { kind: "text" as const, hint: "words" }
 const NUM = { kind: "number" as const }
 const LINK = { key: "extlink", label: "Has a link to", kind: "site" as const }
+
+/** Release animation, as the dump's ani_story / ani_ero record it. */
+const ANIMATION: Choice[] = [
+  { value: "1", label: "None" },
+  { value: "2", label: "Simple effects" },
+  { value: "3", label: "Some scenes animated" },
+  { value: "4", label: "All scenes animated" },
+]
 
 /** What a release's DRM may require; each is a flag on vndb's drm table. */
 const DRM_NEEDS: Choice[] = [
@@ -87,6 +104,13 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "rating", label: "Rating", kind: "number", hint: "10–100" },
     { key: "average", label: "Average", kind: "number", hint: "10–100" },
     { key: "votecount", label: "Votes", ...NUM },
+    { key: "length_minutes", label: "Play time", kind: "number", hint: "minutes", unit: "min" },
+    {
+      key: "relation",
+      label: "Has a relation",
+      kind: "enum",
+      choices: Object.entries(VN_RELATION).map(([value, label]) => ({ value, label })),
+    },
     { key: "tag", label: "Tag", kind: "scored", target: "g", score: true },
     { key: "dtag", label: "Tag (not inherited)", kind: "scored", target: "g", score: true },
     { key: "release", label: "Release", ...rel("r") },
@@ -96,6 +120,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "trait", label: "Character trait", ...on("i") },
     { key: "staff", label: "Staff", ...rel("s") },
     { key: "seiyuu", label: "Voice actor", ...rel("s") },
+    { key: "credit", label: "Staff in a role", kind: "credit", target: "s", roles: from("STAFF_ROLE") },
     { key: "medium", label: "Medium", kind: "enum", choices: from("MEDIUM") },
     { key: "has_description", label: "Has description", ...BOOL },
     { key: "has_screenshot", label: "Has screenshots", ...BOOL },
@@ -112,6 +137,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "voiced", label: "Voiced", kind: "enum", choices: from("VOICED") },
     { key: "released", label: "Released", kind: "date" },
     { key: "minage", label: "Age rating", ...NUM },
+    { key: "resolution", label: "Resolution", kind: "resolution" },
+    { key: "ani_story", label: "Story animation", kind: "enum", choices: ANIMATION, ordered: true },
+    { key: "ani_ero", label: "Erotic scene animation", kind: "enum", choices: ANIMATION, ordered: true },
     { key: "engine", label: "Engine", kind: "text", hint: "exact name" },
     { key: "official", label: "Official", ...BOOL },
     { key: "patch", label: "Patch", ...BOOL },
@@ -137,11 +165,13 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "vn", label: "Visual novel", ...rel("v") },
     { key: "seiyuu", label: "Voice actor", ...on("s") },
     { key: "age", label: "Age", ...NUM },
-    { key: "height", label: "Height", kind: "number", hint: "cm" },
-    { key: "weight", label: "Weight", kind: "number", hint: "kg" },
-    { key: "bust", label: "Bust", kind: "number", hint: "cm" },
-    { key: "waist", label: "Waist", kind: "number", hint: "cm" },
-    { key: "hips", label: "Hips", kind: "number", hint: "cm" },
+    { key: "birthday", label: "Birthday", kind: "text", hint: "12-25, or 12 for a month" },
+    { key: "has_image", label: "Has a picture", ...BOOL },
+    { key: "height", label: "Height", kind: "number", hint: "cm", unit: "cm" },
+    { key: "weight", label: "Weight", kind: "number", hint: "kg", unit: "kg" },
+    { key: "bust", label: "Bust", kind: "number", hint: "cm", unit: "cm" },
+    { key: "waist", label: "Waist", kind: "number", hint: "cm", unit: "cm" },
+    { key: "hips", label: "Hips", kind: "number", hint: "cm", unit: "cm" },
     { key: "cup", label: "Cup size", kind: "text", hint: "AAA–Z" },
     {
       key: "blood_type",
@@ -194,7 +224,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
 /** The other type a condition is about, or undefined for the item's own
  *  properties. */
 export function relatedType(c: Condition | undefined): string | undefined {
-  return c && (c.kind === "relation" || c.kind === "entity" || c.kind === "scored") ? c.target : undefined
+  return c && (c.kind === "relation" || c.kind === "entity" || c.kind === "scored" || c.kind === "credit")
+    ? c.target
+    : undefined
 }
 
 export function conditionOf(type: string, key: string): Condition | undefined {
@@ -234,7 +266,7 @@ export function writeScored(v: Scored, score: boolean): string {
 
 /** Kinds whose backend filter reads a comma list as "any of". Scored values
  *  carry their own colon syntax per item, so they are left alone. */
-const LISTABLE = new Set(["enum", "site", "entity", "relation", "number", "date"])
+const LISTABLE = new Set(["enum", "site", "entity", "relation", "number", "date", "resolution", "credit"])
 
 export const TIDY_RULES: TidyRules = {
   mergeable: (type, name) => LISTABLE.has(conditionOf(type, name)?.kind ?? ""),
@@ -242,6 +274,17 @@ export const TIDY_RULES: TidyRules = {
     const c = conditionOf(type, name)
     return c?.kind === "relation" ? c.target : undefined
   },
+}
+
+/** A staff credit value: s224 or s224:scenario. */
+export function readCredit(value: string): { id: string; role: string } {
+  const [id = "", role = ""] = value.split(":")
+  return { id, role }
+}
+
+export function writeCredit(v: { id: string; role: string }): string {
+  if (!v.id) return ""
+  return v.role ? `${v.id}:${v.role}` : v.id
 }
 
 /** Plain filters as one f= expression, to hand a listing to the builder. */

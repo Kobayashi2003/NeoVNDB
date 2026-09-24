@@ -9,7 +9,9 @@ import {
   NOUN,
   OP_LABEL,
   opsFor,
+  readCredit,
   readScored,
+  writeCredit,
   writeScored,
 } from "@/lib/conditions"
 import { group, leaf, type Leaf, type Op } from "@/lib/expr"
@@ -21,6 +23,11 @@ import { EntitySearch, useEntityName } from "./entity"
 import { FilterList } from "./menus"
 import { values } from "./text"
 import { DoneButton, INPUT, RemoveItem, SearchBox } from "./parts"
+
+const PLACEHOLDER: Partial<Record<string, string>> = {
+  date: "2020, 2020-05 or 2020-05-17",
+  resolution: "1920x1080",
+}
 
 export function Editor({ type, cond, node }: { type: string; cond: Condition | undefined; node: Leaf }) {
   const { edit, open } = useBuilder()
@@ -218,6 +225,27 @@ function Value({
         </div>
       )
     }
+    case "credit": {
+      const v = readCredit(value)
+      const put = (change: Partial<typeof v>, then?: string | null) =>
+        set({ value: writeCredit({ ...v, ...change }) }, then)
+      if (!v.id) return <EntitySearch type={cond.target} onPick={(id: string) => put({ id })} />
+      return (
+        <>
+          <div className="px-1.5 pb-1.5">
+            <Picked type={cond.target} id={v.id} onAction={() => put({ id: "", role: "" })} />
+          </div>
+          <div className="max-h-56 overflow-y-auto overscroll-contain">
+            {[{ value: "", label: "Any role" }, ...cond.roles].map((r) => (
+              <button key={r.value} type="button" onClick={() => put({ role: r.value }, null)} className={menuItem()}>
+                <MenuMark kind="radio" on={v.role === r.value} />
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )
+    }
     default:
       return (
         <div className="flex flex-col gap-2 px-1.5 pb-1.5">
@@ -228,11 +256,9 @@ function Value({
             onChange={(e) => set({ value: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && value.trim() && done()}
             placeholder={
-              cond.kind === "date"
-                ? "2020, 2020-05 or 2020-05-17"
-                : cond.kind === "text" || cond.kind === "number"
-                  ? cond.hint
-                  : ""
+              cond.kind === "text" || cond.kind === "number"
+                ? cond.hint
+                : (PLACEHOLDER[cond.kind] ?? "")
             }
             aria-label={cond.label}
             className={cn(INPUT, "w-full")}

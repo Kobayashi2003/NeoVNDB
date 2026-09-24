@@ -2,7 +2,7 @@
 "use client"
 
 import { Fragment } from "react"
-import { type Condition, OP_LABEL, readScored, relatedType } from "@/lib/conditions"
+import { type Condition, OP_LABEL, readCredit, readScored, relatedType } from "@/lib/conditions"
 import { type Group, type Leaf, switchAt } from "@/lib/expr"
 import { cn } from "@/lib/utils"
 import { Popover, useBuilder } from "./context"
@@ -126,11 +126,15 @@ function Summary({ cond, node }: { cond: Condition | undefined; node: Leaf }) {
       return <span>{value === "true" ? "yes" : "no"}</span>
     case "enum": {
       const labels = values(value).map((v) => cond.choices.find((c) => c.value === v)?.label ?? v)
+      if (node.op === ">=" || node.op === "<=") return <span>{`${OP_LABEL[node.op]} ${labels.join(", ")}`}</span>
       return <span>{listed(labels, not)}</span>
     }
     case "number":
     case "date":
-      return <span>{node.op === "=" ? value : `${OP_LABEL[node.op]} ${value}`}</span>
+    case "resolution": {
+      const unit = cond.kind === "number" && cond.unit ? ` ${cond.unit}` : ""
+      return <span>{node.op === "=" ? value + unit : `${OP_LABEL[node.op]} ${value}${unit}`}</span>
+    }
     case "text":
       return <span>“{value}”</span>
     case "entity":
@@ -146,6 +150,16 @@ function Summary({ cond, node }: { cond: Condition | undefined; node: Leaf }) {
         <span className="inline-flex min-w-0 items-center gap-1">
           <EntityList type={cond.target} ids={[v.id]} not={not} />
           {extra.length > 0 && <span className="text-accent/60">{extra.join(" · ")}</span>}
+        </span>
+      )
+    }
+    case "credit": {
+      const v = readCredit(value)
+      const role = cond.roles.find((r) => r.value === v.role)?.label
+      return (
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <EntityList type={cond.target} ids={[v.id]} not={not} />
+          {role && <span className="text-accent/60">as {role}</span>}
         </span>
       )
     }

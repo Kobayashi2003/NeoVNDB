@@ -1,6 +1,9 @@
 package release
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -16,6 +19,10 @@ var drmNeeds = map[string]bool{
 }
 
 var filters = map[string]query.FilterFunc{
+	// 0 unknown, 1 none, 2 simple effects, 3 some fully animated scenes, 4 all.
+	"ani_story":  query.IntColumn("r.ani_story", 1),
+	"ani_ero":    query.IntColumn("r.ani_ero", 1),
+	"resolution": resolutionFilter,
 	// vndb's "DRM-free" is a DRM entry with none of the restricting
 	// properties; a release with no DRM entry is unknown, not free.
 	"drm_free": query.BoolFilter("EXISTS ("+drmFree+")",
@@ -131,4 +138,39 @@ var spec = query.PageSpec{
 	Table: "releases r LEFT JOIN releases_titles rt2 ON rt2.id = r.id AND rt2.lang = r.olang",
 	Alias: "r", IDType: vndb.TypeRelease, SearchEntity: "r",
 	Filters: filters, Sorts: sorts,
+}
+
+// resolutionFilter matches WxH exactly, or with >= / <= both dimensions at
+// least / at most. 0x0 means unknown and never satisfies a comparison.
+func resolutionFilter(b *query.Builder, value string) error {
+	return b.AnyOf(value, func(b *query.Builder, v string) error {
+		op, rest := query.SplitComparison(v)
+		w, h, ok := parseResolution(rest)
+		if !ok {
+			return query.BadRequest("%q is not a resolution like 1920x1080", rest)
+		}
+		switch op {
+		case "=":
+			b.Where("(r.reso_x = %s AND r.reso_y = %s)", w, h)
+		case "!=":
+			b.Where("NOT (r.reso_x = %s AND r.reso_y = %s)", w, h)
+		case ">=":
+			b.Where("(r.reso_x >= %s AND r.reso_y >= %s)", w, h)
+		case "<=":
+			b.Where("(r.reso_x > 0 AND r.reso_x <= %s AND r.reso_y <= %s)", w, h)
+		default:
+			return query.BadRequest("a resolution compares with =, !=, >= or <=")
+		}
+		return nil
+	})
+}
+
+func parseResolution(s string) (int, int, bool) {
+	ws, hs, found := strings.Cut(strings.ToLower(strings.TrimSpace(s)), "x")
+	w, errW := strconv.Atoi(ws)
+	h, errH := strconv.Atoi(hs)
+	if !found || errW != nil || errH != nil || w <= 0 || h <= 0 {
+		return 0, 0, false
+	}
+	return w, h, true
 }
