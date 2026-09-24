@@ -32,3 +32,37 @@ func TestSearchTerms(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchRankOrder(t *testing.T) {
+	spec := PageSpec{Alias: "vn", SearchEntity: "v", Popularity: "vn.c_votecount",
+		Sorts: map[string]string{"id": "vn.id", "searchrank": ""}}
+
+	for _, c := range []struct {
+		search string
+		args   int
+	}{
+		{"fate", 1},              // the query only
+		{"ever out infinity", 2}, // plus the word list
+	} {
+		b := &Builder{}
+		b.Arg("already bound") // a filter's argument, which stays $1
+		req := &Request{Sort: "searchrank", Reverse: true, Filters: map[string]string{"search": c.search}}
+		sql, err := orderBy(spec, req, b)
+		if err != nil {
+			t.Fatalf("%q: %v", c.search, err)
+		}
+		if len(b.Args) != 1+c.args {
+			t.Errorf("%q: %d arguments, want %d", c.search, len(b.Args), 1+c.args)
+		}
+		if strings.Contains(sql, "$1") || !strings.Contains(sql, "$2") {
+			t.Errorf("%q: ranking must number its arguments after the filters':\n%s", c.search, sql)
+		}
+		if !strings.HasSuffix(sql, "DESC NULLS LAST, vn.id ASC") || !strings.Contains(sql, "vn.c_votecount") {
+			t.Errorf("%q: unexpected ordering tail:\n%s", c.search, sql)
+		}
+	}
+
+	if _, err := orderBy(spec, &Request{Sort: "searchrank", Filters: map[string]string{}}, &Builder{}); err == nil {
+		t.Error("searchrank without a search should be refused")
+	}
+}

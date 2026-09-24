@@ -122,6 +122,6 @@ var sorts = map[string]string{
 // the sort is by something else.
 var spec = query.PageSpec{
 	Table: "vn LEFT JOIN vn_titles vt ON vt.id = vn.id AND vt.lang = vn.olang",
-	Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v",
+	Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v", Popularity: "vn.c_votecount",
 	Filters: filters, Sorts: sorts,
 }
