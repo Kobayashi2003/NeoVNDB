@@ -8,6 +8,7 @@ import (
 // What a visual novel query accepts. Each entry is independent, so filters
 // combine with AND in any order.
 var filters = map[string]query.FilterFunc{
+	"extlink":   query.ExtLinkFilter("vn_extlinks", "vn.id"),
 	"olang":     query.TextColumn("vn.olang"),
 	"devstatus": query.IntColumn("vn.devstatus", 1),
 	"length":    query.IntColumn("vn.length", 1),

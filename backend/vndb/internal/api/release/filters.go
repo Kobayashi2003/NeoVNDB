@@ -5,10 +5,34 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
+const drmFree = `SELECT 1 FROM releases_drm rd JOIN drm d ON d.id = rd.drm
+	 WHERE rd.id = r.id
+	   AND NOT (d.disc OR d.cdkey OR d.activate OR d.alimit OR d.account OR d.online OR d.cloud OR d.physical)`
+
+// The restricting properties a DRM entry may have; each is a boolean column.
+var drmNeeds = map[string]bool{
+	"disc": true, "cdkey": true, "activate": true, "alimit": true,
+	"account": true, "online": true, "cloud": true, "physical": true,
+}
+
 var filters = map[string]query.FilterFunc{
-	"olang":  query.TextColumn("r.olang"),
-	"minage": query.IntColumn("r.minage", 1),
-	"voiced": query.IntColumn("r.voiced", 1),
+	// vndb's "DRM-free" is a DRM entry with none of the restricting
+	// properties; a release with no DRM entry is unknown, not free.
+	"drm_free": query.BoolFilter("EXISTS ("+drmFree+")",
+		"EXISTS (SELECT 1 FROM releases_drm rd WHERE rd.id = r.id) AND NOT EXISTS ("+drmFree+")"),
+	"drm_needs": query.Match(func(b *query.Builder, v string) error {
+		if !drmNeeds[v] {
+			return query.BadRequest("%q is not a DRM property; one of disc, cdkey, activate, alimit, account, online, cloud, physical", v)
+		}
+		b.Conds = append(b.Conds, `EXISTS (
+			SELECT 1 FROM releases_drm rd JOIN drm d ON d.id = rd.drm
+			 WHERE rd.id = r.id AND d.`+v+`)`)
+		return nil
+	}),
+	"extlink": query.ExtLinkFilter("releases_extlinks", "r.id"),
+	"olang":   query.TextColumn("r.olang"),
+	"minage":  query.IntColumn("r.minage", 1),
+	"voiced":  query.IntColumn("r.voiced", 1),
 
 	"released": releasedFilter,
 	"search":   query.SearchFilter("r", "r"),

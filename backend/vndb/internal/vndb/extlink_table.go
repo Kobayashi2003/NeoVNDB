@@ -1,16 +1,10 @@
 package vndb
 
-// URL recipes for external links, taken from vndb's lib/VNDB/ExtLinks.pm
-// (AGPL). A link is stored as a site name and a bare value -- ("steam",
-// "616620") -- because vndb builds the address only when it renders a page, so
-// the recipes have to live on our side too.
-//
-// Nine sites are written upstream as subroutines rather than templates,
-// because their address can depend on an affiliate code and on extlinks.data.
-// We have neither: no affiliate codes, and the dump exports only (site, value).
-// With both empty every one of them reduces to a fixed template, which is what
-// is recorded here. Only itch still needs code, since its value holds two path
-// segments -- see buildExtLink.
+// URL recipes for external links, from vndb's lib/VNDB/ExtLinks.pm (AGPL).
+// The dump stores (site, value) only, so addresses are built here. Nine sites
+// are subroutines upstream (affiliate codes, extlinks.data); with neither
+// available they reduce to the fixed templates below. itch needs code: its
+// value holds two path segments (see formatExtLink).
 //
 // entities lists the id prefixes a site may appear on.
 

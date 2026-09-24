@@ -52,8 +52,10 @@ func ParseID(entity, value string) (int32, error) {
 	if digits == value && strings.IndexFunc(value, isLetter) == 0 {
 		return 0, fmt.Errorf("%q is not a %s id", value, entity)
 	}
-	n, err := strconv.Atoi(digits)
-	if err != nil || n <= 0 {
+	// Parsed within int32 so an oversized id is refused rather than wrapped,
+	// and digits only: ParseInt alone would take a sign.
+	n, err := strconv.ParseInt(digits, 10, 32)
+	if err != nil || n <= 0 || digits[0] < '0' || digits[0] > '9' {
 		return 0, fmt.Errorf("%q is not a %s id", value, entity)
 	}
 	return int32(n), nil

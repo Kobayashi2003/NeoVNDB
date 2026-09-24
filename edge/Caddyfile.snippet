@@ -31,7 +31,7 @@ handle_path /vndbserve/* {
 	# Anything not listed stays loopback-only.
 	@neovndb_read {
 		method GET HEAD
-		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|meta/(generation|fields/[a-z]+)|health)$
+		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|meta/(generation|fields/[a-z]+|extlinks)|health)$
 	}
 	handle @neovndb_read {
 		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}

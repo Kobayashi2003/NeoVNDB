@@ -8,19 +8,13 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// loadTranslation fills what this tag is called in the target language. The
-// two halves are looked up separately -- a name can be translated while its
-// description is not -- and a tag with neither gets null rather than an object
-// of empty strings, so a caller can tell "not translated" from "translated to
-// nothing".
+// loadTranslation fills the target-language name and description, looked up
+// separately. A tag with neither gets null, not an object of empty strings.
 func loadTranslation(ctx context.Context, r *Resolver, page []gen.Tag,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
-	// Chips on a VN page want the name and nothing else, which is most of the
-	// traffic this field will see; fetching descriptions for them would be a
-	// second round trip over text nobody is going to read. The names are
-	// always fetched, because whether there is a translation at all is what
-	// this field reports, and answering that without looking would be a guess.
+	// Descriptions only when asked for: most callers are chips that need the
+	// name alone.
 	wantName := sel.Wants("translation", "name")
 	wantText := sel.Wants("translation", "description")
 	names := make([]string, 0, len(page))

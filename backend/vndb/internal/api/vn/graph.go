@@ -8,14 +8,10 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// Relation graphs are bounded because the component is not small: sequels,
-// fandiscs and shared settings chain titles together until one web holds them
-// all, and the component containing Ever17 alone runs to about nineteen
-// hundred nodes. The walk therefore stops at a depth, the way vndb's own view
-// does, and reports whether it cut anything off.
-// GraphOpts bounds one walk. Depth is what the caller asked for; the two
-// ceilings come from configuration, because how big a graph is worth drawing
-// is a deployment's call rather than a property of the data.
+// Relation graphs are bounded: sequels, fandiscs and shared settings chain
+// into large components (Ever17's has ~1,900 nodes), so the walk stops at a
+// depth, as vndb's view does, and reports whether it cut anything.
+// GraphOpts bounds one walk; the ceilings come from configuration.
 type GraphOpts struct {
 	Depth    int
 	MaxDepth int

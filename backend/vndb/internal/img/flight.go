@@ -5,16 +5,9 @@ import (
 	"sync"
 )
 
-// A flight collapses concurrent work on the same key into one run.
-//
-// A page opening with twenty uncached covers is twenty requests, and a popular
-// page opening at once is twenty times however many readers. Without this each
-// of them would fetch the same file from vndb -- the one dependency here that
-// is neither local nor ours to overload.
-//
-// This is x/sync/singleflight in the few lines actually needed, kept here
-// rather than taken as a dependency: the package has one caller and the
-// behaviour is worth being able to read.
+// A flight collapses concurrent work on the same key into one run, so many
+// readers opening the same uncached image cause one fetch from vndb. A
+// minimal x/sync/singleflight, to avoid a dependency with one caller.
 type flight struct {
 	mu    sync.Mutex
 	calls map[string]*call
@@ -41,11 +34,8 @@ func (f *flight) Do(key string, fn func() ([]byte, error)) (data []byte, err err
 	f.calls[key] = c
 	f.mu.Unlock()
 
-	// Whatever fn does, the waiters are released and the key is freed. A panic
-	// left to unwind would strand everyone waiting on this image and poison
-	// the key for every request after them -- one malformed file upstream
-	// would take that image down for the life of the process. Turning it into
-	// an error keeps the damage to the one image it belongs to.
+	// Always release the waiters and free the key; a panic becomes an error so
+	// one bad file can't strand its waiters or poison the key for good.
 	defer func() {
 		if p := recover(); p != nil {
 			c.err = fmt.Errorf("recovered while working on %s: %v", key, p)

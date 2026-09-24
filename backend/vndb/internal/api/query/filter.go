@@ -314,3 +314,17 @@ func RelatedID(entity, template string) FilterFunc {
 		return nil
 	})
 }
+
+// ExtLinkFilter matches an entry with a link to a site: extlink=steam. table
+// is the entry's link table (vn_extlinks...), owner the column it joins on.
+func ExtLinkFilter(table, owner string) FilterFunc {
+	return Match(func(b *Builder, v string) error {
+		// An unknown site would match nothing and look like an empty result.
+		if !vndb.KnownSite(v) {
+			return BadRequest("unknown link site %q", v)
+		}
+		b.Where(`EXISTS (SELECT 1 FROM `+table+` x JOIN extlinks e ON e.id = x.link
+		          WHERE x.id = `+owner+` AND e.site = %s)`, v)
+		return nil
+	})
+}

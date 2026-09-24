@@ -29,19 +29,14 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Trait]{
 		"aliases":     {Row: func(t gen.Trait) any { return query.SplitLines(t.Alias) }},       // traits.alias, newline-separated -> array
 		"description": {Row: func(t gen.Trait) any { return query.EmptyToNil(t.Description) }}, // traits.description; '' -> null
 
-		// JOIN1 -- what this is called in the language the trans schema holds.
-		// vndb writes these names and descriptions in English only, so unlike
-		// a VN title there is no original script to fall back to: the value
-		// here is something this project supplies, and it is absent until
-		// somebody supplies it. Keyed by the English text, not by id, so it
-		// survives a re-import; see internal/trans.
+		// JOIN1 -- the name in the trans schema's target language. vndb has only
+		// English, so this is project-supplied and null until someone supplies it;
+		// keyed by the English text so it survives imports (see internal/trans).
 		"translation": {Kind: query.Fragment, Source: "translation", Num: 1, // JOIN1 trans.terms + trans.passages
 			Subfields: []string{"lang", "name", "description"}},
 
-		// DERIV -- on the traits row, but filled by derive/03_traits.sql: a
-		// count over chars_traits_inherit, a table this import builds. It
-		// reads like a stored total and is really "how many characters carry
-		// this trait or anything below it", recomputed every import.
+		// DERIV -- filled by derive/03_traits.sql: characters carrying this trait or
+		// any child, recomputed every import.
 		"char_count": {Row: func(t gen.Trait) any { return t.CItems }}, // traits.c_items <- COUNT(*) over chars_traits_inherit
 
 		// JOIN1 -- traits is self-referential: gid points at the trait that is

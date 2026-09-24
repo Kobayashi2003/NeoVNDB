@@ -1,18 +1,12 @@
 package importer
 
-// What to do with each table in the archive.
-//
-// Rows are rewritten as COPY text and handed straight back to Postgres, so no
-// per-column type conversion is needed: PG parses them exactly as it would
-// during the dump's own import.sql. The only edits are stripping the letter
-// prefix off ids and the three tables whose shape changes.
+// What to do with each archive table. Rows go back to Postgres as COPY text,
+// so types need no conversion; only id prefixes are stripped, and three
+// tables change shape.
 
-// spec describes one table. In the common case only ids is set, naming the
-// columns whose 'v17' style value becomes an integer; every other column passes
-// through untouched.
-//
-// A table whose shape changes sets columns and rewrite instead, and builds the
-// whole row itself.
+// spec describes one table. Usually only ids is set (columns whose 'v17'
+// value becomes an integer); a table that changes shape sets columns and
+// rewrite and builds the row itself.
 type spec struct {
 	table   string
 	ids     []string

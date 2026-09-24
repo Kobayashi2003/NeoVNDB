@@ -1,12 +1,7 @@
-// Package dump reads VNDB database archives.
-//
-// The archive is a zstd-compressed tar holding one file per table in
-// PostgreSQL's COPY text format, with column names in a sibling .header file.
-// It is read as a stream: a gigabyte of tables goes past, most of it user
-// lists we do not mirror, and streaming means only the wanted ones are decoded.
-//
-// Each header follows its own table rather than preceding it, so column names
-// have to be collected by Headers before any table can be interpreted.
+// Package dump reads VNDB database archives: a zstd tar of COPY-format table
+// files, each with a .header file of column names. Read as a stream so only
+// wanted tables are decoded. Headers follow their tables, so Headers must
+// collect them before any table can be read.
 package dump
 
 import (
