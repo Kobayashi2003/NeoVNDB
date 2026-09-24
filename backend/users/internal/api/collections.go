@@ -14,11 +14,15 @@ import (
 // vndb ids are stored as type letter plus number, as in the mirror.
 const kinds = "vrcpsgi"
 
+// validKind reports whether k is exactly one of the type letters.
+func validKind(k string) bool { return len(k) == 1 && strings.Contains(kinds, k) }
+
 // What the column holds, so not a setting.
 const maxName = 64
 
 func parseID(raw string) (kind string, num int32, ok bool) {
-	if len(raw) < 2 || !strings.ContainsAny(raw[:1], kinds) {
+	// The number starts with 1-9: ParseInt alone would take "+17" and "017".
+	if len(raw) < 2 || !validKind(raw[:1]) || raw[1] < '1' || raw[1] > '9' {
 		return "", 0, false
 	}
 	n, err := strconv.ParseInt(raw[1:], 10, 32)
@@ -83,7 +87,7 @@ func (s *Server) answer(w http.ResponseWriter, doing string, err error) bool {
 
 func (s *Server) listCollections(w http.ResponseWriter, r *http.Request, userID int32) {
 	kind := r.URL.Query().Get("type")
-	if kind != "" && !strings.ContainsAny(kind, kinds) {
+	if kind != "" && !validKind(kind) {
 		fail(w, http.StatusBadRequest, "That is not a type.")
 		return
 	}
@@ -102,7 +106,7 @@ func (s *Server) createCollection(w http.ResponseWriter, r *http.Request, userID
 	if !ok {
 		return
 	}
-	if len(body.Type) != 1 || !strings.ContainsAny(body.Type, kinds) {
+	if !validKind(body.Type) {
 		fail(w, http.StatusBadRequest, "That is not a type.")
 		return
 	}
