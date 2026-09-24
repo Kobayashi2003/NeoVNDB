@@ -134,9 +134,9 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, error) {
 }
 
 // searchRank scores each row by its best matching label: equal to the whole
-// query, then starting with it, then holding every word; then the label's
-// kind (title, alias, indirect), trigram similarity, and the entry's
-// popularity where the type has one. Ties go to the older entry.
+// query, then starting with it, then holding every word, weighted by the
+// label's kind (title, alias, indirect); then trigram similarity and the
+// entry's popularity where the type has one. Ties go to the older entry.
 func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (string, error) {
 	raw, searching := req.Filters["search"]
 	if !searching {
@@ -160,9 +160,13 @@ func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (stri
 		every = fmt.Sprintf(`(SELECT bool_and(sc.label LIKE '%%%%' || w || '%%%%') FROM unnest(%s) w)`, words)
 	}
 
+	// Match bonuses count fully on a main title, less on an alias and least
+	// on an indirect hit such as a release title: an alias that happens to
+	// start with the query should not tie with a title that does.
 	rank := fmt.Sprintf(`(SELECT MAX(
-	      CASE WHEN sc.label = %[1]s THEN 100 WHEN sc.label LIKE %[1]s || '%%' THEN 50 ELSE 0 END
-	    + CASE WHEN `+every+` THEN 20 ELSE 0 END
+	      ( CASE WHEN sc.label = %[1]s THEN 100 WHEN sc.label LIKE %[1]s || '%%' THEN 50 ELSE 0 END
+	      + CASE WHEN `+every+` THEN 20 ELSE 0 END )
+	      * CASE sc.prio WHEN 3 THEN 1.0 WHEN 2 THEN 0.7 ELSE 0.4 END
 	    + sc.prio * 5
 	    + similarity(sc.label, %[1]s) * 10)
 	   FROM search_cache sc
