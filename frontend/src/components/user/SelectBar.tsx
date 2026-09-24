@@ -81,19 +81,137 @@ export function SelectBar({
   const { box, panel: menu } = useMenu(picking, setPicking)
 
   return (
+    <ActionBar
+      error={error}
+      chosen={chosen}
+      allOnPage={allOnPage}
+      canSelectPage={pageSize > 0 && !busy}
+      onAll={onAll}
+      onClose={onClose}
+    >
+      <div ref={box} className="relative">
+        <button
+          type="button"
+          onClick={() => setPicking((o) => !o)}
+          disabled={chosen === 0 || busy || lists.length === 0}
+          aria-expanded={picking}
+          title={lists.length === 0 ? "No other list of this kind" : "Move to another list"}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
+        >
+          <FolderInput className="icon-text h-4 w-4 shrink-0" aria-hidden />
+          <span className="hidden sm:inline">Move</span>
+        </button>
+
+        {picking && (
+          // Upward: the bar sits at the foot of the screen.
+          <MenuPanel ref={menu} above scroll>
+            <MenuLabel>Move to</MenuLabel>
+            {lists.map((list) => (
+              <button
+                key={list.id}
+                type="button"
+                onClick={() => {
+                  setPicking(false)
+                  onMove(list.id)
+                }}
+                className={menuItem()}
+              >
+                <span className="min-w-0 flex-1 truncate">{list.name}</span>
+                <span className="shrink-0 tabular-nums text-muted">{list.count}</span>
+              </button>
+            ))}
+          </MenuPanel>
+        )}
+      </div>
+
+      {confirming ? (
+        // Asked in place, like deleting a list is. What goes is only a
+        // mark, but it is still a thing the reader chose to keep.
+        <>
+          <span className="px-1 text-xs text-muted">Remove?</span>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirming(false)
+              onRemove()
+            }}
+            disabled={busy}
+            aria-label="Yes, remove them"
+            className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Check className="h-4 w-4" aria-hidden />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            aria-label="Keep them"
+            className="rounded-full p-2 text-muted transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          disabled={chosen === 0 || busy}
+          title="Remove from this list"
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+        >
+          <Trash2 className="icon-text h-4 w-4 shrink-0" aria-hidden />
+          <span className="hidden sm:inline">Remove</span>
+        </button>
+      )}
+    </ActionBar>
+  )
+}
+
+/** The bar itself: select-this-page, the count, the caller's actions, and
+ *  Done. Shared by a list's own bar and the save bar on result pages. */
+export function ActionBar({
+  error,
+  note,
+  chosen,
+  allOnPage,
+  canSelectPage,
+  onAll,
+  onClose,
+  children,
+}: {
+  error: string | null
+  /** A quiet line above the controls, such as what the last action did. */
+  note?: string | null
+  chosen: number
+  allOnPage: boolean
+  canSelectPage: boolean
+  onAll: () => void
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
       <div className="pointer-events-auto flex max-w-full flex-col gap-1 rounded-2xl border border-white/15 bg-[var(--overlay)] p-1.5 shadow-2xl shadow-black/60 animate-slide-up-fade">
-        {error && (
+        {error ? (
           <p role="alert" className="px-2 pt-1 text-xs text-red-400">
             {error}
           </p>
+        ) : (
+          note && (
+            <p role="status" className="px-2 pt-1 text-xs text-muted">
+              {note}
+            </p>
+          )
         )}
 
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={onAll}
-            disabled={pageSize === 0 || busy}
+            disabled={!canSelectPage}
             title={allOnPage ? "Deselect this page" : "Select this page"}
             aria-label={allOnPage ? "Deselect this page" : "Select this page"}
             className="rounded-full p-2 transition-colors hover:bg-white/10 disabled:opacity-40"
@@ -111,83 +229,7 @@ export function SelectBar({
 
           <span className="mx-0.5 h-6 w-px bg-white/15" aria-hidden />
 
-          <div ref={box} className="relative">
-            <button
-              type="button"
-              onClick={() => setPicking((o) => !o)}
-              disabled={chosen === 0 || busy || lists.length === 0}
-              aria-expanded={picking}
-              title={lists.length === 0 ? "No other list of this kind" : "Move to another list"}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
-            >
-              <FolderInput className="icon-text h-4 w-4 shrink-0" aria-hidden />
-              <span className="hidden sm:inline">Move</span>
-            </button>
-
-            {picking && (
-              // Upward: the bar sits at the foot of the screen.
-              <MenuPanel ref={menu} above scroll>
-                <MenuLabel>Move to</MenuLabel>
-                {lists.map((list) => (
-                  <button
-                    key={list.id}
-                    type="button"
-                    onClick={() => {
-                      setPicking(false)
-                      onMove(list.id)
-                    }}
-                    className={menuItem()}
-                  >
-                    <span className="min-w-0 flex-1 truncate">{list.name}</span>
-                    <span className="shrink-0 tabular-nums text-muted">{list.count}</span>
-                  </button>
-                ))}
-              </MenuPanel>
-            )}
-          </div>
-
-          {confirming ? (
-            // Asked in place, like deleting a list is. What goes is only a
-            // mark, but it is still a thing the reader chose to keep.
-            <>
-              <span className="px-1 text-xs text-muted">Remove?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirming(false)
-                  onRemove()
-                }}
-                disabled={busy}
-                aria-label="Yes, remove them"
-                className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
-              >
-                {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                ) : (
-                  <Check className="h-4 w-4" aria-hidden />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                aria-label="Keep them"
-                className="rounded-full p-2 text-muted transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              disabled={chosen === 0 || busy}
-              title="Remove from this list"
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
-            >
-              <Trash2 className="icon-text h-4 w-4 shrink-0" aria-hidden />
-              <span className="hidden sm:inline">Remove</span>
-            </button>
-          )}
+          {children}
 
           <span className="mx-0.5 h-6 w-px bg-white/15" aria-hidden />
 

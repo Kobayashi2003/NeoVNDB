@@ -68,6 +68,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("PUT /collections/{id}/marks/{item}", s.signedIn(s.addMark))
 	mux.HandleFunc("DELETE /collections/{id}/marks/{item}", s.signedIn(s.removeMark))
 
+	mux.HandleFunc("POST /collections/{id}/marks/add", s.signedIn(s.addMarks))
 	mux.HandleFunc("POST /collections/{id}/marks/remove", s.signedIn(s.removeMarks))
 	mux.HandleFunc("POST /collections/{id}/marks/move", s.signedIn(s.moveMarks))
 

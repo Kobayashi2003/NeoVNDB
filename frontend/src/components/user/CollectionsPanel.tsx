@@ -14,15 +14,12 @@ import {
   deleteCollection,
   renameCollection,
   RULES,
-  UserError,
+  errorText,
   type Collection,
 } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 import { SignInFirst } from "./SignInFirst"
 
-function message(err: unknown): string {
-  return err instanceof UserError ? err.message : "Something went wrong."
-}
 
 export function CollectionsPanel() {
   const session = useSession()
@@ -37,7 +34,7 @@ export function CollectionsPanel() {
         if (live) setLists(mine)
       },
       (err) => {
-        if (live) setError(message(err))
+        if (live) setError(errorText(err))
       },
     )
     return () => {
@@ -109,7 +106,7 @@ function Shelf({
       form.reset()
       setNaming(false)
     } catch (err) {
-      onError(message(err))
+      onError(errorText(err))
     }
   }
 
@@ -192,7 +189,7 @@ function Row({
       onChange(list.id, { name })
       setEditing(false)
     } catch (err) {
-      onError(message(err))
+      onError(errorText(err))
     }
   }
 
@@ -202,7 +199,7 @@ function Row({
       await deleteCollection(list.id)
       onChange(list.id, null)
     } catch (err) {
-      onError(message(err))
+      onError(errorText(err))
       setConfirming(false)
     }
   }

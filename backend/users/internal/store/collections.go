@@ -190,9 +190,23 @@ func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []s
 	return items, total, rows.Err()
 }
 
-// RemoveMarks and MoveMarks are one statement each so a bulk action is all or
-// nothing. Items the list no longer holds are skipped, since the reader's page
-// may be out of date.
+// AddMarks, RemoveMarks and MoveMarks are one statement each so a bulk action
+// is all or nothing. Items already there, or no longer there, are skipped,
+// since the reader's page may be out of date; the count is what changed.
+func (s *Store) AddMarks(ctx context.Context, userID, id int32, kind string, items []int32) (int64, error) {
+	if err := s.holds(ctx, userID, id, kind); err != nil {
+		return 0, err
+	}
+	tag, err := s.pool.Exec(ctx, `
+		INSERT INTO marks (collection_id, item)
+		SELECT $1, unnest($2::int[])
+		ON CONFLICT (collection_id, item) DO NOTHING`, id, items)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
 func (s *Store) RemoveMarks(ctx context.Context, userID, id int32, kind string, items []int32) (int64, error) {
 	if err := s.holds(ctx, userID, id, kind); err != nil {
 		return 0, err

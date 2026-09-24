@@ -227,6 +227,18 @@ func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
 }
 
 // removeMarks and moveMarks are the bulk, all-or-nothing forms.
+func (s *Server) addMarks(w http.ResponseWriter, r *http.Request, userID int32) {
+	b, ok := s.batch(w, r)
+	if !ok {
+		return
+	}
+	n, err := s.store.AddMarks(r.Context(), userID, b.list, b.kind, b.items)
+	if !s.answer(w, "adding marks", err) {
+		return
+	}
+	send(w, http.StatusOK, map[string]any{"changed": n})
+}
+
 func (s *Server) removeMarks(w http.ResponseWriter, r *http.Request, userID int32) {
 	b, ok := s.batch(w, r)
 	if !ok {
