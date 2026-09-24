@@ -2,6 +2,7 @@
  *  listings and the catalogue pages; `path` is where its links point. */
 
 import { LIST, PAGE_SIZE } from "@/lib/list"
+import { cn } from "@/lib/utils"
 import type { Params } from "@/lib/href"
 import type { Results as ResultsData } from "@/lib/results"
 import { Pagination } from "./Pagination"
@@ -16,6 +17,7 @@ export function ResultsPanel({
   empty = "Nothing matched.",
   controls,
   action,
+  sortMenu = true,
 }: {
   /** The type letter, which names both the spec and the result shape. */
   type: string
@@ -27,12 +29,19 @@ export function ResultsPanel({
   controls?: React.ReactNode
   /** Rendered opposite the sort links -- tabs, or a count. */
   action?: React.ReactNode
+  /** False where the page puts the narrow-screen sort menu elsewhere. */
+  sortMenu?: boolean
 }) {
   return (
     <div className="flex flex-col gap-4">
       {/* One row that wraps: each group stays whole and drops to the next
           line entire, rather than a label parting from what it labels. */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-x-5 gap-y-2",
+          !sortMenu && !controls && !action && "hidden sm:flex",
+        )}
+      >
         {controls}
         <SortLinks
           path={path}
@@ -40,6 +49,7 @@ export function ResultsPanel({
           sorts={LIST[type].sorts}
           active={data.sort}
           reverse={data.reverse}
+          menu={sortMenu}
         />
         {action && <div className="ml-auto">{action}</div>}
       </div>

@@ -24,7 +24,7 @@ export function SearchBox({
         // A new search invalidates whatever page the reader was on.
         router.push(withParams(path, params, { search: String(term ?? ""), page: null }))
       }}
-      className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5"
+      className="flex w-full min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5 sm:w-auto"
     >
       <Search className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
       <input

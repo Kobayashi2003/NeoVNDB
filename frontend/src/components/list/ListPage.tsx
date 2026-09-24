@@ -42,13 +42,20 @@ export async function ListPage({ type, params }: { type: string; params: Params 
         <SearchBox path={path} params={params} initial={search} />
       </div>
 
-      <FilterBar type={type} path={path} params={params} filters={FILTERS[type] ?? []} />
+      <FilterBar
+        type={type}
+        path={path}
+        params={params}
+        filters={FILTERS[type] ?? []}
+        sort={{ sorts: LIST[type].sorts, active: data.sort, reverse: data.reverse }}
+      />
 
       <ResultsPanel
         type={type}
         path={path}
         params={params}
         data={data}
+        sortMenu={false}
         empty={
           <>
             Nothing matched.{" "}

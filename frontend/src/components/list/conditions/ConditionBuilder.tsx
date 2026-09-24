@@ -113,22 +113,25 @@ export function ConditionBuilder({
             onClick={() => commit(tidied, null)}
             disabled={!untidy}
             title="Merge, flatten and simplify without changing the results"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-muted transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+            aria-label="Tidy"
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted sm:px-3 transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40"
           >
             <Wand2 className="icon-text size-3.5" aria-hidden />
-            Tidy
+            <span className="hidden sm:inline">Tidy</span>
           </button>
           <button
             type="button"
             onClick={() => setAsText((t) => !t)}
             aria-pressed={asText}
+            aria-label="Edit as text"
+            title="Edit as text"
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-colors",
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors sm:px-3",
               asText ? "bg-white/10 text-white" : "text-muted hover:bg-white/10 hover:text-white",
             )}
           >
             <Code2 className="icon-text size-3.5" aria-hidden />
-            Text
+            <span className="hidden sm:inline">Text</span>
           </button>
           {current && (
             <button
