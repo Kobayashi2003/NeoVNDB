@@ -1,12 +1,5 @@
-/** One page of results, with the controls that move through it.
- *
- *  Shared by the listings and by the four detail pages whose body is a listing
- *  under a filter -- a producer's works, a tag's visual novels, a trait's
- *  characters. They differ in what surrounds the results, not in the results.
- *
- *  `path` is where its links point, which is the page it is embedded in. That
- *  is what lets a detail page keep the promise a listing makes: what you are
- *  looking at is in the address. */
+/** One page of results with its sort and paging controls. Shared by the
+ *  listings and the catalogue pages; `path` is where its links point. */
 
 import { LIST, PAGE_SIZE } from "@/lib/list"
 import type { Params } from "@/lib/href"
@@ -30,10 +23,7 @@ export function ResultsPanel({
   params: Params
   data: ResultsData
   empty?: React.ReactNode
-  /** The page's own controls, on the same line as the sorts and before them:
-   *  what is being looked at reads first, how it is ordered second. They share
-   *  a row rather than stacking because they are one bar of controls, and two
-   *  rows of five things each is harder to take in than one row of ten. */
+  /** The page's own controls, on the sort row before the sorts. */
   controls?: React.ReactNode
   /** Rendered opposite the sort links -- tabs, or a count. */
   action?: React.ReactNode

@@ -1,9 +1,5 @@
-/** The right-hand end of the header: who you are, or a way to say so.
- *
- *  The session is not known during the server render, so this draws three
- *  things, not two -- and the third is the one every page starts in. It is a
- *  box of the same size as what replaces it, so the bar does not jump a moment
- *  after it appears. */
+/** The header's account control. The session is unknown during the server
+ *  render, so a same-size placeholder is drawn first to avoid a jump. */
 "use client"
 
 import { useState } from "react"
@@ -13,7 +9,7 @@ import { ChevronDown, KeyRound, ListChecks, LogOut, MonitorSmartphone } from "lu
 import { cn } from "@/lib/utils"
 import { UserError } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
-import { useDismiss } from "@/hooks/useDismiss"
+import { useMenu } from "@/hooks/useMenu"
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
 
 export function UserMenu() {
@@ -26,12 +22,9 @@ export function UserMenu() {
   return <SignedIn />
 }
 
-/** Signing in from halfway through a narrowed listing should come back to it,
- *  and what the reader narrowed by is in the address. Reading that address
- *  during the render would mean either a hydration mismatch or
- *  `useSearchParams`, which opts the whole page out of static rendering -- so
- *  it is read at the moment of the click instead, and the plain `/login` the
- *  markup carries is what a new tab gets. */
+/** The sign-in link returns to the current address. Read at click time:
+ *  reading it during render needs useSearchParams, which opts the page out of
+ *  static rendering. */
 function SignInLink() {
   const router = useRouter()
 
@@ -55,17 +48,15 @@ function SignedIn() {
   const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
+  const { box } = useMenu(open, setOpen)
 
   async function leave(everywhere: boolean) {
     setOpen(false)
     try {
       await (everywhere ? session.signOutEverywhere() : session.signOut())
     } catch (err) {
-      // A 401 says the session was already gone, which is where this was
-      // headed anyway. Anything else leaves it standing: drawing a signed-out
-      // bar over a browser that still carries a live cookie is a lie the next
-      // reload would correct, and the reader would not know which to believe.
+      // A 401 means the session is already gone. Any other failure keeps the
+      // signed-in bar, since the cookie is still live.
       if (!(err instanceof UserError && err.status === 401)) return
       session.forget()
     }

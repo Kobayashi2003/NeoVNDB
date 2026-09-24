@@ -1,13 +1,6 @@
-/** Everything the VN page knows about one character, in one card.
- *
- *  This is the form the slider and the expanded view share. Unlike the grid
- *  tile it shows the portrait whole and spells out the physical details, the
- *  aliases and the description -- the tile answers "who is in this", the card
- *  answers "who is this".
- *
- *  Spoiler traits reveal per card as well as section-wide: a reader who opens
- *  one character should not have to unlock every other one to do it. The
- *  effective level never drops below what the section has already revealed. */
+/** One character in full: portrait, physical details, aliases, description.
+ *  Used by the slider and the expanded view. Spoiler traits can be revealed per
+ *  card, never below the section's level. */
 "use client"
 
 import { useState } from "react"

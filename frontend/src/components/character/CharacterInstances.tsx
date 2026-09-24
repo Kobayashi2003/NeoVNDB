@@ -1,14 +1,6 @@
-/** The instance group: one character as several database entries.
- *
- *  vndb files a character who recurs across unrelated works -- a mascot, a
- *  Vocaloid, a cameo -- as one entry per work, all pointing at a single parent
- *  through chars.main. The pointer only goes one way, so the group is read
- *  from whichever end the reader arrived at: a parent lists its instances
- *  directly, an instance is handed its parent's list.
- *
- *  Being an instance can itself be a spoiler -- that this character turns out
- *  to be a version of that one is exactly the kind of thing a work withholds
- *  -- so each link carries its own level. */
+/** The instance group: one recurring character as several entries, linked
+ *  to a parent through chars.main (one direction only, so the group is read
+ *  from the parent). Each link carries its own spoiler level. */
 "use client"
 
 import Link from "next/link"

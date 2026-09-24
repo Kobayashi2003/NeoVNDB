@@ -1,9 +1,5 @@
-/** What a release does to stop you copying it.
- *
- *  Two texts sit on each entry and mean different things: the description
- *  belongs to the DRM itself and reads the same everywhere it appears, while
- *  the notes belong to this release's use of it. Kana carries none of this;
- *  it is here because the dump has it. */
+/** A release's DRM: each entry's description (of the DRM itself) and notes
+ *  (about this release's use of it). */
 
 import type { Drm } from "@/lib/types"
 

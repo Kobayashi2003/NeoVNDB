@@ -1,12 +1,5 @@
-/** The results themselves, laid out the way their type is looked at.
- *
- *  Kept apart from the page shell so the shell stays type-agnostic: it knows
- *  about counts, orders and pages, and nothing about what a producer looks
- *  like.
- *
- *  What builds the cards and what arranges them are separate below so that a
- *  caller can put something of its own around each one -- the collection pages
- *  put a checkbox there -- without every card learning what a selection is. */
+/** Results laid out for their type. Card building and arrangement are
+ *  separate so a caller can wrap each card (collections add a checkbox). */
 "use client"
 
 import { Fragment } from "react"

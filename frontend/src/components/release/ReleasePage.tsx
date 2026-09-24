@@ -1,12 +1,6 @@
-/** The release page.
- *
- *  The works come first and always: a release has no subject of its own, it is
- *  a packaging of these, and half of all releases carry no notes, no pictures,
- *  no second title and no DRM -- nothing else would be left to show.
- *
- *  No spoiler control. Nothing the dump records about a release is withheld
- *  from a reader who has not finished the work; the content levels still
- *  apply, because a package scan can be as explicit as anything inside. */
+/** The release page, led by the works it contains. No spoiler control:
+ *  nothing about a release is spoiler-gated, but content levels still apply to
+ *  its images. */
 "use client"
 
 import { BBCode } from "@/lib/bbcode"

@@ -1,10 +1,5 @@
-/** A company, and what it put its name on.
- *
- *  Two tabs, because the dump distinguishes two things a company can be to a
- *  work. `developer` is who made it; `producer` is who made or published it,
- *  which is the wider question and the one a reader usually means by "their
- *  games". Releases are the third: a publisher's catalogue often reads as a
- *  list of editions rather than of works. */
+/** A producer: works it developed, works it developed or published, and
+ *  its releases, as three tabs. */
 
 import Link from "next/link"
 import { ICON } from "@/lib/icons"

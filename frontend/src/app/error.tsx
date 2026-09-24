@@ -1,9 +1,5 @@
-/** Something broke while drawing a page.
- *
- *  Which mostly means the read API did not answer: this mirror is four
- *  processes behind one address, and a page is the thing that notices when one
- *  of them is not running. So the first thing offered is to try again, because
- *  more often than not that works. */
+/** Render error page. Usually a backend process isn't running, so retrying
+ *  is offered first. */
 "use client"
 
 import { useEffect } from "react"

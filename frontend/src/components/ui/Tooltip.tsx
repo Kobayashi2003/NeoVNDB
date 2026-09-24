@@ -1,14 +1,6 @@
-/** A label that appears on hover, on focus, and on tap.
- *
- *  The native `title` attribute cannot do this job here: it waits about a
- *  second, it cannot be reached by touch at all, and this page leans on icons
- *  for most of what a release row says.
- *
- *  Rendered into the body so it escapes the sidebar's own scroll clipping, and
- *  positioned from the trigger's box at the moment it opens rather than kept in
- *  sync afterwards -- it closes on scroll, so there is nothing to keep in sync.
- *  A tap leaves it up until the next tap anywhere, which is the only way a
- *  touch reader gets to read it. */
+/** A label on hover, focus and tap (`title` is slow and unreachable by
+ *  touch). Portalled to the body to escape scroll clipping; closes on scroll,
+ *  so its position is set once when it opens. */
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"

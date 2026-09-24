@@ -1,13 +1,6 @@
-/** One release: date, age rating, platform and type, title and producers, then
- *  the run of icons carrying everything else the dump records about it.
- *
- *  Not a table row. Five columns do not fit a phone, and a table can only
- *  shrink them -- here the metadata, the title and the icons stack instead,
- *  and fall into one line from `sm` up where there is room.
- *
- *  A machine-translated or unofficial release is dimmed rather than only
- *  labelled: in a list of sixty a reader is scanning, not reading, and a word
- *  at the end of a line is not something you scan past. */
+/** One release as stacked blocks (metadata, title, icons) that fall into one
+ *  line from `sm` up; a table cannot fit a phone. Machine-translated and
+ *  unofficial releases are dimmed so they stand out when scanning. */
 "use client"
 
 import Link from "next/link"

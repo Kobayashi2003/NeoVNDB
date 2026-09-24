@@ -1,15 +1,6 @@
-/** The shell the four catalogue pages share.
- *
- *  A producer, a person, a tag and a trait are all mostly a question rather
- *  than a subject: what did this company make, what did this person write,
- *  what carries this tag. So the page is a short record of the thing itself
- *  beside a listing of what it applies to, and the listing is the same one the
- *  type's own page shows -- same cards, same orders, same paging, pointed at
- *  this page's address instead.
- *
- *  Which question is being asked is a tab, and tabs are links, so the whole of
- *  the page is still in the address. They sit above the orders because
- *  choosing the question comes before choosing how to arrange the answer. */
+/** Shell for the producer, staff, tag and trait pages: a short record beside
+ *  a listing of what it applies to, using the type's own list (cards, sorts,
+ *  paging). Tabs choose which listing; all state stays in the address. */
 
 import Link from "next/link"
 import { ListFilter } from "lucide-react"

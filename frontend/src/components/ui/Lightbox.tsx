@@ -1,13 +1,6 @@
-/** Full-screen viewer over one set of images. Arrow keys and Escape work,
- *  because a viewer that only responds to clicks is a viewer you have to aim
- *  at. Blurred images stay blurred until clicked, so opening one is never a
- *  surprise.
- *
- *  It renders into the body rather than where it was declared. `position:
- *  fixed` resolves against the nearest ancestor carrying a transform, filter
- *  or backdrop-filter, and this page has all three -- the entrance animation
- *  leaves a transform behind, and every card is backdrop-blurred. Left in
- *  place the overlay sizes itself to a scrolled column instead of the screen. */
+/** Full-screen image viewer (arrows and Escape; blurred images stay blurred
+ *  until clicked). Portalled to the body: `position: fixed` resolves against
+ *  any ancestor with a transform or backdrop-filter, and this page has both. */
 "use client"
 
 import { useCallback, useEffect, useState } from "react"

@@ -1,9 +1,5 @@
-/** The frame a detail page hangs on.
- *
- *  From lg up it is two columns that scroll independently inside a
- *  viewport-height box, so the sidebar stays put while the body moves. Below
- *  that it collapses to one normally-scrolling column ordered header, sidebar,
- *  body -- the title should lead the page on a phone. */
+/** Detail page frame: from lg up, two independently scrolling columns in a
+ *  viewport-high box; below that one column, header then sidebar then body. */
 
 import { cn } from "@/lib/utils"
 

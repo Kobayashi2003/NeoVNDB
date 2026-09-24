@@ -1,12 +1,5 @@
-/** The box that searches everything.
- *
- *  It navigates on submit rather than on every keystroke, like the listings'
- *  own search does and for the same reason: each query is a round trip, and a
- *  reader typing a title does not want seven of them.
- *
- *  An id typed in full is not a search but a destination, and the results page
- *  sends it on. Nothing has to be decided here for that to work -- which is
- *  why it is decided there, where a link from anywhere else lands too. */
+/** Header search, navigating to /q on submit (not per keystroke). /q
+ *  handles a typed id, so links from elsewhere get the same treatment. */
 "use client"
 
 import { useRouter } from "next/navigation"

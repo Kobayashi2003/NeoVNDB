@@ -1,16 +1,6 @@
-/** The title this release carries in each language it was published in.
- *
- *  Shown only when there is more than one -- for the other nine releases in
- *  ten it would just repeat the heading.
- *
- *  A language row can exist with no title on it, which says the release came
- *  out in that language without recording what it was called there. That is
- *  worth knowing and is not worth a row: a Steam-era release lists thirty
- *  languages and names itself in two, and thirty em-dashes bury the two. So
- *  the named ones get rows and the rest get one line of flags.
- *
- *  A machine translation is marked rather than hidden: it is a real title on a
- *  real release, and a reader choosing an edition wants to know which is which. */
+/** A release's title per language, shown when there is more than one.
+ *  Languages with no recorded title collapse into one line of flags; machine
+ *  translations are marked, not hidden. */
 
 import { ICON } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"

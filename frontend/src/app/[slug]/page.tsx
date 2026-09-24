@@ -1,14 +1,5 @@
-/** Every entity lives directly under the root, at its own id; every type lives
- *  under the letter its ids start with.
- *
- *  A vndb id already says what it is -- v17 is a visual novel, c521 a
- *  character -- so a /v/ segment in front of v17 would be saying it twice, and
- *  a link can be written as the id and nothing else. `/v` on its own, with no
- *  number after it, is every visual novel: the same letter asking the same
- *  question without naming one.
- *
- *  Static segments win over a dynamic one in the App Router, so a future
- *  /about is unaffected by this catching everything else. */
+/** Entities live at their id under the root (/v17), types at their letter
+ *  (/v). Static routes such as /q take precedence over this catch-all. */
 
 import { notFound } from "next/navigation"
 import { byId } from "@/lib/api"

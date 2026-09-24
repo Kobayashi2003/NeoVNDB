@@ -1,12 +1,4 @@
-/** The search field.
- *
- *  The one control on a list page that cannot be a link, because what it
- *  navigates to is not known until it is typed. It navigates on submit rather
- *  than on every keystroke: each query is a round trip to the database, and a
- *  reader typing a title does not want seven of them.
- *
- *  `search` is a filter like any other, so submitting is the same edit to the
- *  address the sort links make. */
+/** A list page's search, applied on submit as the `search` filter. */
 "use client"
 
 import { useRouter } from "next/navigation"

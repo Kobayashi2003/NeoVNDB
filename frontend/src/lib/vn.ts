@@ -3,14 +3,8 @@
 
 import type { Producer, Release } from "./types"
 
-/** Who published this, gathered from the releases that say so.
- *
- *  vndb records no publisher on the visual novel itself -- publishing is a
- *  property of a release, and the same work can be published by different
- *  companies in different territories. Unofficial releases are left out: a
- *  fan translation's "publisher" is not one in the sense this row means.
- *  First appearance decides the order, which puts the original publisher
- *  first because releases arrive oldest-first. */
+/** Publishers, gathered from the VN's official releases (vndb records them
+ *  per release), in first-appearance order so the original comes first. */
 export function publishers(releases: Release[]): Producer[] {
   const seen = new Map<string, Producer>()
   for (const release of releases) {

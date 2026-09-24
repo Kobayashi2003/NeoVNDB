@@ -1,12 +1,5 @@
-/** Which month the front page is showing.
- *
- *  A step either way, and the month itself opens a year to pick from -- going
- *  back eighteen months one arrow at a time is not browsing, it is work.
- *
- *  Every step is a link, like the sorts and the pages, so the month a reader
- *  is looking at is part of the address and can be sent to someone. The only
- *  state here is which year the picker happens to be showing, which is about
- *  the picker and not about the page. */
+/** The front page's month: arrows step one month, the label opens a year of
+ *  months. Every step is a link; the only state is which year the picker shows. */
 "use client"
 
 import { useState } from "react"
@@ -15,8 +8,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MenuPanel } from "@/components/ui/Menu"
 import { withParams, type Params } from "@/lib/href"
-import { useDismiss } from "@/hooks/useDismiss"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useMenu } from "@/hooks/useMenu"
 import { monthName, monthNames, stepMonth } from "@/lib/months"
 
 function href(path: string, params: Params, year: number, month: number): string {
@@ -42,8 +34,7 @@ export function MonthPicker({
 }) {
   const [open, setOpen] = useState(false)
   const [showing, setShowing] = useState(year)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+    const { box, panel: menu } = useMenu(open, setOpen)
 
   const back = stepMonth(year, month, -1)
   const on = stepMonth(year, month, 1)

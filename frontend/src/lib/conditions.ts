@@ -13,6 +13,8 @@ export type ConditionKind =
   | { kind: "number"; hint?: string }
   | { kind: "date" }
   | { kind: "text"; hint?: string }
+  /** An external link site; the choices come from /meta/extlinks. */
+  | { kind: "site" }
   /** Matched by id: staff=s8. */
   | { kind: "entity"; target: string }
   /** Tag or trait with optional minimum score and spoiler ceiling. */
@@ -57,6 +59,19 @@ const PLATFORM = () => ({ kind: "enum" as const, choices: from("PLATFORM", ICON.
 const BOOL = { kind: "bool" as const }
 const SEARCH = { kind: "text" as const, hint: "words" }
 const NUM = { kind: "number" as const }
+const LINK = { key: "extlink", label: "Has a link to", kind: "site" as const }
+
+/** What a release's DRM may require; each is a flag on vndb's drm table. */
+const DRM_NEEDS: Choice[] = [
+  { value: "online", label: "Always online" },
+  { value: "account", label: "An account" },
+  { value: "activate", label: "Online activation" },
+  { value: "alimit", label: "An activation limit" },
+  { value: "cdkey", label: "A CD key" },
+  { value: "disc", label: "The disc in the drive" },
+  { value: "physical", label: "A physical item" },
+  { value: "cloud", label: "Cloud play" },
+]
 const on = (target: string) => ({ kind: "entity" as const, target })
 const rel = (target: string) => ({ kind: "relation" as const, target })
 
@@ -85,6 +100,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "has_description", label: "Has description", ...BOOL },
     { key: "has_screenshot", label: "Has screenshots", ...BOOL },
     { key: "has_anime", label: "Has anime", ...BOOL },
+    LINK,
   ],
   r: [
     { key: "search", label: "Title", ...SEARCH },
@@ -102,6 +118,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "freeware", label: "Freeware", ...BOOL },
     { key: "has_ero", label: "Has erotic scenes", ...BOOL },
     { key: "uncensored", label: "Uncensored", ...BOOL },
+    { key: "drm_free", label: "DRM-free", ...BOOL },
+    { key: "drm_needs", label: "DRM requires", kind: "enum", choices: DRM_NEEDS },
+    LINK,
     { key: "vn", label: "Visual novel", ...rel("v") },
     { key: "producer", label: "Producer", ...rel("p") },
     { key: "developer", label: "Developer", ...rel("p") },
@@ -138,6 +157,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "vn", label: "Visual novel", ...on("v") },
     { key: "release", label: "Release", ...on("r") },
     { key: "relation", label: "Related producer", ...on("p") },
+    LINK,
   ],
   s: [
     { key: "search", label: "Name", ...SEARCH },
@@ -146,6 +166,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "gender", label: "Gender", kind: "enum", choices: from("CHARACTER_SEX") },
     { key: "vn", label: "Visual novel", ...on("v") },
     { key: "character", label: "Voiced character", ...on("c") },
+    LINK,
   ],
   g: [
     { key: "search", label: "Name", ...SEARCH },
@@ -213,7 +234,7 @@ export function writeScored(v: Scored, score: boolean): string {
 
 /** Kinds whose backend filter reads a comma list as "any of". Scored values
  *  carry their own colon syntax per item, so they are left alone. */
-const LISTABLE = new Set(["enum", "entity", "relation", "number", "date"])
+const LISTABLE = new Set(["enum", "site", "entity", "relation", "number", "date"])
 
 export const TIDY_RULES: TidyRules = {
   mergeable: (type, name) => LISTABLE.has(conditionOf(type, name)?.kind ?? ""),

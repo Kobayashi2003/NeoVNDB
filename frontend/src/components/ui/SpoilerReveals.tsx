@@ -1,13 +1,6 @@
-/** The buttons that reveal what a spoiler level is holding back.
- *
- *  They sit where the hidden things would have been rather than at the top of
- *  a section, so a reader sees both how much is missing and exactly where.
- *  Yellow opens the minor level and orange the major one -- the same two
- *  colours every spoiler on the page is drawn in.
- *
- *  Rendered without a wrapper: some callers put these at the end of a row of
- *  pills and some below a block, and the one that decides the layout should be
- *  the one that owns it. */
+/** Buttons revealing what a spoiler level hides, placed where the hidden
+ *  items would be (yellow minor, orange major). No wrapper: the caller owns
+ *  the layout. */
 "use client"
 
 import { cn } from "@/lib/utils"

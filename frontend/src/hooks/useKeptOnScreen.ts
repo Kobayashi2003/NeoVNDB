@@ -1,16 +1,6 @@
-/** Keeps an open menu on screen.
- *
- *  Which side has room is a fact about this control at this width, and no CSS
- *  expression knows it. A menu hung from the left of a control near the right
- *  edge runs off one way; one hung from the right of a control that is not at
- *  the right edge runs off the other. Both happen here -- the last of seven
- *  filter buttons on a phone, and the save button sitting mid-row beside the
- *  spoiler control on a character page.
- *
- *  So it is measured when it opens and moved back, and written straight to the
- *  node: the browser is the external thing being kept in step here, not any
- *  state of ours. The shift is never more than the room on the other side, so
- *  pushing one edge on screen cannot take the other off. */
+/** Shifts an open menu back on screen, measured when it opens and written
+ *  straight to the node. The shift never exceeds the room on the other side,
+ *  so fixing one edge cannot push the other off. */
 "use client"
 
 import { useEffect, useRef } from "react"

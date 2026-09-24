@@ -1,13 +1,5 @@
-/** What each type's list page asks for and offers to sort by.
- *
- *  One table rather than seven pages, for the same reason the backend declares
- *  a field table per type instead of scattering the knowledge: the cost of a
- *  listing and the orders it offers are two things a reader compares across
- *  types, so they should be readable in one place.
- *
- *  Every sort named here exists on the matching backend type. `searchrank` is
- *  left out on purpose -- it only means anything with a search term, and the
- *  page picks it up on its own when there is one. */
+/** Each type's list page: fields, sorts and default sort, in one table.
+ *  `searchrank` is omitted; it applies on its own when there is a search. */
 
 export interface Sort {
   value: string

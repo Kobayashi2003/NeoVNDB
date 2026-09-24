@@ -1,15 +1,6 @@
-/** A person, and what they worked on.
- *
- *  Two tabs for the two kinds of credit the dump keeps apart: the works they
- *  are credited on in any role, and the works they voiced a character in. They
- *  are separate tables upstream and they answer different questions, so they
- *  stay separate here.
- *
- *  The aliases are worth a card of their own. A credit elsewhere points at an
- *  alias, not at the person, so a reader who arrived from a staff line saw a
- *  pen name and needs to find it in the list to know they are in the right
- *  place -- the person's own name is marked, and the rest are what else they
- *  have signed. */
+/** A person: credits and voice roles as two tabs (separate tables
+ *  upstream). Aliases get their own card, since credits elsewhere show the
+ *  alias used; the person's own name is marked. */
 
 import { ICON } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"

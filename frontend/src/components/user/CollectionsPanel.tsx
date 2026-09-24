@@ -1,13 +1,5 @@
-/** Everything the reader keeps, grouped by the kind of thing it holds.
- *
- *  Grouped rather than listed flat because a list's type is not decoration --
- *  it decides what can go on it, and two lists both called "Favourites" are
- *  only telling apart by the shelf they belong to.
- *
- *  This is where a list is renamed or thrown away. The control on a detail
- *  page makes lists, because that is where the wish to make one comes from;
- *  what happens to them afterwards belongs somewhere a reader goes on
- *  purpose. */
+/** All of the reader's lists, grouped by type (a list's type decides what
+ *  can go on it). Renaming and deleting happen here. */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -155,10 +147,8 @@ function Shelf({
       )}
 
       {lists === null ? (
-        // Built from the same parts a row is rather than given a height of its
-        // own: a placeholder even a few pixels off moves every shelf below it
-        // when the real rows arrive. What sets a row's height is its icon
-        // buttons, not its text, so the spacer is one of those.
+        // Built from the same parts as a real row, so the placeholder has exactly
+        // its height and nothing shifts when the rows arrive.
         <div className="flex animate-pulse items-center rounded-lg bg-white/5 px-3 py-1.5" aria-hidden>
           <span className="p-1">
             <span className="block h-3.5 w-3.5" />

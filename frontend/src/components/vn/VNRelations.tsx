@@ -1,9 +1,5 @@
-/** Related visual novels, grouped by how they relate.
- *
- *  A sidebar card rather than a body section: it is a way out of this page,
- *  and a reader looks for those beside the work rather than inside it.
- *  Unofficial relations are dimmed the way unofficial releases are, so the two
- *  senses of "not from the original team" read alike across the page. */
+/** Related VNs grouped by relation, in the sidebar. Unofficial relations are
+ *  dimmed like unofficial releases. */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"

@@ -1,14 +1,5 @@
-/** The works this character appears in.
- *
- *  Two orders, because the list answers two questions. By role puts the works
- *  the character carries at the top -- who is this, mostly. By date reads as a
- *  career -- where did they come from, and what came of them. Neither is the
- *  obvious default for every character, so it is a switch rather than a
- *  decision made here.
- *
- *  The voice credit hangs off the appearance rather than living in a list of
- *  its own: vndb records a voice role against the three of work, character and
- *  actor, so an actor belongs to one appearance and not to the character. */
+/** The works a character appears in, by role or by date. Voice credits
+ *  hang off each appearance: vndb records them per work, character and actor. */
 "use client"
 
 import { useState } from "react"

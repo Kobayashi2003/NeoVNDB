@@ -18,8 +18,7 @@ import {
   type Collection,
 } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
-import { useDismiss } from "@/hooks/useDismiss"
+import { useMenu } from "@/hooks/useMenu"
 
 export function CollectionButton({ id }: { id: string }) {
   const session = useSession()
@@ -29,8 +28,7 @@ export function CollectionButton({ id }: { id: string }) {
   const [lists, setLists] = useState<Collection[] | null>(null)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+    const { box, panel: menu } = useMenu(open, setOpen)
 
   // The lists themselves load on open; each page pays one small request.
   useEffect(() => {

@@ -1,8 +1,5 @@
-/** One character at a time, for a reader who wants to read rather than scan.
- *
- *  The card spans the section and is height-capped, so a long description does
- *  not push the rest of the page away; the fade at the cut opens the same
- *  character in the expanded view. */
+/** One character card at a time, height-capped; the fade at the cut opens
+ *  the expanded view. */
 "use client"
 
 import { useCallback, useState } from "react"
@@ -27,13 +24,9 @@ export function VNCharacterSlider({
   const [index, setIndex] = useState(0)
   const total = characters.length
 
-  // Snap back to the first card whenever the filtered list changes, during
-  // render rather than in an effect so the index never points at a stale card.
-  //
-  // Compared by ids, not by array identity: the parent rebuilds this list on
-  // every render, so identity changes when a reader merely toggles a
-  // preference -- which would throw them back to the first character for a
-  // reason that has nothing to do with who is in the list.
+  // Reset to the first card when the filtered list changes, during render so
+  // the index is never stale. Compared by ids: the parent rebuilds the array
+  // every render, so identity changes on unrelated preference toggles.
   const signature = characters.map((c) => c.id).join()
   const [tracked, setTracked] = useState(signature)
   if (tracked !== signature) {

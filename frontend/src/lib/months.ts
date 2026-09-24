@@ -1,9 +1,5 @@
-/** Month names, and the arithmetic of stepping between months.
- *
- *  Its own module because both sides want it: the front page names the month
- *  it is showing while rendering on the server, and the picker names the same
- *  months in the browser. A `"use client"` module cannot be called from the
- *  server at all -- only rendered -- so the shared part lives out here. */
+/** Month names and stepping. A plain module because both the server-rendered
+ *  front page and the client-side picker call it. */
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",

@@ -1,15 +1,5 @@
-/** What the reader thought of the thing this page is about.
- *
- *  Five stars, and clicking the one already lit takes the rating back --
- *  having no opinion is a state, and it is not the same as one star.
- *
- *  A rating belongs to the thing rather than to any list it is on: a novel can
- *  sit on three of the reader's lists and they still have one opinion of it.
- *  So this asks by id and nothing else, and it is here beside the save button
- *  rather than inside it.
- *
- *  Signed out it is not there at all, for the same reason the save button is
- *  not: there is nobody for the opinion to belong to. */
+/** The reader's 1-5 rating. Clicking the lit star clears it (no opinion is
+ *  not one star). Per item rather than per list; hidden when signed out. */
 "use client"
 
 import { useEffect, useState } from "react"
