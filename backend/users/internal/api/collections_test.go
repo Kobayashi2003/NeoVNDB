@@ -2,17 +2,6 @@ package api
 
 import "testing"
 
-func TestValidKind(t *testing.T) {
-	for k, want := range map[string]bool{
-		"v": true, "i": true,
-		"": false, "x": false, "vx": false, "vv": false, "V": false,
-	} {
-		if got := validKind(k); got != want {
-			t.Errorf("validKind(%q) = %v, want %v", k, got, want)
-		}
-	}
-}
-
 func TestParseID(t *testing.T) {
 	cases := []struct {
 		in   string

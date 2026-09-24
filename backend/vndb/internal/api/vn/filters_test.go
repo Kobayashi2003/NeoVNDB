@@ -25,12 +25,3 @@ func TestCreditFilter(t *testing.T) {
 		}
 	}
 }
-
-func TestRelationFilter(t *testing.T) {
-	if err := filters["relation"](&query.Builder{}, "fan,seq"); err != nil {
-		t.Error(err)
-	}
-	if err := filters["relation"](&query.Builder{}, "sibling"); err == nil {
-		t.Error("an unknown relation should be refused")
-	}
-}

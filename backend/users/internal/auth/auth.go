@@ -91,7 +91,8 @@ func TokenFrom(r *http.Request, secure bool) string {
 
 const (
 	minPassword = 8
-	maxPassword = 128
+	// bcrypt's own ceiling, in bytes.
+	maxPassword = 72
 	maxUsername = 32
 )
 
@@ -101,8 +102,8 @@ func ValidUsername(name string) error {
 		return fmt.Errorf("a username is between 2 and %d characters", maxUsername)
 	}
 	for _, r := range name {
-		ok := unicode.IsLetter(r) && r < unicode.MaxASCII ||
-			unicode.IsDigit(r) || r == '-' || r == '_'
+		ok := r < unicode.MaxASCII && (unicode.IsLetter(r) || unicode.IsDigit(r)) ||
+			r == '-' || r == '_'
 		if !ok {
 			return fmt.Errorf("a username may hold letters, digits, - and _")
 		}
@@ -116,8 +117,7 @@ func ValidPassword(password string) error {
 		return fmt.Errorf("a password is at least %d characters", minPassword)
 	}
 	if len(password) > maxPassword {
-		// bcrypt ignores bytes past 72; refuse rather than silently truncate.
-		return fmt.Errorf("a password is at most %d characters", maxPassword)
+		return fmt.Errorf("a password is at most %d bytes (fewer characters outside ASCII)", maxPassword)
 	}
 	return nil
 }
