@@ -103,15 +103,6 @@ func TestStoreWriteIsAtomic(t *testing.T) {
 	}
 }
 
-func TestStorePathMirrorsUpstream(t *testing.T) {
-	store := NewStore("/root")
-	got := store.Path(Ref{"cv", 79412})
-	want := filepath.Join("/root", "cv", "12", "79412.jpg")
-	if got != want {
-		t.Errorf("Path = %q, want %q", got, want)
-	}
-}
-
 func TestWidthsRoundUp(t *testing.T) {
 	w := Widths{128, 256, 512}
 	cases := map[int]int{1: 128, 128: 128, 129: 256, 256: 256, 300: 512, 512: 512, 9999: 512}

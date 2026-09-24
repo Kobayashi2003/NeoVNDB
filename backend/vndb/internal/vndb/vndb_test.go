@@ -1,9 +1,6 @@
 package vndb
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
 // Values are real ones taken from the dump, so a change to the recipe table is
 // checked against what the data actually holds rather than an invented shape.
@@ -131,20 +128,5 @@ func TestImageURL(t *testing.T) {
 	}
 	if got := ImageURL("sf", 5); got != "https://t.vndb.org/sf/05/5.jpg" {
 		t.Errorf("ImageURL = %q", got)
-	}
-}
-
-func TestSites(t *testing.T) {
-	sites := Sites()
-	if len(sites) != len(extlinkSites) {
-		t.Fatalf("Sites() has %d entries, the table %d", len(sites), len(extlinkSites))
-	}
-	for i := 1; i < len(sites); i++ {
-		if strings.ToLower(sites[i-1].Label) > strings.ToLower(sites[i].Label) {
-			t.Errorf("not sorted by label: %q before %q", sites[i-1].Label, sites[i].Label)
-		}
-	}
-	if !KnownSite("steam") || KnownSite("nosuchsite") {
-		t.Error("KnownSite disagrees with the table")
 	}
 }

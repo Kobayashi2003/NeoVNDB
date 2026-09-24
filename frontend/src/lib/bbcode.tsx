@@ -2,6 +2,7 @@
  *  here is left as written -- showing the markup is better than swallowing the
  *  text around it. */
 
+import { Fragment } from "react"
 import Link from "next/link"
 import { Spoiler } from "@/components/ui/Spoiler"
 
@@ -14,12 +15,16 @@ const TOKEN = new RegExp(
     String.raw`\[quote\]([\s\S]*?)\[\/quote\]`,
     String.raw`\[spoiler\]([\s\S]*?)\[\/spoiler\]`,
     String.raw`\[url=([^\]]+)\]([\s\S]*?)\[\/url\]`,
-    String.raw`\[(b|i|u|s)\]([\s\S]*?)\[\/\4\]`,
+    String.raw`\[(?<tag>b|i|u|s)\]([\s\S]*?)\[\/\k<tag>\]`,
     // A bare id such as v17 or c521; vndb links these wherever they appear.
     String.raw`\b([vrcpsgi]\d+)\b`,
   ].join("|"),
   "g",
 )
+
+/** Web addresses and paths on this site; anything else (javascript:, data:)
+ *  stays as its label. */
+const LINKABLE = /^(https?:\/\/|\/(?!\/))/i
 
 const EMPHASIS: Record<string, string> = {
   b: "font-semibold",
@@ -29,6 +34,11 @@ const EMPHASIS: Record<string, string> = {
 }
 
 export function BBCode({ text }: { text: string }) {
+  return <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/90">{render(text)}</div>
+}
+
+/** Nested markup renders inline, inside its parent's element. */
+function render(text: string): React.ReactNode[] {
   const out: React.ReactNode[] = []
   let last = 0
 
@@ -49,11 +59,13 @@ export function BBCode({ text }: { text: string }) {
     } else if (quote !== undefined) {
       out.push(
         <blockquote key={key} className="my-2 border-l-2 border-accent/40 pl-3 text-muted">
-          <BBCode text={quote} />
+          {render(quote)}
         </blockquote>,
       )
     } else if (spoiler !== undefined) {
       out.push(<Spoiler key={key}>{spoiler}</Spoiler>)
+    } else if (href !== undefined && !LINKABLE.test(href)) {
+      out.push(<Fragment key={key}>{render(label)}</Fragment>)
     } else if (href !== undefined) {
       out.push(
         <a key={key} href={href} rel="noreferrer noopener" className="text-accent hover:text-accent-hover">
@@ -63,7 +75,7 @@ export function BBCode({ text }: { text: string }) {
     } else if (tag !== undefined) {
       out.push(
         <span key={key} className={EMPHASIS[tag]}>
-          <BBCode text={emphasised} />
+          {render(emphasised)}
         </span>,
       )
     } else if (id !== undefined) {
@@ -75,8 +87,7 @@ export function BBCode({ text }: { text: string }) {
     }
   }
   out.push(text.slice(last))
-
-  return <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/90">{out}</div>
+  return out
 }
 
 /** The same text with its markup taken off, for somewhere a link cannot go.

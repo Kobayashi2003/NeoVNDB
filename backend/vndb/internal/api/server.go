@@ -40,22 +40,8 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 	}
 	log.Info("response cache", "backend", responses.Name(), "ttl", cfg.CacheTTL)
 
-	// Every type is built first and registered second; see query.Catalog for
-	// why they cannot reference each other directly.
-	cat := query.NewCatalog()
-	resolvers := map[string]query.Resolver{
-		vndb.TypeVN:        vn.New(store, cat),
-		vndb.TypeRelease:   release.New(store, cat),
-		vndb.TypeCharacter: character.New(store, cat),
-		vndb.TypeProducer:  producer.New(store, cat),
-		vndb.TypeStaff:     staff.New(store, cat),
-		vndb.TypeTag:       tag.New(store, cat),
-		vndb.TypeTrait:     trait.New(store, cat),
-	}
-	for name, r := range resolvers {
-		cat.Put(name, r.(query.Nested))
-	}
-	if err := cat.Check(); err != nil {
+	cat, resolvers, err := newCatalog(store)
+	if err != nil {
 		return nil, err
 	}
 
@@ -74,6 +60,25 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 		cache: responses,
 		gen:   &generations{store: store},
 	}, nil
+}
+
+// newCatalog builds every type first and registers them second; see
+// query.Catalog for why they cannot reference each other directly.
+func newCatalog(store *db.Store) (*query.Catalog, map[string]query.Resolver, error) {
+	cat := query.NewCatalog()
+	resolvers := map[string]query.Resolver{
+		vndb.TypeVN:        vn.New(store, cat),
+		vndb.TypeRelease:   release.New(store, cat),
+		vndb.TypeCharacter: character.New(store, cat),
+		vndb.TypeProducer:  producer.New(store, cat),
+		vndb.TypeStaff:     staff.New(store, cat),
+		vndb.TypeTag:       tag.New(store, cat),
+		vndb.TypeTrait:     trait.New(store, cat),
+	}
+	for name, r := range resolvers {
+		cat.Put(name, r.(query.Nested))
+	}
+	return cat, resolvers, cat.Check()
 }
 
 func (s *Server) Routes() http.Handler {
