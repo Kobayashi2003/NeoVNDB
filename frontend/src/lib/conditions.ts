@@ -5,7 +5,7 @@
 import { ENUMS, enumLabel } from "./enums"
 import { ICON } from "./icons"
 import type { Choice } from "./filters"
-import type { Op, TidyRules } from "./expr"
+import { group, leaf, print, type Op, type TidyRules } from "./expr"
 
 export type ConditionKind =
   | { kind: "enum"; choices: Choice[] }
@@ -79,8 +79,8 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "producer", label: "Producer", ...rel("p") },
     { key: "character", label: "Character", ...rel("c") },
     { key: "trait", label: "Character trait", ...on("i") },
-    { key: "staff", label: "Staff", ...on("s") },
-    { key: "seiyuu", label: "Voice actor", ...on("s") },
+    { key: "staff", label: "Staff", ...rel("s") },
+    { key: "seiyuu", label: "Voice actor", ...rel("s") },
     { key: "medium", label: "Medium", kind: "enum", choices: from("MEDIUM") },
     { key: "has_description", label: "Has description", ...BOOL },
     { key: "has_screenshot", label: "Has screenshots", ...BOOL },
@@ -170,6 +170,12 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
 }
 
+/** The other type a condition is about, or undefined for the item's own
+ *  properties. */
+export function relatedType(c: Condition | undefined): string | undefined {
+  return c && (c.kind === "relation" || c.kind === "entity" || c.kind === "scored") ? c.target : undefined
+}
+
 export function conditionOf(type: string, key: string): Condition | undefined {
   return CONDITIONS[type]?.find((c) => c.key === key)
 }
@@ -215,4 +221,14 @@ export const TIDY_RULES: TidyRules = {
     const c = conditionOf(type, name)
     return c?.kind === "relation" ? c.target : undefined
   },
+}
+
+/** Plain filters as one f= expression, to hand a listing to the builder. */
+export function asExpression(filters: Record<string, string>): string {
+  return print(group(true, Object.entries(filters).map(([name, value]) => leaf(name, "=", value))))
+}
+
+/** Items related to anything matching a search: developer=(search=key). */
+export function relatedSearch(filter: string, term: string): string {
+  return print(group(true, [leaf(filter, "=", group(true, [leaf("search", "=", term)]))]))
 }
