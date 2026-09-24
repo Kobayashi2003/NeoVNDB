@@ -23,6 +23,7 @@ import {
   marks,
   moveMarks,
   removeMarks,
+  errorText,
   UserError,
   type Collection,
 } from "@/lib/user"
@@ -62,9 +63,6 @@ interface Held {
   tooBig: boolean
 }
 
-function message(err: unknown): string {
-  return err instanceof UserError ? err.message : "Something went wrong."
-}
 
 export function CollectionPanel({
   id,
@@ -155,7 +153,7 @@ export function CollectionPanel({
         setHeld(got)
       },
       (err) => {
-        if (live) setError(message(err))
+        if (live) setError(errorText(err))
       },
     )
     return () => {
@@ -207,7 +205,7 @@ export function CollectionPanel({
       setChosen([])
       setReloads((n) => n + 1)
     } catch (err) {
-      setTrouble(message(err))
+      setTrouble(errorText(err))
     }
     setBusy(false)
   }

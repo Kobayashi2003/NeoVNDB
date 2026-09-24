@@ -10,6 +10,7 @@ import { LIST } from "@/lib/list"
 import { one } from "@/lib/href"
 import { TYPES } from "@/components/layout/shelves"
 import { Results } from "@/components/list/Results"
+import { Collecting, SelectToggle } from "@/components/list/Collecting"
 import { SearchField } from "@/components/layout/SearchField"
 import { DataAge } from "@/components/layout/DataAge"
 
@@ -64,39 +65,42 @@ export default async function SearchPage({ searchParams }: PageProps<"/q">) {
       ) : (
         <div className="flex flex-col gap-8">
           {found.map(({ type, rows, count, vns }) => (
-            <section key={type} className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="flex items-baseline gap-2 text-sm font-semibold">
-                  <span className="inline-block h-3 w-0.5 translate-y-0.5 rounded bg-accent" aria-hidden />
-                  {LIST[type].label}
-                  <span className="text-xs font-normal tabular-nums text-muted">
-                    {count.toLocaleString()}
-                  </span>
-                </h2>
-                <div className="flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1 text-xs">
-                  {vns.map((v) => (
-                    <Link
-                      key={v.expression}
-                      href={`/v?f=${encodeURIComponent(v.expression)}`}
-                      className="inline-flex items-center gap-1 text-muted transition-colors hover:text-white coarse:py-1"
-                    >
-                      <span className="tabular-nums text-white/80">{v.count.toLocaleString()}</span>
-                      visual novels {v.label}
-                      <ArrowRight className="icon-text size-3" aria-hidden />
-                    </Link>
-                  ))}
-                  {count > rows.length && (
-                    <Link
-                      href={`/${type}?search=${encodeURIComponent(term)}`}
-                      className="shrink-0 text-accent transition-colors hover:underline coarse:py-1"
-                    >
-                      All {count.toLocaleString()}
-                    </Link>
-                  )}
+            <Collecting key={type} type={type}>
+              <section className="flex flex-col gap-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="flex items-baseline gap-2 text-sm font-semibold">
+                    <span className="inline-block h-3 w-0.5 translate-y-0.5 rounded bg-accent" aria-hidden />
+                    {LIST[type].label}
+                    <span className="text-xs font-normal tabular-nums text-muted">
+                      {count.toLocaleString()}
+                    </span>
+                  </h2>
+                  <div className="flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1 text-xs">
+                    {vns.map((v) => (
+                      <Link
+                        key={v.expression}
+                        href={`/v?f=${encodeURIComponent(v.expression)}`}
+                        className="inline-flex items-center gap-1 text-muted transition-colors hover:text-white coarse:py-1"
+                      >
+                        <span className="tabular-nums text-white/80">{v.count.toLocaleString()}</span>
+                        visual novels {v.label}
+                        <ArrowRight className="icon-text size-3" aria-hidden />
+                      </Link>
+                    ))}
+                    <SelectToggle />
+                    {count > rows.length && (
+                      <Link
+                        href={`/${type}?search=${encodeURIComponent(term)}`}
+                        className="shrink-0 text-accent transition-colors hover:underline coarse:py-1"
+                      >
+                        All {count.toLocaleString()}
+                      </Link>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <Results type={type} rows={rows} />
-            </section>
+                <Results type={type} rows={rows} />
+              </section>
+            </Collecting>
           ))}
         </div>
       )}

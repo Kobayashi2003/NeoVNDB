@@ -14,7 +14,7 @@ import {
   holding,
   removeMark,
   RULES,
-  UserError,
+  errorText,
   type Collection,
 } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
@@ -28,7 +28,7 @@ export function CollectionButton({ id }: { id: string }) {
   const [lists, setLists] = useState<Collection[] | null>(null)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-    const { box, panel: menu } = useMenu(open, setOpen)
+  const { box, panel: menu } = useMenu(open, setOpen)
 
   // The lists themselves load on open; each page pays one small request.
   useEffect(() => {
@@ -60,7 +60,7 @@ export function CollectionButton({ id }: { id: string }) {
       setLists(mine)
       setHeld(ids)
     } catch (err) {
-      setError(message(err))
+      setError(errorText(err))
       setLists([])
     }
   }
@@ -76,7 +76,7 @@ export function CollectionButton({ id }: { id: string }) {
     try {
       await (on ? removeMark(list.id, id) : addMark(list.id, id))
     } catch (err) {
-      setError(message(err))
+      setError(errorText(err))
       setHeld((now) => (on ? [...now, list.id] : now.filter((x) => x !== list.id)))
       setLists((now) =>
         now?.map((l) => (l.id === list.id ? { ...l, count: l.count + (on ? 1 : -1) } : l)) ?? null,
@@ -150,9 +150,6 @@ export function CollectionButton({ id }: { id: string }) {
   )
 }
 
-function message(err: unknown): string {
-  return err instanceof UserError ? err.message : "Something went wrong."
-}
 
 function Row({ list, on, onPick }: { list: Collection; on: boolean; onPick: () => void }) {
   return (
@@ -169,7 +166,8 @@ function Row({ list, on, onPick }: { list: Collection; on: boolean; onPick: () =
   )
 }
 
-function NewList({
+/** "New list", which becomes a name field; `onCreate` makes it and adds. */
+export function NewList({
   onCreate,
   onError,
 }: {
@@ -192,7 +190,7 @@ function NewList({
       form.reset()
       setNaming(false)
     } catch (err) {
-      onError(message(err))
+      onError(errorText(err))
     }
     setBusy(false)
   }
@@ -217,39 +215,39 @@ function NewList({
     <>
       <MenuDivider />
       <form onSubmit={submit} className="flex items-center gap-1 px-1 py-0.5">
-      {/* autoFocus because opening this form is the whole of the intent to
-          type into it, and it is one click deep inside a menu. */}
-      <input
-        name="name"
-        autoFocus
-        maxLength={RULES.listName}
-        placeholder="List name"
-        aria-label="New list name"
-        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-background/40 px-2 py-1 text-xs outline-none transition-colors focus:border-white/30"
-      />
-      <button
-        type="submit"
-        disabled={busy}
-        aria-label="Create list"
-        className="shrink-0 rounded p-1 text-accent transition-colors hover:bg-white/10 disabled:opacity-40"
-      >
-        {busy ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-        ) : (
-          <Check className="h-3.5 w-3.5" aria-hidden />
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          setNaming(false)
-          onError(null)
-        }}
-        aria-label="Cancel"
-        className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-white/10 hover:text-white"
-      >
-        <X className="h-3.5 w-3.5" aria-hidden />
-      </button>
+        {/* autoFocus because opening this form is the whole of the intent to
+            type into it, and it is one click deep inside a menu. */}
+        <input
+          name="name"
+          autoFocus
+          maxLength={RULES.listName}
+          placeholder="List name"
+          aria-label="New list name"
+          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-background/40 px-2 py-1 text-xs outline-none transition-colors focus:border-white/30"
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          aria-label="Create list"
+          className="shrink-0 rounded p-1 text-accent transition-colors hover:bg-white/10 disabled:opacity-40"
+        >
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Check className="h-3.5 w-3.5" aria-hidden />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setNaming(false)
+            onError(null)
+          }}
+          aria-label="Cancel"
+          className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </button>
       </form>
     </>
   )

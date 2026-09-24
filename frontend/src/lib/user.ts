@@ -31,6 +31,11 @@ export class UserError extends Error {
   }
 }
 
+/** What to show for a failed call: the service's own words when it gave any. */
+export function errorText(err: unknown): string {
+  return err instanceof UserError ? err.message : "Something went wrong."
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(BASE + path, {
     method,
@@ -103,6 +108,10 @@ export const removeMark = (list: number, item: string) =>
  *  than `count` means the list is too long for that; only saved order works. */
 export const items = (list: number) =>
   call<{ items: string[]; count: number }>("GET", `/collections/${list}/items`)
+
+/** `changed` counts only what was new; the rest were already there. */
+export const addMarks = (list: number, items: string[]) =>
+  call<{ changed: number }>("POST", `/collections/${list}/marks/add`, { items })
 
 /** `changed` can be less than asked when the page is out of date. */
 export const removeMarks = (list: number, items: string[]) =>

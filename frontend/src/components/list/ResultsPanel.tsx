@@ -8,6 +8,7 @@ import type { Results as ResultsData } from "@/lib/results"
 import { Pagination } from "./Pagination"
 import { Results } from "./Results"
 import { SortLinks } from "./SortLinks"
+import { Collecting, SelectToggle } from "./Collecting"
 
 export function ResultsPanel({
   type,
@@ -33,45 +34,51 @@ export function ResultsPanel({
   sortMenu?: boolean
 }) {
   return (
-    <div className="flex flex-col gap-4">
-      {/* One row that wraps: each group stays whole and drops to the next
-          line entire, rather than a label parting from what it labels. */}
-      <div
-        className={cn(
-          "flex flex-wrap items-center gap-x-5 gap-y-2",
-          !sortMenu && !controls && !action && "hidden sm:flex",
-        )}
-      >
-        {controls}
-        <SortLinks
-          path={path}
-          params={params}
-          sorts={LIST[type].sorts}
-          active={data.sort}
-          reverse={data.reverse}
-          menu={sortMenu}
-        />
-        {action && <div className="ml-auto">{action}</div>}
-      </div>
-
-      {data.failure ? (
-        <p className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300">
-          {data.failure}
-        </p>
-      ) : data.rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">{empty}</p>
-      ) : (
-        <>
-          <Results type={type} rows={data.rows} />
-          <Pagination
+    <Collecting type={type}>
+      <div className="flex flex-col gap-4">
+        {/* One row that wraps: each group stays whole and drops to the next
+            line entire, rather than a label parting from what it labels. */}
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-x-5 gap-y-2",
+            // A phone shows the row only for Select, when signed in.
+            !sortMenu && !controls && !action && "hidden has-[[data-select]]:flex sm:flex",
+          )}
+        >
+          {controls}
+          <SortLinks
             path={path}
             params={params}
-            page={data.page}
-            count={data.count}
-            pageSize={PAGE_SIZE}
+            sorts={LIST[type].sorts}
+            active={data.sort}
+            reverse={data.reverse}
+            menu={sortMenu}
           />
-        </>
-      )}
-    </div>
+          <div className="ml-auto flex items-center gap-3">
+            {action}
+            <SelectToggle />
+          </div>
+        </div>
+
+        {data.failure ? (
+          <p className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300">
+            {data.failure}
+          </p>
+        ) : data.rows.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted">{empty}</p>
+        ) : (
+          <>
+            <Results type={type} rows={data.rows} />
+            <Pagination
+              path={path}
+              params={params}
+              page={data.page}
+              count={data.count}
+              pageSize={PAGE_SIZE}
+            />
+          </>
+        )}
+      </div>
+    </Collecting>
   )
 }

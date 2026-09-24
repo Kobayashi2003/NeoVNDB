@@ -1,14 +1,17 @@
 /** Results laid out for their type. Card building and arrangement are
- *  separate so a caller can wrap each card (collections add a checkbox). */
+ *  separate so a caller can wrap each card (collections add a checkbox);
+ *  inside a selecting Collecting, cards become checkboxes on their own. */
 "use client"
 
-import { Fragment } from "react"
+import { Fragment, useEffect } from "react"
 import {
   CharacterCard, ProducerCard, ReleaseCard, StaffCard, TagCard, TraitCard, VNCard,
 } from "./ResultCards"
 import type {
   CharacterRow, ProducerRow, ReleaseRow, StaffRow, TagRow, TraitRow, VNRow,
 } from "@/lib/types"
+import { Selectable } from "@/components/user/SelectBar"
+import { useSelection } from "./Collecting"
 
 const GRID = "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7"
 const LIST = "rounded-lg border border-white/5 bg-surface"
@@ -56,14 +59,37 @@ export function Results({
   wrap?: (card: Card) => React.ReactNode
 }) {
   const built = build(type, rows)
+  const selection = useSelection()
+  const ids = built?.cards.map((c) => c.id).join(",") ?? ""
+  const showing = selection?.showing
+
+  useEffect(() => {
+    showing?.(ids ? ids.split(",") : [])
+  }, [showing, ids])
+
   if (!built) return null
+
+  // Inside a Collecting that is selecting, cards become checkboxes.
+  const around =
+    wrap ??
+    (selection
+      ? (card: Card) => (
+          <Selectable
+            on={selection.chosen.includes(card.id)}
+            grid={card.grid}
+            onToggle={() => selection.toggle(card.id)}
+          >
+            {card.node}
+          </Selectable>
+        )
+      : undefined)
 
   return (
     <div className={built.layout}>
       {built.cards.map((card) => (
         // A fragment rather than a wrapper element: the card has to stay a
         // direct child of the grid or the layout is not a grid any more.
-        <Fragment key={card.id}>{wrap ? wrap(card) : card.node}</Fragment>
+        <Fragment key={card.id}>{around ? around(card) : card.node}</Fragment>
       ))}
     </div>
   )
