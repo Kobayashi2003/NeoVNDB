@@ -29,7 +29,7 @@ export async function ListPage({ type, params }: { type: string; params: Params 
   const data = await fetchResults(type, params, filters)
 
   return (
-    <div className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 py-4 pb-12 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 py-4 pb-12 animate-slide-up-fade">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-xl font-bold sm:text-2xl">
           {LIST[type].label}
@@ -72,6 +72,6 @@ export async function ListPage({ type, params }: { type: string; params: Params 
       />
 
       <DataAge />
-    </div>
+    </main>
   )
 }

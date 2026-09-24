@@ -4,7 +4,7 @@
 
 import { ENUMS, VN_RELATION, enumLabel } from "./enums"
 import { ICON } from "./icons"
-import type { Choice } from "./filters"
+import { STAFF_GENDER, type Choice } from "./filters"
 import { group, leaf, print, type Op, type TidyRules } from "./expr"
 
 export type ConditionKind =
@@ -159,7 +159,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "search", label: "Name", ...SEARCH },
     { key: "role", label: "Role", kind: "enum", choices: from("CHARACTER_ROLE") },
     { key: "sex", label: "Sex", kind: "enum", choices: from("CHARACTER_SEX") },
-    { key: "gender", label: "Gender", kind: "enum", choices: from("CHARACTER_SEX") },
+    { key: "gender", label: "Gender", kind: "enum", choices: from("GENDER") },
     { key: "trait", label: "Trait", kind: "scored", target: "i", score: false },
     { key: "dtrait", label: "Trait (not inherited)", kind: "scored", target: "i", score: false },
     { key: "vn", label: "Visual novel", ...rel("v") },
@@ -193,7 +193,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "search", label: "Name", ...SEARCH },
     { key: "role", label: "Role", kind: "enum", choices: from("STAFF_ROLE") },
     { key: "lang", label: "Language", ...LANG() },
-    { key: "gender", label: "Gender", kind: "enum", choices: from("CHARACTER_SEX") },
+    { key: "gender", label: "Gender", kind: "enum", choices: STAFF_GENDER },
     { key: "vn", label: "Visual novel", ...on("v") },
     { key: "character", label: "Voiced character", ...on("c") },
     LINK,

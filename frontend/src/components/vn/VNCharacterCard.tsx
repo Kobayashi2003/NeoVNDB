@@ -60,7 +60,7 @@ export function VNCharacterCard({
   const level = Math.max(spoilerLevel, revealed) as SpoilerLevel
   const traits = groupTraits(character.traits, level, explicit)
   const sex = readSex(character.sex, character.spoil_sex, level)
-  const gender = readSex(character.gender, character.spoil_gender, level)
+  const gender = readSex(character.gender, character.spoil_gender, level, "GENDER")
   const blur =
     !!character.image &&
     shouldBlur(character.image.sexual, character.image.violence, sexual, violence)

@@ -24,14 +24,22 @@ type Server struct {
 	signInFrom *tries
 	signInFor  *tries
 	signUpFrom *tries
+	// A hash at the configured cost, checked when the username is unknown so
+	// that answer takes as long as a wrong password.
+	decoy string
 }
 
 func NewServer(s *store.Store, cfg *config.Config, log *slog.Logger) *Server {
+	decoy, err := auth.Hash("not anyone's password", cfg.BcryptCost)
+	if err != nil {
+		log.Error("making the sign-in decoy hash; unknown usernames will answer faster", "err", err)
+	}
 	return &Server{
 		store: s, cfg: cfg, log: log,
 		signInFrom: newTries(cfg.SignInTries, cfg.SignInWindow),
 		signInFor:  newTries(cfg.SignInTries, cfg.SignInWindow),
 		signUpFrom: newTries(cfg.SignUpTries, cfg.SignUpWindow),
+		decoy:      decoy,
 	}
 }
 
@@ -230,8 +238,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	// One message for unknown name and wrong password, so accounts can't be probed.
 	const refuse = "That username and password do not match."
 
-	// Counted before any lookup, so refusals are cheap. Timing still differs
-	// between unknown name and wrong password.
+	// Counted before any lookup, so refusals are cheap.
 	name := strings.TrimSpace(body.Username)
 	from := caller(r)
 	if ok, wait := s.signInFrom.take(from); !ok {
@@ -245,6 +252,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	user, hash, err := s.store.UserByName(r.Context(), name)
 	if errors.Is(err, store.ErrNotFound) {
+		auth.Check(s.decoy, body.Password)
 		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}

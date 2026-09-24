@@ -13,7 +13,7 @@ export function DetailShell({
   children: React.ReactNode
 }) {
   return (
-    <div
+    <main
       className={cn(
         "mx-auto flex w-full max-w-page gap-6 px-4",
         "lg:h-[calc(100vh-var(--header-h,0px))] lg:overflow-hidden",
@@ -44,7 +44,7 @@ export function DetailShell({
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
         <div className="flex flex-col gap-8">{children}</div>
       </div>
-    </div>
+    </main>
   )
 }
 
