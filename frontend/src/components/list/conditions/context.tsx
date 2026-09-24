@@ -5,6 +5,7 @@
 import { createContext, useContext } from "react"
 import { complete, ExprError, group, type Group, type Node } from "@/lib/expr"
 import { MenuPanel } from "@/components/ui/Menu"
+import { useArrowKeys } from "@/hooks/useArrowKeys"
 import { useDismiss } from "@/hooks/useDismiss"
 import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
 
@@ -69,6 +70,7 @@ export function Popover({
   const isOpen = opened === id
   const box = useDismiss<HTMLSpanElement>(isOpen, () => open(null))
   const panel = useKeptOnScreen<HTMLDivElement>(isOpen)
+  useArrowKeys(isOpen, box, panel)
   return (
     <span ref={box} className="relative inline-flex">
       {trigger(isOpen, () => open(isOpen ? null : id))}

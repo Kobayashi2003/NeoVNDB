@@ -33,6 +33,9 @@ function from(group: keyof typeof ENUMS, icons?: Record<string, string>): Choice
 const LANGUAGES = () => from("LANGUAGE", ICON.LANGUAGE as Record<string, string>)
 const PLATFORMS = () => from("PLATFORM", ICON.PLATFORM as Record<string, string>)
 
+/** Staff records only ever say m or f. */
+export const STAFF_GENDER = from("GENDER").filter((c) => c.value === "m" || c.value === "f")
+
 /** A yes/no the API spells as a `has_*` parameter. */
 function yesNo(key: string, label: string): Filter {
   return {
@@ -78,7 +81,7 @@ export const FILTERS: Record<string, Filter[]> = {
   ],
   s: [
     { key: "lang", label: "Language", choices: LANGUAGES(), multiple: true },
-    { key: "gender", label: "Gender", choices: from("CHARACTER_SEX"), multiple: true },
+    { key: "gender", label: "Gender", choices: STAFF_GENDER, multiple: true },
   ],
   g: [{ key: "category", label: "Category", choices: from("CATEGORY"), multiple: true }],
   i: [],

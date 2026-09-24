@@ -28,7 +28,7 @@ export function CharacterInfoPanel({
     shouldBlur(character.image.sexual, character.image.violence, sexual, violence)
 
   const sex = readSex(character.sex, character.spoil_sex, spoiler.level)
-  const gender = readSex(character.gender, character.spoil_gender, spoiler.level)
+  const gender = readSex(character.gender, character.spoil_gender, spoiler.level, "GENDER")
   const aliases = character.aliases.filter((a) => a.spoiler <= spoiler.level)
 
   return (

@@ -1,9 +1,11 @@
 /** Page links (so pages bookmark and go back correctly), with a fixed
- *  five-page window so the control keeps its width. */
+ *  five-page window so the control keeps its width; a gap opens a box for
+ *  any other page. */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { withParams, type Params } from "@/lib/href"
+import { PageJump } from "./PageJump"
 
 const STEP =
   "flex h-8 min-w-8 items-center justify-center rounded px-2 text-xs transition-colors"
@@ -49,9 +51,7 @@ export function Pagination({
 
       {window(at, last).map((n, i) =>
         n === "gap" ? (
-          <span key={`gap-${i}`} className="px-1 text-xs text-muted">
-            &hellip;
-          </span>
+          <PageJump key={`gap-${i}`} path={path} params={params} last={last} className={STEP} />
         ) : (
           <Link
             key={n}

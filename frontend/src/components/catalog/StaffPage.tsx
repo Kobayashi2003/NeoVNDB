@@ -53,8 +53,8 @@ export async function StaffPage({
             </InfoRow>
             {s.gender && (
               <InfoRow label="Gender">
-                <Icon cls={SEX[s.gender] ?? ""} title={enumLabel("CHARACTER_SEX", s.gender)} />
-                <span>{enumLabel("CHARACTER_SEX", s.gender)}</span>
+                <Icon cls={SEX[s.gender] ?? ""} title={enumLabel("GENDER", s.gender)} />
+                <span>{enumLabel("GENDER", s.gender)}</span>
               </InfoRow>
             )}
           </InfoCard>

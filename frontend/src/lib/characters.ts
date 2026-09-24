@@ -18,18 +18,19 @@ function spoils(value: string | null, apparent: string): boolean {
   return !!value && value !== apparent && value !== "n"
 }
 
-/** Used for both axes; they share vndb's sex codes. */
+/** Used for both axes, each with its own codes: sex, or gender with "GENDER". */
 export function readSex(
   apparent: string | null,
   spoiler: string | null,
   spoilerLevel: number,
+  labels: "CHARACTER_SEX" | "GENDER" = "CHARACTER_SEX",
 ): SexReading | null {
   if (!apparent) return null
   const hidden = spoils(spoiler, apparent)
   return {
     code: apparent,
-    label: enumLabel("CHARACTER_SEX", apparent),
-    reveal: hidden && spoilerLevel >= 2 ? enumLabel("CHARACTER_SEX", spoiler!) : null,
+    label: enumLabel(labels, apparent),
+    reveal: hidden && spoilerLevel >= 2 ? enumLabel(labels, spoiler!) : null,
     withheld: hidden && spoilerLevel < 2,
   }
 }

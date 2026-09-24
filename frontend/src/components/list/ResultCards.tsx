@@ -177,7 +177,7 @@ export function StaffCard({ row }: { row: StaffRow }) {
       </span>
       {row.gender && (
         <span className="shrink-0 text-xs text-muted">
-          {enumLabel("CHARACTER_SEX", row.gender)}
+          {enumLabel("GENDER", row.gender)}
         </span>
       )}
     </Row>

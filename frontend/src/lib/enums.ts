@@ -249,14 +249,20 @@ export const ENUMS = {
     tech: "Technical",
   },
 
-  /* Character sex (VNDB `character.sex`; incl. spoiler-variant codes) */
+  /* Character sex (VNDB `chars.sex` / `spoil_sex`) */
   "CHARACTER_SEX": {
     m: "Male",
     f: "Female",
     b: "Both",
-    n: "Unknown",
-    o: "Other",
-    u: "Unknown",
+    n: "Sexless",
+  },
+
+  /* Gender identity (VNDB `chars.gender` / `spoil_gender`; staff use m and f) */
+  "GENDER": {
+    m: "Male",
+    f: "Female",
+    o: "Non-binary",
+    a: "Ambiguous",
   },
 
 } as const
