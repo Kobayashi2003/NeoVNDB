@@ -28,7 +28,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
         t.group_id && (
           <p className="mt-1 text-sm text-muted">
             in{" "}
-            <Link href={`/${t.group_id}`} className="hover:text-accent">
+            <Link href={`/${t.group_id}`} className="hover:text-accent coarse:py-1">
               <Name name={t.group_name} original={t.group_translation} />
             </Link>
           </p>
@@ -88,7 +88,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
             <TitledCard title="Parent traits">
               <div className="flex flex-col gap-0.5 text-xs">
                 {t.parents.map((p) => (
-                  <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent">
+                  <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent coarse:py-1">
                     <Name name={p.name} original={p.translation?.name ?? null} />
                     {p.main && t.parents.length > 1 && (
                       <span className="ml-1.5 text-muted">(main)</span>
@@ -106,7 +106,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
                   <Link
                     key={c.id}
                     href={`/${c.id}`}
-                    className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent"
+                    className="flex items-baseline justify-between gap-2 text-white/80 hover:text-accent coarse:py-1"
                   >
                     <span className="truncate">
                       <Name name={c.name} original={c.translation?.name ?? null} />

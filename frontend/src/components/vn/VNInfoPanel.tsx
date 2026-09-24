@@ -93,7 +93,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
             <InfoRow label="Developer">
               <InlineList
                 items={vn.developers.map((d) => (
-                  <Link key={d.id} href={`/${d.id}`} className="hover:text-accent">
+                  <Link key={d.id} href={`/${d.id}`} className="hover:text-accent coarse:py-1">
                     {d.name}
                   </Link>
                 ))}
@@ -108,7 +108,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
                   <Link
                     key={p.id}
                     href={`/${p.id}`}
-                    className="flex items-center gap-1.5 transition-colors hover:text-accent"
+                    className="flex items-center gap-1.5 transition-colors hover:text-accent coarse:py-1"
                   >
                     {p.lang && LANG[p.lang] && (
                       <Icon cls={LANG[p.lang]} title={enumLabel("LANGUAGE", p.lang)} />
@@ -134,7 +134,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           action={
             <Link
               href={`/${vn.id}/rg`}
-              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
+              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent coarse:py-1"
             >
               <Share2 className="icon-text h-3 w-3" aria-hidden />
               Graph
@@ -174,7 +174,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
                 key={`${l.site}-${i}`}
                 href={l.url}
                 rel="noreferrer noopener"
-                className="text-white/90 hover:text-accent"
+                className="text-white/90 hover:text-accent coarse:py-1"
               >
                 {l.label}
               </a>
@@ -212,7 +212,7 @@ function Rating({ value, votes }: { value: number | null; votes: number }) {
         onClick={() => setHidden((on) => !on)}
         title={hidden ? "Show rating" : "Hide rating"}
         aria-label={hidden ? "Show rating" : "Hide rating"}
-        className="icon-text ml-auto rounded p-0.5 text-muted transition-colors hover:text-white"
+        className="icon-text ml-auto rounded p-0.5 text-muted transition-colors hover:text-white coarse:p-1.5"
       >
         {hidden ? <Eye className="h-3.5 w-3.5" aria-hidden /> : <EyeOff className="h-3.5 w-3.5" aria-hidden />}
       </button>

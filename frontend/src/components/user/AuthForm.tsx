@@ -108,7 +108,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
         {registering ? "Already have an account? " : "No account yet? "}
         <Link
           href={`${registering ? "/login" : "/register"}${carry ? `?next=${encodeURIComponent(carry)}` : ""}`}
-          className="text-accent transition-colors hover:underline"
+          className="text-accent transition-colors hover:underline coarse:py-1"
         >
           {registering ? "Sign in" : "Create one"}
         </Link>

@@ -104,7 +104,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
               <Link
                 key={p.id}
                 href={`/${p.id}`}
-                className="flex items-center gap-1.5 transition-colors hover:text-accent"
+                className="flex items-center gap-1.5 transition-colors hover:text-accent coarse:py-1"
               >
                 {p.lang && LANG[p.lang] && (
                   <Icon cls={LANG[p.lang]} title={enumLabel("LANGUAGE", p.lang)} />
@@ -129,7 +129,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
         <TitledCard title="Supersedes">
           <div className="flex flex-col gap-0.5 text-xs">
             {r.supersedes.map((s) => (
-              <Link key={s.id} href={`/${s.id}`} className="truncate text-white/80 hover:text-accent">
+              <Link key={s.id} href={`/${s.id}`} className="truncate text-white/80 hover:text-accent coarse:py-1">
                 {s.title}
               </Link>
             ))}
@@ -145,7 +145,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
                 key={`${l.site}-${i}`}
                 href={l.url}
                 rel="noreferrer noopener"
-                className="text-white/90 hover:text-accent"
+                className="text-white/90 hover:text-accent coarse:py-1"
               >
                 {l.label}
               </a>

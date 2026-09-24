@@ -41,7 +41,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   ])
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 pb-12 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-6 px-4 py-8 pb-12 animate-slide-up-fade">
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">NeoVNDB</h1>
         <p className="mt-1 text-sm text-muted">
@@ -52,7 +52,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <Link
               key={type}
               href={`/${type}`}
-              className="group flex items-baseline gap-1.5 text-xs transition-colors hover:text-white"
+              className="group flex items-baseline gap-1.5 text-xs transition-colors hover:text-white coarse:py-1"
             >
               <span className="font-semibold tabular-nums text-accent">
                 {counts[i].toLocaleString()}

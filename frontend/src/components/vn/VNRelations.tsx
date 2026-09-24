@@ -24,7 +24,7 @@ export function VNRelations({ relations }: { relations: Relation[] }) {
                 href={`/${r.id}`}
                 title={r.official ? undefined : "Unofficial relation"}
                 className={cn(
-                  "truncate text-xs text-white/80 transition-colors hover:text-accent",
+                  "truncate text-xs text-white/80 transition-colors hover:text-accent coarse:py-1",
                   !r.official && "opacity-60",
                 )}
               >

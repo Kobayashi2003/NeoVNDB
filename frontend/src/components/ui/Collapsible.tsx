@@ -43,7 +43,7 @@ export function Collapsible({
       {overflows && (
         <button
           onClick={() => setOpen(!open)}
-          className="relative mt-1 flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
+          className="relative mt-1 flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent coarse:py-1"
         >
           <ChevronDown className={`icon-text h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
           {open ? "Show less" : "Show more"}

@@ -32,7 +32,7 @@ export function SearchBox({
         }}
         placeholder={`${label}…`}
         aria-label={label}
-        className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted"
+        className="-my-1.5 min-w-0 flex-1 bg-transparent py-1.5 text-xs outline-none placeholder:text-muted"
       />
     </div>
   )
