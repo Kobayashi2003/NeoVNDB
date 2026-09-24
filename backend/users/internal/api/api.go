@@ -57,6 +57,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /logout-everywhere", s.signedIn(s.logoutEverywhere))
 	mux.HandleFunc("GET /me", s.signedIn(s.me))
 	mux.HandleFunc("POST /me/password", s.signedIn(s.changePassword))
+	mux.HandleFunc("POST /me/delete", s.signedIn(s.deleteAccount))
 
 	mux.HandleFunc("GET /collections", s.signedIn(s.listCollections))
 	mux.HandleFunc("POST /collections", s.signedIn(s.createCollection))
@@ -310,6 +311,46 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request, _ int32) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// deleteAccount removes the reader and, by cascade, their sessions, lists,
+// marks and ratings. The password is asked again: a session alone, left open
+// on a shared machine, should not be enough.
+func (s *Server) deleteAccount(w http.ResponseWriter, r *http.Request, userID int32) {
+	body, ok := read[struct {
+		Password string `json:"password"`
+	}](w, r)
+	if !ok || !s.confirm(w, r, userID, body.Password) {
+		return
+	}
+	if err := s.store.DeleteUser(r.Context(), userID); err != nil {
+		s.oops(w, "deleting account", err)
+		return
+	}
+	auth.ClearCookie(w, s.cfg.SecureCookie)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// confirm checks the signed-in reader's password, answering 403 if wrong.
+// Counted like sign-in attempts, so a borrowed session cannot be used to
+// guess the password without limit.
+func (s *Server) confirm(w http.ResponseWriter, r *http.Request, userID int32, password string) bool {
+	key := "#" + strconv.Itoa(int(userID))
+	if ok, wait := s.signInFor.take(key); !ok {
+		refuseTooMany(w, wait)
+		return false
+	}
+	hash, err := s.store.PasswordHash(r.Context(), userID)
+	if err != nil {
+		s.oops(w, "reading user", err)
+		return false
+	}
+	if ok, _ := auth.Check(hash, password); !ok {
+		fail(w, http.StatusForbidden, "That is not your current password.")
+		return false
+	}
+	s.signInFor.forget(key)
+	return true
+}
+
 func (s *Server) logoutEverywhere(w http.ResponseWriter, r *http.Request, userID int32) {
 	if err := s.store.DeleteSessionsOf(r.Context(), userID); err != nil {
 		s.oops(w, "ending sessions", err)
@@ -336,18 +377,7 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, userID i
 	if !ok {
 		return
 	}
-	user, err := s.store.UserByID(r.Context(), userID)
-	if err != nil {
-		s.oops(w, "reading user", err)
-		return
-	}
-	_, hash, err := s.store.UserByName(r.Context(), user.Username)
-	if err != nil {
-		s.oops(w, "reading user", err)
-		return
-	}
-	if ok, _ := auth.Check(hash, body.Current); !ok {
-		fail(w, http.StatusForbidden, "That is not your current password.")
+	if !s.confirm(w, r, userID, body.Current) {
 		return
 	}
 	if err := auth.ValidPassword(body.New); err != nil {

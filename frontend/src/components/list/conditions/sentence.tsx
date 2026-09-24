@@ -2,7 +2,7 @@
 "use client"
 
 import { Fragment } from "react"
-import { type Condition, OP_LABEL, readCredit, readScored, relatedType } from "@/lib/conditions"
+import { type Condition, nestable, OP_LABEL, readCredit, readScored, relatedType } from "@/lib/conditions"
 import { type Group, type Leaf, switchAt } from "@/lib/expr"
 import { cn } from "@/lib/utils"
 import { Popover, useBuilder } from "./context"
@@ -89,7 +89,8 @@ function Chip({ type, node }: { type: string; node: Leaf }) {
     </Popover>
   )
 
-  if (nested && cond?.kind === "relation") {
+  const inside = nestable(cond)
+  if (nested && inside) {
     return (
       // A condition about another type holds its own sentence, so it is set
       // apart from the green property chips in a colour of its own.
@@ -101,7 +102,7 @@ function Chip({ type, node }: { type: string; node: Leaf }) {
             <span className="text-[0.6875rem] text-sky-300/60">of</span>
           </>
         )}
-        <Flow type={cond.target} node={nested} />
+        <Flow type={inside} node={nested} />
       </span>
     )
   }

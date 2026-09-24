@@ -178,8 +178,11 @@ func BoolFilter(whenTrue, whenFalse string) FilterFunc {
 //	tag=g749:2.0      score at least 2.0
 //	tag=g749:2.0:1    and spoiler at most 1
 //	trait=i568:1      traits have no score, so the one number is the spoiler
+//	tag=(search=school+category=cont)   any tag matching the tag filters
 //
 // Unasked, neither condition reaches the SQL, so the plain form is unchanged.
+// The bracketed form has no score or spoiler: it asks about the tags
+// themselves, as Relation does about its type.
 type Related struct {
 	Entity string
 	From   string
@@ -188,9 +191,34 @@ type Related struct {
 	// Score is empty where the relation has none.
 	Score   string
 	Spoiler string
+	// Join brings the tag or trait row in under its filters' alias, for the
+	// bracketed form.
+	Join string
 }
 
 func (r Related) Filter() FilterFunc {
+	byID := r.byID()
+	return func(b *Builder, value string) error {
+		inner, nested, err := bracketed(value)
+		switch {
+		case err != nil:
+			return err
+		case !nested:
+			return byID(b, value)
+		case r.Join == "":
+			return BadRequest("%s here takes an id, not conditions", r.Entity)
+		}
+		cond, err := b.nested(r.Entity, inner)
+		if err != nil {
+			return err
+		}
+		b.Conds = append(b.Conds,
+			"EXISTS (SELECT 1 FROM "+r.From+" JOIN "+r.Join+" WHERE "+r.Owner+" AND "+cond+")")
+		return nil
+	}
+}
+
+func (r Related) byID() FilterFunc {
 	return Match(func(b *Builder, v string) error {
 		parts := strings.Split(v, ":")
 		id, err := vndb.ParseID(r.Entity, strings.TrimSpace(parts[0]))
@@ -251,11 +279,9 @@ type Relation struct {
 
 func (rel Relation) Filter() FilterFunc {
 	return func(b *Builder, value string) error {
-		// A plain parameter arrives unparsed, so its brackets are checked here.
-		trimmed := strings.TrimSpace(value)
-		nested := strings.HasPrefix(trimmed, "(")
-		if nested && !strings.HasSuffix(trimmed, ")") {
-			return BadRequest("filter: a bracket was opened and not closed")
+		inner, nested, err := bracketed(value)
+		if err != nil {
+			return err
 		}
 		if !nested {
 			return Match(func(b *Builder, v string) error {
@@ -269,29 +295,10 @@ func (rel Relation) Filter() FilterFunc {
 			})(b, value)
 		}
 
-		inner := trimmed[1 : len(trimmed)-1]
-		if b.Types == nil {
-			return BadRequest("conditions about a related type are not available here")
-		}
-		target := b.Types.Get(rel.Type)
-		if target == nil {
-			return BadRequest("nothing is known about %s", rel.Type)
-		}
-
-		expr, err := ParseExpr(inner, b.Budget)
+		cond, err := b.nested(rel.Type, inner)
 		if err != nil {
 			return err
 		}
-		if expr == nil {
-			return BadRequest("%s needs a condition between its brackets", rel.Type)
-		}
-
-		sub := b.sub()
-		cond, err := expr.compile(sub, target.Filters())
-		if err != nil {
-			return err
-		}
-		b.Args = sub.Args
 
 		from := rel.From
 		if rel.Join != "" {
@@ -301,6 +308,46 @@ func (rel Relation) Filter() FilterFunc {
 			"EXISTS (SELECT 1 FROM "+from+" WHERE "+rel.Owner+" AND "+cond+")")
 		return nil
 	}
+}
+
+// bracketed reports whether a value is a (condition) rather than an id, and
+// returns what is inside. A plain parameter arrives unparsed, so its brackets
+// are checked here.
+func bracketed(value string) (inner string, nested bool, err error) {
+	trimmed := strings.TrimSpace(value)
+	if !strings.HasPrefix(trimmed, "(") {
+		return "", false, nil
+	}
+	if !strings.HasSuffix(trimmed, ")") {
+		return "", false, BadRequest("filter: a bracket was opened and not closed")
+	}
+	return trimmed[1 : len(trimmed)-1], true, nil
+}
+
+// nested compiles a condition written about another type with that type's
+// own filters, keeping placeholder numbering in step with b.
+func (b *Builder) nested(typ, inner string) (string, error) {
+	if b.Types == nil {
+		return "", BadRequest("conditions about a related type are not available here")
+	}
+	target := b.Types.Get(typ)
+	if target == nil {
+		return "", BadRequest("nothing is known about %s", typ)
+	}
+	expr, err := ParseExpr(inner, b.Budget)
+	if err != nil {
+		return "", err
+	}
+	if expr == nil {
+		return "", BadRequest("%s needs a condition between its brackets", typ)
+	}
+	sub := b.sub()
+	cond, err := expr.compile(sub, target.Filters())
+	if err != nil {
+		return "", err
+	}
+	b.Args = sub.Args
+	return cond, nil
 }
 
 // RelatedID matches another entity by id; the template takes one placeholder.

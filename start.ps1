@@ -54,18 +54,33 @@ $ProgressPreference = 'SilentlyContinue'
 $root = $PSScriptRoot
 $pidFile = Join-Path $root '.running.json'
 
-# Ports are read from the .env files rather than repeated here, so that
-# changing one in an .env does not silently leave this script checking the old
-# one. Falls back to the default the service itself would use.
-function Get-EnvPort {
-    param([string]$Dir, [string]$Key, [int]$Fallback)
+# Settings the edge must agree with -- the three services' ports and the image
+# directories -- are read from the services' .env files rather than repeated
+# here, so changing one there cannot leave this script or the edge on the old
+# value. Each falls back to the default the service itself would use. Next and
+# the edge have no .env of their own and keep 3000 and 5090.
+function Get-EnvValue {
+    param([string]$Dir, [string]$Key, [string]$Fallback)
     $file = Join-Path $Dir '.env'
     if (Test-Path $file) {
-        $line = Select-String -Path $file -Pattern "^\s*$Key\s*=\s*(\d+)" -ErrorAction SilentlyContinue |
+        $line = Select-String -Path $file -Pattern "^\s*$Key\s*=\s*(.+?)\s*$" -ErrorAction SilentlyContinue |
             Select-Object -First 1
-        if ($line) { return [int]$line.Matches[0].Groups[1].Value }
+        if ($line) { return $line.Matches[0].Groups[1].Value }
     }
     return $Fallback
+}
+
+function Get-EnvPort {
+    param([string]$Dir, [string]$Key, [int]$Fallback)
+    return [int](Get-EnvValue $Dir $Key $Fallback)
+}
+
+# A directory setting is relative to the service that reads it.
+function Get-EnvDir {
+    param([string]$Dir, [string]$Key, [string]$Fallback)
+    $path = Get-EnvValue $Dir $Key $Fallback
+    if (-not [System.IO.Path]::IsPathRooted($path)) { $path = Join-Path $Dir $path }
+    return [System.IO.Path]::GetFullPath($path)
 }
 
 $vndbDir  = Join-Path $root 'backend/vndb'
@@ -160,6 +175,17 @@ if ($busy) {
 # means the dev server's own environment, so setting it here is enough. Always
 # assigned, so that leaving the switch off actually turns images back on.
 $env:NEXT_PUBLIC_NO_IMAGES = if ($NoImages) { '1' } else { '' }
+
+# The edge is told where everything is, so a port changed in an .env moves
+# the edge's upstream with it instead of leaving it pointing at the default.
+$env:NEOVNDB_BIND       = ":$($ports.edge)"
+$env:VNDBSERVE_UPSTREAM = "127.0.0.1:$($ports.api)"
+$env:IMGSERVE_UPSTREAM  = "127.0.0.1:$($ports.img)"
+$env:USERSERVE_UPSTREAM = "127.0.0.1:$($ports.users)"
+$env:NEXT_UPSTREAM      = "127.0.0.1:$($ports.web)"
+# The edge serves stored images straight off disk, from where the mirror puts them.
+$env:NEOVNDB_IMAGE_DIR         = Get-EnvDir $vndbDir 'NEOVNDB_IMAGE_DIR' '../../data/images'
+$env:NEOVNDB_IMAGE_DERIVED_DIR = Get-EnvDir $vndbDir 'NEOVNDB_IMAGE_DERIVED_DIR' '../../data/images-derived'
 
 # --- Build ----------------------------------------------------------------
 # Before anything starts: on Windows a running binary cannot be overwritten,

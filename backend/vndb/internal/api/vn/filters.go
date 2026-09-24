@@ -45,9 +45,11 @@ var filters = map[string]query.FilterFunc{
 	// tags_vn_inherit holds a row for every ancestor and matching on it is the
 	// expansion. Joining tags_closure on top would be a second, redundant one.
 	"tag": query.Related{Entity: vndb.TypeTag, From: "tags_vn_inherit t",
-		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler"}.Filter(),
+		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler",
+		Join: "tags g ON g.id = t.tag"}.Filter(),
 	"dtag": query.Related{Entity: vndb.TypeTag, From: "tags_vn_direct t",
-		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler"}.Filter(),
+		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler",
+		Join: "tags g ON g.id = t.tag"}.Filter(),
 
 	// developers are a cached array on the row; publishers are not, so that
 	// one goes through the releases.

@@ -41,6 +41,10 @@ func TestNestedConditionsCompile(t *testing.T) {
 		{vndb.TypeVN, "character=(trait=i568+birthday=12)", "c.birthday BETWEEN"},
 		{vndb.TypeCharacter, "vn=(release=(developer=p1))", "EXISTS"},
 		{vndb.TypeRelease, "vn=(length_minutes>=600)", "vn.c_length >="},
+		// Tags and traits by what they are, not by id.
+		{vndb.TypeVN, "tag=(search=school+category=cont)", "JOIN tags g ON g.id = t.tag"},
+		{vndb.TypeVN, "!dtag=(vn_count>=100)", "g.c_items >="},
+		{vndb.TypeCharacter, "trait=(search=glasses)", "JOIN traits i ON i.id = ct.tid"},
 	} {
 		sql, err := compile(cat, c.typ, c.expr)
 		if err != nil {
@@ -49,6 +53,15 @@ func TestNestedConditionsCompile(t *testing.T) {
 		}
 		if !strings.Contains(sql, c.want) {
 			t.Errorf("%s %q: %s lacks %q", c.typ, c.expr, sql, c.want)
+		}
+	}
+}
+
+func TestNestedTagRefusesItsOwnUnknowns(t *testing.T) {
+	cat := realCatalog(t)
+	for _, expr := range []string{"tag=(nosuch=1)", "tag=()", "trait=(search=x)"} {
+		if _, err := compile(cat, vndb.TypeVN, expr); err == nil || !query.IsClientError(err) {
+			t.Errorf("%q: got %v, want a client error", expr, err)
 		}
 	}
 }

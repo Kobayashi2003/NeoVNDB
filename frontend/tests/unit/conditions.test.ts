@@ -5,6 +5,7 @@ import {
   CONDITIONS,
   asExpression,
   conditionOf,
+  nestable,
   opsFor,
   readCredit,
   readScored,
@@ -60,6 +61,16 @@ describe("CONDITIONS", () => {
   })
 })
 
+describe("nestable", () => {
+  it("lets relations and tags or traits hold conditions, and nothing else", () => {
+    expect(nestable(conditionOf("v", "release"))).toBe("r")
+    expect(nestable(conditionOf("v", "tag"))).toBe("g")
+    expect(nestable(conditionOf("c", "trait"))).toBe("i")
+    expect(nestable(conditionOf("v", "credit"))).toBeUndefined()
+    expect(nestable(conditionOf("v", "lang"))).toBeUndefined()
+  })
+})
+
 describe("opsFor", () => {
   it("compares only what has an order", () => {
     expect(opsFor({ kind: "enum", choices: [] })).toEqual(["=", "!="])
@@ -99,6 +110,8 @@ describe("expressions from the catalog", () => {
     expect(t("lang=en,lang=ja")).toBe('lang="en,ja"')
     expect(t("search=a,search=b")).toBe("search=a,search=b")
     expect(t("release=(platform=win,platform=lin)")).toBe('release=(platform="win,lin")')
+    // A tag by what it is, tidied with the tag type's own rules.
+    expect(t("tag=(category=cont,category=ero)")).toBe('tag=(category="cont,ero")')
   })
 
   it("quotes values that carry grammar", () => {

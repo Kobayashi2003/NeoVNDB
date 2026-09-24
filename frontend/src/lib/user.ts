@@ -68,6 +68,9 @@ export const logoutEverywhere = () => call<void>("POST", "/logout-everywhere")
 export const changePassword = (current: string, next: string) =>
   call<void>("POST", "/me/password", { current, new: next })
 
+/** Everything goes with it: sessions, lists, marks, ratings. */
+export const deleteAccount = (password: string) => call<void>("POST", "/me/delete", { password })
+
 export const collections = (type?: string) =>
   call<{ results: Collection[] }>("GET", type ? `/collections?type=${type}` : "/collections").then(
     (r) => r.results,
@@ -132,6 +135,6 @@ export const clearRating = (item: string) => call<void>("DELETE", `/ratings/${it
 /** Mirrors the service's validation. */
 export const RULES = {
   username: "2 to 32 characters: letters, digits, - and _",
-  password: "at least 8 characters",
+  password: "8 to 72 characters (fewer outside ASCII)",
   listName: 64,
 } as const
