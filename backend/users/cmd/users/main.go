@@ -1,13 +1,10 @@
-// Command users serves accounts, sessions and the lists a reader keeps.
+// Command users serves accounts, sessions and lists.
 //
 //	users                       serve
 //	users import-legacy <url>   bring across the old service's database
 //
-// Its own binary and its own database, apart from the mirror on purpose: the
-// mirror's schemas are dropped and rebuilt from the dump every week, and an
-// account that lived beside them would go with them. It is also the only
-// service here that migrates rather than rebuilds, which is the other half of
-// the same distinction.
+// Separate binary and database from the mirror, whose schemas are rebuilt
+// every import; this service migrates rather than rebuilds.
 package main
 
 import (
@@ -83,13 +80,9 @@ func run(ctx context.Context) error {
 	}
 }
 
-// importLegacy brings accounts and lists across from the service this one
-// replaces. Run once, by hand, against a database that is no longer being
-// written to -- it reads the old side and never writes to it, but a list
-// changed halfway through would simply not be seen.
-//
-// It says what it did in the same terms the old database can be counted in, so
-// the two can be compared rather than taken on trust.
+// importLegacy copies accounts and lists from the replaced service, once, by
+// hand, against a database no longer written to. It reports counts in terms
+// the old database can be checked against.
 func importLegacy(ctx context.Context, st *store.Store, oldURL string, log *slog.Logger) error {
 	report, err := st.ImportLegacy(ctx, oldURL)
 	if err != nil {
@@ -106,10 +99,8 @@ func importLegacy(ctx context.Context, st *store.Store, oldURL string, log *slog
 	return nil
 }
 
-// sweep clears out sessions that have already expired. They are refused on
-// sight whatever this does -- expiry is checked when a session is read -- so
-// this is housekeeping and not correctness, which is why it runs on a timer
-// and not on the request that happens to find one.
+// sweep deletes expired sessions. Housekeeping only: expiry is already
+// enforced whenever a session is read.
 func sweep(ctx context.Context, st *store.Store, every time.Duration, log *slog.Logger) {
 	tick := time.NewTicker(every)
 	defer tick.Stop()

@@ -9,19 +9,10 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-// Passwords carried over from the service this one replaces.
-//
-// That one hashed with Werkzeug's default, which is scrypt written as
-// `scrypt:N:r:p$salt$hex`. bcrypt cannot read those, and nothing but the
-// password itself can turn one into the other -- so the choice was between
-// reading the old form and locking every migrated reader out of an account
-// they still have.
-//
-// So it is read, and Check says when what it read was the old form. A
-// successful sign-in then re-hashes into the current one and saves it: the
-// reader notices nothing, and the row stops being legacy the first time they
-// use it. Nothing writes this format, and when the last row is gone this file
-// can go with it.
+// Passwords from the replaced service, in Werkzeug's scrypt format
+// (`scrypt:N:r:p$salt$hex`), which bcrypt can't read. Check reads them and
+// reports them as stale, and a successful sign-in rehashes to bcrypt. Nothing
+// writes this format; the file can go once no legacy rows remain.
 
 const legacyPrefix = "scrypt:"
 
