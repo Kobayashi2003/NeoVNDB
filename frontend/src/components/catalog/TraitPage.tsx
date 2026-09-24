@@ -1,12 +1,6 @@
-/** A trait, and who carries it.
- *
- *  The same two questions a tag page asks, against characters: `trait` means
- *  this trait or anything below it, `dtrait` means only what was assigned
- *  outright.
- *
- *  A trait is displayed under the group it is filed in -- "Hair / Blonde"
- *  rather than "Blonde" -- because the name alone is often ambiguous, and the
- *  group is a trait in its own right that can be opened. */
+/** A trait and its characters: `trait` includes child traits, `dtrait` only
+ *  direct ones. Shown under its group ("Hair / Blonde"), since names alone are
+ *  often ambiguous. */
 
 import Link from "next/link"
 import type { Params } from "@/lib/href"

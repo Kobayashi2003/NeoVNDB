@@ -1,14 +1,5 @@
-/** An image that says something while it loads and when it cannot load.
- *
- *  Covers and screenshots come from vndb's CDN, which is reachable from a
- *  browser and not always from wherever this is running. A broken image should
- *  read as one, and a slow image should read as one too -- an empty box is
- *  indistinguishable from a bug.
- *
- *  The placeholder needs somewhere to be, so it is drawn only when `width` and
- *  `height` are given: those reserve the image's box before a byte arrives.
- *  Without them the image is shown as it decodes, which is the better of the
- *  two behaviours when nothing can be reserved. */
+/** An image with loading and failure states. The placeholder needs a box,
+ *  so it is drawn only when width and height are given. */
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -40,10 +31,8 @@ export function ImageWithFallback({
   const setState = (status: Status) => setSeen({ src, status })
   const sized = width !== undefined && height !== undefined
 
-  // An image can finish before React has attached onLoad: anything cached,
-  // or served straight off disk by the edge, is often complete before the
-  // page hydrates. Its load event has then already fired into nothing, and
-  // without this the image stays hidden behind its placeholder for good.
+  // A cached image can finish before hydration attaches onLoad; its load
+  // event is then lost and the image would stay hidden.
   const ref = useRef<HTMLImageElement>(null)
   useEffect(() => {
     const img = ref.current

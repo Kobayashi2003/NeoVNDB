@@ -1,9 +1,5 @@
-/** Text hidden until clicked, which is what vndb's `[spoiler]` means.
- *
- *  Blurred rather than blanked. A blank block of the right size reads as a
- *  failed image, and it says nothing about what it is; a blur in the same
- *  yellow every other spoiler on this page is drawn in says both what it is
- *  and how much of it there is. */
+/** A `[spoiler]`, blurred until clicked: a blur shows how much is hidden,
+ *  where a blank box reads as a failed image. */
 "use client"
 
 import { useState } from "react"

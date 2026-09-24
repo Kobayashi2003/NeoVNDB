@@ -1,10 +1,5 @@
-/** The VN page. Section order follows what a reader wants in turn: what the
- *  work is, what is in it, who made it, where to get it.
- *
- *  The characters section can take the whole main column over. That is a
- *  substitution rather than an overlay: the expanded view is the same content
- *  read a different way, and putting it in a modal would leave the page it
- *  belongs to scrolling behind it. */
+/** The VN page. The expanded characters view replaces the main column
+ *  rather than opening a modal over it. */
 "use client"
 
 import { useMemo, useState } from "react"

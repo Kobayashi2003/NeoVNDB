@@ -1,12 +1,5 @@
-/** Page links.
- *
- *  Links rather than buttons, because the page a reader is on is part of the
- *  address: a result they want to come back to should survive being
- *  bookmarked, and the back button should walk the pages they actually
- *  visited.
- *
- *  The window is fixed at five so the control does not change width as the
- *  reader moves through it, with the ends always reachable. */
+/** Page links (so pages bookmark and go back correctly), with a fixed
+ *  five-page window so the control keeps its width. */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"

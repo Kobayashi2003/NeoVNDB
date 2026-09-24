@@ -10,10 +10,9 @@ import { cn } from "@/lib/utils"
 import { ControlLabel } from "@/components/ui/ControlLabel"
 import { MenuLabel, MenuMark, MenuPanel, menuAction, menuItem } from "@/components/ui/Menu"
 import { one, withParams, type Params } from "@/lib/href"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
-import { useDismiss } from "@/hooks/useDismiss"
+import { useMenu } from "@/hooks/useMenu"
 import type { Choice, Filter } from "@/lib/filters"
-import { ConditionBuilder } from "./ConditionBuilder"
+import { ConditionBuilder } from "./conditions/ConditionBuilder"
 
 /** The values of one filter currently in the address. */
 function selected(params: Params, key: string): string[] {
@@ -149,8 +148,7 @@ function FilterMenu({
   chosen: string[]
 }) {
   const [open, setOpen] = useState(false)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+    const { box, panel: menu } = useMenu(open, setOpen)
   const cleared = withParams(path, params, { [filter.key]: null, page: null })
 
   return (

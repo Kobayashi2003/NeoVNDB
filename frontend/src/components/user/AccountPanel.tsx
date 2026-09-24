@@ -1,9 +1,5 @@
-/** The account itself: what is known about it, and the one thing that can be
- *  changed.
- *
- *  Rendered from the client for the same reason everything else about a reader
- *  is -- the server has no idea who is asking. So this page has three states
- *  rather than two, and the first one is not "signed out". */
+/** The account page, rendered on the client (the server doesn't know the
+ *  reader), so it starts in an "unknown" state rather than signed out. */
 "use client"
 
 import { useState } from "react"

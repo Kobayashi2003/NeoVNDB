@@ -1,10 +1,6 @@
-/** The works this release publishes.
- *
- *  In the body rather than the sidebar, unlike the ways out of a visual novel
- *  or a character page: a release has no subject of its own, it is a packaging
- *  of these, and half of all releases have nothing else to put here. The type
- *  badge sits per work because it belongs to the link -- one disc can be a
- *  complete edition of one and a trial of another. */
+/** The works a release contains, in the body since a release has no subject
+ *  of its own. The type badge is per work (a disc can be complete for one and
+ *  a trial of another). */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"

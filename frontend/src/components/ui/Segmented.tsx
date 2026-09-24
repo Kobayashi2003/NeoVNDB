@@ -1,9 +1,5 @@
-/** A row of mutually exclusive options inside one pill.
- *
- *  Used where the choice is a scale rather than a switch, so the reader can
- *  see every step and where they currently stand on it. Each option may carry
- *  its own active colour, which is how the content scales say that a step is
- *  more permissive than the last. */
+/** Mutually exclusive options in one pill, for scales where every step
+ *  should be visible. Options can set their own active colour. */
 "use client"
 
 import { cn } from "@/lib/utils"

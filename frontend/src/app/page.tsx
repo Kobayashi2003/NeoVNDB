@@ -1,16 +1,6 @@
-/** The way in.
- *
- *  What came out, and what is in here. A front page for a mirror of vndb has
- *  two things to say and they are not the same: what is worth looking at now,
- *  and how much of vndb this copy actually holds. The month of releases
- *  answers the first and is most of the page; the counts answer the second in
- *  one line, because "how complete is it" is a question a reader asks once.
- *
- *  Most of what comes out in any month is small English-language work with no
- *  votes yet -- in a recent month, 173 of 289 against 63 originally in
- *  Japanese. Starting with the Japanese ones is what makes the page a place to
- *  look rather than a list to wade through, but it is a choice, so it is shown
- *  as one and is a click away from being undone. */
+/** Front page: one month of releases, plus a line of mirror counts. Starts
+ *  with titles originally in Japanese (most monthly releases are small
+ *  English works with no votes); the toggle undoes that. */
 
 import Link from "next/link"
 import { one, withParams, type Params } from "@/lib/href"

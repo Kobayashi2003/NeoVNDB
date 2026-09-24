@@ -1,9 +1,5 @@
-/** One character as a grid tile: portrait, role, name, sex and voice credits.
- *
- *  The tile is uniform on purpose -- a grid that reflows to each portrait's
- *  shape stops being scannable -- so the image is cropped to the ratio vndb
- *  stores most of them at, which leaves the common case untouched. The card
- *  form is where a portrait is shown whole. */
+/** A character grid tile. Portraits are cropped to vndb's most common ratio
+ *  so the grid stays uniform; the card shows them whole. */
 "use client"
 
 import Link from "next/link"

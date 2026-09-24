@@ -1,9 +1,5 @@
-/** The relations a detail page can list, as links.
- *
- *  A producer's works and its releases are two different questions about the
- *  same company, and which one is being asked belongs in the address like
- *  everything else here. Switching tabs abandons whatever page and order the
- *  last one was on, because they describe a different list. */
+/** A catalogue page's tabs, as links. Switching resets page and sort, since
+ *  they belonged to a different list. */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"

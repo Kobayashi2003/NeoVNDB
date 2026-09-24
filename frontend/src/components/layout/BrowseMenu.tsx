@@ -1,14 +1,6 @@
-/** The seven shelves, for screens too narrow to lay them out in a row.
- *
- *  They used to be a strip that scrolled sideways. It fit, in the sense that
- *  nothing overflowed, but the last shelves sat off the end of a bar nobody
- *  would think to drag -- on a desktop there is not even a gesture for it
- *  without a shift key. A shelf you cannot see and cannot reach is not there.
- *
- *  So below the width where all seven fit, they become one button. It names
- *  the shelf the reader is standing in rather than saying "Browse", because
- *  the bar's other job is to say where you are, and the row above did that by
- *  marking one of the seven. */
+/** The seven shelves as one menu, below the width where they fit in a row
+ *  (a sideways-scrolling strip hid the last ones). The button names the
+ *  current shelf. */
 "use client"
 
 import { useState } from "react"
@@ -18,15 +10,13 @@ import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
 import { MenuDivider, MenuPanel, menuItem } from "@/components/ui/Menu"
 import { SHORT, TYPES } from "./shelves"
-import { useDismiss } from "@/hooks/useDismiss"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useMenu } from "@/hooks/useMenu"
 
 export function BrowseMenu({ here, className }: { here?: string; className?: string }) {
   const [open, setOpen] = useState(false)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
   // Hung from the left of a button that starts after the logo, so on the
   // narrowest screens its right edge lands past the window.
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+  const { box, panel: menu } = useMenu(open, setOpen)
 
   return (
     <div ref={box} className={cn("relative min-w-0 flex-1", className)}>

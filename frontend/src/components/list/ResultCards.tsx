@@ -1,9 +1,5 @@
-/** One search result, in the shape its type wants.
- *
- *  Two families. Visual novels and characters are looked for by their picture,
- *  so they get a tile with a cover. The other five are looked for by name, so
- *  they get a row -- a grid of identical text boxes is harder to scan than a
- *  list, not easier. */
+/** One result card: tiles with a picture for VNs and characters, rows for
+ *  the name-first types. */
 "use client"
 
 import Link from "next/link"

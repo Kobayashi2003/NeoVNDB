@@ -1,23 +1,13 @@
-/** What the reader has chosen to see, from any page.
- *
- *  The content scales used to live only on the pages that list or show
- *  things, so a reader on their own lists -- which are covers, and so exactly
- *  what the scales govern -- had to leave to change them. Here they are one
- *  click away wherever the reader is. The pages that had them keep them
- *  beside the images too; that is where a reader looks when a cover is
- *  blurred.
- *
- *  The dot on the button says a scale is above its gentlest setting. Explicit
- *  content being on is a thing to be able to tell at a glance, from any page,
- *  without opening anything. */
+/** Content levels, starting spoiler level and names, adjustable from any
+ *  page. The dot on the button shows when a content level is above its
+ *  gentlest setting. */
 "use client"
 
 import { useState } from "react"
 import { Eye, EyeOff, Flame, Languages, Swords } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePrefs } from "@/hooks/usePrefs"
-import { useDismiss } from "@/hooks/useDismiss"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useMenu } from "@/hooks/useMenu"
 import { Segmented, type Option } from "@/components/ui/Segmented"
 import type { SexualLevel, SpoilerLevel, ViolenceLevel } from "@/lib/content"
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from "@/components/ui/Menu"
@@ -47,9 +37,8 @@ const SPOILERS: Option<string>[] = [
 export function ViewMenu() {
   const p = usePrefs()
   const [open, setOpen] = useState(false)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
   // Hung from the right of a button that, on a phone, is not far from the left.
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+  const { box, panel: menu } = useMenu(open, setOpen)
   const raised = p.sexual !== "safe" || p.violence !== "tame"
 
   return (

@@ -1,13 +1,5 @@
-/** One search across all seven kinds of thing.
- *
- *  The listings each search their own kind, which is what a reader who knows
- *  what they are looking for wants. This is for the other case: a name, and no
- *  certainty about whether it belongs to a work, a person, a company or a
- *  character. Every kind is asked, and each answers with its best few.
- *
- *  A whole id is not a search. Typed into the box, pasted from somewhere, or
- *  followed as a link, `v17` means one particular visual novel, so it is sent
- *  there rather than looked for. */
+/** Search across all seven types at once. A whole id (v17) redirects to
+ *  that entry instead of searching. */
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -27,11 +19,8 @@ export const metadata: Metadata = { title: "Search - NeoVNDB" }
  *  that seven of them still fit on a screen worth scrolling. */
 const PER_TYPE = 6
 
-/** A letter and a number that names something. The number is checked rather
- *  than just matched: `v0` looks like an id and is not one, and sending a
- *  reader who typed it to a page that cannot exist is worse than searching for
- *  it. Leading zeros are allowed and dropped, so `v017` lands on v17 rather
- *  than on an address only it would ever use. */
+/** A letter and a positive number; v0 is searched, not followed. Leading
+ *  zeros are dropped so v017 lands on v17. */
 const AN_ID = /^([vrcpsgi])0*([1-9][0-9]*)$/i
 
 /** Kinds whose matches can be turned into a question about visual novels,

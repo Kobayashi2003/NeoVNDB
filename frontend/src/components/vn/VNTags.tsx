@@ -1,9 +1,5 @@
-/** Tags by category, each carrying the score the votes settled on.
- *
- *  Spoilers are revealed from where they are hidden: a category with three
- *  minor spoilers left out says so at the end of its own row, and clicking
- *  that reveals them. A control at the top of the section would make the
- *  reader look elsewhere to find out what changed. */
+/** Tags by category with their scores. Hidden spoilers are revealed from
+ *  the end of their own category's row. */
 "use client"
 
 import Link from "next/link"

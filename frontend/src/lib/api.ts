@@ -77,6 +77,18 @@ export async function list<T>(
   return get<Page<T>>(`/${type}`, params)
 }
 
+export interface LinkSite {
+  site: string
+  label: string
+  /** The type letters the site appears on, e.g. "ps". */
+  entities: string
+}
+
+/** The link sites the extlink filter accepts. */
+export async function linkSites(): Promise<LinkSite[]> {
+  return (await get<{ results: LinkSite[] }>("/meta/extlinks", {})).results
+}
+
 export async function relationGraph<T>(id: string, depth: number): Promise<T> {
   return get<T>(`/vn/${id}/relations`, { depth: String(depth) })
 }

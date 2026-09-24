@@ -1,15 +1,7 @@
-/** Spoiler state for one section.
- *
- *  It cycles rather than offering three buttons, and skips a level with
- *  nothing behind it, so the control can say what the next click will actually
- *  reveal. A section with no spoilers at all shows no control.
- *
- *  Where it starts is a saved preference, because somebody who has finished a
- *  work was answering the same question on every page they opened. A section
- *  the reader has actually touched keeps their answer for as long as they are
- *  on the page; one they have not follows the preference, so changing it in
- *  the header changes what is in front of them rather than only what comes
- *  next. */
+/** Spoiler state for one section. Cycles through levels, skipping empty
+ *  ones, so the control can say what the next click reveals. Starts at the
+ *  saved preference; a section the reader touched keeps its own choice for
+ *  the page, the rest follow the preference live. */
 "use client"
 
 import { useState } from "react"

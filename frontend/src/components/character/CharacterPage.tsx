@@ -1,13 +1,5 @@
-/** The character page.
- *
- *  One spoiler control, not one per section. A visual novel's page hides the
- *  control where there is nothing behind it because its spoilers sit in
- *  separate places a reader browses independently; here they run through
- *  everything at once -- the sex in the sidebar, the traits, the works, the
- *  instance links -- and a reader who has opened a character has already
- *  decided how much they want to know about them. Each section still counts
- *  what it is holding back where it would have been, so the shape of what is
- *  missing stays visible. */
+/** The character page, with one spoiler control for everything (sex,
+ *  traits, works, instances). Each section still counts what it hides. */
 "use client"
 
 import { BBCode } from "@/lib/bbcode"

@@ -1,14 +1,5 @@
-/** Getting from one list to another without going back to the index first.
- *
- *  Two shapes of the same thing. Where there is room beside the page it is a
- *  column, always open, so moving between lists is one click and the reader
- *  can see what else they keep. Where there is not it is the list's own name
- *  turned into a button, which is the smallest control that can still say
- *  where you are and offer everywhere else.
- *
- *  Grouped by kind in both, because a list's type decides what can go on it,
- *  and two lists called Favourites are told apart only by the shelf they sit
- *  on. */
+/** Moving between lists: an always-open column where there is room, else a
+ *  button naming the current list. Grouped by type in both. */
 "use client"
 
 import { useState } from "react"
@@ -19,8 +10,7 @@ import { MenuDivider, MenuLabel, MenuPanel, menuItem } from "@/components/ui/Men
 import { LIST } from "@/lib/list"
 import { TYPES } from "@/components/layout/shelves"
 import type { Collection } from "@/lib/user"
-import { useDismiss } from "@/hooks/useDismiss"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useMenu } from "@/hooks/useMenu"
 
 function byType(lists: Collection[]) {
   return TYPES.map((type) => ({ type, mine: lists.filter((l) => l.type === type) })).filter(
@@ -85,8 +75,7 @@ export function CollectionPicker({
   className?: string
 }) {
   const [open, setOpen] = useState(false)
-  const box = useDismiss<HTMLDivElement>(open, () => setOpen(false))
-  const menu = useKeptOnScreen<HTMLDivElement>(open)
+    const { box, panel: menu } = useMenu(open, setOpen)
   const here = lists.find((l) => l.id === current)
 
   return (

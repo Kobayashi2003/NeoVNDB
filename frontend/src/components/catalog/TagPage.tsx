@@ -1,11 +1,5 @@
-/** A tag, and what carries it.
- *
- *  Two tabs for the two questions the dump answers separately. Tags form a
- *  graph, and a visual novel tagged "Mystery" is also, by inheritance,
- *  everything Mystery sits under. `tag` asks the inherited question -- this
- *  tag or anything below it -- and `dtag` asks only what was tagged outright.
- *  The first is what a reader browsing means; the second is what an editor
- *  checking their work means. */
+/** A tag and its visual novels: `tag` includes child tags (what browsing
+ *  means), `dtag` only direct ones (what an editor checks). */
 
 import Link from "next/link"
 import { enumLabel } from "@/lib/enums"

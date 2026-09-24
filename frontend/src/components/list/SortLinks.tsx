@@ -1,9 +1,5 @@
-/** The orders a listing offers.
- *
- *  Clicking the order already in use flips its direction, which is what a
- *  column heading does everywhere else. A fresh order starts at the end worth
- *  looking at -- rating and vote counts start high, because nobody opens a
- *  listing to find the worst of something. */
+/** Sort links. Clicking the active sort flips direction; a new sort starts
+ *  from its useful end (ratings high first). */
 
 import { ArrowDown, ArrowUp } from "lucide-react"
 import Link from "next/link"

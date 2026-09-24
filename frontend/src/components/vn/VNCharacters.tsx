@@ -1,15 +1,6 @@
-/** The characters section: how many there are, which of them to show, and in
- *  what form.
- *
- *  Two layouts, because two readers want different things. The grid answers
- *  "who is in this" -- portraits at a glance, filtered by role. The slider
- *  answers "who is this" -- one full card at a time. The choice is a saved
- *  preference, since a reader who prefers one prefers it everywhere.
- *
- *  Spoilers are coloured rather than merely hidden: yellow for minor, orange
- *  for major, on the trait that carries one and on the edge of a card that is
- *  itself one. What is still hidden is counted in its own tile, so the reader
- *  can see how much is behind the door before opening it. */
+/** The characters section: a grid (who is in this) or a slider (one card at
+ *  a time), saved as a preference. Spoilers are coloured, and what is still
+ *  hidden is counted in its own tile. */
 "use client"
 
 import { useState } from "react"

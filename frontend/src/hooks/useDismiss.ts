@@ -1,11 +1,6 @@
-/** A popover that closes when the reader looks away: a pointer down outside
- *  it, or Escape.
- *
- *  Every menu in the app wants exactly this, and wrote it out for itself until
- *  there were four copies of the same twelve lines. The ref goes on whatever
- *  counts as "inside" -- usually the wrapper holding both the button and the
- *  menu, so clicking the button to close does not also register as an outside
- *  click and close it twice. */
+/** Closes a popover on a pointer down outside the ref'd element or on
+ *  Escape. Put the ref on the wrapper holding both the button and the panel,
+ *  so clicking the button to close is not also an outside click. */
 "use client"
 
 import { useEffect, useRef } from "react"

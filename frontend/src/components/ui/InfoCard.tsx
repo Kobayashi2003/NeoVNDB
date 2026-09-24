@@ -47,13 +47,8 @@ export function TitledCard({
   )
 }
 
-/** A label and its value. Below sm the label stacks above; from sm up it
- *  returns to a fixed-width column beside the value.
- *
- *  `min-w-0` on the value, because without it the row cannot be narrower than
- *  its widest unbreakable value, and `flex-1` will not shrink past that. In a
- *  256px sidebar that is enough to push a long publisher name out through the
- *  side of the panel. */
+/** A label and its value: stacked below sm, side by side from sm up.
+ *  `min-w-0` lets a long unbreakable value shrink instead of overflowing. */
 export function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-white/5 py-1.5 last:border-0 sm:flex-row sm:gap-2">

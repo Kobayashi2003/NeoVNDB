@@ -1,10 +1,5 @@
-/** What a reader can do to a handful of things at once, and the box they tick
- *  to choose them.
- *
- *  The bar is pinned to the bottom of the window rather than put at the top of
- *  the list, because the selecting happens down among the cards and a control
- *  that scrolls away is one the reader has to go back for. It exists only
- *  while selecting, so it is never in the way of reading. */
+/** Bulk actions for selected items, pinned to the bottom of the window while
+ *  selecting, plus the checkbox drawn on each card. */
 "use client"
 
 import { useState } from "react"
@@ -12,15 +7,10 @@ import { Check, CheckSquare, FolderInput, Loader2, Square, Trash2, X } from "luc
 import { cn } from "@/lib/utils"
 import { MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
 import type { Collection } from "@/lib/user"
-import { useDismiss } from "@/hooks/useDismiss"
-import { useKeptOnScreen } from "@/hooks/useKeptOnScreen"
+import { useMenu } from "@/hooks/useMenu"
 
-/** One card with a box on it. The card itself stops taking clicks: in this
- *  mode every click on it means "this one", not "take me to it".
- *
- *  A tile has a picture the box can sit on top of. A row has nothing to spare
- *  -- its own icon is already at the left -- so the row is indented instead and
- *  the box goes in the space that makes. */
+/** A card with a checkbox; clicks select rather than navigate. Tiles put
+ *  the box over the picture, rows indent to make room for it. */
 export function Selectable({
   on,
   grid,
@@ -88,8 +78,7 @@ export function SelectBar({
 }) {
   const [picking, setPicking] = useState(false)
   const [confirming, setConfirming] = useState(false)
-  const box = useDismiss<HTMLDivElement>(picking, () => setPicking(false))
-  const menu = useKeptOnScreen<HTMLDivElement>(picking)
+  const { box, panel: menu } = useMenu(picking, setPicking)
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">

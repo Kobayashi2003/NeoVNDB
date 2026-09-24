@@ -1,18 +1,8 @@
 "use client"
 
-/** Staff by role, and before that by edition.
- *
- *  A credit can belong to a named version of the work rather than to the work
- *  itself -- a port, a premium edition, somebody's translation -- and the two
- *  are different facts: who wrote the game is not who translated it. So the
- *  ones with no edition come first, under no heading because they are simply
- *  the work, and the rest sit under the version they are for.
- *
- *  Most works have no such credits at all, and then this is one plain list and
- *  no headings, which is what it was before.
- *
- *  The name shown is the one credited on this work, which for a pen name is
- *  not the person's own -- the API hands back the credited alias. */
+/** Staff by role, grouped first by edition: credits on the work itself, then
+ *  those for a named version (port, translation). Names are the alias
+ *  credited on this work. */
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -25,15 +15,8 @@ import type { Edition, StaffCredit } from "@/lib/types"
 
 const LANG = ICON.LANGUAGE as Record<string, string>
 
-/** The credits in the order they should be read: the work, then each edition
- *  that has any, in the order the dump numbers them.
- *
- *  Nothing is allowed to fall out. A credit naming an edition that is not in
- *  the list would otherwise vanish from the page, and the two tables have no
- *  key tying them together -- today every credit matches, but the mirror is
- *  rebuilt from upstream every week and this page should not be the thing that
- *  notices when one stops. Such a credit gets its edition number instead of a
- *  name, which is all that is known about it. */
+/** The work's credits, then each edition's in dump order. A credit whose
+ *  edition is missing from the list is kept under its number, not dropped. */
 function grouped(staff: StaffCredit[], editions: Edition[]) {
   const base = staff.filter((c) => c.eid === null)
   const known = new Set(editions.map((e) => e.eid))

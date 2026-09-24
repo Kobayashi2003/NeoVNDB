@@ -1,13 +1,6 @@
-/** Signing in and signing up.
- *
- *  One component for both, because they are one form: the same two fields, the
- *  same submit, the same place to land afterwards. Registering adds an
- *  optional email and says what the service will accept before it has to
- *  refuse anything.
- *
- *  The service's refusals are shown as it wrote them. It says "that username
- *  and password do not match" without saying which, on purpose -- restating it
- *  here would be a second place to get that right. */
+/** Sign-in and sign-up in one form. The service's error messages are shown
+ *  as written (it deliberately doesn't say which of name or password was
+ *  wrong). */
 "use client"
 
 import { useState } from "react"
@@ -19,11 +12,8 @@ import { useSession } from "@/hooks/useSession"
 /** These two, which are no place to arrive already signed in. */
 const AUTH = new Set(["/login", "/register"])
 
-/** Where to go afterwards, or null for nowhere in particular.
- *
- *  Only a path on this site: a `next` naming another origin would make this
- *  form a way to send someone anywhere. And not back here -- the header offers
- *  to sign in from whatever page the reader is on, including this one. */
+/** Where to go afterwards: only a path on this site (an off-site `next`
+ *  would be an open redirect), and never back to this page. */
 function safe(next: string | undefined): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return null
   return AUTH.has(next.split("?")[0]) ? null : next

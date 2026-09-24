@@ -6,14 +6,9 @@ import { Header } from "@/components/layout/Header"
 import { PrefsRendered } from "@/hooks/usePrefs"
 import { PREFS_COOKIE, readPrefs } from "@/lib/prefs"
 
-/** The wordmark, and nothing else. A display face is the wrong thing to read a
- *  paragraph in, so it is bound to a variable rather than to the page, and the
- *  one element that wants it asks for it by name.
- *
- *  Self-hosted: next/font fetches it at build time and serves it from here, so
- *  a page does not go to Google to draw its own name. It also measures the
- *  face and writes a matching fallback of the same metrics, so the moment the
- *  real one arrives nothing reflows around it. */
+/** The wordmark face, bound to a variable so only the logo uses it.
+ *  next/font self-hosts it with a metric-matched fallback, so nothing reflows
+ *  when it loads. */
 const display = Righteous({
   weight: "400",
   subsets: ["latin"],
@@ -28,10 +23,9 @@ export const metadata: Metadata = {
   description: "A local mirror of the VNDB database.",
 }
 
-/** Reading the reader's preferences here is what lets every page be rendered
- *  in the script they asked for, rather than in English and then corrected.
- *  It costs the static rendering of the three pages that had it -- a cookie is
- *  per reader, so a page that depends on one cannot be one file for everybody. */
+/** Preferences come from the cookie here so pages render in the reader's
+ *  chosen script without a correction after hydration. This makes these pages
+ *  per-reader rather than static. */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const prefs = readPrefs((await cookies()).get(PREFS_COOKIE)?.value)
 

@@ -1,13 +1,5 @@
-/** How one title sits among the others it is related to.
- *
- *  Rows are how far a title is from the one the graph was drawn for, so
- *  reading down the page is reading outward. The lines are coloured by what
- *  the relation is and carry an arrow only where the relation has a direction
- *  -- a sequel points somewhere, "same series" does not.
- *
- *  It scrolls rather than pans. A component can be four thousand pixels wide
- *  and a scrollbar is a thing every reader already knows how to use; a canvas
- *  that only moves when dragged is one they have to discover. */
+/** The relation graph: rows by distance from this title, lines coloured by
+ *  relation, arrows only on directed relations. It scrolls rather than pans. */
 "use client"
 
 import { useEffect, useMemo, useRef } from "react"

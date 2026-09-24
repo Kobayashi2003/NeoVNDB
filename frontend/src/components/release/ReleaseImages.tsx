@@ -1,10 +1,5 @@
-/** Pictures of the release itself, grouped by what they are pictures of.
- *
- *  These are cover-kind images, which vndb serves at one size only -- there is
- *  no thumbnail to ask for, the way there is for a screenshot -- so a release
- *  with twenty package scans pulls twenty full pictures. They are drawn small
- *  and left to load lazily, and the viewer is the only place any of them is
- *  seen at size. */
+/** Package scans and store art, grouped by kind. Cover-kind images have no
+ *  thumbnail size, so they are drawn small and loaded lazily. */
 "use client"
 
 import { useState } from "react"

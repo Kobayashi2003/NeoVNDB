@@ -1,9 +1,4 @@
-/** An image that opens full-screen when clicked.
- *
- *  Every cover and portrait on the page is a downscale of something larger,
- *  and the page has no other way to reach the original. The button is the
- *  image itself rather than a separate control, which is where a reader
- *  already aims. */
+/** An image that opens the full-size original in the lightbox. */
 "use client"
 
 import { useState } from "react"

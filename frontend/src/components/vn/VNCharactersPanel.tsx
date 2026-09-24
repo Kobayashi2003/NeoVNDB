@@ -1,9 +1,5 @@
-/** The expanded characters view: the page's whole main column given over to
- *  one column of dense cards, grouped by role from most to least important.
- *
- *  Opened from the Characters heading, or from one slide card -- in which case
- *  that character's card is scrolled to on arrival, so following the fade lands
- *  where the reader was rather than at the top of a long list. */
+/** Expanded characters view: dense cards grouped by role, filling the main
+ *  column. Opened from a slide card, it scrolls to that character. */
 "use client"
 
 import { useEffect, useRef } from "react"
