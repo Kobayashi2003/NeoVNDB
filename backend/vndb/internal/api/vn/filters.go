@@ -1,6 +1,8 @@
 package vn
 
 import (
+	"strings"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
@@ -8,6 +10,15 @@ import (
 // What a visual novel query accepts. Each entry is independent, so filters
 // combine with AND in any order.
 var filters = map[string]query.FilterFunc{
+	"length_minutes": query.IntColumn("vn.c_length", 1),
+	"relation": query.Match(func(b *query.Builder, v string) error {
+		if !relationKinds[v] {
+			return query.BadRequest("%q is not a relation; one of seq, preq, set, alt, char, side, par, ser, fan, orig", v)
+		}
+		b.Where(`EXISTS (SELECT 1 FROM vn_relations vr WHERE vr.id = vn.id AND vr.relation = %s)`, v)
+		return nil
+	}),
+	"credit":    creditFilter,
 	"extlink":   query.ExtLinkFilter("vn_extlinks", "vn.id"),
 	"olang":     query.TextColumn("vn.olang"),
 	"devstatus": query.IntColumn("vn.devstatus", 1),
@@ -127,3 +138,36 @@ var spec = query.PageSpec{
 	Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v", Popularity: "vn.c_votecount",
 	Filters: filters, Sorts: sorts,
 }
+
+var relationKinds = map[string]bool{
+	"seq": true, "preq": true, "set": true, "alt": true, "char": true,
+	"side": true, "par": true, "ser": true, "fan": true, "orig": true,
+}
+
+var staffRoles = map[string]bool{
+	"scenario": true, "director": true, "chardesign": true, "art": true, "music": true,
+	"songs": true, "translator": true, "editor": true, "qa": true, "staff": true,
+}
+
+// creditFilter matches a person credited on this VN, optionally in one role:
+// credit=s224 or credit=s224:scenario. Unlike staff=(... role=...), the role
+// is the one held on this VN.
+var creditFilter = query.Match(func(b *query.Builder, v string) error {
+	person, role, withRole := strings.Cut(v, ":")
+	id, err := vndb.ParseID(vndb.TypeStaff, strings.TrimSpace(person))
+	if err != nil {
+		return query.BadRequest("%v", err)
+	}
+	cond := `EXISTS (SELECT 1 FROM vn_staff vs JOIN staff_alias sa ON sa.aid = vs.aid
+	          WHERE vs.id = vn.id AND sa.id = %s`
+	if !withRole {
+		b.Where(cond+")", id)
+		return nil
+	}
+	role = strings.TrimSpace(role)
+	if !staffRoles[role] {
+		return query.BadRequest("%q is not a staff role; one of scenario, director, chardesign, art, music, songs, translator, editor, qa, staff", role)
+	}
+	b.Where(cond+" AND vs.role = %s)", id, role)
+	return nil
+})

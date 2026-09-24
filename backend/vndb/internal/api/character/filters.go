@@ -1,11 +1,33 @@
 package character
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
 var filters = map[string]query.FilterFunc{
+	"has_image": query.BoolFilter("c.image IS NOT NULL", "c.image IS NULL"),
+	// Stored as mmdd, 0 for unknown: birthday=12-25, or birthday=12 for a month.
+	"birthday": query.Match(func(b *query.Builder, v string) error {
+		month, day, withDay := strings.Cut(v, "-")
+		m, err := strconv.Atoi(strings.TrimSpace(month))
+		if err != nil || m < 1 || m > 12 {
+			return query.BadRequest("%q is not a birthday; MM-DD or MM", v)
+		}
+		if !withDay {
+			b.Where("c.birthday BETWEEN %s AND %s", m*100+1, m*100+31)
+			return nil
+		}
+		d, err := strconv.Atoi(strings.TrimSpace(day))
+		if err != nil || d < 1 || d > 31 {
+			return query.BadRequest("%q is not a birthday; MM-DD or MM", v)
+		}
+		b.Where("c.birthday = %s", m*100+d)
+		return nil
+	}),
 	"blood_type": query.TextColumn("c.bloodt"),
 	"cup":        query.TextColumn("c.cup_size"),
 	"sex":        query.TextColumn("c.sex"),
