@@ -131,8 +131,25 @@ func (s *Store) UserByID(ctx context.Context, id int32) (*User, error) {
 	return &u, err
 }
 
+// PasswordHash is the stored hash, for checking the password of someone
+// already signed in.
+func (s *Store) PasswordHash(ctx context.Context, id int32) (string, error) {
+	var hash string
+	err := s.pool.QueryRow(ctx, `SELECT password_hash FROM users WHERE id = $1`, id).Scan(&hash)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return hash, err
+}
+
 func (s *Store) SetPassword(ctx context.Context, id int32, hash string) error {
 	_, err := s.pool.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE id = $1`, id, hash)
+	return err
+}
+
+// DeleteUser removes the account; every other table cascades from it.
+func (s *Store) DeleteUser(ctx context.Context, id int32) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
 	return err
 }
 

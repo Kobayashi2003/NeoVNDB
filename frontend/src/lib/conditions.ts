@@ -229,6 +229,12 @@ export function relatedType(c: Condition | undefined): string | undefined {
     : undefined
 }
 
+/** The type a condition can hold a bracketed condition about: relations,
+ *  and tags or traits matched by what they are (tag=(search=school)). */
+export function nestable(c: Condition | undefined): string | undefined {
+  return c && (c.kind === "relation" || c.kind === "scored") ? c.target : undefined
+}
+
 export function conditionOf(type: string, key: string): Condition | undefined {
   return CONDITIONS[type]?.find((c) => c.key === key)
 }
@@ -270,10 +276,7 @@ const LISTABLE = new Set(["enum", "site", "entity", "relation", "number", "date"
 
 export const TIDY_RULES: TidyRules = {
   mergeable: (type, name) => LISTABLE.has(conditionOf(type, name)?.kind ?? ""),
-  nested: (type, name) => {
-    const c = conditionOf(type, name)
-    return c?.kind === "relation" ? c.target : undefined
-  },
+  nested: (type, name) => nestable(conditionOf(type, name)),
 }
 
 /** A staff credit value: s224 or s224:scenario. */

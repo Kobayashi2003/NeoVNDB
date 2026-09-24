@@ -3,7 +3,16 @@
 "use client"
 
 import { useSyncExternalStore } from "react"
-import { changePassword, login, logout, logoutEverywhere, me, register, type User } from "@/lib/user"
+import {
+  changePassword,
+  deleteAccount,
+  login,
+  logout,
+  logoutEverywhere,
+  me,
+  register,
+  type User,
+} from "@/lib/user"
 
 export interface Session {
   /** `unknown` until the first answer comes back, and never again after. */
@@ -18,6 +27,8 @@ export interface SessionControl extends Session {
   signOutEverywhere(): Promise<void>
   /** Ends other sessions; this browser stays signed in. */
   setPassword(current: string, next: string): Promise<void>
+  /** Irreversible; signed out afterwards. */
+  deleteAccount(password: string): Promise<void>
   /** Drop locally after the service reported the session gone. */
   forget(): void
 }
@@ -83,6 +94,10 @@ const control = {
   },
   async setPassword(currentPassword: string, next: string): Promise<void> {
     await changePassword(currentPassword, next)
+  },
+  async deleteAccount(password: string): Promise<void> {
+    await deleteAccount(password)
+    hold(null)
   },
   forget(): void {
     hold(null)

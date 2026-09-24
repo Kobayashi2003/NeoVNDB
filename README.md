@@ -7,8 +7,8 @@ and column names, plus the derived tables and columns vndb maintains but does
 not export. Everything is rebuilt from a weekly archive, so nothing in it is
 authored here and nothing has to survive an import.
 
-Scope is vndb data only. Users, collections, translations and audio are
-separate applications.
+The mirror's scope is vndb data only. Readers' accounts and lists live beside
+it in `backend/users`, with a database of their own; audio is not here yet.
 
 ## How data gets in
 
@@ -45,8 +45,6 @@ migrates -- it rebuilds. `backend/users` holds the one thing here that cannot
 be rebuilt from upstream, so it migrates and keeps its own database; separate
 modules are what stops the second from reaching into the first.
 
-Every command below runs from `backend/vndb/`.
-
 ## The edge
 
 Nothing is reached on its own port. Four processes run -- the read API on
@@ -73,6 +71,21 @@ mirror process at all.
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
 
+Caddy has no `.env`; it takes its settings from the environment, each with a
+default that suits a local checkout. `start.ps1` sets all of them from the
+services' own `.env` files, so a port or image directory changed there moves
+the edge with it:
+
+| Variable | Default | What it is |
+| --- | --- | --- |
+| `NEOVNDB_BIND` | `:5090` | where the edge listens |
+| `VNDBSERVE_UPSTREAM` | `127.0.0.1:5100` | the read API |
+| `IMGSERVE_UPSTREAM` | `127.0.0.1:5101` | the image mirror |
+| `USERSERVE_UPSTREAM` | `127.0.0.1:5102` | the user service |
+| `NEXT_UPSTREAM` | `127.0.0.1:3000` | the site |
+| `NEOVNDB_IMAGE_DIR` | `../data/images` | stored originals, served straight off disk |
+| `NEOVNDB_IMAGE_DERIVED_DIR` | `../data/images-derived` | resized copies |
+
 ## Running it
 
 ```powershell
@@ -91,7 +104,10 @@ still appear.
 
 It refuses to start on a port that is already in use rather than guessing, waits
 until each service actually answers, and prints the tail of a log for any that
-does not. Ports come from the `.env` files, not from the script.
+does not. The three services' ports and the image directories come from their
+`.env` files, not from the script, and are handed on to the edge; Next and the
+edge keep 3000 and 5090. Each process logs to `<name>.out.log` and
+`<name>.err.log` in its own directory.
 
 By hand it is five processes, each from its own directory, each reading the
 `.env` beside it -- which is also why the script sets a working directory per
@@ -112,10 +128,10 @@ written relative to it. Open the site on :5090, never :3000: nothing but the
 edge serves `/imgserve` and `/userserve`, and the dev server only accepts its
 hot-reload connection from the edge's origin because `next.config.ts` names it
 -- without that no page hydrates, which looks like images that never appear
-and a header that never learns who is signed in. `npm run dev` is the one to use while editing; `npm run
-build && npm start` serves a production build, which is what the numbers in
-the CLS notes were measured against -- and which will not pick up a source
-change until it is rebuilt.
+and a header that never learns who is signed in. `npm run dev` is the one to
+use while editing; `npm run build && npm start` serves a production build,
+which is what the numbers in the CLS notes were measured against -- and which
+will not pick up a source change until it is rebuilt.
 
 Nothing here starts PostgreSQL. The read API also expects a promoted
 generation: without one it starts and says so, and every query fails until
@@ -140,12 +156,15 @@ Passwords come across as they are. They are Werkzeug scrypt hashes, which
 bcrypt cannot read and nothing but the password itself can convert -- so
 `internal/auth` reads that format too and re-hashes the row the first time its
 owner signs in. Nobody has to reset anything, and the old format retires one
-sign-in at a time. Ratings are not carried over; nothing here keeps one.
+sign-in at a time. Ratings come across with their dates; a row the new scale
+(1 to 5, seven types) cannot hold is counted in the report and left behind.
 
 ## Setup
 
-Requires Go 1.24+, PostgreSQL 15+, Caddy 2 for the edge, and `sqlc` to
-regenerate the query layer.
+Requires Go 1.27+, Node 20.9+, PostgreSQL 15+, Caddy 2 for the edge, and
+`sqlc` to regenerate the query layer. Each part reads the `.env` beside it;
+every `.env.sample` lists every setting that part reads, with the value a
+deployment wants. `.env` files are not in git.
 
 ```sh
 cd backend/vndb
@@ -153,27 +172,79 @@ cp .env.sample .env          # adjust NEOVNDB_DB_URL
 createdb neovndb
 go run ./cmd/neovndb db init 20260819
 go run ./cmd/neovndb db verify
+go run ./cmd/neovndb update  # fetch and import the latest archive, then go live
+
+cd ../users
+cp .env.sample .env          # adjust NEOVNDB_USERS_DB_URL
+createdb neovndb_users       # the schema is applied when the service starts
+
+cd ../../frontend
+npm install                  # .env.sample documents its two settings; the defaults suit a checkout
 ```
+
+For local work the `.env` files turn the limits off (0 means no ceiling) and
+lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 
 ## Commands
 
+`backend/vndb`, one binary with a subcommand per role (`go run ./cmd/neovndb
+<command>`, or `bin/neovndb.exe` once `start.ps1` has built it):
+
 | Command | What it does |
 | --- | --- |
+| `serve [--addr host:port]` | Run the read API |
+| `images [--addr host:port]` | Run the image mirror |
+| `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
+| `update [--force]` | Import and go live if upstream is newer |
 | `db status` | Generations, whether the live one matches current DDL, row counts |
 | `db init <code>` | Build an empty `vndb_next` from the embedded DDL |
-| `db promote` | Run `db check`, then swap `vndb_next` into place; refuses an unfinished import |
+| `db check` | Compare `vndb_next` with the live generation and report what objects |
+| `db promote [--force]` | Run `db check`, then swap `vndb_next` into place; refuses an unfinished import |
 | `db rollback` | Swap `vndb_prev` back |
 | `db drop <schema>` | Drop one generation; refuses the live one |
-| `db check` | Compare `vndb_next` with the live generation and report what objects |
 | `db verify` | Write and read through the generated queries, then roll back |
 | `trans status` | What the translation corpus holds, and the language it is in |
 | `trans seed <file>` | Load a corpus; refuses the whole file if any row loses its markup |
+
+`backend/users` (`go run ./cmd/users`):
+
+| Command | What it does |
+| --- | --- |
+| *(none)* | Run the user service |
+| `import-legacy <old database url>` | Carry accounts, lists and ratings over from the old service (below) |
+
+`frontend` (`npm run <script>`):
+
+| Script | What it does |
+| --- | --- |
+| `dev` | The dev server; reach it through the edge |
+| `build` / `start` | A production build, and serving it |
+| `lint` | ESLint |
+| `test` / `test:watch` | The unit tests in `tests/`, once or on every change |
+| `typecheck:tests` | Type-check the tests, which the app's own `tsc` leaves out |
+
+## Tests
+
+```sh
+cd backend/vndb  && go test ./...
+cd backend/users && go test ./...
+cd frontend      && npm test
+```
+
+Nothing needs a running service. The user service's storage tests need a
+database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
+whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
+it, which is why any other name is refused. Frontend tests live in
+`frontend/tests/`, never in `src/`.
 
 ## Updating
 
 ```sh
 cd backend/vndb && go run ./cmd/neovndb update   # no-op if upstream is already live
 ```
+
+Run it while the read API is up: going live is one transaction, and responses
+are cached under the generation, so readers move to the new data at once.
 
 One command for the weekly run and for a run by hand -- an update path that
 only ever runs unattended is one nobody can reproduce when it fails. It stops
@@ -214,7 +285,7 @@ internal/db/
   verify.go
 internal/api/
   server.go           routes and graceful shutdown
-  handlers.go         the four handlers and the JSON envelope
+  handlers.go         the handlers (query, relation graph, meta, health) and the JSON envelope
   middleware.go       panic recovery and request logging
   cache.go            picking a backend, and the live generation's code
   query/              shared machinery: field tables, request parsing,

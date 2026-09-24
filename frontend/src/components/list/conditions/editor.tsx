@@ -6,6 +6,7 @@ import { Plus } from "lucide-react"
 import {
   type Condition,
   conditionOf,
+  nestable,
   NOUN,
   OP_LABEL,
   opsFor,
@@ -59,9 +60,10 @@ export function Editor({ type, cond, node }: { type: string; cond: Condition | u
     </MenuLabel>
   )
 
-  if (cond.kind === "relation") {
+  const inside = nestable(cond)
+  if (inside) {
     const nested = typeof node.value !== "string"
-    const noun = NOUN[cond.target]
+    const noun = NOUN[inside]
     const modes = [
       { id: "is", op: "=" as Op, has: false, label: `is this ${noun}` },
       { id: "isnot", op: "!=" as Op, has: false, label: `is not this ${noun}` },
@@ -92,7 +94,11 @@ export function Editor({ type, cond, node }: { type: string; cond: Condition | u
         {!nested && (
           <>
             <div className="-mx-1 my-1 h-px bg-white/10" role="separator" />
-            <EntityValue type={cond.target} node={node} set={set} />
+            {cond.kind === "scored" ? (
+              <Value cond={cond} node={node} set={set} done={done} />
+            ) : (
+              <EntityValue type={inside} node={node} set={set} />
+            )}
           </>
         )}
         {nested && <RemoveItem onClick={() => edit(node.key, () => null, null)}>Remove condition</RemoveItem>}

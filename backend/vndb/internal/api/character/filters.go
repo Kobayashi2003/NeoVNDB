@@ -46,9 +46,11 @@ var filters = map[string]query.FilterFunc{
 	// assigned directly.
 	// Traits carry no score, so a second part is the spoiler ceiling.
 	"trait": query.Related{Entity: vndb.TypeTrait, From: "chars_traits_inherit ct",
-		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil"}.Filter(),
+		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil",
+		Join: "traits i ON i.id = ct.tid"}.Filter(),
 	"dtrait": query.Related{Entity: vndb.TypeTrait, From: "chars_traits ct",
-		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil"}.Filter(),
+		Owner: "ct.id = c.id", ID: "ct.tid", Spoiler: "ct.spoil",
+		Join: "traits i ON i.id = ct.tid"}.Filter(),
 
 	"vn": query.Relation{Type: vndb.TypeVN,
 		From: "chars_vns cv", Owner: "cv.id = c.id", ID: "cv.vid",

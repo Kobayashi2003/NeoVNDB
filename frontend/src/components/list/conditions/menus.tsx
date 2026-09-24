@@ -15,7 +15,7 @@ import {
   Tag,
   UserRound,
 } from "lucide-react"
-import { conditionOf, CONDITIONS, relatedType } from "@/lib/conditions"
+import { conditionOf, CONDITIONS, nestable, relatedType } from "@/lib/conditions"
 import { group, type Group, leaf } from "@/lib/expr"
 import { cn } from "@/lib/utils"
 import { menuItem, MenuLabel, MenuMark } from "@/components/ui/Menu"
@@ -155,7 +155,7 @@ export function FilterList({ type, onPick }: { type: string; onPick: (name: stri
           <button key={c.key} type="button" onClick={() => onPick(c.key)} className={menuItem()}>
             <TypeIcon type={relatedType(c)!} className="text-sky-300/80" />
             {c.label}
-            {c.kind === "relation" && <span className="ml-auto text-[0.6875rem] text-muted">by details</span>}
+            {nestable(c) && <span className="ml-auto text-[0.6875rem] text-muted">by details</span>}
           </button>
         ))}
         {shown.length === 0 && <p className="px-2.5 py-1.5 text-xs text-muted">No such filter.</p>}

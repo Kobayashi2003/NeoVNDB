@@ -4,7 +4,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { RULES, UserError } from "@/lib/user"
+import { useRouter } from "next/navigation"
+import { errorText, RULES } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 
 export function AccountPanel() {
@@ -53,6 +54,7 @@ export function AccountPanel() {
       </div>
 
       <PasswordForm />
+      <DeleteForm />
     </div>
   )
 }
@@ -76,7 +78,7 @@ function PasswordForm() {
       form.reset()
       setDone(true)
     } catch (err) {
-      setError(err instanceof UserError ? err.message : "Something went wrong.")
+      setError(errorText(err))
     }
     setBusy(false)
   }
@@ -99,7 +101,7 @@ function PasswordForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30"
+          className={FIELD}
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -109,7 +111,7 @@ function PasswordForm() {
           type="password"
           autoComplete="new-password"
           required
-          className="rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30"
+          className={FIELD}
         />
         <span className="text-[0.6875rem] text-muted">{RULES.password}</span>
       </label>
@@ -128,6 +130,97 @@ function PasswordForm() {
       >
         {busy ? "…" : "Change password"}
       </button>
+    </form>
+  )
+}
+
+const FIELD =
+  "rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30"
+
+/** Folded until asked for, and asks for the password again: there is no
+ *  undo, and a session alone may be a borrowed browser. */
+function DeleteForm() {
+  const session = useSession()
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="self-start px-1 text-xs text-muted transition-colors hover:text-red-400"
+      >
+        Delete account…
+      </button>
+    )
+  }
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      await session.deleteAccount(String(new FormData(e.currentTarget).get("password") ?? ""))
+      router.push("/")
+    } catch (err) {
+      setError(errorText(err))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-4 rounded-lg border border-red-500/25 bg-red-500/[0.04] p-6"
+    >
+      <div>
+        <h2 className="text-sm font-semibold text-red-300">Delete account</h2>
+        <p className="mt-1 text-xs text-muted">
+          Your lists, everything on them and your ratings go with it, and every browser is signed
+          out. This cannot be undone.
+        </p>
+      </div>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted">Password</span>
+        <input
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          autoFocus
+          className={FIELD}
+        />
+      </label>
+
+      {error && (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex-1 rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-60"
+        >
+          {busy ? "…" : "Delete my account"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false)
+            setError(null)
+          }}
+          className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold transition-colors hover:bg-white/20"
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   )
 }
