@@ -24,6 +24,8 @@ type PageSpec struct {
 	IDType string
 	// SearchEntity is the letter search_cache stores, for searchrank.
 	SearchEntity string
+	// Popularity weighs into searchrank (vote count, items tagged); optional.
+	Popularity string
 
 	Filters map[string]FilterFunc
 	Sorts   map[string]string
@@ -63,14 +65,15 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 		return nil, 0, err
 	}
 
-	ordering, err := orderBy(spec, req)
+	// Kept before ordering and paging add their own, so the count below can
+	// reuse them.
+	where := b.SQL()
+	conds := append([]any(nil), b.Args...)
+
+	ordering, err := orderBy(spec, req, b)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	// Kept before paging is appended, so the count below can reuse them.
-	where := b.SQL()
-	conds := append([]any(nil), b.Args...)
 
 	sql := fmt.Sprintf("SELECT %s.*, COUNT(*) OVER ()::int AS total FROM %s WHERE %s ORDER BY %s",
 		spec.Alias, spec.Table, where, ordering)
@@ -109,7 +112,7 @@ func count(ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	return total, err
 }
 
-func orderBy(spec PageSpec, req *Request) (string, error) {
+func orderBy(spec PageSpec, req *Request, b *Builder) (string, error) {
 	name := req.Sort
 	if name == "" {
 		name = "id"
@@ -118,21 +121,59 @@ func orderBy(spec PageSpec, req *Request) (string, error) {
 	if !ok {
 		return "", BadRequest("cannot sort by %q", name)
 	}
-	if name == "searchrank" {
-		if _, searching := req.Filters["search"]; !searching {
-			return "", BadRequest("searchrank only orders a search")
-		}
-		expr = fmt.Sprintf(`(SELECT MAX(sc.prio) FROM search_cache sc
-		          WHERE sc.entity_type = '%s' AND sc.id = %s.id)`,
-			spec.SearchEntity, spec.Alias)
-	}
 
 	direction := " ASC"
 	if req.Reverse {
 		direction = " DESC"
 	}
+	if name == "searchrank" {
+		return searchRank(spec, req, b, direction)
+	}
 	// id breaks ties so paging is stable between requests.
 	return expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, nil
+}
+
+// searchRank scores each row by its best matching label: equal to the whole
+// query, then starting with it, then holding every word; then the label's
+// kind (title, alias, indirect), trigram similarity, and the entry's
+// popularity where the type has one. Ties go to the older entry.
+func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (string, error) {
+	raw, searching := req.Filters["search"]
+	if !searching {
+		return "", BadRequest("searchrank only orders a search")
+	}
+	value, err := matchOnly(raw)
+	if err != nil {
+		return "", err
+	}
+	terms := SearchTerms(value)
+	// Uncorrelated, so it runs once rather than for every label ranked: with
+	// a bound parameter the planner cannot fold the call into a constant.
+	q := fmt.Sprintf("(SELECT search_norm_term(%s))", b.Arg(strings.Join(terms, " ")))
+
+	// With one word, "holds every word" is just "contains the query"; the
+	// general form unnests the words for every label and costs most of the
+	// time on a broad search.
+	every := "sc.label LIKE '%%' || " + q + " || '%%'"
+	if len(terms) > 1 {
+		words := fmt.Sprintf("(SELECT array_agg(search_norm_term(w)) FROM unnest(%s::text[]) w)", b.Arg(terms))
+		every = fmt.Sprintf(`(SELECT bool_and(sc.label LIKE '%%%%' || w || '%%%%') FROM unnest(%s) w)`, words)
+	}
+
+	rank := fmt.Sprintf(`(SELECT MAX(
+	      CASE WHEN sc.label = %[1]s THEN 100 WHEN sc.label LIKE %[1]s || '%%' THEN 50 ELSE 0 END
+	    + CASE WHEN `+every+` THEN 20 ELSE 0 END
+	    + sc.prio * 5
+	    + similarity(sc.label, %[1]s) * 10)
+	   FROM search_cache sc
+	  WHERE sc.entity_type = '%[2]s' AND sc.id = %[3]s.id)`,
+		q, spec.SearchEntity, spec.Alias)
+	if spec.Popularity != "" {
+		// About +20 for the most voted-on VNs, a few points for obscure ones:
+		// enough to order equal matches, never enough to beat a better one.
+		rank += fmt.Sprintf(" + COALESCE(ln(1 + GREATEST(%s, 0)), 0) * 2", spec.Popularity)
+	}
+	return "(" + rank + ")" + direction + " NULLS LAST, " + spec.Alias + ".id ASC", nil
 }
 
 // SearchTerms splits a query into words that must each match, in any order; a

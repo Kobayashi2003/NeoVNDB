@@ -31,6 +31,6 @@ var sorts = map[string]string{
 }
 
 var spec = query.PageSpec{
-	Table: "tags g", Alias: "g", IDType: vndb.TypeTag, SearchEntity: "g",
+	Table: "tags g", Alias: "g", IDType: vndb.TypeTag, SearchEntity: "g", Popularity: "g.c_items",
 	Filters: filters, Sorts: sorts,
 }
