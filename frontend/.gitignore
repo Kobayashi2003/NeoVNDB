@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Stray server logs from local runs.
 *.log
+
+# Playwright traces and screenshots from failed e2e runs.
+/tests/e2e/.results/
