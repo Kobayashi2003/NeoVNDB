@@ -32,7 +32,8 @@ const usage = `neovndb
   db verify              round-trip the generated query layer, then roll back
 
   trans status           what the translation corpus holds
-  trans seed <file>      load a corpus; refuses the file if any markup is lost`
+  trans seed [file]      load a corpus (default internal/trans/init.json);
+                         refuses the file if any markup is lost`
 
 func main() {
 	if err := run(); err != nil {

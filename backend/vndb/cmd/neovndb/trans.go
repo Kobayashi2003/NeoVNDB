@@ -16,7 +16,7 @@ import (
 
 // The seed file: tag and trait names by category, and a flat list of the long
 // texts. It is the format the previous incarnation of this project exported,
-// which is where the corpus comes from.
+// which is where the corpus comes from; the corpus itself is defaultSeed.
 type seedFile struct {
 	TargetLang string                       `json:"target_lang"`
 	Terms      map[string]map[string]string `json:"terms"`
@@ -27,6 +27,10 @@ type seedFile struct {
 	} `json:"passages"`
 }
 
+// defaultSeed is the corpus kept in this repository, relative to backend/vndb
+// where the command runs.
+const defaultSeed = "internal/trans/init.json"
+
 func runTrans(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("usage: neovndb trans <status|seed>")
@@ -35,10 +39,14 @@ func runTrans(ctx context.Context, args []string) error {
 	case "status":
 		return transStatus(ctx)
 	case "seed":
-		if len(args) < 2 {
-			return fmt.Errorf("usage: neovndb trans seed <file.json>")
+		if len(args) > 2 {
+			return fmt.Errorf("usage: neovndb trans seed [file.json]")
 		}
-		return transSeed(ctx, args[1])
+		file := defaultSeed
+		if len(args) == 2 {
+			file = args[1]
+		}
+		return transSeed(ctx, file)
 	default:
 		return fmt.Errorf("unknown trans command %q", args[0])
 	}
@@ -152,20 +160,12 @@ func transSeed(ctx context.Context, path string) error {
 		passages++
 	}
 
+	if err := q.BumpTransRevision(ctx); err != nil {
+		return err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	fmt.Printf("seeded %d terms and %d passages into %s\n", terms, passages, lang)
 	return nil
-}
-
-func joinLines(lines []string) string {
-	out := ""
-	for i, l := range lines {
-		if i > 0 {
-			out += "\n"
-		}
-		out += l
-	}
-	return out
 }
