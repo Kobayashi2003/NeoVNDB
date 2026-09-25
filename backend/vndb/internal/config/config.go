@@ -61,6 +61,12 @@ const (
 	defaultImageFetchLimit = 30 * time.Second
 	// Concurrent fetches from vndb's CDN.
 	defaultImageFetchParallel = 8
+	// The crawl that mirrors ahead of readers: hourly, a few hundred images at
+	// a time, one every two seconds -- a day brings about 4,800 images in at a
+	// pace vndb's CDN will not notice.
+	defaultImageCrawlEvery  = time.Hour
+	defaultImageCrawlPerRun = 200
+	defaultImageCrawlDelay  = 2 * time.Second
 
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
@@ -117,6 +123,9 @@ type Config struct {
 	ImageMaxBytes      int64
 	ImageFetchLimit    time.Duration
 	ImageFetchParallel int
+	ImageCrawlEvery    time.Duration // 0 turns the crawl off
+	ImageCrawlPerRun   int           // 0 means no ceiling
+	ImageCrawlDelay    time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -167,6 +176,9 @@ func Load() (*Config, error) {
 		ImageMaxBytes:      int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
 		ImageFetchLimit:    envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
 		ImageFetchParallel: envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
+		ImageCrawlEvery:    envDuration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
+		ImageCrawlPerRun:   envInt("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
+		ImageCrawlDelay:    envDuration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")

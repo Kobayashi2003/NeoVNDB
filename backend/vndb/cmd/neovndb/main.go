@@ -19,7 +19,8 @@ import (
 const usage = `neovndb
 
   serve  [--addr host:port]              run the read-only HTTP API
-  images [--addr host:port]              run the image mirror
+  images [--addr host:port]              run the image mirror (crawls hourly)
+  crawl  [--limit n]                     fetch missing images now (0: all)
   import [--file p] [--promote] [--force] load an archive into vndb_next
   update [--force]                       import and go live if upstream is newer
 
@@ -57,6 +58,8 @@ func run() error {
 		return runServe(ctx, args[1:])
 	case "images":
 		return runImages(ctx, args[1:])
+	case "crawl":
+		return runCrawl(ctx, args[1:])
 	case "import":
 		return runImport(ctx, args[1:])
 	case "update":
