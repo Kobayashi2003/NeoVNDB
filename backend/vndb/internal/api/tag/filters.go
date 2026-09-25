@@ -22,12 +22,12 @@ var filters = map[string]query.FilterFunc{
 		SELECT 1 FROM tags_vn_direct tv WHERE tv.tag = g.id AND tv.vid = %s)`),
 }
 
-var sorts = map[string]string{
-	"id":       "g.id",
-	"name":     "g.name",
-	"vn_count": "g.c_items",
+var sorts = map[string]query.Sort{
+	"id":       {Expr: "g.id"},
+	"name":     {Expr: "g.name"},
+	"vn_count": {Expr: "g.c_items"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 var spec = query.PageSpec{

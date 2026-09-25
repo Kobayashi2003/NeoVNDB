@@ -17,7 +17,8 @@ import (
 type Countable interface{ Count() int32 }
 
 type PageSpec struct {
-	// Table is the FROM clause with its alias; Alias is the alias alone.
+	// Table is the main table with its alias, and nothing joined: filters
+	// reach other tables through EXISTS, and a sort brings its own join.
 	Table string
 	Alias string
 	// IDType parses an id= filter.
@@ -28,7 +29,15 @@ type PageSpec struct {
 	Popularity string
 
 	Filters map[string]FilterFunc
-	Sorts   map[string]string
+	Sorts   map[string]Sort
+}
+
+// Sort is one ordering a type offers. Join is what Expr needs beyond the main
+// table; it reaches the FROM only when this sort is asked for, so the count and
+// every other ordering never pay for it, and its alias cannot meet a filter's.
+type Sort struct {
+	Expr string
+	Join string
 }
 
 // Page runs one filtered, ordered page and returns the rows with the total. A
@@ -70,13 +79,17 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	where := b.SQL()
 	conds := append([]any(nil), b.Args...)
 
-	ordering, err := orderBy(spec, req, b)
+	ordering, join, err := orderBy(spec, req, b)
 	if err != nil {
 		return nil, 0, err
 	}
 
+	from := spec.Table
+	if join != "" {
+		from += " " + join
+	}
 	sql := fmt.Sprintf("SELECT %s.*, COUNT(*) OVER ()::int AS total FROM %s WHERE %s ORDER BY %s",
-		spec.Alias, spec.Table, where, ordering)
+		spec.Alias, from, where, ordering)
 	if !byID {
 		sql += fmt.Sprintf(" LIMIT %s OFFSET %s", b.Arg(req.Limit), b.Arg(req.Offset()))
 	}
@@ -112,14 +125,15 @@ func count(ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	return total, err
 }
 
-func orderBy(spec PageSpec, req *Request, b *Builder) (string, error) {
+// orderBy returns the ORDER BY clause and the join it needs, if any.
+func orderBy(spec PageSpec, req *Request, b *Builder) (string, string, error) {
 	name := req.Sort
 	if name == "" {
 		name = "id"
 	}
-	expr, ok := spec.Sorts[name]
+	sort, ok := spec.Sorts[name]
 	if !ok {
-		return "", BadRequest("cannot sort by %q", name)
+		return "", "", BadRequest("cannot sort by %q", name)
 	}
 
 	direction := " ASC"
@@ -127,10 +141,11 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, error) {
 		direction = " DESC"
 	}
 	if name == "searchrank" {
-		return searchRank(spec, req, b, direction)
+		rank, err := searchRank(spec, req, b, direction)
+		return rank, "", err
 	}
 	// id breaks ties so paging is stable between requests.
-	return expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, nil
+	return sort.Expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, sort.Join, nil
 }
 
 // searchRank scores each row by its best matching label: equal to the whole

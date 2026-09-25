@@ -70,6 +70,18 @@ const SEARCH = { kind: "text" as const, hint: "words" }
 const NUM = { kind: "number" as const }
 const LINK = { key: "extlink", label: "Has a link to", kind: "site" as const }
 
+/** A cover's voted level, in the steps the site blurs by; unvoted covers match none. */
+const COVER_SEXUAL: Choice[] = [
+  { value: "safe", label: "Safe" },
+  { value: "suggestive", label: "Suggestive" },
+  { value: "explicit", label: "Explicit" },
+]
+const COVER_VIOLENCE: Choice[] = [
+  { value: "tame", label: "Tame" },
+  { value: "violent", label: "Violent" },
+  { value: "brutal", label: "Brutal" },
+]
+
 /** Release animation, as the dump's ani_story / ani_ero record it. */
 const ANIMATION: Choice[] = [
   { value: "1", label: "None" },
@@ -121,6 +133,8 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "staff", label: "Staff", ...rel("s") },
     { key: "seiyuu", label: "Voice actor", ...rel("s") },
     { key: "credit", label: "Staff in a role", kind: "credit", target: "s", roles: from("STAFF_ROLE") },
+    { key: "cover_sexual", label: "Cover: sexual content", kind: "enum", choices: COVER_SEXUAL },
+    { key: "cover_violence", label: "Cover: violence", kind: "enum", choices: COVER_VIOLENCE },
     { key: "medium", label: "Medium", kind: "enum", choices: from("MEDIUM") },
     { key: "has_description", label: "Has description", ...BOOL },
     { key: "has_screenshot", label: "Has screenshots", ...BOOL },
@@ -167,6 +181,8 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "age", label: "Age", ...NUM },
     { key: "birthday", label: "Birthday", kind: "text", hint: "12-25, or 12 for a month" },
     { key: "has_image", label: "Has a picture", ...BOOL },
+    { key: "is_variant", label: "Is a variant", ...BOOL },
+    { key: "variant_of", label: "Variant of", ...on("c") },
     { key: "height", label: "Height", kind: "number", hint: "cm", unit: "cm" },
     { key: "weight", label: "Weight", kind: "number", hint: "kg", unit: "kg" },
     { key: "bust", label: "Bust", kind: "number", hint: "cm", unit: "cm" },

@@ -35,7 +35,7 @@ func TestSearchTerms(t *testing.T) {
 
 func TestSearchRankOrder(t *testing.T) {
 	spec := PageSpec{Alias: "vn", SearchEntity: "v", Popularity: "vn.c_votecount",
-		Sorts: map[string]string{"id": "vn.id", "searchrank": ""}}
+		Sorts: map[string]Sort{"id": {Expr: "vn.id"}, "searchrank": {}}}
 
 	for _, c := range []struct {
 		search string
@@ -47,8 +47,8 @@ func TestSearchRankOrder(t *testing.T) {
 		b := &Builder{}
 		b.Arg("already bound") // a filter's argument, which stays $1
 		req := &Request{Sort: "searchrank", Reverse: true, Filters: map[string]string{"search": c.search}}
-		sql, err := orderBy(spec, req, b)
-		if err != nil {
+		sql, join, err := orderBy(spec, req, b)
+		if err != nil || join != "" {
 			t.Fatalf("%q: %v", c.search, err)
 		}
 		if len(b.Args) != 1+c.args {
@@ -62,7 +62,24 @@ func TestSearchRankOrder(t *testing.T) {
 		}
 	}
 
-	if _, err := orderBy(spec, &Request{Sort: "searchrank", Filters: map[string]string{}}, &Builder{}); err == nil {
+	if _, _, err := orderBy(spec, &Request{Sort: "searchrank", Filters: map[string]string{}}, &Builder{}); err == nil {
 		t.Error("searchrank without a search should be refused")
+	}
+}
+
+// A sort's join comes with that sort only.
+func TestSortBringsItsJoin(t *testing.T) {
+	spec := PageSpec{Alias: "vn", Sorts: map[string]Sort{
+		"id":    {Expr: "vn.id"},
+		"title": {Expr: "vt.title", Join: "LEFT JOIN vn_titles vt ON vt.id = vn.id"},
+	}}
+	if _, join, _ := orderBy(spec, &Request{Sort: "title"}, &Builder{}); join == "" {
+		t.Error("title sort lost its join")
+	}
+	if _, join, _ := orderBy(spec, &Request{}, &Builder{}); join != "" {
+		t.Errorf("the default sort brought a join: %q", join)
+	}
+	if _, _, err := orderBy(spec, &Request{Sort: "nosuch"}, &Builder{}); err == nil {
+		t.Error("an unknown sort was accepted")
 	}
 }

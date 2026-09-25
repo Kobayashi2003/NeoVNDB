@@ -123,20 +123,19 @@ func releasedFilter(b *query.Builder, value string) error {
 	})
 }
 
-var sorts = map[string]string{
-	"id":       "r.id",
-	"title":    "COALESCE(rt2.latin, rt2.title)",
-	"released": "r.released",
-	"minage":   "r.minage",
+var sorts = map[string]query.Sort{
+	"id":       {Expr: "r.id"},
+	"title":    {Expr: "COALESCE(rt.latin, rt.title)", Join: "LEFT JOIN releases_titles rt ON rt.id = r.id AND rt.lang = r.olang"},
+	"released": {Expr: "r.released"},
+	"minage":   {Expr: "r.minage"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 // The join to the title in the release's own language is one-to-one, so it
 // adds a sortable title without multiplying rows.
 var spec = query.PageSpec{
-	Table: "releases r LEFT JOIN releases_titles rt2 ON rt2.id = r.id AND rt2.lang = r.olang",
-	Alias: "r", IDType: vndb.TypeRelease, SearchEntity: "r",
+	Table: "releases r", Alias: "r", IDType: vndb.TypeRelease, SearchEntity: "r",
 	Filters: filters, Sorts: sorts,
 }
 

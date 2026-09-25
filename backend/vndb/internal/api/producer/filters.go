@@ -22,11 +22,11 @@ var filters = map[string]query.FilterFunc{
 		 WHERE rp.pid = p.id AND rv.vid = %s)`),
 }
 
-var sorts = map[string]string{
-	"id":   "p.id",
-	"name": "COALESCE(p.latin, p.name)",
+var sorts = map[string]query.Sort{
+	"id":   {Expr: "p.id"},
+	"name": {Expr: "COALESCE(p.latin, p.name)"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 var spec = query.PageSpec{
