@@ -1,4 +1,8 @@
-// Command users serves accounts, sessions and lists.
+// Command users serves accounts, sessions and lists, and backs up its database
+// on a schedule.
+//
+//	users          serve
+//	users backup   dump the database now
 //
 // Separate binary and database from the mirror, whose schemas are rebuilt
 // every import; this service migrates rather than rebuilds.
@@ -16,6 +20,7 @@ import (
 	"time"
 
 	"github.com/kobayashi/neovndb-users/internal/api"
+	"github.com/kobayashi/neovndb-users/internal/backup"
 	"github.com/kobayashi/neovndb-users/internal/config"
 	"github.com/kobayashi/neovndb-users/internal/store"
 )
@@ -36,6 +41,18 @@ func run(ctx context.Context) error {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	dumps := backup.Options{PgDump: cfg.PgDump, DatabaseURL: cfg.DatabaseURL, Dir: cfg.BackupDir, Keep: cfg.BackupKeep}
+
+	switch {
+	case len(os.Args) == 2 && os.Args[1] == "backup":
+		path, err := backup.Run(ctx, dumps, time.Now())
+		if err == nil {
+			log.Info("backed up", "file", path)
+		}
+		return err
+	case len(os.Args) > 1:
+		return fmt.Errorf("usage: users [backup]")
+	}
 
 	st, err := store.Open(ctx, cfg)
 	if err != nil {
@@ -43,11 +60,10 @@ func run(ctx context.Context) error {
 	}
 	defer st.Close()
 
-	if len(os.Args) > 1 {
-		return fmt.Errorf("users takes no arguments")
-	}
-
 	go sweep(ctx, st, cfg.SweepEvery, log)
+	if cfg.BackupEvery > 0 {
+		go backUp(ctx, dumps, cfg.BackupEvery, log)
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.Addr(),
@@ -90,6 +106,29 @@ func sweep(ctx context.Context, st *store.Store, every time.Duration, log *slog.
 			} else if n > 0 {
 				log.Info("swept expired sessions", "count", n)
 			}
+		}
+	}
+}
+
+// backUp checks hourly whether the newest backup is older than every, so a
+// service that restarts often still backs up on time. Checked once at start.
+func backUp(ctx context.Context, o backup.Options, every time.Duration, log *slog.Logger) {
+	tick := time.NewTicker(time.Hour)
+	defer tick.Stop()
+	for {
+		if due, err := backup.Due(o.Dir, every, time.Now()); err != nil {
+			log.Warn("checking backups", "err", err)
+		} else if due {
+			if path, err := backup.Run(ctx, o, time.Now()); err != nil {
+				log.Error("backing up", "err", err)
+			} else {
+				log.Info("backed up", "file", path)
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
 		}
 	}
 }

@@ -124,24 +124,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.oops(w, "reading user", err)
 		return
 	}
-	ok, stale := auth.Check(hash, body.Password)
-	if !ok {
+	if !auth.Check(hash, body.Password) {
 		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}
 	// A correct password clears earlier failed attempts.
 	s.signInFrom.forget(from)
 	s.signInFor.forget(strings.ToLower(name))
-
-	// Legacy hash: rehash to bcrypt while the plaintext is in hand. A failure
-	// is only logged; the sign-in still succeeds.
-	if stale {
-		if next, err := auth.Hash(body.Password, s.cfg.BcryptCost); err != nil {
-			s.log.Error("rehashing a migrated password", "user", user.ID, "err", err)
-		} else if err := s.store.SetPassword(r.Context(), user.ID, next); err != nil {
-			s.log.Error("saving a rehashed password", "user", user.ID, "err", err)
-		}
-	}
 
 	if err := s.start(w, r, user.ID); err != nil {
 		s.oops(w, "starting session", err)
@@ -259,7 +248,7 @@ func (s *Server) confirm(w http.ResponseWriter, r *http.Request, userID int32, p
 		s.oops(w, "reading user", err)
 		return false
 	}
-	if ok, _ := auth.Check(hash, password); !ok {
+	if !auth.Check(hash, password) {
 		fail(w, http.StatusForbidden, "That is not your current password.")
 		return false
 	}
