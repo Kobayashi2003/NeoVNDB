@@ -137,28 +137,6 @@ Nothing here starts PostgreSQL. The read API also expects a promoted
 generation: without one it starts and says so, and every query fails until
 `db promote` has run.
 
-## Accounts carried over
-
-`backend/users` can take on the database of the service this project replaces:
-
-```sh
-cd backend/users
-go run ./cmd/users import-legacy postgres://user:pass@host/olddb
-```
-
-It reads the old side and never writes to it, does everything in one
-transaction, and reports what it made so the counts can be compared with the
-old database rather than taken on trust. A username already taken here is left
-alone and named in the output: two rows are the same person only if someone
-says so.
-
-Passwords come across as they are. They are Werkzeug scrypt hashes, which
-bcrypt cannot read and nothing but the password itself can convert -- so
-`internal/auth` reads that format too and re-hashes the row the first time its
-owner signs in. Nobody has to reset anything, and the old format retires one
-sign-in at a time. Ratings come across with their dates; a row the new scale
-(1 to 5, seven types) cannot hold is counted in the report and left behind.
-
 ## Setup
 
 Requires Go 1.27+, Node 20.9+, PostgreSQL 15+, Caddy 2 for the edge, and
@@ -173,6 +151,7 @@ createdb neovndb
 go run ./cmd/neovndb db init 20260819
 go run ./cmd/neovndb db verify
 go run ./cmd/neovndb update  # fetch and import the latest archive, then go live
+go run ./cmd/neovndb trans seed   # the translation corpus kept in internal/trans/init.json
 
 cd ../users
 cp .env.sample .env          # adjust NEOVNDB_USERS_DB_URL
@@ -193,7 +172,8 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | Command | What it does |
 | --- | --- |
 | `serve [--addr host:port]` | Run the read API |
-| `images [--addr host:port]` | Run the image mirror |
+| `images [--addr host:port]` | Run the image mirror; it also crawls ahead of readers every hour |
+| `crawl [--limit n]` | Fetch images the database knows of and the disk lacks, now (`--limit 0`: all of them) |
 | `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
 | `update [--force]` | Import and go live if upstream is newer |
 | `db status` | Generations, whether the live one matches current DDL, row counts |
@@ -204,14 +184,14 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | `db drop <schema>` | Drop one generation; refuses the live one |
 | `db verify` | Write and read through the generated queries, then roll back |
 | `trans status` | What the translation corpus holds, and the language it is in |
-| `trans seed <file>` | Load a corpus; refuses the whole file if any row loses its markup |
+| `trans seed [file]` | Load a corpus, by default `internal/trans/init.json`; refuses the whole file if any row loses its markup |
 
 `backend/users` (`go run ./cmd/users`):
 
 | Command | What it does |
 | --- | --- |
-| *(none)* | Run the user service |
-| `import-legacy <old database url>` | Carry accounts, lists and ratings over from the old service (below) |
+| *(none)* | Run the user service; it also backs its database up on a schedule |
+| `backup` | Dump the user database now, into `NEOVNDB_USERS_BACKUP_DIR` |
 
 `frontend` (`npm run <script>`):
 
@@ -220,7 +200,8 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | `dev` | The dev server; reach it through the edge |
 | `build` / `start` | A production build, and serving it |
 | `lint` | ESLint |
-| `test` / `test:watch` | The unit tests in `tests/`, once or on every change |
+| `test` / `test:watch` | The unit tests in `tests/unit/`, once or on every change |
+| `test:e2e` | The end-to-end tests in `tests/e2e/`, against the running site |
 | `typecheck:tests` | Type-check the tests, which the app's own `tsc` leaves out |
 
 ## Tests
@@ -229,13 +210,42 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 cd backend/vndb  && go test ./...
 cd backend/users && go test ./...
 cd frontend      && npm test
+cd frontend      && npm run test:e2e   # needs the site up (start.ps1)
 ```
 
-Nothing needs a running service. The user service's storage tests need a
+Only the end-to-end tests need a running service; they drive Chromium
+through the edge (`E2E_BASE_URL`, default `http://127.0.0.1:5090`). The user service's storage tests need a
 database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
 whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
-it, which is why any other name is refused. Frontend tests live in
+it, which is why any other name is refused. The same variable lets the
+end-to-end tests start a throwaway user service of their own on :5199 and
+exercise signed-in pages; without it those three skip. Frontend tests live in
 `frontend/tests/`, never in `src/`.
+
+## Scheduled work
+
+Three things run on a schedule, and only one of them needs anything from
+outside:
+
+- **Updating the mirror** is left to the system's scheduler, which runs
+  `neovndb update` from `backend/vndb` (it is a no-op when upstream has nothing
+  newer, so daily is fine):
+
+  ```powershell
+  schtasks /Create /TN "NeoVNDB update" /SC DAILY /ST 05:00 /TR "cmd /c cd /d D:\path\to\NeoVNDB\backend\vndb && bin\neovndb.exe update >> update.log 2>&1"
+  ```
+
+  or a cron line / systemd timer running the same command.
+- **Backing up the user database** is done by the user service itself: it
+  checks hourly and dumps (`pg_dump`, custom format) when the newest copy is
+  older than `NEOVNDB_USERS_BACKUP_EVERY` (a week), keeping the newest
+  `NEOVNDB_USERS_BACKUP_KEEP`. Restore with
+  `pg_restore --clean --if-exists -d <database url> <file>`.
+- **Mirroring images ahead of readers** is done by the image mirror: every
+  `NEOVNDB_IMAGE_CRAWL_EVERY` it fetches up to `NEOVNDB_IMAGE_CRAWL_PER_RUN`
+  images, and their upstream thumbnails, that the database knows of and the disk
+  does not hold, newest first and `NEOVNDB_IMAGE_CRAWL_DELAY` apart. The dump's
+  `images` table is the list, so nothing is probed.
 
 ## Updating
 
@@ -271,6 +281,8 @@ internal/cache/       response cache: memory LRU or Redis
 internal/dump/        fetch and stream the tar
 internal/importer/    COPY the dump into a fresh generation
 internal/vndb/        the dump's own encodings: ids, dates, extlinks, animation
+internal/trans/       translations of tag and trait text; init.json is the
+                      corpus itself, the only copy, loaded by `trans seed`
 internal/db/
   guard/              what makes a fresh generation unfit to go live
   ddl/01_mirror.sql   the 42 dump tables we import
@@ -325,7 +337,9 @@ internal/api/
   generation is read per request rather than remembered: that read is a
   fraction of a millisecond, and paying it is what keeps a promote from being
   followed by a window where some types answer out of the new generation and
-  others out of entries keyed to the old one.
+  others out of entries keyed to the old one. The key also carries the
+  translation corpus's revision, which every `trans seed` bumps, so a changed
+  translation is served at once too.
 - **Every bound is a setting.** Page size, id-list length, field depth, the
   response cost ceiling, the graph's depth and node cap, and the request
   timeout all come from the environment (see `.env.sample`). They bound work
