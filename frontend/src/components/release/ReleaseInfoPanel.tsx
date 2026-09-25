@@ -4,7 +4,7 @@
 "use client"
 
 import Link from "next/link"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { animationLabel, medium, releaseDate } from "@/lib/format"
 import { AgeRating } from "@/components/ui/AgeRating"
@@ -12,9 +12,6 @@ import { Icon } from "@/components/ui/Icon"
 import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoCard"
 import { Tooltip } from "@/components/ui/Tooltip"
 import type { ReleaseDetail } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
-const PLAT = ICON.PLATFORM as Record<string, string>
 
 /** Three independent facts vndb records about how a release was published. */
 function publication(r: ReleaseDetail): string[] {
@@ -64,7 +61,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
         {r.platforms.length > 0 && (
           <InfoRow label="Platform">
             {r.platforms.map((p) => (
-              <Icon key={p} cls={PLAT[p] ?? ""} title={enumLabel("PLATFORM", p)} />
+              <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
             ))}
           </InfoRow>
         )}
@@ -106,8 +103,8 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
                 href={`/${p.id}`}
                 className="flex items-center gap-1.5 transition-colors hover:text-accent coarse:py-1"
               >
-                {p.lang && LANG[p.lang] && (
-                  <Icon cls={LANG[p.lang]} title={enumLabel("LANGUAGE", p.lang)} />
+                {p.lang && iconOf("LANGUAGE", p.lang) && (
+                  <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
                 )}
                 <span className="truncate">{p.name}</span>
                 <span className="shrink-0 text-muted">

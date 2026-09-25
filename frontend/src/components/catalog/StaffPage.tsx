@@ -2,7 +2,7 @@
  *  upstream). Aliases get their own card, since credits elsewhere show the
  *  alias used; the person's own name is marked. */
 
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { BBCode } from "@/lib/bbcode"
 import { cn } from "@/lib/utils"
@@ -15,9 +15,6 @@ import { Name } from "@/components/ui/Name"
 import { DetailControls } from "@/components/ui/DetailControls"
 import { CatalogPage } from "./CatalogPage"
 import type { StaffDetail } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
-const SEX = ICON.CHARACTER_SEX as Record<string, string>
 
 export async function StaffPage({
   staff: s,
@@ -48,12 +45,12 @@ export async function StaffPage({
         <>
           <InfoCard>
             <InfoRow label="Language">
-              <Icon cls={LANG[s.lang] ?? ""} title={enumLabel("LANGUAGE", s.lang)} />
+              <Icon cls={iconOf("LANGUAGE", s.lang)} title={enumLabel("LANGUAGE", s.lang)} />
               <span>{enumLabel("LANGUAGE", s.lang)}</span>
             </InfoRow>
             {s.gender && (
               <InfoRow label="Gender">
-                <Icon cls={SEX[s.gender] ?? ""} title={enumLabel("GENDER", s.gender)} />
+                <Icon cls={iconOf("CHARACTER_SEX", s.gender)} title={enumLabel("GENDER", s.gender)} />
                 <span>{enumLabel("GENDER", s.gender)}</span>
               </InfoRow>
             )}

@@ -1,8 +1,5 @@
 // Command users serves accounts, sessions and lists.
 //
-//	users                       serve
-//	users import-legacy <url>   bring across the old service's database
-//
 // Separate binary and database from the mirror, whose schemas are rebuilt
 // every import; this service migrates rather than rebuilds.
 package main
@@ -47,10 +44,7 @@ func run(ctx context.Context) error {
 	defer st.Close()
 
 	if len(os.Args) > 1 {
-		if os.Args[1] != "import-legacy" || len(os.Args) != 3 {
-			return fmt.Errorf("usage: users [import-legacy <old database url>]")
-		}
-		return importLegacy(ctx, st, os.Args[2], log)
+		return fmt.Errorf("users takes no arguments")
 	}
 
 	go sweep(ctx, st, cfg.SweepEvery, log)
@@ -78,25 +72,6 @@ func run(ctx context.Context) error {
 		defer cancel()
 		return srv.Shutdown(shutdown)
 	}
-}
-
-// importLegacy copies accounts and lists from the replaced service, once, by
-// hand, against a database no longer written to. It reports counts in terms
-// the old database can be checked against.
-func importLegacy(ctx context.Context, st *store.Store, oldURL string, log *slog.Logger) error {
-	report, err := st.ImportLegacy(ctx, oldURL)
-	if err != nil {
-		return err
-	}
-	log.Info("imported", "users", report.Users, "collections", report.Collections,
-		"marks", report.Marks, "ratings", report.Ratings)
-	if report.Unfit > 0 {
-		log.Warn("left behind: ratings the schema here cannot hold", "rows", report.Unfit)
-	}
-	for _, name := range report.Skipped {
-		log.Warn("left alone: that username is already taken here", "username", name)
-	}
-	return nil
 }
 
 // sweep deletes expired sessions. Housekeeping only: expiry is already

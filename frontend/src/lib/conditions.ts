@@ -2,9 +2,8 @@
  *  api/<type>/filters.go; keep the two in step. The text view accepts any
  *  filter, so a missing entry only means it has no control here. */
 
-import { ENUMS, VN_RELATION, enumLabel } from "./enums"
-import { ICON } from "./icons"
-import { STAFF_GENDER, type Choice } from "./filters"
+import { VN_RELATION } from "./enums"
+import { choices, LANGUAGES, PLATFORMS, STAFF_GENDER, type Choice } from "./choices"
 import { group, leaf, print, type Op, type TidyRules } from "./expr"
 
 export type ConditionKind =
@@ -55,16 +54,8 @@ export function opsFor(c: ConditionKind): Op[] {
   }
 }
 
-function from(group: keyof typeof ENUMS, icons?: Record<string, string>): Choice[] {
-  return Object.keys(ENUMS[group]).map((value) => ({
-    value,
-    label: enumLabel(group, value),
-    icon: icons?.[value],
-  }))
-}
-
-const LANG = () => ({ kind: "enum" as const, choices: from("LANGUAGE", ICON.LANGUAGE as Record<string, string>) })
-const PLATFORM = () => ({ kind: "enum" as const, choices: from("PLATFORM", ICON.PLATFORM as Record<string, string>) })
+const LANG = () => ({ kind: "enum" as const, choices: LANGUAGES })
+const PLATFORM = () => ({ kind: "enum" as const, choices: PLATFORMS })
 const BOOL = { kind: "bool" as const }
 const SEARCH = { kind: "text" as const, hint: "words" }
 const NUM = { kind: "number" as const }
@@ -110,8 +101,8 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "lang", label: "Language", ...LANG() },
     { key: "olang", label: "Original language", ...LANG() },
     { key: "platform", label: "Platform", ...PLATFORM() },
-    { key: "length", label: "Length", kind: "enum", choices: from("LENGTH") },
-    { key: "devstatus", label: "Status", kind: "enum", choices: from("DEVSTATUS") },
+    { key: "length", label: "Length", kind: "enum", choices: choices("LENGTH") },
+    { key: "devstatus", label: "Status", kind: "enum", choices: choices("DEVSTATUS") },
     { key: "released", label: "Released", kind: "date" },
     { key: "rating", label: "Rating", kind: "number", hint: "10–100" },
     { key: "average", label: "Average", kind: "number", hint: "10–100" },
@@ -132,10 +123,10 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "trait", label: "Character trait", ...on("i") },
     { key: "staff", label: "Staff", ...rel("s") },
     { key: "seiyuu", label: "Voice actor", ...rel("s") },
-    { key: "credit", label: "Staff in a role", kind: "credit", target: "s", roles: from("STAFF_ROLE") },
+    { key: "credit", label: "Staff in a role", kind: "credit", target: "s", roles: choices("STAFF_ROLE") },
     { key: "cover_sexual", label: "Cover: sexual content", kind: "enum", choices: COVER_SEXUAL },
     { key: "cover_violence", label: "Cover: violence", kind: "enum", choices: COVER_VIOLENCE },
-    { key: "medium", label: "Medium", kind: "enum", choices: from("MEDIUM") },
+    { key: "medium", label: "Medium", kind: "enum", choices: choices("MEDIUM") },
     { key: "has_description", label: "Has description", ...BOOL },
     { key: "has_screenshot", label: "Has screenshots", ...BOOL },
     { key: "has_anime", label: "Has anime", ...BOOL },
@@ -146,9 +137,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: "lang", label: "Language", ...LANG() },
     { key: "olang", label: "Original language", ...LANG() },
     { key: "platform", label: "Platform", ...PLATFORM() },
-    { key: "medium", label: "Medium", kind: "enum", choices: from("MEDIUM") },
-    { key: "rtype", label: "Type", kind: "enum", choices: from("RTYPE") },
-    { key: "voiced", label: "Voiced", kind: "enum", choices: from("VOICED") },
+    { key: "medium", label: "Medium", kind: "enum", choices: choices("MEDIUM") },
+    { key: "rtype", label: "Type", kind: "enum", choices: choices("RTYPE") },
+    { key: "voiced", label: "Voiced", kind: "enum", choices: choices("VOICED") },
     { key: "released", label: "Released", kind: "date" },
     { key: "minage", label: "Age rating", ...NUM },
     { key: "resolution", label: "Resolution", kind: "resolution" },
@@ -171,9 +162,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   c: [
     { key: "search", label: "Name", ...SEARCH },
-    { key: "role", label: "Role", kind: "enum", choices: from("CHARACTER_ROLE") },
-    { key: "sex", label: "Sex", kind: "enum", choices: from("CHARACTER_SEX") },
-    { key: "gender", label: "Gender", kind: "enum", choices: from("GENDER") },
+    { key: "role", label: "Role", kind: "enum", choices: choices("CHARACTER_ROLE") },
+    { key: "sex", label: "Sex", kind: "enum", choices: choices("CHARACTER_SEX") },
+    { key: "gender", label: "Gender", kind: "enum", choices: choices("GENDER") },
     { key: "trait", label: "Trait", kind: "scored", target: "i", score: false },
     { key: "dtrait", label: "Trait (not inherited)", kind: "scored", target: "i", score: false },
     { key: "vn", label: "Visual novel", ...rel("v") },
@@ -198,7 +189,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   p: [
     { key: "search", label: "Name", ...SEARCH },
-    { key: "type", label: "Type", kind: "enum", choices: from("TYPE") },
+    { key: "type", label: "Type", kind: "enum", choices: choices("TYPE") },
     { key: "lang", label: "Language", ...LANG() },
     { key: "vn", label: "Visual novel", ...on("v") },
     { key: "release", label: "Release", ...on("r") },
@@ -207,7 +198,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   s: [
     { key: "search", label: "Name", ...SEARCH },
-    { key: "role", label: "Role", kind: "enum", choices: from("STAFF_ROLE") },
+    { key: "role", label: "Role", kind: "enum", choices: choices("STAFF_ROLE") },
     { key: "lang", label: "Language", ...LANG() },
     { key: "gender", label: "Gender", kind: "enum", choices: STAFF_GENDER },
     { key: "vn", label: "Visual novel", ...on("v") },
@@ -216,7 +207,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   g: [
     { key: "search", label: "Name", ...SEARCH },
-    { key: "category", label: "Category", kind: "enum", choices: from("CATEGORY") },
+    { key: "category", label: "Category", kind: "enum", choices: choices("CATEGORY") },
     { key: "vn_count", label: "Visual novels", ...NUM },
     { key: "parent", label: "Parent", ...on("g") },
     { key: "under", label: "Anywhere under", ...on("g") },

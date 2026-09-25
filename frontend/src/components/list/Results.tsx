@@ -10,7 +10,7 @@ import {
 import type {
   CharacterRow, ProducerRow, ReleaseRow, StaffRow, TagRow, TraitRow, VNRow,
 } from "@/lib/types"
-import { Selectable } from "@/components/user/SelectBar"
+import { Selectable } from "@/components/ui/Selection"
 import { useSelection } from "./Collecting"
 
 const GRID = "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7"

@@ -27,7 +27,7 @@ export const DEFAULTS: Prefs = {
 
 export const PREFS_COOKIE = "neovndb.prefs"
 
-/** Pre-cookie storage key, read once to migrate; still written as a cross-tab signal. */
+/** Written on every change only so other tabs hear of it: cookies fire no event. */
 export const PREFS_STORAGE = "neovndb:prefs"
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {

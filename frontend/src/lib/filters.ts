@@ -2,15 +2,9 @@
  *  builder (lib/conditions.ts). A `multiple` filter joins values with commas,
  *  which the API reads as "any of". */
 
-import { ENUMS, enumLabel } from "./enums"
-import { ICON } from "./icons"
+import { choices, LANGUAGES, PLATFORMS, STAFF_GENDER, type Choice } from "./choices"
 
-export interface Choice {
-  value: string
-  label: string
-  /** A sprite class, for the two dictionaries that have one. */
-  icon?: string
-}
+export type { Choice }
 
 export interface Filter {
   /** The API parameter. */
@@ -20,21 +14,6 @@ export interface Filter {
   /** Several at once, joined by commas, which the API reads as "any of". */
   multiple?: boolean
 }
-
-/** Turn one of the enum dictionaries into choices, in its own order. */
-function from(group: keyof typeof ENUMS, icons?: Record<string, string>): Choice[] {
-  return Object.keys(ENUMS[group]).map((value) => ({
-    value,
-    label: enumLabel(group, value),
-    icon: icons?.[value],
-  }))
-}
-
-const LANGUAGES = () => from("LANGUAGE", ICON.LANGUAGE as Record<string, string>)
-const PLATFORMS = () => from("PLATFORM", ICON.PLATFORM as Record<string, string>)
-
-/** Staff records only ever say m or f. */
-export const STAFF_GENDER = from("GENDER").filter((c) => c.value === "m" || c.value === "f")
 
 /** A yes/no the API spells as a `has_*` parameter. */
 function yesNo(key: string, label: string): Filter {
@@ -50,10 +29,10 @@ function yesNo(key: string, label: string): Filter {
 
 export const FILTERS: Record<string, Filter[]> = {
   v: [
-    { key: "lang", label: "Language", choices: LANGUAGES(), multiple: true },
-    { key: "platform", label: "Platform", choices: PLATFORMS(), multiple: true },
-    { key: "length", label: "Length", choices: from("LENGTH"), multiple: true },
-    { key: "devstatus", label: "Status", choices: from("DEVSTATUS"), multiple: true },
+    { key: "lang", label: "Language", choices: LANGUAGES, multiple: true },
+    { key: "platform", label: "Platform", choices: PLATFORMS, multiple: true },
+    { key: "length", label: "Length", choices: choices("LENGTH"), multiple: true },
+    { key: "devstatus", label: "Status", choices: choices("DEVSTATUS"), multiple: true },
     {
       key: "rating",
       label: "Rating",
@@ -63,26 +42,26 @@ export const FILTERS: Record<string, Filter[]> = {
     yesNo("has_anime", "Anime"),
   ],
   c: [
-    { key: "sex", label: "Sex", choices: from("CHARACTER_SEX"), multiple: true },
-    { key: "role", label: "Role", choices: from("CHARACTER_ROLE"), multiple: true },
+    { key: "sex", label: "Sex", choices: choices("CHARACTER_SEX"), multiple: true },
+    { key: "role", label: "Role", choices: choices("CHARACTER_ROLE"), multiple: true },
   ],
   r: [
-    { key: "lang", label: "Language", choices: LANGUAGES(), multiple: true },
-    { key: "platform", label: "Platform", choices: PLATFORMS(), multiple: true },
-    { key: "medium", label: "Medium", choices: from("MEDIUM"), multiple: true },
-    { key: "voiced", label: "Voiced", choices: from("VOICED"), multiple: true },
+    { key: "lang", label: "Language", choices: LANGUAGES, multiple: true },
+    { key: "platform", label: "Platform", choices: PLATFORMS, multiple: true },
+    { key: "medium", label: "Medium", choices: choices("MEDIUM"), multiple: true },
+    { key: "voiced", label: "Voiced", choices: choices("VOICED"), multiple: true },
     yesNo("official", "Official"),
     yesNo("patch", "Patch"),
     yesNo("freeware", "Freeware"),
   ],
   p: [
-    { key: "type", label: "Type", choices: from("TYPE"), multiple: true },
-    { key: "lang", label: "Language", choices: LANGUAGES(), multiple: true },
+    { key: "type", label: "Type", choices: choices("TYPE"), multiple: true },
+    { key: "lang", label: "Language", choices: LANGUAGES, multiple: true },
   ],
   s: [
-    { key: "lang", label: "Language", choices: LANGUAGES(), multiple: true },
+    { key: "lang", label: "Language", choices: LANGUAGES, multiple: true },
     { key: "gender", label: "Gender", choices: STAFF_GENDER, multiple: true },
   ],
-  g: [{ key: "category", label: "Category", choices: from("CATEGORY"), multiple: true }],
+  g: [{ key: "category", label: "Category", choices: choices("CATEGORY"), multiple: true }],
   i: [],
 }

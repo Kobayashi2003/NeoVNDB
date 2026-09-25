@@ -2,12 +2,10 @@
  *  Languages with no recorded title collapse into one line of flags; machine
  *  translations are marked, not hidden. */
 
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { Icon } from "@/components/ui/Icon"
 import type { ReleaseTitle } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
 
 export function ReleaseTitles({ titles, olang }: { titles: ReleaseTitle[]; olang: string }) {
   // The release's own language leads; the rest follow as they arrive, which is
@@ -25,7 +23,7 @@ export function ReleaseTitles({ titles, olang }: { titles: ReleaseTitle[]; olang
         >
           <dt className="flex shrink-0 items-center gap-1.5 sm:w-36">
             <Icon
-              cls={LANG[t.lang] ?? ""}
+              cls={iconOf("LANGUAGE", t.lang)}
               title={enumLabel("LANGUAGE", t.lang)}
               className={t.lang === olang ? "rounded-xs ring-1 ring-accent" : undefined}
             />
@@ -46,7 +44,7 @@ export function ReleaseTitles({ titles, olang }: { titles: ReleaseTitle[]; olang
           <dt className="shrink-0 text-xs text-muted sm:w-36">Also published in</dt>
           <dd className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             {bare.map((t) => (
-              <Icon key={t.lang} cls={LANG[t.lang] ?? ""} title={enumLabel("LANGUAGE", t.lang)} />
+              <Icon key={t.lang} cls={iconOf("LANGUAGE", t.lang)} title={enumLabel("LANGUAGE", t.lang)} />
             ))}
           </dd>
         </div>

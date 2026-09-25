@@ -149,3 +149,8 @@ export const ICON = {
   },
 
 } as const
+
+/** The sprite class for one code of a group, or "" when it has none. */
+export function iconOf(group: keyof typeof ICON, code: string | number): string {
+  return (ICON[group] as Record<string | number, string>)[code] ?? ""
+}

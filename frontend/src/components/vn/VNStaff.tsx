@@ -6,14 +6,12 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { display } from "@/lib/format"
 import { Icon } from "@/components/ui/Icon"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Edition, StaffCredit } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
 
 /** The work's credits, then each edition's in dump order. A credit whose
  *  edition is missing from the list is kept under its number, not dropped. */
@@ -55,9 +53,9 @@ export function VNStaff({ staff, editions }: { staff: StaffCredit[]; editions: E
       {rest.map(({ edition, credits }) => (
         <div key={edition.eid} className="flex flex-col gap-1">
           <p className="flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
-            {edition.lang && LANG[edition.lang] && (
+            {edition.lang && iconOf("LANGUAGE", edition.lang) && (
               <Icon
-                cls={LANG[edition.lang]}
+                cls={iconOf("LANGUAGE", edition.lang)}
                 title={enumLabel("LANGUAGE", edition.lang)}
                 className="shrink-0"
               />

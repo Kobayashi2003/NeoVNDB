@@ -2,7 +2,7 @@
  *  its releases, as three tabs. */
 
 import Link from "next/link"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { BBCode } from "@/lib/bbcode"
 import type { Params } from "@/lib/href"
@@ -14,8 +14,6 @@ import { Name } from "@/components/ui/Name"
 import { DetailControls } from "@/components/ui/DetailControls"
 import { CatalogPage } from "./CatalogPage"
 import type { ProducerDetail } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
 
 type Relation = ProducerDetail["relations"][number]
 
@@ -59,7 +57,7 @@ export async function ProducerPage({
           <InfoCard>
             <InfoRow label="Type">{enumLabel("TYPE", p.type)}</InfoRow>
             <InfoRow label="Language">
-              <Icon cls={LANG[p.lang] ?? ""} title={enumLabel("LANGUAGE", p.lang)} />
+              <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
               <span>{enumLabel("LANGUAGE", p.lang)}</span>
             </InfoRow>
             {p.aliases.length > 0 && (

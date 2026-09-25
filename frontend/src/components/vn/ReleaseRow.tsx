@@ -5,7 +5,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { AgeRating } from "@/components/ui/AgeRating"
 import { Icon } from "@/components/ui/Icon"
@@ -13,8 +13,6 @@ import { Tooltip } from "@/components/ui/Tooltip"
 import { animationLabel, aspect, display, medium, releaseDate } from "@/lib/format"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Release } from "@/lib/types"
-
-const PLAT = ICON.PLATFORM as Record<string, string>
 
 /** A medium is something physical or a download, drawn as a disc, a cartridge
  *  or a download arrow. */
@@ -60,7 +58,7 @@ export function ReleaseRow({ release: r, striped }: { release: Release; striped:
 
         <span className="inline-flex shrink-0 items-center gap-1">
           {r.platforms.map((p) => (
-            <Icon key={p} cls={PLAT[p] ?? ""} title={enumLabel("PLATFORM", p)} />
+            <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
           ))}
           <Icon cls={`icon-rt${r.rtype}`} title={r.rtype} />
         </span>

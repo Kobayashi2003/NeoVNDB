@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ListChecks, Search, X } from "lucide-react"
+import { ListChecks, X } from "lucide-react"
 import { list as query } from "@/lib/api"
 import { LIST, PAGE_SIZE, type Sort } from "@/lib/list"
 import { one, withParams, type Params } from "@/lib/href"
@@ -17,6 +17,7 @@ import { Results } from "@/components/list/Results"
 import { Pagination } from "@/components/list/Pagination"
 import { SortLinks } from "@/components/list/SortLinks"
 import { ControlLabel } from "@/components/ui/ControlLabel"
+import { SearchPill } from "@/components/ui/SearchPill"
 import {
   collections,
   items as allItems,
@@ -29,7 +30,8 @@ import {
 } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 import { SignInFirst } from "./SignInFirst"
-import { SelectBar, Selectable } from "./SelectBar"
+import { Selectable } from "@/components/ui/Selection"
+import { SelectBar } from "./SelectBar"
 import { CollectionColumn, CollectionPicker } from "./CollectionSwitcher"
 
 /** From lg up each column scrolls on its own (as DetailShell). Stable
@@ -362,33 +364,23 @@ function SearchInList({
   const router = useRouter()
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        const term = String(new FormData(e.currentTarget).get("q") ?? "")
-        router.push(withParams(path, params, { q: term || null, page: null }))
-      }}
-      className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5"
-    >
-      <ControlLabel className="mr-0">In list</ControlLabel>
-      <Search className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-      <input
-        name="q"
-        type="search"
-        defaultValue={initial}
-        placeholder="Search"
-        aria-label="Search this list"
-        className="-my-1.5 min-w-0 flex-1 bg-transparent py-1.5 text-xs outline-none placeholder:text-muted"
-      />
-      {initial && (
-        <Link
-          href={withParams(path, params, { q: null, page: null })}
-          aria-label="Clear the search"
-          className="shrink-0 text-muted transition-colors hover:text-white"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden />
-        </Link>
-      )}
-    </form>
+    <SearchPill
+      name="q"
+      initial={initial}
+      label="Search this list"
+      onSearch={(term) => router.push(withParams(path, params, { q: term || null, page: null }))}
+      before={<ControlLabel className="mr-0">In list</ControlLabel>}
+      after={
+        initial && (
+          <Link
+            href={withParams(path, params, { q: null, page: null })}
+            aria-label="Clear the search"
+            className="shrink-0 text-muted transition-colors hover:text-white"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        )
+      }
+    />
   )
 }
