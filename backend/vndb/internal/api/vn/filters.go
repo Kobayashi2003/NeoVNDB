@@ -1,6 +1,7 @@
 package vn
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/kobayashi/neovndb/internal/api/query"
@@ -18,7 +19,15 @@ var filters = map[string]query.FilterFunc{
 		b.Where(`EXISTS (SELECT 1 FROM vn_relations vr WHERE vr.id = vn.id AND vr.relation = %s)`, v)
 		return nil
 	}),
-	"credit":    creditFilter,
+	"credit": creditFilter,
+
+	// The levels the site blurs by: averages of vndb's 0-2 votes, stored x100.
+	// A cover nobody has voted on is unknown, so it matches no level.
+	"cover_sexual": coverLevel("c_sexual_avg", map[string]string{
+		"safe": "<= 50", "suggestive": "BETWEEN 51 AND 150", "explicit": "> 150"}),
+	"cover_violence": coverLevel("c_violence_avg", map[string]string{
+		"tame": "<= 50", "violent": "BETWEEN 51 AND 150", "brutal": "> 150"}),
+
 	"extlink":   query.ExtLinkFilter("vn_extlinks", "vn.id"),
 	"olang":     query.TextColumn("vn.olang"),
 	"devstatus": query.IntColumn("vn.devstatus", 1),
@@ -119,25 +128,24 @@ func releasedFilter(b *query.Builder, value string) error {
 
 // Sortable expressions. searchrank ranks by the strength of the match, so it
 // is only meaningful alongside a search term.
-var sorts = map[string]string{
-	"id":             "vn.id",
-	"title":          "COALESCE(vt.latin, vt.title)",
-	"released":       "vn.c_released",
-	"rating":         "vn.c_rating",
-	"average":        "vn.c_average",
-	"votecount":      "vn.c_votecount",
-	"length":         "vn.c_length",
-	"length_minutes": "vn.c_length",
+var sorts = map[string]query.Sort{
+	"id":             {Expr: "vn.id"},
+	"title":          {Expr: "COALESCE(vt.latin, vt.title)", Join: "LEFT JOIN vn_titles vt ON vt.id = vn.id AND vt.lang = vn.olang"},
+	"released":       {Expr: "vn.c_released"},
+	"rating":         {Expr: "vn.c_rating"},
+	"average":        {Expr: "vn.c_average"},
+	"votecount":      {Expr: "vn.c_votecount"},
+	"length":         {Expr: "vn.c_length"},
+	"length_minutes": {Expr: "vn.c_length"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 // The join to the title in the VN's own language is one-to-one, so it adds a
 // sortable title without multiplying rows and without costing anything when
 // the sort is by something else.
 var spec = query.PageSpec{
-	Table: "vn LEFT JOIN vn_titles vt ON vt.id = vn.id AND vt.lang = vn.olang",
-	Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v", Popularity: "vn.c_votecount",
+	Table: "vn", Alias: "vn", IDType: vndb.TypeVN, SearchEntity: "v", Popularity: "vn.c_votecount",
 	Filters: filters, Sorts: sorts,
 }
 
@@ -173,3 +181,22 @@ var creditFilter = query.Match(func(b *query.Builder, v string) error {
 	b.Where(cond+" AND vs.role = %s)", id, role)
 	return nil
 })
+
+// coverLevel matches the cover's voted level on one axis; the SQL fragments
+// come from the table above, never from the request.
+func coverLevel(column string, levels map[string]string) query.FilterFunc {
+	return query.Match(func(b *query.Builder, v string) error {
+		cond, ok := levels[v]
+		if !ok {
+			names := make([]string, 0, len(levels))
+			for name := range levels {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			return query.BadRequest("%q is not a level; one of %s", v, strings.Join(names, ", "))
+		}
+		b.Where(`EXISTS (SELECT 1 FROM images im WHERE im.kind = 'cv' AND im.num = vn.c_image
+		          AND im.c_votecount > 0 AND im.` + column + " " + cond + ")")
+		return nil
+	})
+}

@@ -23,12 +23,12 @@ var filters = map[string]query.FilterFunc{
 		SELECT 1 FROM chars_traits ct WHERE ct.tid = i.id AND ct.id = %s)`),
 }
 
-var sorts = map[string]string{
-	"id":         "i.id",
-	"name":       "i.name",
-	"char_count": "i.c_items",
+var sorts = map[string]query.Sort{
+	"id":         {Expr: "i.id"},
+	"name":       {Expr: "i.name"},
+	"char_count": {Expr: "i.c_items"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 var spec = query.PageSpec{

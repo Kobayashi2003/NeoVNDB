@@ -10,6 +10,9 @@ import (
 
 var filters = map[string]query.FilterFunc{
 	"has_image": query.BoolFilter("c.image IS NOT NULL", "c.image IS NULL"),
+	// Variants: vndb files a character's other forms under one main entry.
+	"is_variant": query.BoolFilter("c.main IS NOT NULL", "c.main IS NULL"),
+	"variant_of": query.RelatedID(vndb.TypeCharacter, "c.main = %s"),
 	// Stored as mmdd, 0 for unknown: birthday=12-25, or birthday=12 for a month.
 	"birthday": query.Match(func(b *query.Builder, v string) error {
 		month, day, withDay := strings.Cut(v, "-")
@@ -69,24 +72,23 @@ var filters = map[string]query.FilterFunc{
 	}),
 }
 
-var sorts = map[string]string{
-	"id":       "c.id",
-	"name":     "COALESCE(cn.latin, cn.name)",
-	"height":   "c.height",
-	"weight":   "c.weight",
-	"bust":     "c.s_bust",
-	"waist":    "c.s_waist",
-	"hips":     "c.s_hip",
-	"age":      "c.age",
-	"birthday": "c.birthday",
+var sorts = map[string]query.Sort{
+	"id":       {Expr: "c.id"},
+	"name":     {Expr: "COALESCE(cn.latin, cn.name)", Join: "LEFT JOIN chars_names cn ON cn.id = c.id AND cn.lang = c.c_lang"},
+	"height":   {Expr: "c.height"},
+	"weight":   {Expr: "c.weight"},
+	"bust":     {Expr: "c.s_bust"},
+	"waist":    {Expr: "c.s_waist"},
+	"hips":     {Expr: "c.s_hip"},
+	"age":      {Expr: "c.age"},
+	"birthday": {Expr: "c.birthday"},
 	// Ranks by the strength of the match; only meaningful with a search term.
-	"searchrank": "",
+	"searchrank": {},
 }
 
 // The join to the name in the character's own language is one-to-one, so it
 // adds a sortable name without multiplying rows.
 var spec = query.PageSpec{
-	Table: "chars c LEFT JOIN chars_names cn ON cn.id = c.id AND cn.lang = c.c_lang",
-	Alias: "c", IDType: vndb.TypeCharacter, SearchEntity: "c",
+	Table: "chars c", Alias: "c", IDType: vndb.TypeCharacter, SearchEntity: "c",
 	Filters: filters, Sorts: sorts,
 }
