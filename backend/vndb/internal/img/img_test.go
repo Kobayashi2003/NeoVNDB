@@ -84,9 +84,6 @@ func TestStoreWriteIsAtomic(t *testing.T) {
 	if err != nil || string(got) != "hello" {
 		t.Fatalf("Read = %q, %v", got, err)
 	}
-	if !store.Has(ref) {
-		t.Error("Has = false after a write")
-	}
 
 	// Nothing may be left behind for a file server to trip over.
 	dir := filepath.Dir(store.Path(ref))

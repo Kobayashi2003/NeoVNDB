@@ -29,11 +29,6 @@ func (s *Store) Read(ref Ref) ([]byte, error) {
 	return b, err
 }
 
-func (s *Store) Has(ref Ref) bool {
-	_, err := os.Stat(s.Path(ref))
-	return err == nil
-}
-
 // Write is atomic for readers (temporary file, then rename), since the edge
 // serves files straight off disk and could otherwise send a partial one.
 func (s *Store) Write(ref Ref, data []byte) error {

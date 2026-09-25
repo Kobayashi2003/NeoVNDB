@@ -32,10 +32,6 @@ func KnownType(name string) bool {
 	return ok
 }
 
-func Types() []string {
-	return []string{TypeVN, TypeRelease, TypeCharacter, TypeProducer, TypeStaff, TypeTag, TypeTrait}
-}
-
 // FormatID turns a stored integer into the form every client speaks: 17 -> v17.
 func FormatID(entity string, id int32) string {
 	return prefixes[entity] + strconv.Itoa(int(id))

@@ -6,7 +6,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { RULES, UserError } from "@/lib/user"
+import { errorText, RULES } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 
 /** These two, which are no place to arrive already signed in. */
@@ -46,7 +46,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
       // stale markup to throw away -- only somewhere to be.
       router.push(carry ?? "/")
     } catch (err) {
-      setError(err instanceof UserError ? err.message : "Something went wrong.")
+      setError(errorText(err))
       setBusy(false)
     }
   }

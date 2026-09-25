@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react"
 import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { clearRating, rating as readRating, setRating, UserError } from "@/lib/user"
+import { clearRating, errorText, rating as readRating, setRating } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
 
 const STARS = [1, 2, 3, 4, 5]
@@ -49,7 +49,7 @@ export function RatingStars({ id }: { id: string }) {
       else await setRating(id, next)
     } catch (err) {
       setMine(before)
-      setTrouble(err instanceof UserError ? err.message : "Something went wrong.")
+      setTrouble(errorText(err))
     }
   }
 

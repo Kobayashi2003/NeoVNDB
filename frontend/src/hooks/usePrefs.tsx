@@ -38,21 +38,7 @@ function writeCookie(prefs: Prefs): void {
 }
 
 function load(): Prefs {
-  const raw = cookie()
-  if (raw !== null) return readPrefs(raw)
-
-  // Migrate prefs saved before they moved to the cookie.
-  try {
-    const old = window.localStorage.getItem(PREFS_STORAGE)
-    if (old) {
-      const prefs = readPrefs(old)
-      writeCookie(prefs)
-      return prefs
-    }
-  } catch {
-    // Storage can be unreadable.
-  }
-  return DEFAULTS
+  return readPrefs(cookie())
 }
 
 function snapshot(): Prefs {

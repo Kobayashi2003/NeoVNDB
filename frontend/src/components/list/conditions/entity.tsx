@@ -3,11 +3,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search } from "lucide-react"
 import { list } from "@/lib/api"
 import { LIST } from "@/lib/list"
 import { NOUN } from "@/lib/conditions"
 import { menuItem } from "@/components/ui/Menu"
+import { SearchBox } from "./parts"
 
 interface Named {
   id: string
@@ -79,23 +79,15 @@ export function EntitySearch({ type, onPick }: { type: string; onPick: (id: stri
 
   return (
     <div className="flex flex-col">
-      <div className="mx-1 mb-1 flex items-center gap-2 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
-        <Search className="icon-text size-3.5 shrink-0 text-muted" aria-hidden />
-        <input
-          autoFocus
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return
-            e.preventDefault()
-            if (asID) pick(q)
-            else if (rows[0]) pick(rows[0].id)
-          }}
-          placeholder={`Find a ${NOUN[type]}`}
-          aria-label={`Find a ${NOUN[type]}`}
-          className="-my-1.5 min-w-0 flex-1 bg-transparent py-1.5 text-xs outline-none placeholder:text-muted"
-        />
-      </div>
+      <SearchBox
+        value={term}
+        onChange={setTerm}
+        label={`Find a ${NOUN[type]}`}
+        onEnter={() => {
+          if (asID) pick(q)
+          else if (rows[0]) pick(rows[0].id)
+        }}
+      />
       {asID && (
         <button type="button" onClick={() => pick(q)} className={menuItem()}>
           Use <span className="font-mono">{q.toLowerCase()}</span>

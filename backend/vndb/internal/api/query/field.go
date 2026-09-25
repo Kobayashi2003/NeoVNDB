@@ -116,8 +116,6 @@ func NewTable[R, T any](t Table[R, T]) *Table[R, T] {
 
 func (t *Table[R, T]) Registry() Registry { return t.reg }
 
-func (t *Table[R, T]) Type() string { return t.IDType }
-
 // Objects renders rows for another type's relation, keyed by id: one query for
 // the whole level rather than one per parent.
 func (t *Table[R, T]) Objects(ctx context.Context, r R, ids []int32, sel Selection) (map[int32]map[string]any, error) {

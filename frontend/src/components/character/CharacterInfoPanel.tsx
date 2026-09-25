@@ -2,7 +2,7 @@
  *  person rather than about their appearances. */
 "use client"
 
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { readSex } from "@/lib/characters"
 import { birthday, bust, display } from "@/lib/format"
 import { shouldBlur } from "@/lib/content"
@@ -12,8 +12,6 @@ import { usePrefs } from "@/hooks/usePrefs"
 import type { SpoilerControl } from "@/hooks/useSpoilerLevel"
 import { SexLine } from "./SexLine"
 import type { CharacterDetail } from "@/lib/types"
-
-const SEX = ICON.CHARACTER_SEX as Record<string, string>
 
 export function CharacterInfoPanel({
   character,
@@ -47,12 +45,12 @@ export function CharacterInfoPanel({
       <InfoCard className="min-w-0 flex-1 lg:flex-none">
         {sex && (
           <InfoRow label="Sex">
-            <SexLine reading={sex} icon={SEX[sex.code] ?? ""} />
+            <SexLine reading={sex} icon={iconOf("CHARACTER_SEX", sex.code)} />
           </InfoRow>
         )}
         {gender && (
           <InfoRow label="Gender">
-            <SexLine reading={gender} icon={SEX[gender.code] ?? ""} />
+            <SexLine reading={gender} icon={iconOf("CHARACTER_SEX", gender.code)} />
           </InfoRow>
         )}
         {character.age !== null && <InfoRow label="Age">{character.age}</InfoRow>}

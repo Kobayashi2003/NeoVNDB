@@ -5,7 +5,7 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { imageURL } from "@/lib/images"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { plain } from "@/lib/bbcode"
 import { shouldBlur } from "@/lib/content"
@@ -17,10 +17,6 @@ import { usePrefs } from "@/hooks/usePrefs"
 import type {
   CharacterRow, Image, ProducerRow, ReleaseRow, StaffRow, TagRow, TraitRow, VNRow,
 } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
-const PLAT = ICON.PLATFORM as Record<string, string>
-const SEX = ICON.CHARACTER_SEX as Record<string, string>
 
 /* ─── Shared pieces ───────────────────────────────────────────────────────── */
 
@@ -99,10 +95,10 @@ export function VNCard({ row }: { row: VNRow }) {
       </p>
       <p className="flex flex-wrap items-center gap-1">
         {row.languages.slice(0, 6).map((l) => (
-          <Icon key={l} cls={LANG[l] ?? ""} title={enumLabel("LANGUAGE", l)} />
+          <Icon key={l} cls={iconOf("LANGUAGE", l)} title={enumLabel("LANGUAGE", l)} />
         ))}
         {row.platforms.slice(0, 4).map((p) => (
-          <Icon key={p} cls={PLAT[p] ?? ""} title={enumLabel("PLATFORM", p)} />
+          <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
         ))}
       </p>
     </Tile>
@@ -118,7 +114,7 @@ export function CharacterCard({ row }: { row: CharacterRow }) {
       </p>
       {row.sex && (
         <p className="flex items-center gap-1.5 text-xs text-muted">
-          <Icon cls={SEX[row.sex] ?? ""} title={enumLabel("CHARACTER_SEX", row.sex)} />
+          <Icon cls={iconOf("CHARACTER_SEX", row.sex)} title={enumLabel("CHARACTER_SEX", row.sex)} />
           {enumLabel("CHARACTER_SEX", row.sex)}
         </p>
       )}
@@ -137,7 +133,7 @@ export function ReleaseCard({ row }: { row: ReleaseRow }) {
       </span>
       <span className="inline-flex shrink-0 items-center gap-1">
         {row.platforms.slice(0, 5).map((p) => (
-          <Icon key={p} cls={PLAT[p] ?? ""} title={enumLabel("PLATFORM", p)} />
+          <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
         ))}
       </span>
       <span className={cn("min-w-0 flex-1 truncate text-sm", !row.official && "opacity-60")}>
@@ -155,7 +151,7 @@ export function ProducerCard({ row }: { row: ProducerRow }) {
   return (
     <Row href={`/${row.id}`}>
       <span className="shrink-0">
-        <Icon cls={LANG[row.lang] ?? ""} title={enumLabel("LANGUAGE", row.lang)} />
+        <Icon cls={iconOf("LANGUAGE", row.lang)} title={enumLabel("LANGUAGE", row.lang)} />
       </span>
       <span className="min-w-0 flex-1 truncate text-sm">
         {display(row.name, row.original, original)}
@@ -170,7 +166,7 @@ export function StaffCard({ row }: { row: StaffRow }) {
   return (
     <Row href={`/${row.id}`}>
       <span className="shrink-0">
-        <Icon cls={LANG[row.lang] ?? ""} title={enumLabel("LANGUAGE", row.lang)} />
+        <Icon cls={iconOf("LANGUAGE", row.lang)} title={enumLabel("LANGUAGE", row.lang)} />
       </span>
       <span className="min-w-0 flex-1 truncate text-sm">
         {display(row.name, row.original, original)}

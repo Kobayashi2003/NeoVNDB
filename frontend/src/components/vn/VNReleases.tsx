@@ -4,14 +4,13 @@
 "use client"
 
 import { useState } from "react"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { ChevronRight } from "lucide-react"
 import { Icon } from "@/components/ui/Icon"
 import { ReleaseRow } from "./ReleaseRow"
 import type { Release } from "@/lib/types"
 
-const LANG = ICON.LANGUAGE as Record<string, string>
 const UNKNOWN = "__none__"
 
 /** A release is listed under every language it was published in, which is how
@@ -67,7 +66,7 @@ export function VNReleases({ releases, olang }: { releases: Release[]; olang: st
                 aria-hidden
               />
               {lang !== UNKNOWN && (
-                <Icon cls={LANG[lang] ?? ""} title={enumLabel("LANGUAGE", lang)} />
+                <Icon cls={iconOf("LANGUAGE", lang)} title={enumLabel("LANGUAGE", lang)} />
               )}
               <span className="text-xs font-semibold uppercase tracking-wider">
                 {lang === UNKNOWN ? "Unknown language" : enumLabel("LANGUAGE", lang)}

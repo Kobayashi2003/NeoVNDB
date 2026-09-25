@@ -4,7 +4,7 @@
 "use client"
 
 import { BBCode } from "@/lib/bbcode"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { display } from "@/lib/format"
 import { Collapsible } from "@/components/ui/Collapsible"
@@ -21,8 +21,6 @@ import { ReleaseTitles } from "./ReleaseTitles"
 import { ReleaseVNs } from "./ReleaseVNs"
 import type { ReleaseDetail } from "@/lib/types"
 
-const LANG = ICON.LANGUAGE as Record<string, string>
-
 export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
   const { original } = usePrefs()
 
@@ -32,8 +30,8 @@ export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
         <DetailHeader
           title={
             <span className="flex items-baseline gap-2">
-              {LANG[r.olang] && (
-                <Icon cls={LANG[r.olang]} title={enumLabel("LANGUAGE", r.olang)} />
+              {iconOf("LANGUAGE", r.olang) && (
+                <Icon cls={iconOf("LANGUAGE", r.olang)} title={enumLabel("LANGUAGE", r.olang)} />
               )}
               <span className="min-w-0">{display(r.title, r.alttitle, original) || r.id}</span>
             </span>

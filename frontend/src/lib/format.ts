@@ -1,6 +1,7 @@
 /** Rendering rules the API leaves to the client. */
 
 import { enumLabel } from "./enums"
+import { monthName } from "./months"
 
 /** The API sends TBA for a release with no date and 2002-08 for a partial one;
  *  both pass through as they are. */
@@ -72,15 +73,10 @@ export function display(
 
 /** The dump packs a birthday as a month/day pair with no year, which is all
  *  vndb records -- so it reads as a day and a month and nothing else. */
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-]
-
 export function birthday(pair: [number, number] | null): string | null {
   if (!pair) return null
   const [month, day] = pair
-  const name = MONTHS[month - 1]
+  const name = monthName(month)
   return name ? `${day} ${name}` : null
 }
 

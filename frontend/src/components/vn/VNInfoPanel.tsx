@@ -9,7 +9,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Eye, EyeOff, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { shouldBlur } from "@/lib/content"
 import { publishers } from "@/lib/vn"
@@ -20,9 +20,6 @@ import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoC
 import { VNRelations } from "./VNRelations"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { VN } from "@/lib/types"
-
-const LANG = ICON.LANGUAGE as Record<string, string>
-const PLAT = ICON.PLATFORM as Record<string, string>
 
 /** Finished, in development, or cancelled -- coloured because the middle one
  *  and the last one mean very different things to a reader deciding to start. */
@@ -74,7 +71,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
 
           <InfoRow label="Platform">
             {vn.platforms.map((p) => (
-              <Icon key={p} cls={PLAT[p] ?? ""} title={enumLabel("PLATFORM", p)} />
+              <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
             ))}
           </InfoRow>
 
@@ -82,7 +79,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
             {vn.languages.map((l) => (
               <Icon
                 key={l}
-                cls={LANG[l] ?? ""}
+                cls={iconOf("LANGUAGE", l)}
                 title={l === vn.olang ? `${enumLabel("LANGUAGE", l)} (original)` : enumLabel("LANGUAGE", l)}
                 className={cn(l === vn.olang && "rounded-xs ring-1 ring-accent")}
               />
@@ -110,8 +107,8 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
                     href={`/${p.id}`}
                     className="flex items-center gap-1.5 transition-colors hover:text-accent coarse:py-1"
                   >
-                    {p.lang && LANG[p.lang] && (
-                      <Icon cls={LANG[p.lang]} title={enumLabel("LANGUAGE", p.lang)} />
+                    {p.lang && iconOf("LANGUAGE", p.lang) && (
+                      <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
                     )}
                     <span className="truncate">{p.name}</span>
                   </Link>

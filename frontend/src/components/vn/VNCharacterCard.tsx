@@ -6,7 +6,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { CHARACTER_ROLE_CLASS, enumLabel } from "@/lib/enums"
 import { readSex } from "@/lib/characters"
 import { groupTraits } from "@/lib/traits"
@@ -20,8 +20,6 @@ import { usePrefs } from "@/hooks/usePrefs"
 import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
 import type { SpoilerLevel } from "@/hooks/useSpoilerLevel"
-
-const SEX = ICON.CHARACTER_SEX as Record<string, string>
 
 /** A run of "label value" pairs on one line, separated by dim middots. Absent
  *  values drop out, and a line with nothing left does not render. */
@@ -113,11 +111,11 @@ export function VNCharacterCard({
           </span>
         </div>
 
-        {sex && <SexLine reading={sex} icon={SEX[sex.code] ?? ""} className="text-xs" />}
+        {sex && <SexLine reading={sex} icon={iconOf("CHARACTER_SEX", sex.code)} className="text-xs" />}
         {gender && (
           <SexLine
             reading={gender}
-            icon={SEX[gender.code] ?? ""}
+            icon={iconOf("CHARACTER_SEX", gender.code)}
             className="text-xs text-white/70"
           />
         )}

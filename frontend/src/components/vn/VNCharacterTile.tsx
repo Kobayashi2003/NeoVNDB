@@ -5,7 +5,7 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { imageURL } from "@/lib/images"
-import { ICON } from "@/lib/icons"
+import { iconOf } from "@/lib/icons"
 import { CHARACTER_ROLE_TEXT, enumLabel } from "@/lib/enums"
 import { readSex } from "@/lib/characters"
 import { display } from "@/lib/format"
@@ -15,8 +15,6 @@ import { Tooltip } from "@/components/ui/Tooltip"
 import { usePrefs } from "@/hooks/usePrefs"
 import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
-
-const SEX = ICON.CHARACTER_SEX as Record<string, string>
 
 export function VNCharacterTile({
   character,
@@ -81,7 +79,7 @@ export function VNCharacterTile({
           {sex && (
             <SexLine
               reading={sex}
-              icon={SEX[sex.code] ?? ""}
+              icon={iconOf("CHARACTER_SEX", sex.code)}
               className="text-xs text-muted/80"
             />
           )}
