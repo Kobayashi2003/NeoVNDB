@@ -42,6 +42,14 @@ func NewServer(cfg *config.Config, log *slog.Logger) *Server {
 	}
 }
 
+// Crawler fetches ahead of readers into this server's store, through the same
+// source and its limit on concurrent fetches.
+func (s *Server) Crawler(perRun int, delay time.Duration) *Crawler {
+	c := NewCrawler(s.mirror, s.source, s.log)
+	c.PerRun, c.Delay = perRun, delay
+	return c
+}
+
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /img/", s.handle)

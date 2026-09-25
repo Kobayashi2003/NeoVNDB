@@ -54,7 +54,7 @@ handle_path /imgserve/* {
 		# A hit is served straight off disk; imgserve never wakes up. The shape is
 		# checked too, since a store also holds half-written temporaries.
 		@neovndb_img_derived {
-			path_regexp ^/\d+/(cv|ch|sf|st)/\d+/\d+\.jpg$
+			path_regexp ^/\d+/(cv|cv\.t|ch|sf|st)/\d+/\d+\.jpg$
 			file {
 				root {$NEOVNDB_IMAGE_DERIVED_DIR:../data/images-derived}
 			}
@@ -66,7 +66,7 @@ handle_path /imgserve/* {
 		}
 
 		@neovndb_img_original {
-			path_regexp ^/(cv|ch|sf|st)/\d+/\d+\.jpg$
+			path_regexp ^/(cv|cv\.t|ch|sf|st)/\d+/\d+\.jpg$
 			file {
 				root {$NEOVNDB_IMAGE_DIR:../data/images}
 			}

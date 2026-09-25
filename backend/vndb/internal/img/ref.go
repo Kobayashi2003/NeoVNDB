@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-// Kinds vndb serves. cv is a cover, ch a character portrait, sf a screenshot
-// and st that screenshot's own thumbnail -- st is upstream's, not ours, and is
-// mirrored like any other original.
-var kinds = map[string]bool{"cv": true, "ch": true, "sf": true, "st": true}
+// Kinds vndb serves. cv is a cover and cv.t its 256px thumbnail, ch a
+// character portrait, sf a screenshot and st that screenshot's thumbnail. The
+// thumbnails are upstream's, not ours, and are mirrored like any other original.
+var kinds = map[string]bool{"cv": true, "cv.t": true, "ch": true, "sf": true, "st": true}
 
 // A Ref names one image the way vndb does, and is everything needed to find
 // it: no database is consulted to serve a request, because the request already
