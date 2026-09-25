@@ -9,6 +9,15 @@ import (
 	"context"
 )
 
+const bumpTransRevision = `-- name: BumpTransRevision :exec
+UPDATE trans.revision SET n = n + 1
+`
+
+func (q *Queries) BumpTransRevision(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, bumpTransRevision)
+	return err
+}
+
 const passageTranslations = `-- name: PassageTranslations :many
 SELECT source_hash, target_text
   FROM trans.passages
@@ -82,6 +91,17 @@ func (q *Queries) TermTranslations(ctx context.Context, arg TermTranslationsPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const transRevision = `-- name: TransRevision :one
+SELECT n FROM trans.revision
+`
+
+func (q *Queries) TransRevision(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, transRevision)
+	var n int64
+	err := row.Scan(&n)
+	return n, err
 }
 
 const translationCounts = `-- name: TranslationCounts :one

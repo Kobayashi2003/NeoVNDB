@@ -25,3 +25,11 @@ CREATE TABLE IF NOT EXISTS trans.passages (
     entity_type text,
     PRIMARY KEY (target_lang, source_hash)
 );
+
+-- Bumped by every seed and read into every response cache key, so a changed
+-- translation is served at once instead of when the cached page expires.
+CREATE TABLE IF NOT EXISTS trans.revision (
+    one boolean PRIMARY KEY DEFAULT true CHECK (one),
+    n   bigint  NOT NULL DEFAULT 0
+);
+INSERT INTO trans.revision DEFAULT VALUES ON CONFLICT DO NOTHING;

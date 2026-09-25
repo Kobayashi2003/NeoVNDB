@@ -30,3 +30,9 @@ ON CONFLICT (target_lang, source_hash) DO UPDATE
 -- name: TranslationCounts :one
 SELECT (SELECT count(*) FROM trans.terms)    AS terms,
        (SELECT count(*) FROM trans.passages) AS passages;
+
+-- name: TransRevision :one
+SELECT n FROM trans.revision;
+
+-- name: BumpTransRevision :exec
+UPDATE trans.revision SET n = n + 1;

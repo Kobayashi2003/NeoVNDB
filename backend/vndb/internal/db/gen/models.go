@@ -357,6 +357,11 @@ type TransPassage struct {
 	EntityType *string `db:"entity_type" json:"entity_type"`
 }
 
+type TransRevision struct {
+	One bool  `db:"one" json:"one"`
+	N   int64 `db:"n" json:"n"`
+}
+
 type TransTerm struct {
 	TargetLang string  `db:"target_lang" json:"target_lang"`
 	SourceKey  string  `db:"source_key" json:"source_key"`

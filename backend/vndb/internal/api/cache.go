@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/kobayashi/neovndb/internal/cache"
@@ -26,8 +27,8 @@ func newCache(ctx context.Context, cfg *config.Config) (cache.Cache, error) {
 	}
 }
 
-// generations reports which generation is live, which every cache key starts
-// with.
+// generations reports which generation is live and which revision of the
+// translations it is read with, which every cache key starts with.
 type generations struct {
 	store *db.Store
 
@@ -41,6 +42,10 @@ type generations struct {
 // out of entries keyed to the old one -- incoherent rather than merely stale.
 func (g *generations) current(ctx context.Context) string {
 	gen, err := g.store.Describe(ctx, db.SchemaLive)
+	var revision int64
+	if err == nil {
+		revision, err = g.store.TransRevision(ctx)
+	}
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -49,6 +54,6 @@ func (g *generations) current(ctx context.Context) string {
 		// one would collapse every generation's keys onto each other.
 		return g.last
 	}
-	g.last = gen.Code
+	g.last = gen.Code + "+t" + strconv.FormatInt(revision, 10)
 	return g.last
 }
