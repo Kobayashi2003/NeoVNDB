@@ -62,31 +62,25 @@ func TestHashCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok, stale := Check(h, "correct horse"); !ok || stale {
-		t.Errorf("right password: ok %v stale %v", ok, stale)
+	if !Check(h, "correct horse") {
+		t.Error("right password refused")
 	}
-	if ok, _ := Check(h, "wrong horse"); ok {
+	if Check(h, "wrong horse") {
 		t.Error("wrong password matched")
 	}
 }
 
-func TestTokenFromEitherCookieName(t *testing.T) {
-	for _, c := range []struct {
-		name   string
-		secure bool
-	}{
-		{Cookie, true}, {insecureCookie, false},
-		// Flipping the setting signs nobody out.
-		{insecureCookie, true}, {Cookie, false},
-	} {
+func TestTokenFromTheConfiguredCookie(t *testing.T) {
+	for _, secure := range []bool{true, false} {
 		r := httptest.NewRequest("GET", "/", nil)
-		r.AddCookie(&http.Cookie{Name: c.name, Value: "tok"})
-		if got := TokenFrom(r, c.secure); got != "tok" {
-			t.Errorf("cookie %s, secure %v: got %q", c.name, c.secure, got)
+		r.AddCookie(&http.Cookie{Name: CookieName(secure), Value: "tok"})
+		if got := TokenFrom(r, secure); got != "tok" {
+			t.Errorf("secure %v: got %q", secure, got)
 		}
-	}
-	if TokenFrom(httptest.NewRequest("GET", "/", nil), true) != "" {
-		t.Error("a token without a cookie")
+		// Only the configured name is read.
+		if got := TokenFrom(r, !secure); got != "" {
+			t.Errorf("secure %v read the other cookie: %q", !secure, got)
+		}
 	}
 }
 

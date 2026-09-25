@@ -41,13 +41,9 @@ func Hash(password string, cost int) (string, error) {
 	return string(h), err
 }
 
-// Check reports whether the password matches, and whether the hash is a
-// legacy format the caller should replace (see legacy.go).
-func Check(hash, password string) (ok, stale bool) {
-	if ok, isLegacy := checkLegacy(hash, password); isLegacy {
-		return ok, ok
-	}
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil, false
+// Check reports whether the password matches the stored bcrypt hash.
+func Check(hash, password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
 func SetCookie(w http.ResponseWriter, secure bool, token string, life time.Duration) {
@@ -77,12 +73,6 @@ func ClearCookie(w http.ResponseWriter, secure bool) {
 func TokenFrom(r *http.Request, secure bool) string {
 	if c, err := r.Cookie(CookieName(secure)); err == nil {
 		return c.Value
-	}
-	// Both names are read, so flipping the setting signs nobody out.
-	for _, name := range []string{Cookie, insecureCookie} {
-		if c, err := r.Cookie(name); err == nil {
-			return c.Value
-		}
 	}
 	return ""
 }
