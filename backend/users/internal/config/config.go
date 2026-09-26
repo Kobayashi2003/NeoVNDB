@@ -23,7 +23,8 @@ const (
 	defaultSessionLife = 30 * 24 * time.Hour
 	// Expired rows are useless but harmless, so they go in a sweep rather than
 	// on the request that trips over one.
-	defaultSweepEvery = time.Hour
+	defaultSweepEvery      = time.Hour
+	defaultSweepFirstAfter = time.Hour
 
 	// bcrypt's work factor. 12 is a tenth of a second per attempt on current
 	// hardware, which is nothing to a person signing in and a great deal to
@@ -52,9 +53,11 @@ const (
 
 	// The one database that cannot be rebuilt is copied weekly, and the last
 	// eight copies -- two months -- are kept. Relative to backend/users.
-	defaultBackupDir   = "../../data/backups/users"
-	defaultBackupEvery = 7 * 24 * time.Hour
-	defaultBackupKeep  = 8
+	defaultBackupDir        = "../../data/backups/users"
+	defaultBackupEvery      = 7 * 24 * time.Hour
+	defaultBackupKeep       = 8
+	defaultBackupCheckEvery = time.Hour
+	defaultBackupFirstAfter = 0
 
 	defaultReadHeaderTimeout = 10 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
@@ -69,21 +72,24 @@ type Config struct {
 	MaxConns       int32
 	ConnectTimeout time.Duration
 
-	SessionLife  time.Duration
-	PageSize     int
-	MaxPageSize  int
-	MaxItems     int
-	SignInTries  int
-	SignInWindow time.Duration
-	SignUpTries  int
-	SignUpWindow time.Duration
-	SweepEvery   time.Duration
-	BcryptCost   int
+	SessionLife     time.Duration
+	PageSize        int
+	MaxPageSize     int
+	MaxItems        int
+	SignInTries     int
+	SignInWindow    time.Duration
+	SignUpTries     int
+	SignUpWindow    time.Duration
+	SweepEvery      time.Duration // 0 turns the sweep off
+	SweepFirstAfter time.Duration
+	BcryptCost      int
 
-	BackupDir   string
-	BackupEvery time.Duration // 0 turns the schedule off; `users backup` still works
-	BackupKeep  int           // 0 keeps every copy
-	PgDump      string
+	BackupDir        string
+	BackupEvery      time.Duration // how old the newest copy may get; 0 turns the schedule off
+	BackupCheckEvery time.Duration
+	BackupFirstAfter time.Duration
+	BackupKeep       int // 0 keeps every copy
+	PgDump           string
 
 	// Whether the session cookie may only travel over https. Off by default so
 	// a local checkout works; on wherever this is actually served.
@@ -104,23 +110,26 @@ func Load() (*Config, error) {
 		MaxConns:       int32(envInt("NEOVNDB_USERS_DB_MAX_CONNS", defaultMaxConns)),
 		ConnectTimeout: envDuration("NEOVNDB_USERS_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
 
-		SessionLife:  envDuration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
-		PageSize:     envInt("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
-		MaxPageSize:  envInt("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
-		MaxItems:     envInt("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
-		SignInTries:  envInt("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
-		SignInWindow: envDuration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
-		SignUpTries:  envInt("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),
-		SignUpWindow: envDuration("NEOVNDB_USERS_SIGNUP_WINDOW", defaultSignUpWindow),
-		SweepEvery:   envDuration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
-		BcryptCost:   envInt("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
+		SessionLife:     envDuration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
+		PageSize:        envInt("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:     envInt("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
+		MaxItems:        envInt("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
+		SignInTries:     envInt("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
+		SignInWindow:    envDuration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
+		SignUpTries:     envInt("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),
+		SignUpWindow:    envDuration("NEOVNDB_USERS_SIGNUP_WINDOW", defaultSignUpWindow),
+		SweepEvery:      envDuration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
+		SweepFirstAfter: envDuration("NEOVNDB_USERS_SWEEP_FIRST_AFTER", defaultSweepFirstAfter),
+		BcryptCost:      envInt("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
 
 		SecureCookie: envBool("NEOVNDB_USERS_SECURE_COOKIE", false),
 
-		BackupDir:   envString("NEOVNDB_USERS_BACKUP_DIR", defaultBackupDir),
-		BackupEvery: envDuration("NEOVNDB_USERS_BACKUP_EVERY", defaultBackupEvery),
-		BackupKeep:  envInt("NEOVNDB_USERS_BACKUP_KEEP", defaultBackupKeep),
-		PgDump:      envString("NEOVNDB_USERS_PG_DUMP", "pg_dump"),
+		BackupDir:        envString("NEOVNDB_USERS_BACKUP_DIR", defaultBackupDir),
+		BackupEvery:      envDuration("NEOVNDB_USERS_BACKUP_EVERY", defaultBackupEvery),
+		BackupCheckEvery: envDuration("NEOVNDB_USERS_BACKUP_CHECK_EVERY", defaultBackupCheckEvery),
+		BackupFirstAfter: envDuration("NEOVNDB_USERS_BACKUP_FIRST_AFTER", defaultBackupFirstAfter),
+		BackupKeep:       envInt("NEOVNDB_USERS_BACKUP_KEEP", defaultBackupKeep),
+		PgDump:           envString("NEOVNDB_USERS_PG_DUMP", "pg_dump"),
 
 		ReadHeaderTimeout: envDuration("NEOVNDB_USERS_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
 		ShutdownTimeout:   envDuration("NEOVNDB_USERS_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),

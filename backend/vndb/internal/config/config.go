@@ -20,6 +20,10 @@ const (
 	// At the repository root: not source, and read by two modules.
 	defaultDumpDir = "../../data/dumps"
 	defaultDumpURL = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
+	// The API process checks upstream daily and imports when it is newer. The
+	// first check waits a while, so a restart is not followed by an import.
+	defaultUpdateEvery      = 24 * time.Hour
+	defaultUpdateFirstAfter = 10 * time.Minute
 
 	// Request bounds; 0 lifts a cap.
 	defaultPageSize    = 24
@@ -57,9 +61,10 @@ const (
 	// The crawl that mirrors ahead of readers: hourly, a few hundred images at
 	// a time, one every two seconds -- a day brings about 4,800 images in at a
 	// pace vndb's CDN will not notice.
-	defaultImageCrawlEvery  = time.Hour
-	defaultImageCrawlPerRun = 200
-	defaultImageCrawlDelay  = 2 * time.Second
+	defaultImageCrawlEvery      = time.Hour
+	defaultImageCrawlFirstAfter = time.Minute
+	defaultImageCrawlPerRun     = 200
+	defaultImageCrawlDelay      = 2 * time.Second
 
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
@@ -74,6 +79,9 @@ type Config struct {
 
 	DumpDir string
 	DumpURL string
+	// The scheduled update in `serve`; UpdateEvery 0 turns it off.
+	UpdateEvery      time.Duration
+	UpdateFirstAfter time.Duration
 
 	MaxConns       int32
 	MinConns       int32
@@ -108,14 +116,15 @@ type Config struct {
 	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
 	GuardMaxLoss float64
 
-	ImageDir           string
-	ImagePort          int
-	ImageMaxBytes      int64
-	ImageFetchLimit    time.Duration
-	ImageFetchParallel int
-	ImageCrawlEvery    time.Duration // 0 turns the crawl off
-	ImageCrawlPerRun   int           // 0 means no ceiling
-	ImageCrawlDelay    time.Duration
+	ImageDir             string
+	ImagePort            int
+	ImageMaxBytes        int64
+	ImageFetchLimit      time.Duration
+	ImageFetchParallel   int
+	ImageCrawlEvery      time.Duration // 0 turns the crawl off
+	ImageCrawlFirstAfter time.Duration
+	ImageCrawlPerRun     int // 0 means no ceiling
+	ImageCrawlDelay      time.Duration
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -123,11 +132,15 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	c := &Config{
-		DatabaseURL:    os.Getenv("NEOVNDB_DB_URL"),
-		Host:           envString("NEOVNDB_HOST", defaultHost),
-		Port:           envInt("NEOVNDB_PORT", defaultPort),
-		DumpDir:        envString("NEOVNDB_DUMP_DIR", defaultDumpDir),
-		DumpURL:        envString("NEOVNDB_DUMP_URL", defaultDumpURL),
+		DatabaseURL: os.Getenv("NEOVNDB_DB_URL"),
+		Host:        envString("NEOVNDB_HOST", defaultHost),
+		Port:        envInt("NEOVNDB_PORT", defaultPort),
+		DumpDir:     envString("NEOVNDB_DUMP_DIR", defaultDumpDir),
+		DumpURL:     envString("NEOVNDB_DUMP_URL", defaultDumpURL),
+
+		UpdateEvery:      envDuration("NEOVNDB_UPDATE_EVERY", defaultUpdateEvery),
+		UpdateFirstAfter: envDuration("NEOVNDB_UPDATE_FIRST_AFTER", defaultUpdateFirstAfter),
+
 		MaxConns:       int32(envInt("NEOVNDB_DB_MAX_CONNS", defaultMaxConns)),
 		MinConns:       int32(envInt("NEOVNDB_DB_MIN_CONNS", defaultMinConns)),
 		ConnLifetime:   envDuration("NEOVNDB_DB_CONN_LIFETIME", defaultConnLifetime),
@@ -158,14 +171,15 @@ func Load() (*Config, error) {
 
 		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
 
-		ImageDir:           envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
-		ImagePort:          envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
-		ImageMaxBytes:      int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
-		ImageFetchLimit:    envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
-		ImageFetchParallel: envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
-		ImageCrawlEvery:    envDuration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
-		ImageCrawlPerRun:   envInt("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
-		ImageCrawlDelay:    envDuration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
+		ImageDir:             envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
+		ImagePort:            envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
+		ImageMaxBytes:        int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
+		ImageFetchLimit:      envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
+		ImageFetchParallel:   envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
+		ImageCrawlEvery:      envDuration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
+		ImageCrawlFirstAfter: envDuration("NEOVNDB_IMAGE_CRAWL_FIRST_AFTER", defaultImageCrawlFirstAfter),
+		ImageCrawlPerRun:     envInt("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
+		ImageCrawlDelay:      envDuration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
 	}
 	if c.DatabaseURL == "" {
 		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")

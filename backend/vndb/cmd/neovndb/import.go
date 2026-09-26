@@ -39,7 +39,23 @@ func runImport(ctx context.Context, args []string) error {
 	}
 	defer store.Close()
 
-	path, code, sum, published, err := resolve(ctx, cfg, *file)
+	return importArchive(ctx, cfg, store, *file, *promote, *force)
+}
+
+// importLock is held for the whole of an import, so the scheduled update and
+// one started by hand never build vndb_next at the same time.
+const importLock = "neovndb import"
+
+// importArchive builds vndb_next from an archive (a local file, or upstream's
+// latest) and, if asked, promotes it.
+func importArchive(ctx context.Context, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
+	return store.Exclusive(ctx, importLock, func() error {
+		return importLocked(ctx, cfg, store, file, promote, force)
+	})
+}
+
+func importLocked(ctx context.Context, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
+	path, code, sum, published, err := resolve(ctx, cfg, file)
 	if err != nil {
 		return err
 	}
@@ -99,11 +115,11 @@ func runImport(ctx context.Context, args []string) error {
 	fmt.Printf("\n%d rows across %d tables in %s\n",
 		total, len(counts), time.Since(started).Round(time.Second))
 
-	if !*promote {
+	if !promote {
 		fmt.Println("staged in " + db.SchemaNext + "; run `db check` then `db promote`")
 		return nil
 	}
-	if err := inspect(ctx, cfg, store, *force); err != nil {
+	if err := inspect(ctx, cfg, store, force); err != nil {
 		return err
 	}
 	if err := store.Promote(ctx); err != nil {

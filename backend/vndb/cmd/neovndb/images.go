@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/img"
+	"github.com/kobayashi/neovndb/internal/schedule"
 )
 
 // runImages serves the image mirror. Serving opens no database: an image
@@ -39,9 +39,10 @@ func runImages(ctx context.Context, args []string) error {
 		"store", cfg.ImageDir)
 
 	mirror := img.NewServer(cfg, log)
-	if cfg.ImageCrawlEvery > 0 {
-		go crawlEvery(ctx, cfg, mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay), log)
-	}
+	crawler := mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay)
+	go schedule.Every(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, func(ctx context.Context) {
+		crawlOnce(ctx, cfg, crawler, log)
+	})
 
 	srv := &http.Server{
 		Addr:              cfg.ImageAddr(),
@@ -65,20 +66,6 @@ func runImages(ctx context.Context, args []string) error {
 		shutdown, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
 		return srv.Shutdown(shutdown)
-	}
-}
-
-// crawlEvery runs the crawl now and then every cfg.ImageCrawlEvery.
-func crawlEvery(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slog.Logger) {
-	tick := time.NewTicker(cfg.ImageCrawlEvery)
-	defer tick.Stop()
-	for {
-		crawlOnce(ctx, cfg, c, log)
-		select {
-		case <-ctx.Done():
-			return
-		case <-tick.C:
-		}
 	}
 }
 
