@@ -4,6 +4,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -155,9 +156,14 @@ func (s *Server) extlinks(w http.ResponseWriter, r *http.Request) {
 	respond(w, http.StatusOK, map[string]any{"results": vndb.Sites()})
 }
 
+// statusClientClosed is nginx's code for a request the client gave up on.
+// Nobody reads it; it keeps the access log from calling that a server error.
+const statusClientClosed = 499
+
 // cached answers from the response cache when it can; otherwise it runs
 // compute, stores the encoded result and answers with it. A client error is a
-// 400 with its message; anything else is logged and reported as a bare 500.
+// 400 with its message, a timeout a 504; anything else is logged and reported
+// as a bare 500.
 func (s *Server) cached(ctx context.Context, w http.ResponseWriter, key, what string, compute func() (any, error)) {
 	if body, ok := s.cache.Get(ctx, key); ok {
 		w.Header().Set("X-Cache", "hit")
@@ -165,11 +171,21 @@ func (s *Server) cached(ctx context.Context, w http.ResponseWriter, key, what st
 		return
 	}
 	value, err := compute()
-	if err != nil {
-		if query.IsClientError(err) {
-			fail(w, http.StatusBadRequest, err.Error())
-			return
-		}
+	switch {
+	case err == nil:
+	case query.IsClientError(err):
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	case errors.Is(err, context.Canceled):
+		// e.g. a newer live count in the builder replaced this one.
+		s.log.Info("request abandoned", "what", what)
+		w.WriteHeader(statusClientClosed)
+		return
+	case errors.Is(err, context.DeadlineExceeded):
+		s.log.Warn("request timed out", "what", what, "limit", s.cfg.RequestTimeout)
+		fail(w, http.StatusGatewayTimeout, "that took too long; try narrowing it")
+		return
+	default:
 		s.log.Error("request failed", "what", what, "err", err)
 		fail(w, http.StatusInternalServerError, "query failed")
 		return
