@@ -4,7 +4,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { imageURL } from "@/lib/images"
+import { thumbnailURL } from "@/lib/images"
 import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
 import { plain } from "@/lib/bbcode"
@@ -44,7 +44,7 @@ function Tile({
         <div className={cn("relative w-full shrink-0 overflow-hidden bg-elevated", ratio)}>
           {image ? (
             <ImageWithFallback
-              src={imageURL(image.url, 256)}
+              src={thumbnailURL(image)}
               alt={alt}
               width={image.dims[0]}
               height={image.dims[1]}

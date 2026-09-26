@@ -100,58 +100,6 @@ func TestStoreWriteIsAtomic(t *testing.T) {
 	}
 }
 
-func TestWidthsRoundUp(t *testing.T) {
-	w := Widths{128, 256, 512}
-	cases := map[int]int{1: 128, 128: 128, 129: 256, 256: 256, 300: 512, 512: 512, 9999: 512}
-	for want, expect := range cases {
-		if got := w.Nearest(want); got != expect {
-			t.Errorf("Nearest(%d) = %d, want %d", want, got, expect)
-		}
-	}
-}
-
-func TestScale(t *testing.T) {
-	wide := jpegOf(t, 800, 600)
-
-	got, changed, err := Scale(wide, 256, 40_000_000)
-	if err != nil || !changed {
-		t.Fatalf("Scale = %v, changed %v", err, changed)
-	}
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(got))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Width != 256 || cfg.Height != 192 {
-		t.Errorf("scaled to %dx%d, want 256x192", cfg.Width, cfg.Height)
-	}
-	if len(got) >= len(wide) {
-		t.Errorf("scaled copy is %d bytes, no smaller than the %d it came from", len(got), len(wide))
-	}
-}
-
-func TestScaleLeavesSmallImagesAlone(t *testing.T) {
-	// Every character portrait is like this: narrower than any width a page
-	// asks for, so it should come back untouched and unstored.
-	small := jpegOf(t, 256, 300)
-	got, changed, err := Scale(small, 512, 40_000_000)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changed {
-		t.Error("changed = true for an image already narrow enough")
-	}
-	if !bytes.Equal(got, small) {
-		t.Error("an untouched image came back re-encoded")
-	}
-}
-
-func TestScaleRefusesHugeImages(t *testing.T) {
-	big := jpegOf(t, 4000, 3000)
-	if _, _, err := Scale(big, 256, 1_000_000); err == nil {
-		t.Error("Scale accepted an image past the pixel limit")
-	}
-}
-
 func TestFlightCollapsesConcurrentWork(t *testing.T) {
 	const callers = 20
 

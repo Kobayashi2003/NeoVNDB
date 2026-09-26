@@ -13,8 +13,11 @@ import (
 	"time"
 )
 
-// thumbnails are upstream's smaller copies of a kind, mirrored alongside it.
-var thumbnails = map[string]string{"cv": "cv.t", "sf": "st"}
+// Known is an image vndb records, with the width that decides its thumbnail.
+type Known struct {
+	Ref   Ref
+	Width int
+}
 
 // A Crawler fetches ahead of readers: every image the database knows of, and
 // its upstream thumbnail, that the store does not hold yet. t.vndb.org has no
@@ -24,7 +27,7 @@ type Crawler struct {
 	source *Source
 	// Known lists what vndb has, from the database; the crawler itself stays
 	// free of it.
-	Known  func(ctx context.Context) ([]Ref, error)
+	Known  func(ctx context.Context) ([]Known, error)
 	PerRun int           // fetches per run; 0 means no ceiling
 	Delay  time.Duration // between fetches, out of politeness to vndb
 	log    *slog.Logger
@@ -44,10 +47,10 @@ func (c *Crawler) Run(ctx context.Context) (fetched, left int, err error) {
 		return 0, 0, err
 	}
 	var want []Ref
-	for _, r := range known {
-		want = append(want, r)
-		if t, ok := thumbnails[r.Kind]; ok {
-			want = append(want, Ref{Kind: t, Num: r.Num})
+	for _, k := range known {
+		want = append(want, k.Ref)
+		if t, ok := Thumbnail(k.Ref, k.Width); ok {
+			want = append(want, t)
 		}
 	}
 

@@ -55,7 +55,7 @@ $root = $PSScriptRoot
 $pidFile = Join-Path $root '.running.json'
 
 # Settings the edge must agree with -- the three services' ports and the image
-# directories -- are read from the services' .env files rather than repeated
+# directory -- are read from the services' .env files rather than repeated
 # here, so changing one there cannot leave this script or the edge on the old
 # value. Each falls back to the default the service itself would use. Next and
 # the edge have no .env of their own and keep 3000 and 5090.
@@ -185,7 +185,6 @@ $env:USERSERVE_UPSTREAM = "127.0.0.1:$($ports.users)"
 $env:NEXT_UPSTREAM      = "127.0.0.1:$($ports.web)"
 # The edge serves stored images straight off disk, from where the mirror puts them.
 $env:NEOVNDB_IMAGE_DIR         = Get-EnvDir $vndbDir 'NEOVNDB_IMAGE_DIR' '../../data/images'
-$env:NEOVNDB_IMAGE_DERIVED_DIR = Get-EnvDir $vndbDir 'NEOVNDB_IMAGE_DERIVED_DIR' '../../data/images-derived'
 
 # --- Build ----------------------------------------------------------------
 # Before anything starts: on Windows a running binary cannot be overwritten,

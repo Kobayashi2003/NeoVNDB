@@ -7,7 +7,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.20.0
 	github.com/redis/go-redis/v9 v9.22.0
-	golang.org/x/image v0.46.0
 )
 
 require (

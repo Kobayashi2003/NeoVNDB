@@ -10,15 +10,16 @@ import (
 )
 
 const imageRefs = `-- name: ImageRefs :many
-SELECT kind, num
+SELECT kind, num, width
   FROM images
  WHERE kind IN ('cv', 'ch', 'sf')
  ORDER BY num DESC
 `
 
 type ImageRefsRow struct {
-	Kind string `db:"kind" json:"kind"`
-	Num  int32  `db:"num" json:"num"`
+	Kind  string `db:"kind" json:"kind"`
+	Num   int32  `db:"num" json:"num"`
+	Width int16  `db:"width" json:"width"`
 }
 
 // The images table read whole, for the crawler that mirrors ahead of readers.
@@ -32,7 +33,7 @@ func (q *Queries) ImageRefs(ctx context.Context) ([]ImageRefsRow, error) {
 	items := []ImageRefsRow{}
 	for rows.Next() {
 		var i ImageRefsRow
-		if err := rows.Scan(&i.Kind, &i.Num); err != nil {
+		if err := rows.Scan(&i.Kind, &i.Num, &i.Width); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

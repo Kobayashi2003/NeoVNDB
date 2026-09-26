@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { imageURL, type Width } from "@/lib/images"
+import { imageURL, thumbnailURL } from "@/lib/images"
 import { ImageWithFallback } from "./ImageWithFallback"
 import { Lightbox } from "./Lightbox"
 import type { Image } from "@/lib/types"
@@ -14,7 +14,7 @@ export function Cover({
   blurred,
   className,
   imageClassName,
-  width = 512,
+  thumbnail = false,
 }: {
   image: Image
   alt: string
@@ -22,10 +22,9 @@ export function Cover({
   /** Sizes the frame; the image fills its width. */
   className?: string
   imageClassName?: string
-  /** What to load, which is not what the frame renders at: a cover on a
-   *  retina screen wants more pixels than its CSS width. The viewer always
-   *  gets the original whatever this says. */
-  width?: Width
+  /** vndb's thumbnail where the frame is small; the viewer always gets the
+   *  original. */
+  thumbnail?: boolean
 }) {
   const [open, setOpen] = useState(false)
 
@@ -41,7 +40,7 @@ export function Cover({
         )}
       >
         <ImageWithFallback
-          src={imageURL(image.url, width)}
+          src={thumbnail ? thumbnailURL(image) : imageURL(image.url)}
           alt={alt}
           width={image.dims[0]}
           height={image.dims[1]}

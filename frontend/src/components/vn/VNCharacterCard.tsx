@@ -87,7 +87,7 @@ export function VNCharacterCard({
           image={character.image}
           alt={character.name}
           blurred={blur}
-          width={256}
+          thumbnail
           className="w-28 shrink-0 self-start sm:w-32"
         />
       )}

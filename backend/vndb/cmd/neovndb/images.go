@@ -36,7 +36,7 @@ func runImages(ctx context.Context, args []string) error {
 
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	log.Info("mirroring images",
-		"originals", cfg.ImageDir, "resized", cfg.ImageDerivedDir, "widths", cfg.ImageWidths)
+		"store", cfg.ImageDir)
 
 	mirror := img.NewServer(cfg, log)
 	if cfg.ImageCrawlEvery > 0 {
@@ -90,13 +90,13 @@ func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slo
 		return
 	}
 	defer store.Close()
-	c.Known = func(ctx context.Context) ([]img.Ref, error) {
+	c.Known = func(ctx context.Context) ([]img.Known, error) {
 		rows, err := store.ImageRefs(ctx)
-		refs := make([]img.Ref, len(rows))
+		known := make([]img.Known, len(rows))
 		for i, r := range rows {
-			refs[i] = img.Ref{Kind: r.Kind, Num: r.Num}
+			known[i] = img.Known{Ref: img.Ref{Kind: r.Kind, Num: r.Num}, Width: int(r.Width)}
 		}
-		return refs, err
+		return known, err
 	}
 	fetched, left, err := c.Run(ctx)
 	if err != nil && ctx.Err() == nil {

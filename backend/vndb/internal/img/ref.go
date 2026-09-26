@@ -55,3 +55,30 @@ func ParseRef(path string) (Ref, error) {
 	}
 	return ref, nil
 }
+
+// Thumbnails are upstream's smaller copies of a kind. vndb makes a cover's
+// only when the cover is wider than the thumbnail (older covers were stored at
+// that size already); every screenshot has one.
+var thumbnails = map[string]string{"cv": "cv.t", "sf": "st"}
+
+const coverThumbnailWidth = 256
+
+// Thumbnail is the upstream thumbnail of an image of this kind and width, if
+// vndb publishes one.
+func Thumbnail(r Ref, width int) (Ref, bool) {
+	kind, ok := thumbnails[r.Kind]
+	if !ok || (r.Kind == "cv" && width <= coverThumbnailWidth) {
+		return Ref{}, false
+	}
+	return Ref{Kind: kind, Num: r.Num}, true
+}
+
+// baseOf is the image a thumbnail was made from.
+func baseOf(thumb Ref) (Ref, bool) {
+	for kind, t := range thumbnails {
+		if t == thumb.Kind {
+			return Ref{Kind: kind, Num: thumb.Num}, true
+		}
+	}
+	return Ref{}, false
+}

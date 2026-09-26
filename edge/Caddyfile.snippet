@@ -53,18 +53,6 @@ handle_path /imgserve/* {
 
 		# A hit is served straight off disk; imgserve never wakes up. The shape is
 		# checked too, since a store also holds half-written temporaries.
-		@neovndb_img_derived {
-			path_regexp ^/\d+/(cv|cv\.t|ch|sf|st)/\d+/\d+\.jpg$
-			file {
-				root {$NEOVNDB_IMAGE_DERIVED_DIR:../data/images-derived}
-			}
-		}
-		handle @neovndb_img_derived {
-			root * {$NEOVNDB_IMAGE_DERIVED_DIR:../data/images-derived}
-			header Cache-Control "public, max-age=31536000, immutable"
-			file_server
-		}
-
 		@neovndb_img_original {
 			path_regexp ^/(cv|cv\.t|ch|sf|st)/\d+/\d+\.jpg$
 			file {
@@ -77,7 +65,7 @@ handle_path /imgserve/* {
 			file_server
 		}
 
-		# A miss, or a width never written because the original is narrower.
+		# A miss: imgserve fetches it from vndb, stores it and answers.
 		handle {
 			rewrite * /img{path}
 			reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101} {
