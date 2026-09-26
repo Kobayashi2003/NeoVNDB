@@ -69,6 +69,11 @@ mirror process at all. Nothing is resized: the mirror keeps vndb's files byte
 for byte, and thumbnails are vndb's own (`cv.t` for covers wider than 256px,
 `st` for screenshots).
 
+The read API describes itself: `/vndbserve/meta/openapi` is an OpenAPI 3.1
+document built from the same tables that answer requests, so every type, field,
+filter and sort it lists is one a request can use. The site's `/api` page (linked
+from the footer of list pages) renders it for people.
+
 `frontend/` asks for `/vndbserve/...` from the browser and
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
@@ -172,8 +177,8 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 
 | Command | What it does |
 | --- | --- |
-| `serve [--addr host:port]` | Run the read API |
-| `images [--addr host:port]` | Run the image mirror; it also crawls ahead of readers every hour |
+| `serve [--addr host:port]` | Run the read API; it also updates the mirror on a schedule |
+| `images [--addr host:port]` | Run the image mirror; it also crawls ahead of readers on a schedule |
 | `crawl [--limit n]` | Fetch images the database knows of and the disk lacks, now (`--limit 0`: all of them) |
 | `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
 | `update [--force]` | Import and go live if upstream is newer |
@@ -225,28 +230,30 @@ exercise signed-in pages; without it those three skip. Frontend tests live in
 
 ## Scheduled work
 
-Three things run on a schedule, and only one of them needs anything from
-outside:
+Every scheduled job lives in the service it belongs to, so starting the stack
+is all it takes; nothing is registered with the system's scheduler. Each job
+waits `*_FIRST_AFTER`, runs, then runs every `*_EVERY`; `0` for `*_EVERY` turns
+it off, and a run never overlaps the previous one.
 
-- **Updating the mirror** is left to the system's scheduler, which runs
-  `neovndb update` from `backend/vndb` (it is a no-op when upstream has nothing
-  newer, so daily is fine):
+| Job | Runs in | Settings (default) |
+| --- | --- | --- |
+| Updating the mirror (`neovndb update`) | `serve` | `NEOVNDB_UPDATE_EVERY` (24h), `NEOVNDB_UPDATE_FIRST_AFTER` (10m) |
+| Mirroring images ahead of readers | `images` | `NEOVNDB_IMAGE_CRAWL_EVERY` (1h), `NEOVNDB_IMAGE_CRAWL_FIRST_AFTER` (1m), `NEOVNDB_IMAGE_CRAWL_PER_RUN` (200), `NEOVNDB_IMAGE_CRAWL_DELAY` (2s) |
+| Expiring sessions | user service | `NEOVNDB_USERS_SWEEP_EVERY` (1h), `NEOVNDB_USERS_SWEEP_FIRST_AFTER` (1h) |
+| Backing up the user database | user service | `NEOVNDB_USERS_BACKUP_EVERY` (a week), `NEOVNDB_USERS_BACKUP_CHECK_EVERY` (1h), `NEOVNDB_USERS_BACKUP_FIRST_AFTER` (0s), `NEOVNDB_USERS_BACKUP_KEEP` |
 
-  ```powershell
-  schtasks /Create /TN "NeoVNDB update" /SC DAILY /ST 05:00 /TR "cmd /c cd /d D:\path\to\NeoVNDB\backend\vndb && bin\neovndb.exe update >> update.log 2>&1"
-  ```
-
-  or a cron line / systemd timer running the same command.
-- **Backing up the user database** is done by the user service itself: it
-  checks hourly and dumps (`pg_dump`, custom format) when the newest copy is
-  older than `NEOVNDB_USERS_BACKUP_EVERY` (a week), keeping the newest
-  `NEOVNDB_USERS_BACKUP_KEEP`. Restore with
+- **Updating** is a no-op when upstream has nothing newer, so checking daily
+  costs one small request. Imports take a Postgres advisory lock, so a
+  scheduled update and a hand-run `import`/`update` never run at once: the
+  second one stops with "another run holds the lock".
+- **Images**: each run fetches up to `PER_RUN` images, and their upstream
+  thumbnails, that the database knows of and the disk does not hold, newest
+  first and `DELAY` apart. The dump's `images` table is the list, so nothing is
+  probed.
+- **Backups** are due when the newest copy is older than `BACKUP_EVERY`, so a
+  service that restarts often still backs up on time. They are `pg_dump`
+  custom-format files; restore with
   `pg_restore --clean --if-exists -d <database url> <file>`.
-- **Mirroring images ahead of readers** is done by the image mirror: every
-  `NEOVNDB_IMAGE_CRAWL_EVERY` it fetches up to `NEOVNDB_IMAGE_CRAWL_PER_RUN`
-  images, and their upstream thumbnails, that the database knows of and the disk
-  does not hold, newest first and `NEOVNDB_IMAGE_CRAWL_DELAY` apart. The dump's
-  `images` table is the list, so nothing is probed.
 
 ## Updating
 
@@ -257,7 +264,7 @@ cd backend/vndb && go run ./cmd/neovndb update   # no-op if upstream is already 
 Run it while the read API is up: going live is one transaction, and responses
 are cached under the generation, so readers move to the new data at once.
 
-One command for the weekly run and for a run by hand -- an update path that
+One command for the scheduled run and for a run by hand -- an update path that
 only ever runs unattended is one nobody can reproduce when it fails. It stops
 if upstream has nothing newer, and refuses to go backwards if upstream
 republishes an older archive.
