@@ -93,4 +93,35 @@ export async function relationGraph<T>(id: string, depth: number): Promise<T> {
   return get<T>(`/vn/${id}/relations`, { depth: String(depth) })
 }
 
+/** The read API's description of itself (OpenAPI 3.1), built by the API from
+ *  the tables that serve requests. Only the parts the /api page reads. */
+export interface OpenAPI {
+  info: { title: string; version: string; description: string }
+  servers: { url: string }[]
+  paths: Record<string, { get: Operation }>
+  components: { schemas: Record<string, { properties: Record<string, FieldSchema> }> }
+}
+
+export interface Operation {
+  summary: string
+  parameters?: {
+    name: string
+    in: string
+    description?: string
+    "x-filter"?: boolean
+    schema?: { enum?: string[] }
+  }[]
+}
+
+export interface FieldSchema {
+  $ref?: string
+  "x-expected"?: number
+  "x-subfields"?: string[]
+  "x-edge"?: string[]
+}
+
+export async function openapi(): Promise<OpenAPI> {
+  return get<OpenAPI>("/meta/openapi", {})
+}
+
 export { ApiError }

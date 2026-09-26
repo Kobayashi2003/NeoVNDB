@@ -30,6 +30,8 @@ func (r *Resolver) Registry() query.Registry { return fields.Registry() }
 // it from inside a query about something else.
 func (r *Resolver) Filters() map[string]query.FilterFunc { return spec.Filters }
 
+func (r *Resolver) Sorts() []string { return query.SortNames(spec) }
+
 func (r *Resolver) Type() string { return vndb.TypeStaff }
 
 // Objects renders these entities for another type that nests them.

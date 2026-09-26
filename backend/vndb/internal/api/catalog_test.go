@@ -97,3 +97,22 @@ func TestEveryFilterFailsAsAClientError(t *testing.T) {
 func newBuilder(cat *query.Catalog) *query.Builder {
 	return &query.Builder{Types: cat, Budget: query.Budget(0), Limits: query.DefaultLimits()}
 }
+
+// Every type the server runs can describe itself, which is what /meta/openapi
+// is built from.
+func TestEveryTypeDescribesItself(t *testing.T) {
+	_, resolvers, err := newCatalog(&db.Store{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, r := range resolvers {
+		d, ok := r.(described)
+		if !ok {
+			t.Errorf("%s cannot describe itself", name)
+			continue
+		}
+		if len(d.Registry()) == 0 || len(d.Filters()) == 0 || len(d.Sorts()) == 0 {
+			t.Errorf("%s: %d fields, %d filters, %d sorts", name, len(d.Registry()), len(d.Filters()), len(d.Sorts()))
+		}
+	}
+}

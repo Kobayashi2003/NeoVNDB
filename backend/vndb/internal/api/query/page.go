@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -30,6 +31,16 @@ type PageSpec struct {
 
 	Filters map[string]FilterFunc
 	Sorts   map[string]Sort
+}
+
+// SortNames lists a spec's orders, sorted.
+func SortNames(spec PageSpec) []string {
+	names := make([]string, 0, len(spec.Sorts))
+	for name := range spec.Sorts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // Sort is one ordering a type offers. Join is what Expr needs beyond the main
@@ -131,7 +142,7 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, string, error) {
 	if name == "" {
 		name = "id"
 	}
-	sort, ok := spec.Sorts[name]
+	order, ok := spec.Sorts[name]
 	if !ok {
 		return "", "", BadRequest("cannot sort by %q", name)
 	}
@@ -145,7 +156,7 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, string, error) {
 		return rank, "", err
 	}
 	// id breaks ties so paging is stable between requests.
-	return sort.Expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, sort.Join, nil
+	return order.Expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, order.Join, nil
 }
 
 // searchRank scores each row by its best matching label: equal to the whole
