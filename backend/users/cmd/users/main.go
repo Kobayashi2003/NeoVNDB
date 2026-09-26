@@ -22,6 +22,7 @@ import (
 	"github.com/kobayashi/neovndb-users/internal/api"
 	"github.com/kobayashi/neovndb-users/internal/backup"
 	"github.com/kobayashi/neovndb-users/internal/config"
+	"github.com/kobayashi/neovndb-users/internal/schedule"
 	"github.com/kobayashi/neovndb-users/internal/store"
 )
 
@@ -60,9 +61,13 @@ func run(ctx context.Context) error {
 	}
 	defer st.Close()
 
-	go sweep(ctx, st, cfg.SweepEvery, log)
+	go schedule.Every(ctx, cfg.SweepFirstAfter, cfg.SweepEvery, func(ctx context.Context) {
+		sweep(ctx, st, log)
+	})
 	if cfg.BackupEvery > 0 {
-		go backUp(ctx, dumps, cfg.BackupEvery, log)
+		go schedule.Every(ctx, cfg.BackupFirstAfter, cfg.BackupCheckEvery, func(ctx context.Context) {
+			backUpIfDue(ctx, dumps, cfg.BackupEvery, log)
+		})
 	}
 
 	srv := &http.Server{
@@ -92,43 +97,29 @@ func run(ctx context.Context) error {
 
 // sweep deletes expired sessions. Housekeeping only: expiry is already
 // enforced whenever a session is read.
-func sweep(ctx context.Context, st *store.Store, every time.Duration, log *slog.Logger) {
-	tick := time.NewTicker(every)
-	defer tick.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-tick.C:
-			n, err := st.SweepSessions(ctx)
-			if err != nil {
-				log.Warn("sweeping sessions", "err", err)
-			} else if n > 0 {
-				log.Info("swept expired sessions", "count", n)
-			}
-		}
+func sweep(ctx context.Context, st *store.Store, log *slog.Logger) {
+	n, err := st.SweepSessions(ctx)
+	if err != nil {
+		log.Warn("sweeping sessions", "err", err)
+	} else if n > 0 {
+		log.Info("swept expired sessions", "count", n)
 	}
 }
 
-// backUp checks hourly whether the newest backup is older than every, so a
-// service that restarts often still backs up on time. Checked once at start.
-func backUp(ctx context.Context, o backup.Options, every time.Duration, log *slog.Logger) {
-	tick := time.NewTicker(time.Hour)
-	defer tick.Stop()
-	for {
-		if due, err := backup.Due(o.Dir, every, time.Now()); err != nil {
-			log.Warn("checking backups", "err", err)
-		} else if due {
-			if path, err := backup.Run(ctx, o, time.Now()); err != nil {
-				log.Error("backing up", "err", err)
-			} else {
-				log.Info("backed up", "file", path)
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-tick.C:
-		}
+// backUpIfDue backs up when the newest copy is older than every. Deciding by
+// the newest copy rather than a clock means restarts cannot skip one.
+func backUpIfDue(ctx context.Context, o backup.Options, every time.Duration, log *slog.Logger) {
+	due, err := backup.Due(o.Dir, every, time.Now())
+	if err != nil {
+		log.Warn("checking backups", "err", err)
+		return
+	}
+	if !due {
+		return
+	}
+	if path, err := backup.Run(ctx, o, time.Now()); err != nil {
+		log.Error("backing up", "err", err)
+	} else {
+		log.Info("backed up", "file", path)
 	}
 }

@@ -29,7 +29,13 @@ func runUpdate(ctx context.Context, args []string) error {
 		return err
 	}
 	defer store.Close()
+	return updateOnce(ctx, cfg, store, *force)
+}
 
+// updateOnce imports and promotes upstream's latest archive when it is newer
+// than the live generation, and does nothing otherwise. The scheduled update
+// in `serve` calls the same thing.
+func updateOnce(ctx context.Context, cfg *config.Config, store *db.Store, force bool) error {
 	rel, err := dump.Latest(ctx, cfg.DumpURL)
 	if err != nil {
 		return fmt.Errorf("check upstream: %w", err)
@@ -53,10 +59,5 @@ func runUpdate(ctx context.Context, args []string) error {
 	default:
 		fmt.Printf("upstream  %s, live %s\n", rel.Code, live.Code)
 	}
-
-	importArgs := []string{"-promote"}
-	if *force {
-		importArgs = append(importArgs, "-force")
-	}
-	return runImport(ctx, importArgs)
+	return importArchive(ctx, cfg, store, "", true, force)
 }
