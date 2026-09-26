@@ -23,9 +23,6 @@ func newTestServer(t *testing.T, upstream http.Handler) (*Server, *httptest.Serv
 
 	srv := NewServer(&config.Config{
 		ImageDir:           t.TempDir(),
-		ImageDerivedDir:    t.TempDir(),
-		ImageWidths:        []int{128, 256, 512},
-		ImageMaxPixels:     40_000_000,
 		ImageMaxBytes:      32 << 20,
 		ImageFetchLimit:    10 * time.Second,
 		ImageFetchParallel: 4,
@@ -34,8 +31,8 @@ func newTestServer(t *testing.T, upstream http.Handler) (*Server, *httptest.Serv
 	return srv, up
 }
 
-// Two widths of one image share the original. Asking for a cover at two sizes
-// is one page doing what a page does; it must not be two trips to vndb.
+// Two readers of one cold image share one fetch; a page showing a cover twice
+// must not be two trips to vndb.
 func TestOneUpstreamFetchPerImage(t *testing.T) {
 	var fetches atomic.Int32
 	release := make(chan struct{})
@@ -49,12 +46,12 @@ func TestOneUpstreamFetchPerImage(t *testing.T) {
 	var entered, done sync.WaitGroup
 	entered.Add(2)
 	done.Add(2)
-	for _, width := range []int{256, 512} {
+	for range 2 {
 		go func() {
 			defer done.Done()
 			entered.Done()
-			if _, err := srv.serve(ref, width); err != nil {
-				t.Errorf("serve at %d: %v", width, err)
+			if _, err := srv.original(ref); err != nil {
+				t.Errorf("original: %v", err)
 			}
 		}()
 	}
@@ -78,7 +75,7 @@ func TestFetchSurvivesTheCallerLeaving(t *testing.T) {
 	}))
 
 	mux := srv.Routes()
-	first := httptest.NewRequest(http.MethodGet, "/img/256/cv/12/79412.jpg", nil)
+	first := httptest.NewRequest(http.MethodGet, "/img/cv/12/79412.jpg", nil)
 	ctx, cancel := context.WithCancel(first.Context())
 	first = first.WithContext(ctx)
 
@@ -97,7 +94,7 @@ func TestFetchSurvivesTheCallerLeaving(t *testing.T) {
 	wg2.Add(1)
 	go func() {
 		defer wg2.Done()
-		mux.ServeHTTP(second, httptest.NewRequest(http.MethodGet, "/img/256/cv/12/79412.jpg", nil))
+		mux.ServeHTTP(second, httptest.NewRequest(http.MethodGet, "/img/cv/12/79412.jpg", nil))
 	}()
 	time.Sleep(20 * time.Millisecond)
 	cancel()
@@ -138,7 +135,7 @@ func TestUpstreamFetchesAreBounded(t *testing.T) {
 			defer done.Done()
 			// Distinct images, so the flight has nothing to collapse and every
 			// one of them is a real trip upstream.
-			_, _ = srv.serve(Ref{"cv", int32(1000 + i)}, 0)
+			_, _ = srv.original(Ref{"cv", int32(1000 + i)})
 		}()
 	}
 	time.Sleep(100 * time.Millisecond)
@@ -150,5 +147,28 @@ func TestUpstreamFetchesAreBounded(t *testing.T) {
 	}
 	if peak.Load() == 0 {
 		t.Error("nothing reached upstream at all")
+	}
+}
+
+// A cover no wider than a thumbnail has no cv.t upstream; asking for one gets
+// the original, which is already that small.
+func TestMissingThumbnailServesTheOriginal(t *testing.T) {
+	srv, _ := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/cv/39/10039.jpg" {
+			_, _ = w.Write([]byte("the small original"))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv.t/39/10039.jpg", nil))
+	if rec.Code != http.StatusOK || rec.Body.String() != "the small original" {
+		t.Errorf("got %d %q", rec.Code, rec.Body.String())
+	}
+	// A missing original is still a 404.
+	rec = httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv/40/10040.jpg", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("missing original: %d", rec.Code)
 	}
 }

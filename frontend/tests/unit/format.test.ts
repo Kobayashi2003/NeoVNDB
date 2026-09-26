@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { aspect, birthday, bust, display, length, medium, score } from "@/lib/format"
 import { one, withParams } from "@/lib/href"
+import { imageURL, thumbnailURL } from "@/lib/images"
 import { stepMonth } from "@/lib/months"
 import { DEFAULTS, readPrefs } from "@/lib/prefs"
 
@@ -67,5 +68,23 @@ describe("readPrefs", () => {
     expect(readPrefs("not json")).toEqual(DEFAULTS)
     expect(readPrefs('{"sexual":"explicit","spoiler":9,"layout":"x"}')).toEqual({ ...DEFAULTS, sexual: "explicit" })
     expect(readPrefs('{"original":true,"spoiler":2}')).toEqual({ ...DEFAULTS, original: true, spoiler: 2 })
+  })
+})
+
+describe("image addresses", () => {
+  const cover = (width: number) => ({ url: "https://t.vndb.org/cv/39/20339.jpg", dims: [width, 400] as [number, number] })
+
+  it("rewrites vndb's addresses to the mirror", () => {
+    expect(imageURL("https://t.vndb.org/cv/39/20339.jpg")).toBe("/imgserve/img/cv/39/20339.jpg")
+    expect(imageURL("https://example.org/x.png")).toBe("https://example.org/x.png")
+  })
+
+  it("uses vndb's own thumbnails, and the original where vndb made none", () => {
+    expect(thumbnailURL(cover(315))).toBe("/imgserve/img/cv.t/39/20339.jpg")
+    // No wider than a thumbnail: vndb never made one.
+    expect(thumbnailURL(cover(256))).toBe("/imgserve/img/cv/39/20339.jpg")
+    expect(thumbnailURL({ url: "https://t.vndb.org/sf/90/190.jpg", dims: [800, 600] })).toBe("/imgserve/img/st/90/190.jpg")
+    // Portraits have no upstream thumbnail.
+    expect(thumbnailURL({ url: "https://t.vndb.org/ch/12/12.jpg", dims: [500, 700] })).toBe("/imgserve/img/ch/12/12.jpg")
   })
 })

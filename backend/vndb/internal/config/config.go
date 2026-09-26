@@ -4,9 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -49,14 +47,9 @@ const (
 	// shrink means a truncated archive or a partial import.
 	defaultGuardMaxLoss = 0.02
 
-	// Derived copies live apart from originals: deleting them loses nothing.
+	// Originals only, byte-exact; thumbnails are vndb's own (cv.t, st).
 	defaultImageDir        = "../../data/images"
-	defaultImageDerivedDir = "../../data/images-derived"
 	defaultImagePort       = 5101
-	// Requests round up to one of these, so arbitrary widths can't fill the disk.
-	defaultImageWidths = "128,256,512"
-	// Upstream covers reach 15158x15189; decoding those is refused.
-	defaultImageMaxPixels  = 40_000_000
 	defaultImageMaxBytes   = 32 << 20
 	defaultImageFetchLimit = 30 * time.Second
 	// Concurrent fetches from vndb's CDN.
@@ -116,10 +109,7 @@ type Config struct {
 	GuardMaxLoss float64
 
 	ImageDir           string
-	ImageDerivedDir    string
 	ImagePort          int
-	ImageWidths        []int
-	ImageMaxPixels     int
 	ImageMaxBytes      int64
 	ImageFetchLimit    time.Duration
 	ImageFetchParallel int
@@ -169,10 +159,7 @@ func Load() (*Config, error) {
 		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
 
 		ImageDir:           envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
-		ImageDerivedDir:    envString("NEOVNDB_IMAGE_DERIVED_DIR", defaultImageDerivedDir),
 		ImagePort:          envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
-		ImageWidths:        envInts("NEOVNDB_IMAGE_WIDTHS", defaultImageWidths),
-		ImageMaxPixels:     envInt("NEOVNDB_IMAGE_MAX_PIXELS", defaultImageMaxPixels),
 		ImageMaxBytes:      int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
 		ImageFetchLimit:    envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
 		ImageFetchParallel: envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
@@ -218,19 +205,6 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 		}
 	}
 	return fallback
-}
-
-// envInts reads a comma-separated list, skipping malformed entries.
-func envInts(key, fallback string) []int {
-	raw := envString(key, fallback)
-	out := []int{}
-	for _, part := range strings.Split(raw, ",") {
-		if n, err := strconv.Atoi(strings.TrimSpace(part)); err == nil && n > 0 {
-			out = append(out, n)
-		}
-	}
-	sort.Ints(out)
-	return out
 }
 
 func envFloat(key string, fallback float64) float64 {

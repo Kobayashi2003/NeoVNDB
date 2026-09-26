@@ -65,7 +65,9 @@ the rest without forwarding them, which is why `backend/vndb` contains no
 notion of who may call it: its whole surface stays reachable on :5100, and
 which part of it the world can reach is a question the edge answers. Images
 that are already on disk are served by the file server and never reach the
-mirror process at all.
+mirror process at all. Nothing is resized: the mirror keeps vndb's files byte
+for byte, and thumbnails are vndb's own (`cv.t` for covers wider than 256px,
+`st` for screenshots).
 
 `frontend/` asks for `/vndbserve/...` from the browser and
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
@@ -83,8 +85,7 @@ the edge with it:
 | `IMGSERVE_UPSTREAM` | `127.0.0.1:5101` | the image mirror |
 | `USERSERVE_UPSTREAM` | `127.0.0.1:5102` | the user service |
 | `NEXT_UPSTREAM` | `127.0.0.1:3000` | the site |
-| `NEOVNDB_IMAGE_DIR` | `../data/images` | stored originals, served straight off disk |
-| `NEOVNDB_IMAGE_DERIVED_DIR` | `../data/images-derived` | resized copies |
+| `NEOVNDB_IMAGE_DIR` | `../data/images` | stored images, served straight off disk |
 
 ## Running it
 
@@ -104,7 +105,7 @@ still appear.
 
 It refuses to start on a port that is already in use rather than guessing, waits
 until each service actually answers, and prints the tail of a log for any that
-does not. The three services' ports and the image directories come from their
+does not. The three services' ports and the image directory come from their
 `.env` files, not from the script, and are handed on to the edge; Next and the
 edge keep 3000 and 5090. Each process logs to `<name>.out.log` and
 `<name>.err.log` in its own directory.

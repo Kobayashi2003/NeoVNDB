@@ -29,19 +29,24 @@ func TestCrawlFetchesWhatIsMissing(t *testing.T) {
 	}
 
 	c := NewCrawler(srv.mirror, srv.source, srv.log)
-	c.Known = func(context.Context) ([]Ref, error) {
-		return []Ref{{"cv", 17}, {"ch", 3}, {"sf", 105}}, nil
+	c.Known = func(context.Context) ([]Known, error) {
+		return []Known{
+			{Ref{"cv", 17}, 315}, // wide enough to have a cv.t
+			{Ref{"cv", 16}, 256}, // not: its cv.t is never asked for
+			{Ref{"ch", 3}, 256},
+			{Ref{"sf", 105}, 800},
+		}, nil
 	}
 
 	fetched, left, err := c.Run(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	// cv.t/17, ch/3, st/105 stored; sf/105 is gone upstream.
-	if fetched != 3 || left != 1 {
+	// cv/16, cv.t/17, ch/3, st/105 stored; sf/105 is gone upstream.
+	if fetched != 4 || left != 1 {
 		t.Errorf("fetched %d, left %d; asked %v", fetched, left, asked)
 	}
-	want := []string{"/sf/05/105.jpg", "/st/05/105.jpg", "/cv.t/17/17.jpg", "/ch/03/3.jpg"}
+	want := []string{"/sf/05/105.jpg", "/st/05/105.jpg", "/cv.t/17/17.jpg", "/cv/16/16.jpg", "/ch/03/3.jpg"}
 	if len(asked) != len(want) {
 		t.Fatalf("asked %v, want %v", asked, want)
 	}
