@@ -20,6 +20,8 @@ const (
 	// At the repository root: not source, and read by two modules.
 	defaultDumpDir = "../../data/dumps"
 	defaultDumpURL = "https://dl.vndb.org/dump/vndb-db-latest.tar.zst"
+	// The archives behind the live and the previous generation.
+	defaultDumpKeep = 2
 	// The API process checks upstream daily and imports when it is newer. The
 	// first check waits a while, so a restart is not followed by an import.
 	defaultUpdateEvery      = 24 * time.Hour
@@ -77,8 +79,9 @@ type Config struct {
 	Host string
 	Port int
 
-	DumpDir string
-	DumpURL string
+	DumpDir  string
+	DumpURL  string
+	DumpKeep int // 0 keeps every archive
 	// The scheduled update in `serve`; UpdateEvery 0 turns it off.
 	UpdateEvery      time.Duration
 	UpdateFirstAfter time.Duration
@@ -137,6 +140,7 @@ func Load() (*Config, error) {
 		Port:        envInt("NEOVNDB_PORT", defaultPort),
 		DumpDir:     envString("NEOVNDB_DUMP_DIR", defaultDumpDir),
 		DumpURL:     envString("NEOVNDB_DUMP_URL", defaultDumpURL),
+		DumpKeep:    envInt("NEOVNDB_DUMP_KEEP", defaultDumpKeep),
 
 		UpdateEvery:      envDuration("NEOVNDB_UPDATE_EVERY", defaultUpdateEvery),
 		UpdateFirstAfter: envDuration("NEOVNDB_UPDATE_FIRST_AFTER", defaultUpdateFirstAfter),
