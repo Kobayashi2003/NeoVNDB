@@ -126,6 +126,17 @@ func importLocked(ctx context.Context, cfg *config.Config, store *db.Store, file
 		return err
 	}
 	fmt.Printf("generation %s is now live\n", code)
+
+	if cfg.DumpKeep > 0 {
+		removed, err := dump.Prune(cfg.DumpDir, cfg.DumpKeep, path)
+		for _, p := range removed {
+			fmt.Printf("removed   %s\n", p)
+		}
+		if err != nil {
+			// The new generation is live; a leftover archive only costs disk.
+			fmt.Printf("pruning archives: %v\n", err)
+		}
+	}
 	return nil
 }
 
