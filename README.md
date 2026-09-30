@@ -245,7 +245,10 @@ it off, and a run never overlaps the previous one.
 - **Updating** is a no-op when upstream has nothing newer, so checking daily
   costs one small request. Imports take a Postgres advisory lock, so a
   scheduled update and a hand-run `import`/`update` never run at once: the
-  second one stops with "another run holds the lock".
+  second one stops with "another run holds the lock". Upstream publishes
+  most days, so once a generation goes live all but the newest
+  `NEOVNDB_DUMP_KEEP` archives (2: the live and previous generations') are
+  deleted from `NEOVNDB_DUMP_DIR`.
 - **Images**: each run fetches up to `PER_RUN` images, and their upstream
   thumbnails, that the database knows of and the disk does not hold, newest
   first and `DELAY` apart. The dump's `images` table is the list, so nothing is
