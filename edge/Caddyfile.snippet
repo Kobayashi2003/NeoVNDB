@@ -3,12 +3,14 @@
 # Upstreams come from the environment (VNDBSERVE_UPSTREAM, IMGSERVE_UPSTREAM,
 # USERSERVE_UPSTREAM, NEXT_UPSTREAM). Defaults use 127.0.0.1, not localhost: on
 # Windows localhost tries ::1 first and each cold connection eats a ~20s IPv6
-# timeout. NEOVNDB_IMAGE_DIR / NEOVNDB_IMAGE_DERIVED_DIR are imgserve's stores;
-# relative values resolve per process, so deployments set them absolute.
+# timeout. NEOVNDB_IMAGE_DIR is imgserve's store; a relative value resolves per
+# process, so deployments set it absolute.
 #
 # Each backend prefix allowlists the routes the frontend uses and answers 403
-# otherwise, which is why vndbserve and imgserve hold no auth code. userserve
-# guards its own routes and passes through whole.
+# otherwise, which is why vndbserve and imgserve hold no auth code. Their
+# /admin routes are let through only once userserve's /auth/admin says the
+# caller is an administrator. userserve guards its own routes, admin ones
+# included, and passes through whole.
 #
 # To gate browsing behind sign-in, put this at the top of each gated prefix:
 #
@@ -28,6 +30,14 @@
 #   - Backend prefixes stay top-level so pages reach them from any route.
 
 handle_path /vndbserve/* {
+	@neovndb_admin path /admin/*
+	handle @neovndb_admin {
+		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+			uri /auth/admin
+		}
+		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}
+	}
+
 	# Anything not listed stays loopback-only.
 	@neovndb_read {
 		method GET HEAD
@@ -83,6 +93,14 @@ handle_path /imgserve/* {
 		path /health
 	}
 	handle @neovndb_img_health {
+		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101}
+	}
+
+	@neovndb_img_admin path /admin/*
+	handle @neovndb_img_admin {
+		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+			uri /auth/admin
+		}
 		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101}
 	}
 

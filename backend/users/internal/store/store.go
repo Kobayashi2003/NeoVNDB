@@ -147,6 +147,53 @@ func (s *Store) SetPassword(ctx context.Context, id int32, hash string) error {
 	return err
 }
 
+// Account is a user as the admin page lists them.
+type Account struct {
+	User
+	Lists    int        `json:"lists"`
+	Items    int        `json:"items"`
+	Ratings  int        `json:"ratings"`
+	Sessions int        `json:"sessions"`
+	LastSeen *time.Time `json:"last_seen"`
+}
+
+// Accounts lists every user, oldest first. LastSeen is when their newest live
+// session began.
+func (s *Store) Accounts(ctx context.Context) ([]Account, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT u.id, u.username, u.email, u.is_admin, u.created_at,
+		       (SELECT count(*) FROM collections c WHERE c.user_id = u.id),
+		       (SELECT count(*) FROM marks m JOIN collections c ON c.id = m.collection_id WHERE c.user_id = u.id),
+		       (SELECT count(*) FROM ratings r WHERE r.user_id = u.id),
+		       (SELECT count(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > now()),
+		       (SELECT max(s.created_at) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > now())
+		  FROM users u
+		 ORDER BY u.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Account
+	for rows.Next() {
+		var a Account
+		if err := rows.Scan(&a.ID, &a.Username, &a.Email, &a.IsAdmin, &a.CreatedAt,
+			&a.Lists, &a.Items, &a.Ratings, &a.Sessions, &a.LastSeen); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// SetAdmin grants or withdraws administration. ErrNotFound if no such user.
+func (s *Store) SetAdmin(ctx context.Context, id int32, admin bool) error {
+	tag, err := s.pool.Exec(ctx, `UPDATE users SET is_admin = $2 WHERE id = $1`, id, admin)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return err
+}
+
 // DeleteUser removes the account; every other table cascades from it.
 func (s *Store) DeleteUser(ctx context.Context, id int32) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)

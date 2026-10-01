@@ -48,8 +48,9 @@ func (s *Server) Routes() http.Handler {
 
 	mux.HandleFunc("GET /health", s.health)
 
-	// The edge's probe.
+	// The edge's probes: anyone signed in, and administrators only.
 	mux.HandleFunc("GET /auth/verify", s.verify)
+	mux.HandleFunc("GET /auth/admin", s.adminOnly(s.verifyAdmin))
 
 	mux.HandleFunc("POST /register", s.register)
 	mux.HandleFunc("POST /login", s.login)
@@ -79,6 +80,13 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("PUT /ratings/{item}", s.signedIn(s.setRating))
 	mux.HandleFunc("DELETE /ratings/{item}", s.signedIn(s.clearRating))
 
+	mux.HandleFunc("GET /admin/users", s.adminOnly(s.accounts))
+	mux.HandleFunc("PATCH /admin/users/{id}", s.adminOnly(s.setAdmin))
+	mux.HandleFunc("POST /admin/users/{id}/logout", s.adminOnly(s.signOutUser))
+	mux.HandleFunc("DELETE /admin/users/{id}", s.adminOnly(s.removeUser))
+	mux.HandleFunc("GET /admin/backups", s.adminOnly(s.backups))
+	mux.HandleFunc("POST /admin/backups", s.adminOnly(s.backUp))
+
 	return mux
 }
 
@@ -88,22 +96,44 @@ type ctxKey struct{}
 // is closed unless opened on purpose.
 func (s *Server) signedIn(next func(http.ResponseWriter, *http.Request, int32)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := auth.TokenFrom(r, s.cfg.SecureCookie)
-		if token == "" {
-			fail(w, http.StatusUnauthorized, "Not signed in.")
+		if userID, _, ok := s.session(w, r); ok {
+			next(w, r, userID)
+		}
+	}
+}
+
+// adminOnly is signedIn for administrators; anyone else is refused.
+func (s *Server) adminOnly(next func(http.ResponseWriter, *http.Request, int32)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, isAdmin, ok := s.session(w, r)
+		if !ok {
 			return
 		}
-		userID, _, err := s.store.Session(r.Context(), token)
-		if errors.Is(err, store.ErrNotFound) {
-			fail(w, http.StatusUnauthorized, "Not signed in.")
-			return
-		}
-		if err != nil {
-			s.oops(w, "reading session", err)
+		if !isAdmin {
+			fail(w, http.StatusForbidden, "Administrators only.")
 			return
 		}
 		next(w, r, userID)
 	}
+}
+
+// session reads who is asking, answering 401 itself when nobody is.
+func (s *Server) session(w http.ResponseWriter, r *http.Request) (userID int32, isAdmin, ok bool) {
+	token := auth.TokenFrom(r, s.cfg.SecureCookie)
+	if token == "" {
+		fail(w, http.StatusUnauthorized, "Not signed in.")
+		return 0, false, false
+	}
+	userID, isAdmin, err := s.store.Session(r.Context(), token)
+	if errors.Is(err, store.ErrNotFound) {
+		fail(w, http.StatusUnauthorized, "Not signed in.")
+		return 0, false, false
+	}
+	if err != nil {
+		s.oops(w, "reading session", err)
+		return 0, false, false
+	}
+	return userID, isAdmin, true
 }
 
 func send(w http.ResponseWriter, status int, body any) {

@@ -34,7 +34,9 @@ const usage = `neovndb
 
   trans status           what the translation corpus holds
   trans seed [file]      load a corpus (default internal/trans/init.json);
-                         refuses the file if any markup is lost`
+                         refuses the file if any markup is lost
+  trans export [file]    write the database's corpus out (default the same
+                         file), edits made on the admin page included`
 
 func main() {
 	if err := run(); err != nil {
@@ -101,7 +103,7 @@ func runDB(ctx context.Context, args []string) error {
 		}
 		return initGeneration(ctx, store, args[1], cfg.DumpURL)
 	case "check":
-		return inspect(ctx, cfg, store, false)
+		return inspect(ctx, os.Stdout, cfg, store, false)
 	case "promote":
 		return promote(ctx, cfg, store, args[1:])
 	case "rollback":
@@ -169,10 +171,14 @@ func promote(ctx context.Context, cfg *config.Config, store *db.Store, args []st
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if err := inspect(ctx, cfg, store, *force); err != nil {
-		return err
-	}
-	if err := store.Promote(ctx); err != nil {
+	// Under the import lock, so it cannot swap generations under an import.
+	err := store.Exclusive(ctx, db.ImportLock, func() error {
+		if err := inspect(ctx, os.Stdout, cfg, store, *force); err != nil {
+			return err
+		}
+		return store.Promote(ctx)
+	})
+	if err != nil {
 		return err
 	}
 	g, err := store.Describe(ctx, db.SchemaLive)
@@ -184,7 +190,7 @@ func promote(ctx context.Context, cfg *config.Config, store *db.Store, args []st
 }
 
 func rollback(ctx context.Context, store *db.Store) error {
-	if err := store.Rollback(ctx); err != nil {
+	if err := store.Exclusive(ctx, db.ImportLock, func() error { return store.Rollback(ctx) }); err != nil {
 		return err
 	}
 	g, err := store.Describe(ctx, db.SchemaLive)

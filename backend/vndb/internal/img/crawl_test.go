@@ -38,13 +38,13 @@ func TestCrawlFetchesWhatIsMissing(t *testing.T) {
 		}, nil
 	}
 
-	fetched, left, err := c.Run(context.Background())
+	report, err := c.Run(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	// cv/16, cv.t/17, ch/3, st/105 stored; sf/105 is gone upstream.
-	if fetched != 4 || left != 1 {
-		t.Errorf("fetched %d, left %d; asked %v", fetched, left, asked)
+	if report.Fetched != 4 || report.Left != 1 || report.Held != report.Known-5 {
+		t.Errorf("report %+v; asked %v", report, asked)
 	}
 	want := []string{"/sf/05/105.jpg", "/st/05/105.jpg", "/cv.t/17/17.jpg", "/cv/16/16.jpg", "/ch/03/3.jpg"}
 	if len(asked) != len(want) {
@@ -61,7 +61,7 @@ func TestCrawlFetchesWhatIsMissing(t *testing.T) {
 
 	// Second run: nothing left worth asking for.
 	asked = nil
-	if fetched, _, _ := c.Run(context.Background()); fetched != 0 || len(asked) != 0 {
-		t.Errorf("second run fetched %d, asked %v", fetched, asked)
+	if report, _ := c.Run(context.Background()); report.Fetched != 0 || len(asked) != 0 {
+		t.Errorf("second run fetched %d, asked %v", report.Fetched, asked)
 	}
 }

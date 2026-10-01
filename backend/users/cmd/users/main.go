@@ -42,7 +42,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	dumps := backup.Options{PgDump: cfg.PgDump, DatabaseURL: cfg.DatabaseURL, Dir: cfg.BackupDir, Keep: cfg.BackupKeep}
+	dumps := backup.OptionsFrom(cfg)
 
 	switch {
 	case len(os.Args) == 2 && os.Args[1] == "backup":
@@ -51,8 +51,10 @@ func run(ctx context.Context) error {
 			log.Info("backed up", "file", path)
 		}
 		return err
+	case len(os.Args) > 1 && os.Args[1] == "admin":
+		return grantAdmin(ctx, cfg, os.Args[2:], log)
 	case len(os.Args) > 1:
-		return fmt.Errorf("usage: users [backup]")
+		return fmt.Errorf("usage: users [backup | admin <username> [off]]")
 	}
 
 	st, err := store.Open(ctx, cfg)
@@ -124,4 +126,28 @@ func backUpIfDue(ctx context.Context, o backup.Options, every time.Duration, log
 	} else {
 		log.Info("backed up", "file", path)
 	}
+}
+
+// grantAdmin makes an account an administrator, or with "off" stops it being
+// one. The first administrator can only come from here: the admin page needs
+// one to open.
+func grantAdmin(ctx context.Context, cfg *config.Config, args []string, log *slog.Logger) error {
+	if len(args) == 0 || len(args) > 2 || (len(args) == 2 && args[1] != "off") {
+		return fmt.Errorf("usage: users admin <username> [off]")
+	}
+	st, err := store.Open(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	u, _, err := st.UserByName(ctx, args[0])
+	if err != nil {
+		return fmt.Errorf("%s: %w", args[0], err)
+	}
+	on := len(args) == 1
+	if err := st.SetAdmin(ctx, u.ID, on); err != nil {
+		return err
+	}
+	log.Info("administrator", "user", u.Username, "is admin", on)
+	return nil
 }

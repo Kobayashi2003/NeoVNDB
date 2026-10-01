@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,28 +40,24 @@ func runImport(ctx context.Context, args []string) error {
 	}
 	defer store.Close()
 
-	return importArchive(ctx, cfg, store, *file, *promote, *force)
+	return importArchive(ctx, os.Stdout, cfg, store, *file, *promote, *force)
 }
-
-// importLock is held for the whole of an import, so the scheduled update and
-// one started by hand never build vndb_next at the same time.
-const importLock = "neovndb import"
 
 // importArchive builds vndb_next from an archive (a local file, or upstream's
 // latest) and, if asked, promotes it.
-func importArchive(ctx context.Context, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
-	return store.Exclusive(ctx, importLock, func() error {
-		return importLocked(ctx, cfg, store, file, promote, force)
+func importArchive(ctx context.Context, out io.Writer, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
+	return store.Exclusive(ctx, db.ImportLock, func() error {
+		return importLocked(ctx, out, cfg, store, file, promote, force)
 	})
 }
 
-func importLocked(ctx context.Context, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
-	path, code, sum, published, err := resolve(ctx, cfg, file)
+func importLocked(ctx context.Context, out io.Writer, cfg *config.Config, store *db.Store, file string, promote, force bool) error {
+	path, code, sum, published, err := resolve(ctx, out, cfg, file)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("archive   %s\n", path)
-	fmt.Printf("code      %s\n\n", code)
+	fmt.Fprintf(out, "archive   %s\n", path)
+	fmt.Fprintf(out, "code      %s\n\n", code)
 
 	started := time.Now()
 	if err := store.CreateNext(ctx, code, cfg.DumpURL); err != nil {
@@ -70,21 +67,21 @@ func importLocked(ctx context.Context, cfg *config.Config, store *db.Store, file
 		return err
 	}
 
-	counts, err := load(ctx, store, path)
+	counts, err := load(ctx, out, store, path)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("\nindexing")
+	fmt.Fprintln(out, "\nindexing")
 	indexed := time.Now()
 	if err := store.Index(ctx, db.SchemaNext); err != nil {
 		return err
 	}
-	fmt.Printf("  %-22s %10s\n", "03_indexes.sql", time.Since(indexed).Round(time.Millisecond))
+	fmt.Fprintf(out, "  %-22s %10s\n", "03_indexes.sql", time.Since(indexed).Round(time.Millisecond))
 
-	fmt.Println("\nderiving")
+	fmt.Fprintln(out, "\nderiving")
 	if err := store.Derive(ctx, db.SchemaNext, func(name string, took time.Duration) {
-		fmt.Printf("  %-22s %10s\n", name, took.Round(time.Millisecond))
+		fmt.Fprintf(out, "  %-22s %10s\n", name, took.Round(time.Millisecond))
 	}); err != nil {
 		return err
 	}
@@ -112,37 +109,37 @@ func importLocked(ctx context.Context, cfg *config.Config, store *db.Store, file
 	for _, n := range counts {
 		total += n
 	}
-	fmt.Printf("\n%d rows across %d tables in %s\n",
+	fmt.Fprintf(out, "\n%d rows across %d tables in %s\n",
 		total, len(counts), time.Since(started).Round(time.Second))
 
 	if !promote {
-		fmt.Println("staged in " + db.SchemaNext + "; run `db check` then `db promote`")
+		fmt.Fprintln(out, "staged in "+db.SchemaNext+"; run `db check` then `db promote`")
 		return nil
 	}
-	if err := inspect(ctx, cfg, store, force); err != nil {
+	if err := inspect(ctx, out, cfg, store, force); err != nil {
 		return err
 	}
 	if err := store.Promote(ctx); err != nil {
 		return err
 	}
-	fmt.Printf("generation %s is now live\n", code)
+	fmt.Fprintf(out, "generation %s is now live\n", code)
 
 	if cfg.DumpKeep > 0 {
 		removed, err := dump.Prune(cfg.DumpDir, cfg.DumpKeep, path)
 		for _, p := range removed {
-			fmt.Printf("removed   %s\n", p)
+			fmt.Fprintf(out, "removed   %s\n", p)
 		}
 		if err != nil {
 			// The new generation is live; a leftover archive only costs disk.
-			fmt.Printf("pruning archives: %v\n", err)
+			fmt.Fprintf(out, "pruning archives: %v\n", err)
 		}
 	}
 	return nil
 }
 
-func load(ctx context.Context, store *db.Store, path string) (map[string]int64, error) {
+func load(ctx context.Context, out io.Writer, store *db.Store, path string) (map[string]int64, error) {
 	im := importer.New(store.Pool(), db.SchemaNext, func(table string, rows int64, took time.Duration) {
-		fmt.Printf("  %-22s %9d rows  %6s\n", table, rows, took.Round(time.Millisecond))
+		fmt.Fprintf(out, "  %-22s %9d rows  %6s\n", table, rows, took.Round(time.Millisecond))
 	})
 	return im.Load(ctx, path)
 }
@@ -150,7 +147,7 @@ func load(ctx context.Context, store *db.Store, path string) (map[string]int64, 
 // resolve settles on an archive: a local file if given, otherwise whatever
 // dl.vndb.org currently redirects `latest` to, downloading it only when the
 // dump directory does not already hold it.
-func resolve(ctx context.Context, cfg *config.Config, file string) (path, code, sum string, published *time.Time, err error) {
+func resolve(ctx context.Context, out io.Writer, cfg *config.Config, file string) (path, code, sum string, published *time.Time, err error) {
 	if file != "" {
 		m := localCode.FindStringSubmatch(filepath.Base(file))
 		if m == nil {
@@ -166,7 +163,7 @@ func resolve(ctx context.Context, cfg *config.Config, file string) (path, code, 
 	if err != nil {
 		return "", "", "", nil, fmt.Errorf("check %w: %w", errUpstream, err)
 	}
-	fmt.Printf("upstream  %s (%.0f MB, published %s)\n",
+	fmt.Fprintf(out, "upstream  %s (%.0f MB, published %s)\n",
 		rel.Code, float64(rel.Size)/(1<<20), rel.PublishedAt.Format(time.DateOnly))
 
 	path, sum, err = dump.Download(ctx, rel, cfg.DumpDir)
