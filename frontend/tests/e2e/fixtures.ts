@@ -1,6 +1,8 @@
 /** `user`: a fresh account on the throwaway user service, signed in by cookie
  *  and with the page's /userserve calls sent there. Registered through the API,
  *  so no password is ever typed into a page. Skips without a test database. */
+import { execFileSync } from "node:child_process"
+import { join } from "node:path"
 import { test as base, expect } from "@playwright/test"
 
 interface User {
@@ -10,7 +12,7 @@ interface User {
   call(method: string, path: string, body?: unknown): Promise<Response>
 }
 
-export const test = base.extend<{ user: User }>({
+export const test = base.extend<{ user: User; admin: User }>({
   user: async ({ context, baseURL }, provide) => {
     const service = process.env.E2E_USERS_URL
     test.skip(!service, "set NEOVNDB_USERS_TEST_DB_URL to run signed-in tests")
@@ -40,6 +42,26 @@ export const test = base.extend<{ user: User }>({
         body: body === undefined ? undefined : JSON.stringify(body),
       })
     await provide({ name, password, call })
+  },
+
+  /** `user`, made an administrator. The edge would ask the real user service
+   *  about the services' admin routes, so the page's calls to them go to the
+   *  services directly, as the edge would forward them once it said yes. */
+  admin: async ({ user, context }, provide) => {
+    execFileSync(process.env.E2E_USERS_EXE!, ["admin", user.name], {
+      cwd: join(__dirname, "../../../backend/users"),
+      env: { ...process.env, NEOVNDB_USERS_DB_URL: process.env.NEOVNDB_USERS_TEST_DB_URL },
+    })
+    for (const [prefix, service] of [
+      ["vndbserve", "http://127.0.0.1:5100"],
+      ["imgserve", "http://127.0.0.1:5101"],
+    ]) {
+      await context.route(`**/${prefix}/admin/**`, async (route) => {
+        const url = route.request().url().replace(new RegExp(`^.*?/${prefix}`), service)
+        await route.fulfill({ response: await route.fetch({ url }) })
+      })
+    }
+    await provide(user)
   },
 })
 
