@@ -43,6 +43,8 @@ export default async function setup() {
     try {
       if ((await fetch(`${url}/health`)).ok) {
         process.env.E2E_USERS_URL = url
+        // For the `admin` fixture, which grants with the binary's own command.
+        process.env.E2E_USERS_EXE = exe
         return
       }
     } catch {

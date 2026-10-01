@@ -5,7 +5,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronDown, KeyRound, ListChecks, LogOut, MonitorSmartphone } from "lucide-react"
+import { ChevronDown, KeyRound, ListChecks, LogOut, MonitorSmartphone, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserError } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
@@ -97,6 +97,12 @@ function SignedIn() {
             <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Change password
           </Link>
+          {session.user?.is_admin && (
+            <Link href="/admin" onClick={() => setOpen(false)} className={menuItem()}>
+              <Wrench className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+              Administration
+            </Link>
+          )}
           <MenuDivider />
           <button type="button" onClick={() => leave(false)} className={menuItem()}>
             <LogOut className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
