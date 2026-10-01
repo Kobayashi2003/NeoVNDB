@@ -3,7 +3,11 @@
  *
  *    - Added order: the user service pages the ids; works at any size.
  *    - Any vndb sort or a search: the whole list goes to the read API in one
- *      request, so those are not offered once a list is too long for that. */
+ *      request, so those are not offered once a list is too long for that.
+ *
+ *  An entry vndb has since hidden or deleted keeps its place in added order
+ *  as a placeholder card, so it can be seen and removed. vndb's sorts cannot
+ *  place it, so there it is only counted, with a way back to added order. */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -11,6 +15,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ListChecks, X } from "lucide-react"
 import { list as query } from "@/lib/api"
+import type { GoneRow } from "@/lib/types"
 import { LIST, PAGE_SIZE, type Sort } from "@/lib/list"
 import { one, withParams, type Params } from "@/lib/href"
 import { Results } from "@/components/list/Results"
@@ -56,11 +61,17 @@ function orderOf(sort: string): Sort | undefined {
   return undefined
 }
 
+function goneRow(id: string): GoneRow {
+  return { id, gone: true }
+}
+
 interface Held {
   list: Collection
   mine: Collection[]
   rows: { id: string }[]
   count: number
+  /** Saved entries vndb no longer has, which a vndb sort leaves out. */
+  missing: number
   /** Too long for one read API request, so only ADDED is offered. */
   tooBig: boolean
 }
@@ -105,8 +116,7 @@ export function CollectionPanel({
         filters: { id: ids.join(",") },
       })
       const byId = new Map(answer.results.map((r) => [r.id, r]))
-      // Entries vndb hid are dropped rather than failing the list.
-      return ids.filter((x) => byId.has(x)).map((x) => byId.get(x)!)
+      return ids.map((x) => byId.get(x) ?? goneRow(x))
     }
 
     const read = async (): Promise<Held> => {
@@ -118,7 +128,7 @@ export function CollectionPanel({
       if (sort === ADDED.value && !search) {
         const held = await marks(id, page, PAGE_SIZE)
         const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
-        return { list, mine, rows, count: held.count, tooBig: false }
+        return { list, mine, rows, count: held.count, missing: 0, tooBig: false }
       }
 
       const whole = await allItems(id)
@@ -126,10 +136,10 @@ export function CollectionPanel({
         // Fall back rather than sort only part of the list.
         const held = await marks(id, page, PAGE_SIZE)
         const rows = await hydrate(held.results.map((m) => m.id), list.type, spec)
-        return { list, mine, rows, count: held.count, tooBig: true }
+        return { list, mine, rows, count: held.count, missing: 0, tooBig: true }
       }
       if (whole.items.length === 0) {
-        return { list, mine, rows: [], count: 0, tooBig: false }
+        return { list, mine, rows: [], count: 0, missing: 0, tooBig: false }
       }
 
       const answer = await query<{ id: string }>(spec.type, {
@@ -140,7 +150,10 @@ export function CollectionPanel({
         reverse,
         filters: { id: whole.items.join(","), ...(search ? { search } : {}) },
       })
-      return { list, mine, rows: answer.results, count: answer.count, tooBig: false }
+      // Without a search every saved entry vndb still has is counted, so the
+      // shortfall is what it no longer has.
+      const missing = search ? 0 : whole.items.length - answer.count
+      return { list, mine, rows: answer.results, count: answer.count, missing, tooBig: false }
     }
 
     read().then(
@@ -253,6 +266,13 @@ export function CollectionPanel({
           </div>
         )}
 
+        {held.missing > 0 && (
+          <Missing
+            count={held.missing}
+            href={withParams(path, params, { sort: null, reverse: null, page: null })}
+          />
+        )}
+
         {held.tooBig && (
           <p className="text-xs text-muted">
             This list is longer than can be sorted or searched here, so it stays in the order you
@@ -338,6 +358,21 @@ export function CollectionPanel({
         />
       )}
     </div>
+  )
+}
+
+/** Saved entries a vndb sort cannot place, and the way to where they show. */
+function Missing({ count, href }: { count: number; href: string }) {
+  const [entries, are, them] =
+    count === 1 ? ["One entry", "is", "it"] : [`${count.toLocaleString()} entries`, "are", "them"]
+  return (
+    <p className="text-xs text-muted">
+      {entries} on this list {are} no longer on vndb, so this order leaves {them} out.{" "}
+      <Link href={href} className="text-accent hover:underline">
+        See {them} in added order
+      </Link>
+      .
+    </p>
   )
 }
 
