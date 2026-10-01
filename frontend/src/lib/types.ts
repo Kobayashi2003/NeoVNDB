@@ -299,6 +299,17 @@ export interface VN {
 
 /* ─── List rows ─────────────────────────────────────────────────────────── */
 
+/** An id a reader saved that the mirror no longer has: vndb hid or deleted
+ *  the entry. It stands in a list so it can still be seen and removed. */
+export interface GoneRow {
+  id: string
+  gone: true
+}
+
+export function isGone(row: unknown): row is GoneRow {
+  return (row as GoneRow).gone === true
+}
+
 export interface VNRow {
   id: string
   title: string | null

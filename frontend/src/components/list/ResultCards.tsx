@@ -66,6 +66,10 @@ function Tile({
   )
 }
 
+/** The two tile shapes: covers are portrait, portraits nearly square. */
+export const COVER = "aspect-[2/3]"
+export const PORTRAIT = "aspect-[17/20]"
+
 /** The row frame the five text types share. */
 function Row({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -78,12 +82,36 @@ function Row({ href, children }: { href: string; children: React.ReactNode }) {
   )
 }
 
+/** A saved entry vndb no longer has. Not a link: there is no page to go to. */
+export function GoneCard({ id, ratio }: { id: string; ratio?: string }) {
+  const note = "No longer on vndb"
+  if (!ratio) {
+    return (
+      <div className="flex items-baseline gap-3 border-b border-white/5 px-3 py-2 text-muted last:border-0">
+        <span className="font-mono text-xs">{id}</span>
+        <span className="min-w-0 flex-1 truncate text-sm italic">{note}</span>
+      </div>
+    )
+  }
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-dashed border-white/10 bg-surface/50">
+      <div className={cn("flex w-full shrink-0 items-center justify-center bg-elevated/50 p-2 text-center text-xs text-muted", ratio)}>
+        {note}
+      </div>
+      <div className="flex min-h-14 flex-1 flex-col gap-0.5 p-2 text-xs text-muted">
+        <p className="font-mono">{id}</p>
+        <p>Hidden or deleted there; remove it when you like.</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Per type ────────────────────────────────────────────────────────────── */
 
 export function VNCard({ row }: { row: VNRow }) {
   const { original } = usePrefs()
   return (
-    <Tile href={`/${row.id}`} image={row.image} alt={row.title ?? ""} ratio="aspect-[2/3]">
+    <Tile href={`/${row.id}`} image={row.image} alt={row.title ?? ""} ratio={COVER}>
       <p className="truncate text-xs font-semibold">
         {display(row.title, row.alttitle, original)}
       </p>
@@ -108,7 +136,7 @@ export function VNCard({ row }: { row: VNRow }) {
 export function CharacterCard({ row }: { row: CharacterRow }) {
   const { original } = usePrefs()
   return (
-    <Tile href={`/${row.id}`} image={row.image} alt={row.name} ratio="aspect-[17/20]">
+    <Tile href={`/${row.id}`} image={row.image} alt={row.name} ratio={PORTRAIT}>
       <p className="truncate text-xs font-semibold">
         {display(row.name, row.original, original)}
       </p>

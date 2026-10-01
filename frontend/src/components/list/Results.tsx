@@ -5,10 +5,13 @@
 
 import { Fragment, useEffect } from "react"
 import {
-  CharacterCard, ProducerCard, ReleaseCard, StaffCard, TagCard, TraitCard, VNCard,
+  CharacterCard, COVER, GoneCard, PORTRAIT, ProducerCard, ReleaseCard, StaffCard, TagCard, TraitCard,
+  VNCard,
 } from "./ResultCards"
-import type {
-  CharacterRow, ProducerRow, ReleaseRow, StaffRow, TagRow, TraitRow, VNRow,
+import {
+  isGone,
+  type CharacterRow, type ProducerRow, type ReleaseRow, type StaffRow, type TagRow, type TraitRow,
+  type VNRow,
 } from "@/lib/types"
 import { Selectable } from "@/components/ui/Selection"
 import { useSelection } from "./Collecting"
@@ -16,26 +19,30 @@ import { useSelection } from "./Collecting"
 const GRID = "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7"
 const LIST = "rounded-lg border border-white/5 bg-surface"
 
-/** Pictures are looked for by eye and go in a grid; the rest are looked for by
- *  name, and a grid of identical text boxes is harder to scan than rows. */
+/** How each type is laid out. Pictures are looked for by eye and go in a
+ *  grid; the rest are looked for by name, and a grid of identical text boxes
+ *  is harder to scan than rows. */
+const SHAPES: Record<string, { ratio?: string; card: (row: never) => React.ReactNode }> = {
+  v: { ratio: COVER, card: (r: VNRow) => <VNCard row={r} /> },
+  c: { ratio: PORTRAIT, card: (r: CharacterRow) => <CharacterCard row={r} /> },
+  r: { card: (r: ReleaseRow) => <ReleaseCard row={r} /> },
+  p: { card: (r: ProducerRow) => <ProducerCard row={r} /> },
+  s: { card: (r: StaffRow) => <StaffCard row={r} /> },
+  g: { card: (r: TagRow) => <TagCard row={r} /> },
+  i: { card: (r: TraitRow) => <TraitCard row={r} /> },
+}
+
 function build(type: string, rows: unknown[]): { layout: string; cards: Card[] } | null {
-  switch (type) {
-    case "v":
-      return { layout: GRID, cards: (rows as VNRow[]).map((r) => ({ id: r.id, node: <VNCard row={r} />, grid: true })) }
-    case "c":
-      return { layout: GRID, cards: (rows as CharacterRow[]).map((r) => ({ id: r.id, node: <CharacterCard row={r} />, grid: true })) }
-    case "r":
-      return { layout: LIST, cards: (rows as ReleaseRow[]).map((r) => ({ id: r.id, node: <ReleaseCard row={r} />, grid: false })) }
-    case "p":
-      return { layout: LIST, cards: (rows as ProducerRow[]).map((r) => ({ id: r.id, node: <ProducerCard row={r} />, grid: false })) }
-    case "s":
-      return { layout: LIST, cards: (rows as StaffRow[]).map((r) => ({ id: r.id, node: <StaffCard row={r} />, grid: false })) }
-    case "g":
-      return { layout: LIST, cards: (rows as TagRow[]).map((r) => ({ id: r.id, node: <TagCard row={r} />, grid: false })) }
-    case "i":
-      return { layout: LIST, cards: (rows as TraitRow[]).map((r) => ({ id: r.id, node: <TraitCard row={r} />, grid: false })) }
-    default:
-      return null
+  const shape = SHAPES[type]
+  if (!shape) return null
+  const grid = shape.ratio !== undefined
+  return {
+    layout: grid ? GRID : LIST,
+    cards: (rows as { id: string }[]).map((r) => ({
+      id: r.id,
+      grid,
+      node: isGone(r) ? <GoneCard id={r.id} ratio={shape.ratio} /> : shape.card(r as never),
+    })),
   }
 }
 

@@ -29,3 +29,29 @@ test("only one set of search results selects at a time", async ({ page, user }) 
   await expect(page.locator("button[data-select][aria-pressed=true]")).toHaveCount(1)
   await expect(page.getByText(/\d+ selected/)).toHaveCount(1)
 })
+
+test("an entry vndb no longer has stays visible and removable", async ({ page, user }) => {
+  const list = (await (await user.call("POST", "/collections", { type: "v", name: "Gone" })).json()) as {
+    id: number
+  }
+  // v17 is real; no vndb id comes near v9999999.
+  await user.call("POST", `/collections/${list.id}/marks/add`, { items: ["v17", "v9999999"] })
+
+  await page.goto(`/u/${list.id}?sort=title`)
+  await expect(page.getByText(/One entry on this list is no longer on vndb/)).toBeVisible()
+  await page.getByRole("link", { name: "See it in added order" }).click()
+
+  const gone = page.getByText("v9999999", { exact: true })
+  await expect(gone).toBeVisible()
+  await expect(page.getByText("No longer on vndb")).toBeVisible()
+
+  await page.getByRole("button", { name: "Select" }).click()
+  // The checkbox is drawn over the card, beside it in the DOM rather than around it.
+  await gone.locator("xpath=ancestor::div[button[@aria-pressed]][1]/button").click()
+  await page.getByTitle("Remove from this list").click()
+  await page.getByRole("button", { name: "Yes, remove them" }).click()
+  await expect(gone).toHaveCount(0)
+
+  const left = (await (await user.call("GET", `/collections/${list.id}/items`)).json()) as { items: string[] }
+  expect(left.items).toEqual(["v17"])
+})
