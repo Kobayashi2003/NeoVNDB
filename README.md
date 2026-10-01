@@ -69,6 +69,15 @@ mirror process at all. Nothing is resized: the mirror keeps vndb's files byte
 for byte, and thumbnails are vndb's own (`cv.t` for covers wider than 256px,
 `st` for screenshots).
 
+The read API and the image mirror each have `/admin` routes, which the edge
+forwards only after asking the user service's `/auth/admin` whether the caller
+is an administrator (`forward_auth`); the user service guards its own. The
+site's `/admin` page uses them: the generations, the update and image crawl
+with a button each, rollback, user-database backups, translating tag and trait
+names and descriptions, and the accounts. Edits to translations are live at
+once but only in the database: export the corpus (on the page, or `neovndb
+trans export`) and commit `internal/trans/init.json` to keep them.
+
 The read API describes itself: `/vndbserve/meta/openapi` is an OpenAPI 3.1
 document built from the same tables that answer requests, so every type, field,
 filter and sort it lists is one a request can use. The site's `/api` page (linked
@@ -191,6 +200,7 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | `db verify` | Write and read through the generated queries, then roll back |
 | `trans status` | What the translation corpus holds, and the language it is in |
 | `trans seed [file]` | Load a corpus, by default `internal/trans/init.json`; refuses the whole file if any row loses its markup |
+| `trans export [file]` | Write the database's corpus, admin-page edits included, to a file, by default `internal/trans/init.json` |
 
 `backend/users` (`go run ./cmd/users`):
 
@@ -198,6 +208,7 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | --- | --- |
 | *(none)* | Run the user service; it also backs its database up on a schedule |
 | `backup` | Dump the user database now, into `NEOVNDB_USERS_BACKUP_DIR` |
+| `admin <username> [off]` | Make an account an administrator, or stop it being one; the first one can only come from here |
 
 `frontend` (`npm run <script>`):
 
