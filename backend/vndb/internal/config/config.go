@@ -26,6 +26,9 @@ const (
 	// first check waits a while, so a restart is not followed by an import.
 	defaultUpdateEvery      = 24 * time.Hour
 	defaultUpdateFirstAfter = 10 * time.Minute
+	// After upstream could not be reached; sooner than a day, rarely enough
+	// that an outage costs one request an hour.
+	defaultUpdateRetryAfter = time.Hour
 
 	// Request bounds; 0 lifts a cap.
 	defaultPageSize    = 24
@@ -85,6 +88,7 @@ type Config struct {
 	// The scheduled update in `serve`; UpdateEvery 0 turns it off.
 	UpdateEvery      time.Duration
 	UpdateFirstAfter time.Duration
+	UpdateRetryAfter time.Duration // 0 waits the full interval
 
 	MaxConns       int32
 	MinConns       int32
@@ -144,6 +148,7 @@ func Load() (*Config, error) {
 
 		UpdateEvery:      envDuration("NEOVNDB_UPDATE_EVERY", defaultUpdateEvery),
 		UpdateFirstAfter: envDuration("NEOVNDB_UPDATE_FIRST_AFTER", defaultUpdateFirstAfter),
+		UpdateRetryAfter: envDuration("NEOVNDB_UPDATE_RETRY_AFTER", defaultUpdateRetryAfter),
 
 		MaxConns:       int32(envInt("NEOVNDB_DB_MAX_CONNS", defaultMaxConns)),
 		MinConns:       int32(envInt("NEOVNDB_DB_MIN_CONNS", defaultMinConns)),

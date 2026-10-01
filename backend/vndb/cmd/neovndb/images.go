@@ -40,8 +40,9 @@ func runImages(ctx context.Context, args []string) error {
 
 	mirror := img.NewServer(cfg, log)
 	crawler := mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay)
-	go schedule.Every(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, func(ctx context.Context) {
+	go schedule.Every(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, 0, func(ctx context.Context) error {
 		crawlOnce(ctx, cfg, crawler, log)
+		return nil
 	})
 
 	srv := &http.Server{

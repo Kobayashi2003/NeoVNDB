@@ -61,12 +61,14 @@ func run(ctx context.Context) error {
 	}
 	defer st.Close()
 
-	go schedule.Every(ctx, cfg.SweepFirstAfter, cfg.SweepEvery, func(ctx context.Context) {
+	go schedule.Every(ctx, cfg.SweepFirstAfter, cfg.SweepEvery, 0, func(ctx context.Context) error {
 		sweep(ctx, st, log)
+		return nil
 	})
 	if cfg.BackupEvery > 0 {
-		go schedule.Every(ctx, cfg.BackupFirstAfter, cfg.BackupCheckEvery, func(ctx context.Context) {
+		go schedule.Every(ctx, cfg.BackupFirstAfter, cfg.BackupCheckEvery, 0, func(ctx context.Context) error {
 			backUpIfDue(ctx, dumps, cfg.BackupEvery, log)
+			return nil
 		})
 	}
 
