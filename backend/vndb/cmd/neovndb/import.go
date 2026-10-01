@@ -164,14 +164,14 @@ func resolve(ctx context.Context, cfg *config.Config, file string) (path, code, 
 
 	rel, err := dump.Latest(ctx, cfg.DumpURL)
 	if err != nil {
-		return "", "", "", nil, err
+		return "", "", "", nil, fmt.Errorf("check %w: %w", errUpstream, err)
 	}
 	fmt.Printf("upstream  %s (%.0f MB, published %s)\n",
 		rel.Code, float64(rel.Size)/(1<<20), rel.PublishedAt.Format(time.DateOnly))
 
 	path, sum, err = dump.Download(ctx, rel, cfg.DumpDir)
 	if err != nil {
-		return "", "", "", nil, err
+		return "", "", "", nil, fmt.Errorf("download from %w: %w", errUpstream, err)
 	}
 	return path, rel.Code, sum, &rel.PublishedAt, nil
 }

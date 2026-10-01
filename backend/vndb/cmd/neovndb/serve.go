@@ -42,15 +42,21 @@ func runServe(ctx context.Context, args []string) error {
 	if *addr != "" {
 		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)
 	}
-	go schedule.Every(ctx, cfg.UpdateFirstAfter, cfg.UpdateEvery, func(ctx context.Context) {
+	go schedule.Every(ctx, cfg.UpdateFirstAfter, cfg.UpdateEvery, cfg.UpdateRetryAfter, func(ctx context.Context) error {
 		err := updateOnce(ctx, cfg, store, false)
 		switch {
 		case err == nil || ctx.Err() != nil:
 		case errors.Is(err, db.ErrBusy):
 			log.Info("scheduled update skipped: an import is already running")
+		case errors.Is(err, errUpstream):
+			// Only this is worth retrying soon: a refused or failed import
+			// would fail the same way again an hour later.
+			log.Warn("scheduled update: upstream unreachable", "retry after", cfg.UpdateRetryAfter, "err", err)
+			return err
 		default:
 			log.Error("scheduled update", "err", err)
 		}
+		return nil
 	})
 
 	srv, err := api.NewServer(ctx, store, log, cfg)

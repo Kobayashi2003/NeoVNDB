@@ -9,9 +9,11 @@ import (
 	"time"
 )
 
-// Every runs job after first, then every interval. An interval of 0 or less
-// turns the job off.
-func Every(ctx context.Context, first, every time.Duration, job func(context.Context)) {
+// Every runs job after first, then every interval. After a run that returns
+// an error the wait is retry instead, when retry is above 0: a job whose
+// failure passes (an unreachable host) need not wait a whole interval. An
+// interval of 0 or less turns the job off.
+func Every(ctx context.Context, first, every, retry time.Duration, job func(context.Context) error) {
 	if every <= 0 {
 		return
 	}
@@ -23,7 +25,10 @@ func Every(ctx context.Context, first, every time.Duration, job func(context.Con
 			return
 		case <-wait.C:
 		}
-		job(ctx)
-		wait.Reset(every)
+		if err := job(ctx); err != nil && retry > 0 {
+			wait.Reset(retry)
+		} else {
+			wait.Reset(every)
+		}
 	}
 }

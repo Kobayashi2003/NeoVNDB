@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 
@@ -32,13 +33,17 @@ func runUpdate(ctx context.Context, args []string) error {
 	return updateOnce(ctx, cfg, store, *force)
 }
 
+// errUpstream marks a failure to reach or fetch from dl.vndb.org, the one kind
+// of failure the scheduled update retries soon.
+var errUpstream = errors.New("upstream")
+
 // updateOnce imports and promotes upstream's latest archive when it is newer
 // than the live generation, and does nothing otherwise. The scheduled update
 // in `serve` calls the same thing.
 func updateOnce(ctx context.Context, cfg *config.Config, store *db.Store, force bool) error {
 	rel, err := dump.Latest(ctx, cfg.DumpURL)
 	if err != nil {
-		return fmt.Errorf("check upstream: %w", err)
+		return fmt.Errorf("check %w: %w", errUpstream, err)
 	}
 
 	live, err := store.Describe(ctx, db.SchemaLive)
