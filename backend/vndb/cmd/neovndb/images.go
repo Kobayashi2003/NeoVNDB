@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 
+	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/img"
-	"github.com/kobayashi/neovndb/internal/schedule"
 )
 
 // runImages serves the image mirror. Serving opens no database: an image
@@ -40,14 +42,21 @@ func runImages(ctx context.Context, args []string) error {
 
 	mirror := img.NewServer(cfg, log)
 	crawler := mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay)
-	go schedule.Every(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, 0, func(ctx context.Context) error {
-		crawlOnce(ctx, cfg, crawler, log)
-		return nil
+	// The schedule and the admin page's button share one job.
+	crawl := admin.NewJob(func(ctx context.Context, _ io.Writer) (any, error) {
+		return crawlOnce(ctx, cfg, crawler, log)
 	})
+	// crawlOnce logs its own failures; the next run comes on the interval.
+	go crawl.Schedule(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, 0, nil)
+
+	routes := http.NewServeMux()
+	routes.Handle("/", mirror.Routes())
+	// Only the edge's administrator check lets anyone reach this.
+	routes.Handle("/admin/", admin.NewImages(ctx, cfg, crawl).Routes())
 
 	srv := &http.Server{
 		Addr:              cfg.ImageAddr(),
-		Handler:           mirror.Routes(),
+		Handler:           routes,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 	}
 
@@ -71,11 +80,11 @@ func runImages(ctx context.Context, args []string) error {
 }
 
 // crawlOnce opens the database for the length of one run.
-func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slog.Logger) {
+func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slog.Logger) (img.Report, error) {
 	store, err := db.Open(ctx, cfg)
 	if err != nil {
 		log.Warn("crawl skipped: no database", "err", err)
-		return
+		return img.Report{}, fmt.Errorf("no database: %w", err)
 	}
 	defer store.Close()
 	c.Known = func(ctx context.Context) ([]img.Known, error) {
@@ -86,11 +95,12 @@ func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slo
 		}
 		return known, err
 	}
-	fetched, left, err := c.Run(ctx)
+	report, err := c.Run(ctx)
 	if err != nil && ctx.Err() == nil {
 		log.Warn("crawl", "err", err)
 	}
-	log.Info("crawled", "fetched", fetched, "still missing", left)
+	log.Info("crawled", "fetched", report.Fetched, "still missing", report.Left)
+	return report, err
 }
 
 // runCrawl is one crawl by hand, e.g. to fill a new mirror: --limit 0 fetches
@@ -106,6 +116,6 @@ func runCrawl(ctx context.Context, args []string) error {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	crawlOnce(ctx, cfg, img.NewServer(cfg, log).Crawler(*limit, cfg.ImageCrawlDelay), log)
-	return nil
+	_, err = crawlOnce(ctx, cfg, img.NewServer(cfg, log).Crawler(*limit, cfg.ImageCrawlDelay), log)
+	return err
 }

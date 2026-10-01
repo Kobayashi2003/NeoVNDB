@@ -97,6 +97,39 @@ func TestAccounts(t *testing.T) {
 	}
 }
 
+// What the admin page lists, and who may open it.
+func TestAdministration(t *testing.T) {
+	s, ctx := open(t), context.Background()
+	a, b := user(t, s, "a"), user(t, s, "b")
+	if err := s.CreateSession(ctx, "tok", b.ID, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.AddMark(ctx, b.ID, list(t, s, b, "v"), "v", 17); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.SetAdmin(ctx, a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetAdmin(ctx, 9999, true); !errors.Is(err, ErrNotFound) {
+		t.Errorf("no such user: %v", err)
+	}
+
+	got, err := s.Accounts(ctx)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("accounts: %v %v", got, err)
+	}
+	if !got[0].IsAdmin || got[1].IsAdmin {
+		t.Errorf("admin flags: %v %v", got[0].IsAdmin, got[1].IsAdmin)
+	}
+	if got[1].Lists != len(kinds) || got[1].Items != 1 || got[1].Sessions != 1 || got[1].LastSeen == nil {
+		t.Errorf("b's counts: %+v", got[1])
+	}
+	if _, isAdmin, _ := s.Session(ctx, "tok"); isAdmin {
+		t.Error("b's session claims administration")
+	}
+}
+
 func TestSessions(t *testing.T) {
 	s, ctx := open(t), context.Background()
 	u := user(t, s, "reader")

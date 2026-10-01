@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
@@ -30,7 +32,7 @@ func runUpdate(ctx context.Context, args []string) error {
 		return err
 	}
 	defer store.Close()
-	return updateOnce(ctx, cfg, store, *force)
+	return updateOnce(ctx, os.Stdout, cfg, store, *force)
 }
 
 // errUpstream marks a failure to reach or fetch from dl.vndb.org, the one kind
@@ -40,7 +42,7 @@ var errUpstream = errors.New("upstream")
 // updateOnce imports and promotes upstream's latest archive when it is newer
 // than the live generation, and does nothing otherwise. The scheduled update
 // in `serve` calls the same thing.
-func updateOnce(ctx context.Context, cfg *config.Config, store *db.Store, force bool) error {
+func updateOnce(ctx context.Context, out io.Writer, cfg *config.Config, store *db.Store, force bool) error {
 	rel, err := dump.Latest(ctx, cfg.DumpURL)
 	if err != nil {
 		return fmt.Errorf("check %w: %w", errUpstream, err)
@@ -52,9 +54,9 @@ func updateOnce(ctx context.Context, cfg *config.Config, store *db.Store, force 
 	}
 	switch {
 	case live == nil:
-		fmt.Printf("upstream  %s; nothing is live yet\n", rel.Code)
+		fmt.Fprintf(out, "upstream  %s; nothing is live yet\n", rel.Code)
 	case live.Code == rel.Code:
-		fmt.Printf("upstream  %s; already live, nothing to do\n", rel.Code)
+		fmt.Fprintf(out, "upstream  %s; already live, nothing to do\n", rel.Code)
 		return nil
 	case live.Code > rel.Code:
 		// Upstream republishing an older archive is the shape a mirror
@@ -62,7 +64,7 @@ func updateOnce(ctx context.Context, cfg *config.Config, store *db.Store, force 
 		return fmt.Errorf("upstream offers %s but %s is live; refusing to go backwards",
 			rel.Code, live.Code)
 	default:
-		fmt.Printf("upstream  %s, live %s\n", rel.Code, live.Code)
+		fmt.Fprintf(out, "upstream  %s, live %s\n", rel.Code, live.Code)
 	}
-	return importArchive(ctx, cfg, store, "", true, force)
+	return importArchive(ctx, out, cfg, store, "", true, force)
 }

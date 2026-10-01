@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
@@ -10,7 +11,7 @@ import (
 )
 
 // inspect refuses to let a suspect import go live. See internal/db/guard.
-func inspect(ctx context.Context, cfg *config.Config, store *db.Store, force bool) error {
+func inspect(ctx context.Context, out io.Writer, cfg *config.Config, store *db.Store, force bool) error {
 	next, err := store.Describe(ctx, db.SchemaNext)
 	if err != nil {
 		return err
@@ -24,7 +25,7 @@ func inspect(ctx context.Context, cfg *config.Config, store *db.Store, force boo
 		return err
 	}
 	if live == nil {
-		fmt.Println("checks    skipped: no live generation to compare against")
+		fmt.Fprintln(out, "checks    skipped: no live generation to compare against")
 		return nil
 	}
 
@@ -43,17 +44,17 @@ func inspect(ctx context.Context, cfg *config.Config, store *db.Store, force boo
 		guard.Snapshot{Code: next.Code, Tables: after},
 	)
 
-	fmt.Printf("checks    %s against %s (%v, max loss %.0f%%)\n",
+	fmt.Fprintf(out, "checks    %s against %s (%v, max loss %.0f%%)\n",
 		next.Code, live.Code, g.Names(), cfg.GuardMaxLoss*100)
 	if len(found) == 0 {
-		fmt.Println("          all clear")
+		fmt.Fprintln(out, "          all clear")
 		return nil
 	}
 	for _, f := range found {
-		fmt.Println("          " + f.String())
+		fmt.Fprintln(out, "          "+f.String())
 	}
 	if force {
-		fmt.Println("          overridden by -force")
+		fmt.Fprintln(out, "          overridden by -force")
 		return nil
 	}
 	return fmt.Errorf("%d check(s) object; inspect the archive, or pass -force to promote anyway", len(found))

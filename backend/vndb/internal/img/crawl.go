@@ -39,12 +39,22 @@ func NewCrawler(store *Store, source *Source, log *slog.Logger) *Crawler {
 	return &Crawler{store: store, source: source, log: log, gone: map[Ref]bool{}}
 }
 
-// Run fetches up to PerRun missing images, newest first, and reports how many
-// it stored and how many are still missing.
-func (c *Crawler) Run(ctx context.Context) (fetched, left int, err error) {
+// Report is what one crawl found and did.
+type Report struct {
+	// Images vndb has, thumbnails included, and how many of those were
+	// already on disk when the run began.
+	Known int `json:"known"`
+	Held  int `json:"held"`
+	// Stored this run, and still missing after it.
+	Fetched int `json:"fetched"`
+	Left    int `json:"left"`
+}
+
+// Run fetches up to PerRun missing images, newest first.
+func (c *Crawler) Run(ctx context.Context) (Report, error) {
 	known, err := c.Known(ctx)
 	if err != nil {
-		return 0, 0, err
+		return Report{}, err
 	}
 	var want []Ref
 	for _, k := range known {
@@ -59,22 +69,24 @@ func (c *Crawler) Run(ctx context.Context) (fetched, left int, err error) {
 	for _, r := range want {
 		if held[r.Kind] == nil {
 			if held[r.Kind], err = c.store.held(r.Kind); err != nil {
-				return 0, 0, err
+				return Report{}, err
 			}
 		}
 		if !held[r.Kind][r.Num] && !c.gone[r] {
 			missing = append(missing, r)
 		}
 	}
+	report := Report{Known: len(want), Held: len(want) - len(missing)}
 	// The newest are the likeliest to be asked for next.
 	sort.SliceStable(missing, func(i, j int) bool { return missing[i].Num > missing[j].Num })
 
 	for _, r := range missing {
-		if c.PerRun > 0 && fetched >= c.PerRun {
+		if c.PerRun > 0 && report.Fetched >= c.PerRun {
 			break
 		}
 		if ctx.Err() != nil {
-			return fetched, len(missing) - fetched, ctx.Err()
+			report.Left = len(missing) - report.Fetched
+			return report, ctx.Err()
 		}
 		switch _, err := c.source.Fetch(c.store, r); {
 		case errors.Is(err, ErrMissing):
@@ -82,14 +94,15 @@ func (c *Crawler) Run(ctx context.Context) (fetched, left int, err error) {
 		case err != nil:
 			c.log.Warn("crawling", "image", r.String(), "err", err)
 		default:
-			fetched++
+			report.Fetched++
 		}
 		select {
 		case <-ctx.Done():
 		case <-time.After(c.Delay):
 		}
 	}
-	return fetched, len(missing) - fetched, nil
+	report.Left = len(missing) - report.Fetched
+	return report, nil
 }
 
 // held lists the numbers of one kind on disk: one directory read per shard,

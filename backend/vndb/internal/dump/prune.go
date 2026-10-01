@@ -11,25 +11,48 @@ import (
 // orders them.
 var archiveName = regexp.MustCompile(`^vndb-db-\d{4}-\d{2}-\d{2}\.tar\.zst$`)
 
+// Stored is one archive in the dump directory.
+type Stored struct {
+	Name  string `json:"name"`
+	Bytes int64  `json:"bytes"`
+}
+
+// Archives lists the archives in dir, newest first.
+func Archives(dir string) ([]Stored, error) {
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []Stored
+	for _, e := range entries {
+		if !e.Type().IsRegular() || !archiveName.MatchString(e.Name()) {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, Stored{Name: e.Name(), Bytes: info.Size()})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name > out[j].Name })
+	return out, nil
+}
+
 // Prune deletes all but the newest keep archives in dir, never touching
 // spare, and returns what it removed. Upstream only serves the latest, so an
 // archive deleted here cannot be fetched again.
 func Prune(dir string, keep int, spare string) ([]string, error) {
-	entries, err := os.ReadDir(dir)
+	archives, err := Archives(dir)
 	if err != nil {
 		return nil, err
 	}
-	var names []string
-	for _, e := range entries {
-		if e.Type().IsRegular() && archiveName.MatchString(e.Name()) {
-			names = append(names, e.Name())
-		}
-	}
-	sort.Sort(sort.Reverse(sort.StringSlice(names)))
 
 	var removed []string
-	for _, name := range names[min(keep, len(names)):] {
-		path := filepath.Join(dir, name)
+	for _, a := range archives[min(keep, len(archives)):] {
+		path := filepath.Join(dir, a.Name)
 		if spare != "" && sameFile(path, spare) {
 			continue
 		}

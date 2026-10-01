@@ -6,6 +6,10 @@ import (
 	"fmt"
 )
 
+// ImportLock is held by whatever builds or swaps generations -- an import,
+// a promote, a rollback -- so two of them never interleave.
+const ImportLock = "neovndb import"
+
 // ErrBusy means another process holds the lock.
 var ErrBusy = errors.New("another run holds the lock")
 

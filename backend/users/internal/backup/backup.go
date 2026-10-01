@@ -13,7 +13,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/kobayashi/neovndb-users/internal/config"
 )
 
 const (
@@ -30,9 +33,19 @@ type Options struct {
 	Keep        int // 0 keeps every copy
 }
 
+func OptionsFrom(cfg *config.Config) Options {
+	return Options{PgDump: cfg.PgDump, DatabaseURL: cfg.DatabaseURL, Dir: cfg.BackupDir, Keep: cfg.BackupKeep}
+}
+
+// running keeps the schedule and the admin page's button from dumping at
+// once, into the same directory, possibly under the same second's name.
+var running sync.Mutex
+
 // Run writes one dump and prunes to Keep. The dump goes to a temporary name
 // first, so a failed or interrupted run never looks like a backup.
 func Run(ctx context.Context, o Options, now time.Time) (string, error) {
+	running.Lock()
+	defer running.Unlock()
 	if err := os.MkdirAll(o.Dir, 0o755); err != nil {
 		return "", err
 	}
@@ -57,11 +70,40 @@ func Due(dir string, every time.Duration, now time.Time) (bool, error) {
 	if err != nil || len(files) == 0 {
 		return err == nil, err
 	}
-	newest, err := time.Parse(stamp, strings.TrimSuffix(strings.TrimPrefix(files[len(files)-1], prefix), suffix))
+	newest, err := taken(files[len(files)-1])
 	if err != nil {
 		return true, nil
 	}
 	return now.Sub(newest) >= every, nil
+}
+
+// Copy is one finished backup.
+type Copy struct {
+	Name  string    `json:"name"`
+	Bytes int64     `json:"bytes"`
+	Taken time.Time `json:"taken"`
+}
+
+// List returns the finished backups in dir, newest first.
+func List(dir string) ([]Copy, error) {
+	files, err := list(dir)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Copy, 0, len(files))
+	for i := len(files) - 1; i >= 0; i-- {
+		info, err := os.Stat(filepath.Join(dir, files[i]))
+		if err != nil {
+			return nil, err
+		}
+		when, _ := taken(files[i])
+		out = append(out, Copy{Name: files[i], Bytes: info.Size(), Taken: when})
+	}
+	return out, nil
+}
+
+func taken(name string) (time.Time, error) {
+	return time.Parse(stamp, strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix))
 }
 
 func prune(dir string, keep int) error {

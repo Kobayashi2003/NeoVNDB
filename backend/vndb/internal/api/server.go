@@ -81,8 +81,13 @@ func newCatalog(store *db.Store) (*query.Catalog, map[string]query.Resolver, err
 	return cat, resolvers, cat.Check()
 }
 
-func (s *Server) Routes() http.Handler {
+// Routes is the API; admin, when given, answers under /admin/, which only the
+// edge's administrator check lets anyone reach.
+func (s *Server) Routes(admin http.Handler) http.Handler {
 	mux := http.NewServeMux()
+	if admin != nil {
+		mux.Handle("/admin/", admin)
+	}
 	mux.HandleFunc("GET /health", s.health)
 	mux.HandleFunc("GET /meta/generation", s.generation)
 	mux.HandleFunc("GET /meta/fields/{type}", s.fields)

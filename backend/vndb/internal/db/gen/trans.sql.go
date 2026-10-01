@@ -9,12 +9,100 @@ import (
 	"context"
 )
 
+const allPassages = `-- name: AllPassages :many
+SELECT entity_type, source_text, target_text FROM trans.passages WHERE target_lang = $1
+`
+
+type AllPassagesRow struct {
+	EntityType *string `db:"entity_type" json:"entity_type"`
+	SourceText string  `db:"source_text" json:"source_text"`
+	TargetText string  `db:"target_text" json:"target_text"`
+}
+
+func (q *Queries) AllPassages(ctx context.Context, targetLang string) ([]AllPassagesRow, error) {
+	rows, err := q.db.Query(ctx, allPassages, targetLang)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AllPassagesRow{}
+	for rows.Next() {
+		var i AllPassagesRow
+		if err := rows.Scan(&i.EntityType, &i.SourceText, &i.TargetText); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const allTerms = `-- name: AllTerms :many
+SELECT category, source_text, target_text FROM trans.terms WHERE target_lang = $1
+`
+
+type AllTermsRow struct {
+	Category   *string `db:"category" json:"category"`
+	SourceText string  `db:"source_text" json:"source_text"`
+	TargetText string  `db:"target_text" json:"target_text"`
+}
+
+func (q *Queries) AllTerms(ctx context.Context, targetLang string) ([]AllTermsRow, error) {
+	rows, err := q.db.Query(ctx, allTerms, targetLang)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AllTermsRow{}
+	for rows.Next() {
+		var i AllTermsRow
+		if err := rows.Scan(&i.Category, &i.SourceText, &i.TargetText); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const bumpTransRevision = `-- name: BumpTransRevision :exec
 UPDATE trans.revision SET n = n + 1
 `
 
 func (q *Queries) BumpTransRevision(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, bumpTransRevision)
+	return err
+}
+
+const deletePassage = `-- name: DeletePassage :exec
+DELETE FROM trans.passages WHERE target_lang = $1 AND source_hash = $2
+`
+
+type DeletePassageParams struct {
+	TargetLang string `db:"target_lang" json:"target_lang"`
+	SourceHash []byte `db:"source_hash" json:"source_hash"`
+}
+
+func (q *Queries) DeletePassage(ctx context.Context, arg DeletePassageParams) error {
+	_, err := q.db.Exec(ctx, deletePassage, arg.TargetLang, arg.SourceHash)
+	return err
+}
+
+const deleteTerm = `-- name: DeleteTerm :exec
+DELETE FROM trans.terms WHERE target_lang = $1 AND source_key = $2
+`
+
+type DeleteTermParams struct {
+	TargetLang string `db:"target_lang" json:"target_lang"`
+	SourceKey  string `db:"source_key" json:"source_key"`
+}
+
+func (q *Queries) DeleteTerm(ctx context.Context, arg DeleteTermParams) error {
+	_, err := q.db.Exec(ctx, deleteTerm, arg.TargetLang, arg.SourceKey)
 	return err
 }
 
@@ -102,6 +190,88 @@ func (q *Queries) TransRevision(ctx context.Context) (int64, error) {
 	var n int64
 	err := row.Scan(&n)
 	return n, err
+}
+
+const translatableTags = `-- name: TranslatableTags :many
+SELECT id, name, description, c_items, ''::text AS group_name
+  FROM tags
+ ORDER BY c_items DESC, id
+`
+
+type TranslatableTagsRow struct {
+	ID          int32  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Description string `db:"description" json:"description"`
+	CItems      int32  `db:"c_items" json:"c_items"`
+	GroupName   string `db:"group_name" json:"group_name"`
+}
+
+// The text a translator works from: every tag and trait, the most used first.
+func (q *Queries) TranslatableTags(ctx context.Context) ([]TranslatableTagsRow, error) {
+	rows, err := q.db.Query(ctx, translatableTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TranslatableTagsRow{}
+	for rows.Next() {
+		var i TranslatableTagsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CItems,
+			&i.GroupName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const translatableTraits = `-- name: TranslatableTraits :many
+SELECT t.id, t.name, t.description, t.c_items, COALESCE(g.name, '') AS group_name
+  FROM traits t
+  LEFT JOIN traits g ON g.id = t.gid
+ ORDER BY t.c_items DESC, t.id
+`
+
+type TranslatableTraitsRow struct {
+	ID          int32  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Description string `db:"description" json:"description"`
+	CItems      int32  `db:"c_items" json:"c_items"`
+	GroupName   string `db:"group_name" json:"group_name"`
+}
+
+func (q *Queries) TranslatableTraits(ctx context.Context) ([]TranslatableTraitsRow, error) {
+	rows, err := q.db.Query(ctx, translatableTraits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TranslatableTraitsRow{}
+	for rows.Next() {
+		var i TranslatableTraitsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CItems,
+			&i.GroupName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const translationCounts = `-- name: TranslationCounts :one

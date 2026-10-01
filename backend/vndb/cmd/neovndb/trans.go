@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,37 +15,27 @@ import (
 	"github.com/kobayashi/neovndb/internal/trans"
 )
 
-// The seed file: tag and trait names by category, and a flat list of the long
-// texts. It is the format the previous incarnation of this project exported,
-// which is where the corpus comes from; the corpus itself is defaultSeed.
-type seedFile struct {
-	TargetLang string                       `json:"target_lang"`
-	Terms      map[string]map[string]string `json:"terms"`
-	Passages   []struct {
-		Source     string `json:"source"`
-		Target     string `json:"target"`
-		EntityType string `json:"entity_type"`
-	} `json:"passages"`
-}
-
-// defaultSeed is the corpus kept in this repository, relative to backend/vndb
-// where the command runs.
-const defaultSeed = "internal/trans/init.json"
+// defaultCorpus is the corpus kept in this repository, relative to
+// backend/vndb where the command runs.
+const defaultCorpus = "internal/trans/init.json"
 
 func runTrans(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: neovndb trans <status|seed>")
+		return fmt.Errorf("usage: neovndb trans <status|seed|export>")
 	}
 	switch args[0] {
 	case "status":
 		return transStatus(ctx)
-	case "seed":
+	case "seed", "export":
 		if len(args) > 2 {
-			return fmt.Errorf("usage: neovndb trans seed [file.json]")
+			return fmt.Errorf("usage: neovndb trans %s [file.json]", args[0])
 		}
-		file := defaultSeed
+		file := defaultCorpus
 		if len(args) == 2 {
 			file = args[1]
+		}
+		if args[0] == "export" {
+			return transExport(ctx, file)
 		}
 		return transSeed(ctx, file)
 	default:
@@ -86,7 +77,7 @@ func transSeed(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	var seed seedFile
+	var seed trans.Corpus
 	if err := json.Unmarshal(raw, &seed); err != nil {
 		return fmt.Errorf("reading %s: %w", path, err)
 	}
@@ -167,5 +158,39 @@ func transSeed(ctx context.Context, path string) error {
 		return err
 	}
 	fmt.Printf("seeded %d terms and %d passages into %s\n", terms, passages, lang)
+	return nil
+}
+
+// transExport writes what the database holds -- including edits made on the
+// admin page -- to a corpus file, by default the repository's own copy. The
+// file is replaced whole, and only once the new one is written.
+func transExport(ctx context.Context, path string) error {
+	store, err := openStore(ctx)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+
+	corpus, err := store.Corpus(ctx)
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := corpus.Encode(&buf); err != nil {
+		return err
+	}
+	partial := path + ".partial"
+	if err := os.WriteFile(partial, buf.Bytes(), 0o644); err != nil {
+		return err
+	}
+	if err := os.Rename(partial, path); err != nil {
+		os.Remove(partial)
+		return err
+	}
+	terms := 0
+	for _, pairs := range corpus.Terms {
+		terms += len(pairs)
+	}
+	fmt.Printf("exported %d terms and %d passages to %s\n", terms, len(corpus.Passages), path)
 	return nil
 }

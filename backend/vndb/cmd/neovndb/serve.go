@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"io"
 	"log/slog"
 	"net"
 	"os"
 	"strconv"
 
+	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/api"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
-	"github.com/kobayashi/neovndb/internal/schedule"
 )
 
 func runServe(ctx context.Context, args []string) error {
@@ -42,21 +43,24 @@ func runServe(ctx context.Context, args []string) error {
 	if *addr != "" {
 		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)
 	}
-	go schedule.Every(ctx, cfg.UpdateFirstAfter, cfg.UpdateEvery, cfg.UpdateRetryAfter, func(ctx context.Context) error {
-		err := updateOnce(ctx, cfg, store, false)
+	// One job for the schedule and the admin page's button, so the two never
+	// run at once and the page shows either.
+	update := admin.NewJob(func(ctx context.Context, out io.Writer) (any, error) {
+		return nil, updateOnce(ctx, out, cfg, store, false)
+	})
+	go update.Schedule(ctx, cfg.UpdateFirstAfter, cfg.UpdateEvery, cfg.UpdateRetryAfter, func(err error) bool {
 		switch {
-		case err == nil || ctx.Err() != nil:
-		case errors.Is(err, db.ErrBusy):
+		case errors.Is(err, admin.ErrRunning), errors.Is(err, db.ErrBusy):
 			log.Info("scheduled update skipped: an import is already running")
 		case errors.Is(err, errUpstream):
 			// Only this is worth retrying soon: a refused or failed import
 			// would fail the same way again an hour later.
 			log.Warn("scheduled update: upstream unreachable", "retry after", cfg.UpdateRetryAfter, "err", err)
-			return err
+			return true
 		default:
 			log.Error("scheduled update", "err", err)
 		}
-		return nil
+		return false
 	})
 
 	srv, err := api.NewServer(ctx, store, log, cfg)
@@ -65,7 +69,7 @@ func runServe(ctx context.Context, args []string) error {
 	}
 	defer srv.Close()
 
-	return api.Serve(ctx, cfg, srv.Routes(), log)
+	return api.Serve(ctx, cfg, srv.Routes(admin.NewMirror(ctx, store, cfg, log, update).Routes()), log)
 }
 
 // splitAddr applies a -addr override onto the configured host and port. A bare

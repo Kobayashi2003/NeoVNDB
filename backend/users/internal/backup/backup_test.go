@@ -43,6 +43,10 @@ func TestDueAndPrune(t *testing.T) {
 	if len(left) != 1 || left[0] != "users-20260925T000000Z.dump" {
 		t.Errorf("kept %v, want only the newest", left)
 	}
+	copies, err := List(dir)
+	if err != nil || len(copies) != 1 || !copies[0].Taken.Equal(time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("listed %+v, %v", copies, err)
+	}
 	for _, other := range []string{"notes.txt", "users-20260925T110000Z.dump.partial"} {
 		if _, err := os.Stat(filepath.Join(dir, other)); err != nil {
 			t.Errorf("%s was touched: %v", other, err)
