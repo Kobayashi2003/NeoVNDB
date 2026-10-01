@@ -225,7 +225,7 @@ database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
 whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
 it, which is why any other name is refused. The same variable lets the
 end-to-end tests start a throwaway user service of their own on :5199 and
-exercise signed-in pages; without it those three skip. Frontend tests live in
+exercise signed-in pages; without it those tests skip. Frontend tests live in
 `frontend/tests/`, never in `src/`.
 
 ## Scheduled work
@@ -237,13 +237,16 @@ it off, and a run never overlaps the previous one.
 
 | Job | Runs in | Settings (default) |
 | --- | --- | --- |
-| Updating the mirror (`neovndb update`) | `serve` | `NEOVNDB_UPDATE_EVERY` (24h), `NEOVNDB_UPDATE_FIRST_AFTER` (10m) |
+| Updating the mirror (`neovndb update`) | `serve` | `NEOVNDB_UPDATE_EVERY` (24h), `NEOVNDB_UPDATE_FIRST_AFTER` (10m), `NEOVNDB_UPDATE_RETRY_AFTER` (1h) |
 | Mirroring images ahead of readers | `images` | `NEOVNDB_IMAGE_CRAWL_EVERY` (1h), `NEOVNDB_IMAGE_CRAWL_FIRST_AFTER` (1m), `NEOVNDB_IMAGE_CRAWL_PER_RUN` (200), `NEOVNDB_IMAGE_CRAWL_DELAY` (2s) |
 | Expiring sessions | user service | `NEOVNDB_USERS_SWEEP_EVERY` (1h), `NEOVNDB_USERS_SWEEP_FIRST_AFTER` (1h) |
 | Backing up the user database | user service | `NEOVNDB_USERS_BACKUP_EVERY` (a week), `NEOVNDB_USERS_BACKUP_CHECK_EVERY` (1h), `NEOVNDB_USERS_BACKUP_FIRST_AFTER` (0s), `NEOVNDB_USERS_BACKUP_KEEP` |
 
 - **Updating** is a no-op when upstream has nothing newer, so checking daily
-  costs one small request. Imports take a Postgres advisory lock, so a
+  costs one small request. When dl.vndb.org cannot be reached or a download
+  fails, the next try comes `RETRY_AFTER` later rather than a day later; a
+  failed import or a refusal to go live waits the full interval, since it
+  would fail the same way again. Imports take a Postgres advisory lock, so a
   scheduled update and a hand-run `import`/`update` never run at once: the
   second one stops with "another run holds the lock". Upstream publishes
   most days, so once a generation goes live all but the newest
