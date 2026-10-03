@@ -2,7 +2,7 @@
  *  handles a typed id, so links from elsewhere get the same treatment. */
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useNavigate } from "@/components/layout/Navigation"
 import { SearchPill } from "@/components/ui/SearchPill"
 
 export function SearchField({
@@ -14,7 +14,7 @@ export function SearchField({
   className?: string
   autoFocus?: boolean
 }) {
-  const router = useRouter()
+  const router = useNavigate()
 
   return (
     <SearchPill

@@ -1,13 +1,9 @@
-/** The sidebar: the cover, then the facts that belong beside it.
- *
- *  The rating leads and stays blurred until asked for. A score is the one
- *  thing on this page that changes how a reader reads everything below it,
- *  and a reader who wants to decide for themselves cannot unsee it. */
+/** The sidebar: the cover, then the facts that belong beside it, the rating
+ *  first. */
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff, Share2 } from "lucide-react"
+import { Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { iconOf } from "@/lib/icons"
 import { enumLabel } from "@/lib/enums"
@@ -184,35 +180,14 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
 }
 
 function Rating({ value, votes }: { value: number | null; votes: number }) {
-  const [hidden, setHidden] = useState(true)
-
+  if (value === null) return <span className="text-muted">No rating</span>
   return (
     // Wrapping, because beside the cover on a phone this column is about
-    // 114px and "84.50 / 100 (8,726)" with a button after it is not.
+    // 114px and "84.50 / 100 (8,726)" is not.
     <span className="flex w-full flex-wrap items-center gap-1.5">
-      {value === null ? (
-        <span className="text-muted">No rating</span>
-      ) : (
-        <>
-          <span className={cn("font-semibold text-accent transition-all", hidden && "select-none blur-sm")}>
-            {score(value)}
-          </span>
-          <span className="text-muted">/ 100</span>
-          {votes > 0 && (
-            <span className={cn("text-muted transition-all", hidden && "select-none blur-sm")}>
-              ({votes.toLocaleString()})
-            </span>
-          )}
-        </>
-      )}
-      <button
-        onClick={() => setHidden((on) => !on)}
-        title={hidden ? "Show rating" : "Hide rating"}
-        aria-label={hidden ? "Show rating" : "Hide rating"}
-        className="icon-text ml-auto rounded p-0.5 text-muted transition-colors hover:text-white coarse:p-1.5"
-      >
-        {hidden ? <Eye className="h-3.5 w-3.5" aria-hidden /> : <EyeOff className="h-3.5 w-3.5" aria-hidden />}
-      </button>
+      <span className="font-semibold text-accent">{score(value)}</span>
+      <span className="text-muted">/ 100</span>
+      {votes > 0 && <span className="text-muted">({votes.toLocaleString()})</span>}
     </span>
   )
 }

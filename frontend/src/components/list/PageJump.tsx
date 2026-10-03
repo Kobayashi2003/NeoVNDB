@@ -3,7 +3,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "@/components/layout/Navigation"
 import { withParams, type Params } from "@/lib/href"
 import { cn } from "@/lib/utils"
 
@@ -18,7 +18,7 @@ export function PageJump({
   last: number
   className: string
 }) {
-  const router = useRouter()
+  const router = useNavigate()
   const [open, setOpen] = useState(false)
 
   if (!open) {

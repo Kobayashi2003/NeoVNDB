@@ -67,7 +67,7 @@ export function ResultsPanel({
         ) : data.rows.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">{empty}</p>
         ) : (
-          <>
+          <div data-results className="flex flex-col gap-4">
             <Results type={type} rows={data.rows} />
             <Pagination
               path={path}
@@ -76,7 +76,7 @@ export function ResultsPanel({
               count={data.count}
               pageSize={PAGE_SIZE}
             />
-          </>
+          </div>
         )}
       </div>
     </Collecting>

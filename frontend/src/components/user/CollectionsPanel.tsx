@@ -2,14 +2,13 @@
  *  can go on it). Renaming and deleting happen here. */
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LIST } from "@/lib/list"
 import { TYPES } from "@/components/layout/shelves"
 import {
-  collections,
   createCollection,
   deleteCollection,
   renameCollection,
@@ -18,29 +17,18 @@ import {
   type Collection,
 } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
+import { refreshCollections, useCollections } from "@/hooks/useCollections"
 import { SignInFirst } from "./SignInFirst"
 
 
 export function CollectionsPanel() {
   const session = useSession()
-  const [lists, setLists] = useState<Collection[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (session.status !== "in") return
-    let live = true
-    collections().then(
-      (mine) => {
-        if (live) setLists(mine)
-      },
-      (err) => {
-        if (live) setError(errorText(err))
-      },
-    )
-    return () => {
-      live = false
-    }
-  }, [session.status])
+  // The same lists the column on a list's page shows, so a change here is
+  // there too.
+  const held = useCollections(session.status === "in")
+  const lists = held.lists
+  const [trouble, setError] = useState<string | null>(null)
+  const error = trouble ?? held.error
 
   if (session.status === "unknown") {
     return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
@@ -49,14 +37,7 @@ export function CollectionsPanel() {
     return <SignInFirst next="/u">Your lists are yours, so they need an account.</SignInFirst>
   }
 
-  const replace = (id: number, change: Partial<Collection> | null) =>
-    setLists((now) =>
-      now === null
-        ? now
-        : change === null
-          ? now.filter((l) => l.id !== id)
-          : now.map((l) => (l.id === id ? { ...l, ...change } : l)),
-    )
+  const changed = () => void refreshCollections()
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -72,8 +53,8 @@ export function CollectionsPanel() {
           type={type}
           lists={lists?.filter((l) => l.type === type) ?? null}
           onError={setError}
-          onChange={replace}
-          onAdd={(made) => setLists((now) => [...(now ?? []), made])}
+          onChange={changed}
+          onAdd={changed}
         />
       ))}
     </div>
@@ -90,8 +71,8 @@ function Shelf({
   type: string
   lists: Collection[] | null
   onError: (message: string | null) => void
-  onChange: (id: number, change: Partial<Collection> | null) => void
-  onAdd: (made: Collection) => void
+  onChange: () => void
+  onAdd: () => void
 }) {
   const [naming, setNaming] = useState(false)
 
@@ -102,7 +83,8 @@ function Shelf({
     if (!name) return
     onError(null)
     try {
-      onAdd(await createCollection(type, name))
+      await createCollection(type, name)
+      onAdd()
       form.reset()
       setNaming(false)
     } catch (err) {
@@ -171,7 +153,7 @@ function Row({
 }: {
   list: Collection
   onError: (message: string | null) => void
-  onChange: (id: number, change: Partial<Collection> | null) => void
+  onChange: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -186,7 +168,7 @@ function Row({
     onError(null)
     try {
       await renameCollection(list.id, name)
-      onChange(list.id, { name })
+      onChange()
       setEditing(false)
     } catch (err) {
       onError(errorText(err))
@@ -197,7 +179,7 @@ function Row({
     onError(null)
     try {
       await deleteCollection(list.id)
-      onChange(list.id, null)
+      onChange()
     } catch (err) {
       onError(errorText(err))
       setConfirming(false)

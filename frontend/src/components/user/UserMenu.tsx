@@ -5,7 +5,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronDown, KeyRound, ListChecks, LogOut, MonitorSmartphone, Wrench } from "lucide-react"
+import { ChevronDown, KeyRound, ListChecks, LogOut, MonitorSmartphone, Star, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserError } from "@/lib/user"
 import { useSession } from "@/hooks/useSession"
@@ -92,6 +92,10 @@ function SignedIn() {
           <Link href="/u" onClick={() => setOpen(false)} className={menuItem()}>
             <ListChecks className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Your lists
+          </Link>
+          <Link href="/u/ratings" onClick={() => setOpen(false)} className={menuItem()}>
+            <Star className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            Your ratings
           </Link>
           <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
             <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />

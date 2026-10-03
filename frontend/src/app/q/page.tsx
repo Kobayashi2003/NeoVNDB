@@ -63,7 +63,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/q">) {
           Nothing matched <span className="text-white/80">{term}</span>.
         </p>
       ) : (
-        <div className="flex flex-col gap-8">
+        <div data-results className="flex flex-col gap-8">
           {found.map(({ type, rows, count, vns }) => (
             <Collecting key={type} type={type}>
               <section className="flex flex-col gap-3">
