@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/kobayashi/neovndb-users/internal/auth"
 	"github.com/kobayashi/neovndb-users/internal/config"
@@ -76,6 +78,11 @@ func (s *Server) Routes() http.Handler {
 
 	mux.HandleFunc("GET /holding/{item}", s.signedIn(s.holding))
 
+	mux.HandleFunc("GET /ratings", s.signedIn(s.ratings))
+	mux.HandleFunc("GET /ratings/items", s.signedIn(s.ratedItems))
+	mux.HandleFunc("GET /ratings/counts", s.signedIn(s.ratingCounts))
+	mux.HandleFunc("POST /ratings/set", s.signedIn(s.setRatings))
+	mux.HandleFunc("POST /ratings/clear", s.signedIn(s.clearRatings))
 	mux.HandleFunc("GET /ratings/{item}", s.signedIn(s.rating))
 	mux.HandleFunc("PUT /ratings/{item}", s.signedIn(s.setRating))
 	mux.HandleFunc("DELETE /ratings/{item}", s.signedIn(s.clearRating))
@@ -215,6 +222,49 @@ func positive(w http.ResponseWriter, r *http.Request, name string, fallback, max
 		return 0, false
 	}
 	return n, true
+}
+
+// ids parses the items of a bulk request: at least one, at most a page, and
+// all of the first one's type.
+func (s *Server) ids(w http.ResponseWriter, raw []string) (string, []int32, bool) {
+	switch {
+	case len(raw) == 0:
+		fail(w, http.StatusBadRequest, "Name at least one thing to act on.")
+		return "", nil, false
+	case s.cfg.MaxPageSize > 0 && len(raw) > s.cfg.MaxPageSize:
+		fail(w, http.StatusBadRequest, fmt.Sprintf("At most %d at a time.", s.cfg.MaxPageSize))
+		return "", nil, false
+	}
+	var first string
+	nums := make([]int32, 0, len(raw))
+	for _, id := range raw {
+		kind, num, valid := parseID(id)
+		if !valid {
+			fail(w, http.StatusBadRequest, fmt.Sprintf("%q is not an id.", id))
+			return "", nil, false
+		}
+		if first == "" {
+			first = kind
+		} else if kind != first {
+			fail(w, http.StatusBadRequest, "Those are not all the same kind of thing.")
+			return "", nil, false
+		}
+		nums = append(nums, num)
+	}
+	return first, nums, true
+}
+
+// order reads ?sort= (one of allowed; the first when absent) and ?reverse=.
+func order(w http.ResponseWriter, r *http.Request, allowed ...string) (store.Order, bool) {
+	by := r.URL.Query().Get("sort")
+	if by == "" {
+		by = allowed[0]
+	}
+	if !slices.Contains(allowed, by) {
+		fail(w, http.StatusBadRequest, fmt.Sprintf("sort is one of %s.", strings.Join(allowed, ", ")))
+		return store.Order{}, false
+	}
+	return store.Order{By: by, Reverse: r.URL.Query().Get("reverse") == "true"}, true
 }
 
 // answer maps store errors to replies.

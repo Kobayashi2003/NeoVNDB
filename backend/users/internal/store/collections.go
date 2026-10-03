@@ -20,6 +20,51 @@ type Mark struct {
 	// Full vndb id, rebuilt from the collection's type and the stored number.
 	ID       string    `json:"id"`
 	MarkedAt time.Time `json:"marked_at"`
+	// The reader's rating of the item, wherever it was given; nil if none.
+	Rating *int16 `json:"rating"`
+}
+
+// Order is one of the orders this service can put a list in itself, from what
+// only it knows: when something was saved, and what the reader thought of it.
+type Order struct {
+	By      string // "added" or "rating"
+	Reverse bool
+}
+
+// markOrder is the ORDER BY for a list. Unrated items sort last either way:
+// "no opinion" is not the lowest opinion.
+func markOrder(o Order) string {
+	dir, back := "DESC", "ASC"
+	if o.Reverse {
+		dir, back = back, dir
+	}
+	if o.By == "rating" {
+		return "r.rating " + dir + " NULLS LAST, m.marked_at DESC, m.item DESC"
+	}
+	return "m.marked_at " + dir + ", m.item " + dir
+}
+
+// markRows is a list's marks with their ratings, in order.
+const markRows = `
+	SELECT m.item, m.marked_at, r.rating
+	  FROM marks m
+	  JOIN collections c ON c.id = m.collection_id
+	  LEFT JOIN ratings r ON r.user_id = c.user_id AND r.type = c.type AND r.item = m.item
+	 WHERE m.collection_id = $1`
+
+func scanMarks(rows pgx.Rows, kind string) ([]Mark, error) {
+	defer rows.Close()
+	out := []Mark{}
+	for rows.Next() {
+		var item int32
+		var m Mark
+		if err := rows.Scan(&item, &m.MarkedAt, &m.Rating); err != nil {
+			return nil, err
+		}
+		m.ID = kind + itoa(item)
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }
 
 // Collections lists a reader's lists, of one type or all, with counts.
@@ -98,9 +143,10 @@ func (s *Store) DeleteCollection(ctx context.Context, userID, id int32) error {
 	return nil
 }
 
-// Marks is one page of a list, newest first. The page size stays within what
-// the read API takes in one id lookup.
-func (s *Store) Marks(ctx context.Context, userID, id int32, limit, offset int) ([]Mark, int, error) {
+// Marks is a list in the given order: a page of it, or with a limit of 0 all
+// of it, for the read API to sort or search. The total says how many there are
+// in all, so a caller can tell when it got only part.
+func (s *Store) Marks(ctx context.Context, userID, id int32, order Order, limit, offset int) ([]Mark, int, error) {
 	kind, err := s.owned(ctx, userID, id)
 	if err != nil {
 		return nil, 0, err
@@ -112,26 +158,14 @@ func (s *Store) Marks(ctx context.Context, userID, id int32, limit, offset int) 
 		return nil, 0, err
 	}
 
-	rows, err := s.pool.Query(ctx, `
-		SELECT item, marked_at FROM marks
-		 WHERE collection_id = $1
-		 ORDER BY marked_at DESC, item DESC
-		 LIMIT $2 OFFSET $3`, id, limit, offset)
+	// NULLIF so that a limit of 0 means none, as it does everywhere else
+	// here: LIMIT NULL is LIMIT ALL, LIMIT 0 is nothing.
+	rows, err := s.pool.Query(ctx, markRows+` ORDER BY `+markOrder(order)+` LIMIT NULLIF($2, 0) OFFSET $3`, id, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
-
-	out := []Mark{}
-	for rows.Next() {
-		var item int32
-		var at time.Time
-		if err := rows.Scan(&item, &at); err != nil {
-			return nil, 0, err
-		}
-		out = append(out, Mark{ID: kind + itoa(item), MarkedAt: at})
-	}
-	return out, total, rows.Err()
+	out, err := scanMarks(rows, kind)
+	return out, total, err
 }
 
 // AddMark is idempotent. kind must match the list's type, since the stored
@@ -153,41 +187,6 @@ func (s *Store) RemoveMark(ctx context.Context, userID, id int32, kind string, i
 	_, err := s.pool.Exec(ctx,
 		`DELETE FROM marks WHERE collection_id = $1 AND item = $2`, id, item)
 	return err
-}
-
-// Items is every id on a list, so the read API can sort or search it. The true
-// count comes back too, so a caller can tell when it got only part.
-func (s *Store) Items(ctx context.Context, userID, id int32, max int) (items []string, total int, err error) {
-	kind, err := s.owned(ctx, userID, id)
-	if err != nil {
-		return nil, 0, err
-	}
-	if err := s.pool.QueryRow(ctx,
-		`SELECT count(*) FROM marks WHERE collection_id = $1`, id).Scan(&total); err != nil {
-		return nil, 0, err
-	}
-
-	rows, err := s.pool.Query(ctx, `
-		SELECT item FROM marks
-		 WHERE collection_id = $1
-		 ORDER BY marked_at DESC, item DESC
-		 -- NULLIF so that a ceiling of 0 means no ceiling, as it does
-		 -- everywhere else here: LIMIT NULL is LIMIT ALL, LIMIT 0 is nothing.
-		 LIMIT NULLIF($2, 0)`, id, max)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	items = []string{}
-	for rows.Next() {
-		var item int32
-		if err := rows.Scan(&item); err != nil {
-			return nil, 0, err
-		}
-		items = append(items, kind+itoa(item))
-	}
-	return items, total, rows.Err()
 }
 
 // AddMarks, RemoveMarks and MoveMarks are one statement each so a bulk action

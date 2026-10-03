@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -111,7 +110,12 @@ func (s *Server) listMarks(w http.ResponseWriter, r *http.Request, userID int32)
 		return
 	}
 
-	marks, total, err := s.store.Marks(r.Context(), userID, id, limit, (page-1)*limit)
+	sorted, ok := order(w, r, "added", "rating")
+	if !ok {
+		return
+	}
+
+	marks, total, err := s.store.Marks(r.Context(), userID, id, sorted, limit, (page-1)*limit)
 	if !s.answer(w, "reading marks", err) {
 		return
 	}
@@ -159,7 +163,11 @@ func (s *Server) items(w http.ResponseWriter, r *http.Request, userID int32) {
 		fail(w, http.StatusBadRequest, "That is not a list.")
 		return
 	}
-	items, total, err := s.store.Items(r.Context(), userID, id, s.cfg.MaxItems)
+	sorted, ok := order(w, r, "added", "rating")
+	if !ok {
+		return
+	}
+	items, total, err := s.store.Marks(r.Context(), userID, id, sorted, s.cfg.MaxItems, 0)
 	if !s.answer(w, "reading a collection", err) {
 		return
 	}
@@ -234,30 +242,8 @@ func (s *Server) batch(w http.ResponseWriter, r *http.Request) (batchOf, bool) {
 	}
 	b.to = body.To
 
-	switch {
-	case len(body.Items) == 0:
-		fail(w, http.StatusBadRequest, "Name at least one thing to act on.")
-		return b, false
-	case s.cfg.MaxPageSize > 0 && len(body.Items) > s.cfg.MaxPageSize:
-		fail(w, http.StatusBadRequest, fmt.Sprintf("At most %d at a time.", s.cfg.MaxPageSize))
-		return b, false
-	}
-
-	for _, raw := range body.Items {
-		kind, num, valid := parseID(raw)
-		if !valid {
-			fail(w, http.StatusBadRequest, fmt.Sprintf("%q is not an id.", raw))
-			return b, false
-		}
-		if b.kind == "" {
-			b.kind = kind
-		} else if kind != b.kind {
-			fail(w, http.StatusBadRequest, "Those are not all the same kind of thing.")
-			return b, false
-		}
-		b.items = append(b.items, num)
-	}
-	return b, true
+	b.kind, b.items, ok = s.ids(w, body.Items)
+	return b, ok
 }
 
 func (s *Server) holding(w http.ResponseWriter, r *http.Request, userID int32) {
