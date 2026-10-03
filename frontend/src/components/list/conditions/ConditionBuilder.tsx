@@ -4,7 +4,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "@/components/layout/Navigation"
 import { Code2, Wand2 } from "lucide-react"
 import { ApiError, list } from "@/lib/api"
 import { TIDY_RULES } from "@/lib/conditions"
@@ -30,7 +30,7 @@ export function ConditionBuilder({
   /** The f= in the address. */
   current: string
 }) {
-  const router = useRouter()
+  const router = useNavigate()
   const [state, setState] = useState(() => {
     try {
       return { root: parse(current), text: current, error: null as string | null }

@@ -1,7 +1,7 @@
 /** A list page's search, applied on submit as the `search` filter. */
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useNavigate } from "@/components/layout/Navigation"
 import { withParams, type Params } from "@/lib/href"
 import { SearchPill } from "@/components/ui/SearchPill"
 
@@ -14,7 +14,7 @@ export function SearchBox({
   params: Params
   initial: string
 }) {
-  const router = useRouter()
+  const router = useNavigate()
 
   return (
     <SearchPill

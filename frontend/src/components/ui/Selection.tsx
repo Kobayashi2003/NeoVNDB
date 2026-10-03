@@ -101,7 +101,7 @@ export function ActionBar({
             )}
           </button>
 
-          <span className="min-w-20 select-none px-1 text-center text-xs font-medium tabular-nums">
+          <span className="min-w-14 select-none px-1 text-center text-xs font-medium tabular-nums sm:min-w-20">
             {chosen} selected
           </span>
 

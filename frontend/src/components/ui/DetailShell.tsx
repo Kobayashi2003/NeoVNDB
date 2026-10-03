@@ -39,7 +39,7 @@ export function DetailShell({
         {aside}
       </aside>
 
-      <div className="min-w-0 flex-1 py-4 pb-12 lg:-ml-1 lg:overflow-y-auto lg:overscroll-contain lg:pl-1 lg:pr-3 lg:[scrollbar-gutter:stable] animate-slide-up-fade">
+      <div data-scroll-top className="min-w-0 flex-1 py-4 pb-12 lg:-ml-1 lg:overflow-y-auto lg:overscroll-contain lg:pl-1 lg:pr-3 lg:[scrollbar-gutter:stable] animate-slide-up-fade">
         <div className="mb-6">{header}</div>
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
         <div className="flex flex-col gap-8">{children}</div>

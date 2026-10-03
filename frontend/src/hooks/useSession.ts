@@ -13,6 +13,7 @@ import {
   register,
   type User,
 } from "@/lib/user"
+import { forgetCollections } from "./useCollections"
 
 export interface Session {
   /** `unknown` until the first answer comes back, and never again after. */
@@ -47,6 +48,8 @@ function announce(): void {
 
 function hold(user: User | null): void {
   current = user ? { status: "in", user } : OUT
+  // Whoever signs in next must not see the last reader's lists, even briefly.
+  if (!user) forgetCollections()
   announce()
 }
 

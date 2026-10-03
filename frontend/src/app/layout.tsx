@@ -2,7 +2,9 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { Righteous } from "next/font/google"
 import "./globals.css"
+import { Suspense } from "react"
 import { Header } from "@/components/layout/Header"
+import { Navigation } from "@/components/layout/Navigation"
 import { PrefsRendered } from "@/hooks/usePrefs"
 import { PREFS_COOKIE, readPrefs } from "@/lib/prefs"
 
@@ -33,6 +35,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <PrefsRendered value={prefs}>
+          {/* Reads the address, which a prerender does not have. */}
+          <Suspense fallback={null}>
+            <Navigation />
+          </Suspense>
           <Header />
           {children}
         </PrefsRendered>

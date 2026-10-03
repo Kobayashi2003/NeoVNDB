@@ -38,8 +38,8 @@ test("an entry vndb no longer has stays visible and removable", async ({ page, u
   await user.call("POST", `/collections/${list.id}/marks/add`, { items: ["v17", "v9999999"] })
 
   await page.goto(`/u/${list.id}?sort=title`)
-  await expect(page.getByText(/One entry on this list is no longer on vndb/)).toBeVisible()
-  await page.getByRole("link", { name: "See it in added order" }).click()
+  await expect(page.getByText(/One entry in this list is no longer on vndb/)).toBeVisible()
+  await page.getByRole("link", { name: "See it by added" }).click()
 
   const gone = page.getByText("v9999999", { exact: true })
   await expect(gone).toBeVisible()
@@ -52,6 +52,6 @@ test("an entry vndb no longer has stays visible and removable", async ({ page, u
   await page.getByRole("button", { name: "Yes, remove them" }).click()
   await expect(gone).toHaveCount(0)
 
-  const left = (await (await user.call("GET", `/collections/${list.id}/items`)).json()) as { items: string[] }
-  expect(left.items).toEqual(["v17"])
+  const left = (await (await user.call("GET", `/collections/${list.id}/items`)).json()) as { items: { id: string }[] }
+  expect(left.items.map((i) => i.id)).toEqual(["v17"])
 })
