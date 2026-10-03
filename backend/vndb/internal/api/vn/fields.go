@@ -78,6 +78,10 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 			Edge: []string{"rating", "spoiler", "lie"}, Target: vndb.TypeTag},
 		"relations": {Kind: query.Fragment, Source: "relations", Num: 5, // REL vn_relations -> vn
 			Edge: []string{"relation", "official"}, Target: vndb.TypeVN},
+		// DERIV at the relation itself: works alike in their tags, which the
+		// import computes (internal/db/similar); score is a cosine, 0 to 1.
+		"similar": {Kind: query.Fragment, Source: "similar", Num: 20, // REL vn_similar -> vn
+			Edge: []string{"score"}, Target: vndb.TypeVN},
 		// DERIV at the relation itself: the producer ids come from the
 		// c_developers array this import fills, not from a stored join table.
 		"developers": {Kind: query.Fragment, Source: "developers", Num: 2, // REL vn.c_developers -> producers
@@ -100,6 +104,7 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"extlinks":    loadExtLinks,
 		"tags":        loadTags,
 		"relations":   loadRelations,
+		"similar":     loadSimilar,
 		"developers":  loadDevelopers,
 		"editions":    loadEditions,
 		"anime":       loadAnime,

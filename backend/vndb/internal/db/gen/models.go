@@ -428,6 +428,12 @@ type VnSeiyuu struct {
 	Note string `db:"note" json:"note"`
 }
 
+type VnSimilar struct {
+	ID    int32   `db:"id" json:"id"`
+	Vid   int32   `db:"vid" json:"vid"`
+	Score float32 `db:"score" json:"score"`
+}
+
 type VnStaff struct {
 	ID   int32  `db:"id" json:"id"`
 	Aid  int32  `db:"aid" json:"aid"`

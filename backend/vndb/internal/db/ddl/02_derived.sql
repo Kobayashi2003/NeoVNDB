@@ -96,6 +96,17 @@ CREATE TABLE traits_closure (
     PRIMARY KEY (ancestor, descendant)
 );
 
+-- Visual novels alike in their tags, computed at import by internal/db/similar
+-- (vndb has no such list): up to twenty per work, best first by score, works
+-- related to it left out. Not SQL like the rest of the derive step: comparing
+-- every pair of works is billions of products, and pruning them is code.
+CREATE TABLE vn_similar (
+    id    integer NOT NULL,
+    vid   integer NOT NULL, -- the work alike; named as in vn_relations
+    score real    NOT NULL,
+    PRIMARY KEY (id, vid)
+);
+
 -- One row, describing the generation it lives in. It is replaced along with
 -- everything else, so nothing has to survive an import.
 CREATE TABLE import_info (

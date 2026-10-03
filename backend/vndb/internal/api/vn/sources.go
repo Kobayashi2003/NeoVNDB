@@ -182,6 +182,20 @@ func loadRelations(ctx context.Context, r *Resolver, page []gen.Vn,
 	return query.Relate(ctx, r.cat, vndb.TypeVN, "relations", edges, sel, byID)
 }
 
+func loadSimilar(ctx context.Context, r *Resolver, page []gen.Vn,
+	sel query.Selection, byID map[int32]map[string]any) error {
+
+	rows, err := r.q.VNSimilar(ctx, idsOf(page))
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, len(rows))
+	for i, s := range rows {
+		edges[i] = query.Edge{Parent: s.ID, Child: s.Vid, Attrs: map[string]any{"score": s.Score}}
+	}
+	return query.Relate(ctx, r.cat, vndb.TypeVN, "similar", edges, sel, byID)
+}
+
 // c_developers is a cached array on the row, so the producers come back
 // without going through the releases.
 func loadDevelopers(ctx context.Context, r *Resolver, page []gen.Vn,
