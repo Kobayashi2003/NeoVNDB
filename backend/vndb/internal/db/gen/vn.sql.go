@@ -643,6 +643,34 @@ func (q *Queries) VNScreenshotList(ctx context.Context, ids []int32) ([]VNScreen
 	return items, nil
 }
 
+const vNSimilar = `-- name: VNSimilar :many
+SELECT id, vid, score
+  FROM vn_similar
+ WHERE id = ANY($1::int[])
+ ORDER BY id, score DESC, vid
+`
+
+// Best first, as the page shows them.
+func (q *Queries) VNSimilar(ctx context.Context, ids []int32) ([]VnSimilar, error) {
+	rows, err := q.db.Query(ctx, vNSimilar, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VnSimilar{}
+	for rows.Next() {
+		var i VnSimilar
+		if err := rows.Scan(&i.ID, &i.Vid, &i.Score); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const vNStaffList = `-- name: VNStaffList :many
 SELECT vs.id AS vn_id, vs.role, vs.eid, vs.note,
        s.id AS staff_id, s.lang, sa.name, sa.latin

@@ -336,14 +336,24 @@ func sqlFiles(dir string) ([]sqlFile, error) {
 // query matched nothing.
 var Derived = []string{
 	"tags_vn_direct", "tags_vn_inherit", "chars_traits_inherit",
-	"search_cache", "tags_closure", "traits_closure",
+	"search_cache", "tags_closure", "traits_closure", "vn_similar",
 }
 
 // DerivedCounts counts what the derive step built, so the recorded row counts
-// cover the whole generation rather than only what was copied in.
+// cover the whole generation rather than only what was copied in. A table a
+// generation does not have -- it was built before the table was added -- is
+// left out rather than counted as empty, so the guard sees it as new.
 func (s *Store) DerivedCounts(ctx context.Context, schema string) (map[string]int64, error) {
 	counts := make(map[string]int64, len(Derived))
 	for _, table := range Derived {
+		var exists bool
+		if err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`,
+			pgx.Identifier{schema, table}.Sanitize()).Scan(&exists); err != nil {
+			return nil, err
+		}
+		if !exists {
+			continue
+		}
 		var n int64
 		err := s.pool.QueryRow(ctx,
 			fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, pgx.Identifier{schema}.Sanitize(), table)).Scan(&n)

@@ -13,6 +13,7 @@ import (
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
+	"github.com/kobayashi/neovndb/internal/db/similar"
 	"github.com/kobayashi/neovndb/internal/dump"
 	"github.com/kobayashi/neovndb/internal/importer"
 )
@@ -85,6 +86,12 @@ func importLocked(ctx context.Context, out io.Writer, cfg *config.Config, store 
 	}); err != nil {
 		return err
 	}
+	// The one derived table SQL cannot build at a sensible cost.
+	built := time.Now()
+	if _, err := similar.Build(ctx, store.Pool(), db.SchemaNext); err != nil {
+		return fmt.Errorf("similar works: %w", err)
+	}
+	fmt.Fprintf(out, "  %-22s %10s\n", "similar (Go)", time.Since(built).Round(time.Millisecond))
 
 	// The derive step's tables are counted here so the recorded totals cover
 	// the whole generation: an empty one is what a derive query that matched
@@ -156,7 +163,13 @@ func resolve(ctx context.Context, out io.Writer, cfg *config.Config, file string
 		if _, err := os.Stat(file); err != nil {
 			return "", "", "", nil, err
 		}
-		return file, m[1] + m[2] + m[3], "", nil, nil
+		// The name's date stands in for the publication date upstream would
+		// have given; without one the generation would have none.
+		day, err := time.Parse("20060102", m[1]+m[2]+m[3])
+		if err != nil {
+			return "", "", "", nil, err
+		}
+		return file, m[1] + m[2] + m[3], "", &day, nil
 	}
 
 	rel, err := dump.Latest(ctx, cfg.DumpURL)

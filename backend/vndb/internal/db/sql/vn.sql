@@ -47,6 +47,13 @@ SELECT id, vid, relation, official
  WHERE id = ANY(@ids::int[])
  ORDER BY id, vid;
 
+-- Best first, as the page shows them.
+-- name: VNSimilar :many
+SELECT id, vid, score
+  FROM vn_similar
+ WHERE id = ANY(@ids::int[])
+ ORDER BY id, score DESC, vid;
+
 -- name: VNRelationGraph :many
 -- The connected component reachable from one VN, breadth-first and capped.
 -- Edges are stored in both directions, so following one is enough to reach the
