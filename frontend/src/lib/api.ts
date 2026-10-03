@@ -47,7 +47,8 @@ export interface Generation {
   /** The dump's own date, as vndb numbers it: 20260907. */
   code: string
   imported_at: string
-  published_at: string
+  /** Null for an archive imported from a file rather than downloaded. */
+  published_at: string | null
 }
 
 /** byId returns the single entity, or null when the id matches nothing. */

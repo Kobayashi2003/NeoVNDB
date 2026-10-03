@@ -12,3 +12,13 @@ test("every page names its icon", async ({ page }) => {
   expect(href).toBeTruthy()
   expect((await page.request.get(href!)).ok()).toBe(true)
 })
+
+test("a visual novel lists works alike in their tags, its own relations left out", async ({ page }) => {
+  await page.goto("/v17")
+  const section = page.locator("section", { has: page.getByRole("heading", { name: /Similar/ }) })
+  const cards = section.locator("a[href^='/v']")
+  await expect(cards).toHaveCount(20)
+  // Never7 is related to Ever17, so it belongs to the sidebar, not here.
+  await expect(section.locator("a[href='/v248']")).toHaveCount(0)
+  await expect(section.locator("a[href='/v17']")).toHaveCount(0)
+})

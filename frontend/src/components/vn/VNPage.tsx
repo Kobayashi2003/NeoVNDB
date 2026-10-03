@@ -18,6 +18,7 @@ import { VNCharacters } from "./VNCharacters"
 import { VNCharactersPanel } from "./VNCharactersPanel"
 import { VNStaff } from "./VNStaff"
 import { VNReleases } from "./VNReleases"
+import { Results } from "@/components/list/Results"
 import { VNScreenshots } from "./VNScreenshots"
 import type { VN } from "@/lib/types"
 
@@ -101,6 +102,14 @@ export function VNPage({ vn }: { vn: VN }) {
           {vn.screenshots.length > 0 && (
             <Section title="Screenshots" count={vn.screenshots.length}>
               <VNScreenshots screenshots={vn.screenshots} releases={vn.releases} />
+            </Section>
+          )}
+
+          {vn.similar.length > 0 && (
+            // Not vndb's: works alike in their tags, related ones left out
+            // (they are in the sidebar), computed at each import.
+            <Section title="Similar" count={vn.similar.length}>
+              <Results type="v" rows={vn.similar} />
             </Section>
           )}
         </>
