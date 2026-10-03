@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"slices"
@@ -65,12 +66,18 @@ func list(t *testing.T, s *Store, u *User, kind string) int32 {
 
 func ids(t *testing.T, s *Store, u *User, id int32) []string {
 	t.Helper()
-	items, _, err := s.Items(context.Background(), u.ID, id, 0)
+	items, _, err := s.Marks(context.Background(), u.ID, id, Order{By: "added"}, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return items
+	out := make([]string, len(items))
+	for i, m := range items {
+		out[i] = m.ID
+	}
+	return out
 }
+
+var added = Order{By: "added"}
 
 func TestAccounts(t *testing.T) {
 	s, ctx := open(t), context.Background()
@@ -173,7 +180,7 @@ func TestListsAreTheirOwners(t *testing.T) {
 	if err := s.DeleteCollection(ctx, b.ID, mine); !errors.Is(err, ErrNotFound) {
 		t.Errorf("delete another's list: %v", err)
 	}
-	if _, _, err := s.Marks(ctx, b.ID, mine, 10, 0); !errors.Is(err, ErrNotFound) {
+	if _, _, err := s.Marks(ctx, b.ID, mine, added, 10, 0); !errors.Is(err, ErrNotFound) {
 		t.Errorf("read another's list: %v", err)
 	}
 	// A character on a VN list reads as no such list.
@@ -212,7 +219,7 @@ func TestMarks(t *testing.T) {
 		t.Errorf("items: %v", got)
 	}
 
-	marks, _, err := s.Marks(ctx, u.ID, from, 10, 0)
+	marks, _, err := s.Marks(ctx, u.ID, from, added, 10, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +232,7 @@ func TestMarks(t *testing.T) {
 	if n, err := s.MoveMarks(ctx, u.ID, from, to.ID, "v", []int32{17, 999}); err != nil || n != 1 {
 		t.Fatalf("move: %d %v", n, err)
 	}
-	moved, _, _ := s.Marks(ctx, u.ID, to.ID, 10, 0)
+	moved, _, _ := s.Marks(ctx, u.ID, to.ID, added, 10, 0)
 	if len(moved) != 1 || moved[0].ID != "v17" || !moved[0].MarkedAt.Equal(when["v17"]) {
 		t.Errorf("moved: %+v, saved at %v", moved, when["v17"])
 	}
@@ -240,9 +247,9 @@ func TestMarks(t *testing.T) {
 		t.Errorf("left: %v", got)
 	}
 
-	// Items reports the true count even when capped.
+	// The true count comes back even when capped.
 	s.AddMarks(ctx, u.ID, from, "v", []int32{1, 2, 3})
-	if items, total, _ := s.Items(ctx, u.ID, from, 2); len(items) != 2 || total != 4 {
+	if items, total, _ := s.Marks(ctx, u.ID, from, added, 2, 0); len(items) != 2 || total != 4 {
 		t.Errorf("capped items: %v of %d", items, total)
 	}
 }
@@ -272,6 +279,60 @@ func TestRatings(t *testing.T) {
 	}
 	if r, _ := s.Rating(ctx, u.ID, "v", 17); r != nil {
 		t.Errorf("cleared: %v", *r)
+	}
+}
+
+// A list sorts by what the reader thought of its items, unrated last either
+// way; the ratings page pages, counts and changes ratings in bulk.
+func TestRatingOrders(t *testing.T) {
+	s, ctx := open(t), context.Background()
+	u := user(t, s, "reader")
+	l := list(t, s, u, "v")
+	s.AddMarks(ctx, u.ID, l, "v", []int32{1, 2, 3, 4})
+	s.SetRating(ctx, u.ID, "v", 2, 5)
+	s.SetRating(ctx, u.ID, "v", 3, 1)
+	s.SetRating(ctx, u.ID, "v", 9, 4) // rated, not on the list
+	s.SetRating(ctx, u.ID, "c", 1, 2)
+
+	order := func(o Order) []string {
+		marks, _, err := s.Marks(ctx, u.ID, l, o, 10, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []string
+		for _, m := range marks {
+			r := 0
+			if m.Rating != nil {
+				r = int(*m.Rating)
+			}
+			got = append(got, fmt.Sprintf("%s:%d", m.ID, r))
+		}
+		return got
+	}
+	if got := order(Order{By: "rating"}); !reflect.DeepEqual(got[:2], []string{"v2:5", "v3:1"}) {
+		t.Errorf("by rating: %v", got)
+	}
+	if got := order(Order{By: "rating", Reverse: true}); !reflect.DeepEqual(got[:2], []string{"v3:1", "v2:5"}) || !strings.HasSuffix(got[3], ":0") {
+		t.Errorf("by rating, reversed: %v", got)
+	}
+
+	rated, total, err := s.Ratings(ctx, u.ID, "v", Order{By: "rating"}, 2, 0)
+	if err != nil || total != 3 || len(rated) != 2 || rated[0].ID != "v2" || rated[1].ID != "v9" {
+		t.Errorf("ratings page: %+v of %d, %v", rated, total, err)
+	}
+	if counts, _ := s.RatingCounts(ctx, u.ID); counts["v"] != 3 || counts["c"] != 1 {
+		t.Errorf("counts: %v", counts)
+	}
+
+	if n, err := s.SetRatings(ctx, u.ID, "v", []int32{3, 4}, 4); err != nil || n != 2 {
+		t.Errorf("set: %d %v", n, err)
+	}
+	if n, _ := s.ClearRatings(ctx, u.ID, "v", []int32{2, 4, 77}); n != 2 {
+		t.Errorf("clear: %d", n)
+	}
+	all, _, _ := s.Ratings(ctx, u.ID, "v", Order{By: "rating"}, 0, 0)
+	if len(all) != 2 || all[0].Rating != 4 || all[1].Rating != 4 {
+		t.Errorf("left: %+v", all)
 	}
 }
 
