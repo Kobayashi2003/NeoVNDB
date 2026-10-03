@@ -1,6 +1,8 @@
 /** The fields each page requests, kept in one place so a page's cost is easy
  *  to read. */
 
+import { LIST } from "@/lib/list"
+
 export const VN_PAGE = [
   "title", "alttitle", "olang", "released", "devstatus", "languages", "platforms",
   "aliases", "length", "length_minutes", "length_votes",
@@ -43,6 +45,10 @@ export const VN_PAGE = [
   "screenshots.sexual", "screenshots.violence", "screenshots.release",
 
   "relations.title", "relations.relation", "relations.official",
+
+  // Drawn as list cards, so asked for with exactly the list's fields.
+  ...LIST.v.fields.split(",").map((f) => `similar.${f}`),
+  "similar.score",
 ].join(",")
 
 export const CHARACTER_PAGE = [

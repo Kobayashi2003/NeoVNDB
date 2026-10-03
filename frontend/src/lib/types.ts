@@ -295,6 +295,8 @@ export interface VN {
   releases: Release[]
   screenshots: Screenshot[]
   relations: Relation[]
+  /** Alike in their tags, best first; score is a cosine, 0 to 1. */
+  similar: (VNRow & { score: number })[]
 }
 
 /* ─── List rows ─────────────────────────────────────────────────────────── */
