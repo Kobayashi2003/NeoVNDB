@@ -13,6 +13,7 @@ import { Tooltip } from "@/components/ui/Tooltip"
 import { animationLabel, aspect, display, medium, releaseDate } from "@/lib/format"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Release } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 /** A medium is something physical or a download, drawn as a disc, a cartridge
  *  or a download arrow. */
@@ -66,7 +67,7 @@ export function ReleaseRow({ release: r, striped }: { release: Release; striped:
 
       <div className="min-w-0">
         <Link href={`/${r.id}`} className="text-white/90 transition-colors hover:text-accent coarse:py-1">
-          {display(r.title, r.titles.find((t) => t.latin && t.title)?.title ?? null, original) || r.id}
+          {display(r.title, r.alttitle, original) || r.id}
         </Link>
         {r.patch && <span className="ml-1 text-muted">(patch)</span>}
         {!r.official && <span className="ml-1 text-muted">(unofficial)</span>}
@@ -76,7 +77,7 @@ export function ReleaseRow({ release: r, striped }: { release: Release; striped:
             {r.producers.map((p, i) => (
               <span key={p.id}>
                 {i > 0 && " · "}
-                {p.name}
+                <Name name={p.name} original={p.original} />
                 {p.developer && !p.publisher && " (dev)"}
                 {p.publisher && !p.developer && " (pub)"}
               </span>

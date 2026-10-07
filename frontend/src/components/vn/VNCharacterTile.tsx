@@ -15,6 +15,7 @@ import { Tooltip } from "@/components/ui/Tooltip"
 import { usePrefs } from "@/hooks/usePrefs"
 import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 export function VNCharacterTile({
   character,
@@ -91,7 +92,7 @@ export function VNCharacterTile({
                 <Tooltip key={`${s.id}-${i}`} label={s.note}>
                   <span>
                     {i > 0 && ", "}
-                    {s.name}
+                    <Name name={s.name} original={s.original} />
                   </span>
                 </Tooltip>
               ))}

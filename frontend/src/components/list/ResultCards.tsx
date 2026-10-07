@@ -12,6 +12,7 @@ import { shouldBlur } from "@/lib/content"
 import { display, releaseDate, score } from "@/lib/format"
 import { AgeRating } from "@/components/ui/AgeRating"
 import { Icon } from "@/components/ui/Icon"
+import { Name } from "@/components/ui/Name"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
 import { usePrefs } from "@/hooks/usePrefs"
 import type {
@@ -165,7 +166,7 @@ export function ReleaseCard({ row }: { row: ReleaseRow }) {
         ))}
       </span>
       <span className={cn("min-w-0 flex-1 truncate text-sm", !row.official && "opacity-60")}>
-        {row.title}
+        <Name name={row.title} original={row.alttitle} />
         {row.patch && <span className="ml-1 text-xs text-muted">(patch)</span>}
         {!row.official && <span className="ml-1 text-xs text-muted">(unofficial)</span>}
         {row.freeware && <span className="ml-1 text-xs text-muted">(freeware)</span>}

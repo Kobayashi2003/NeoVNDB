@@ -22,3 +22,19 @@ test("a visual novel lists works alike in their tags, its own relations left out
   await expect(section.locator("a[href='/v248']")).toHaveCount(0)
   await expect(section.locator("a[href='/v17']")).toHaveCount(0)
 })
+
+test("original mode reaches voice actors and the works a page links to", async ({ page, context, baseURL }) => {
+  await context.addCookies([
+    {
+      name: "neovndb.prefs",
+      value: encodeURIComponent(JSON.stringify({ original: true })),
+      domain: new URL(baseURL!).hostname,
+      path: "/",
+    },
+  ])
+  await page.goto("/c521")
+  // Credited once per work she voices the character in.
+  await expect(page.getByText("前田 このみ").first()).toBeVisible()
+  await page.goto("/r1")
+  await expect(page.locator("main").getByText("みんなでニャンニャン", { exact: true }).first()).toBeVisible()
+})

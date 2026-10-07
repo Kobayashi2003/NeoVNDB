@@ -5,6 +5,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { VN_RELATION } from "@/lib/enums"
 import type { Relation } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 export function VNRelations({ relations }: { relations: Relation[] }) {
   const groups = new Map<string, Relation[]>()
@@ -28,7 +29,7 @@ export function VNRelations({ relations }: { relations: Relation[] }) {
                   !r.official && "opacity-60",
                 )}
               >
-                {r.title}
+                <Name name={r.title} original={r.alttitle} />
               </Link>
             ))}
           </div>
