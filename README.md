@@ -48,11 +48,11 @@ modules are what stops the second from reaching into the first.
 ## The edge
 
 Nothing is reached on its own port. Four processes run -- the read API on
-:5100, the image mirror on :5101, the user service on :5102 and Next on :3000
+:17031, the image mirror on :17032, the user service on :17033 and Next on :17034
 -- and Caddy is the only one anything talks to:
 
 ```sh
-cd edge && caddy run              # http://127.0.0.1:5090
+cd edge && caddy run              # http://127.0.0.1:17030
 ```
 
 A local checkout goes through it too, so there is one set of addresses rather
@@ -62,7 +62,7 @@ the site.
 
 Each prefix exposes an allowlist of the routes the frontend uses and refuses
 the rest without forwarding them, which is why `backend/vndb` contains no
-notion of who may call it: its whole surface stays reachable on :5100, and
+notion of who may call it: its whole surface stays reachable on :17031, and
 which part of it the world can reach is a question the edge answers. Images
 that are already on disk are served by the file server and never reach the
 mirror process at all. Nothing is resized: the mirror keeps vndb's files byte
@@ -84,7 +84,7 @@ filter and sort it lists is one a request can use. The site's `/api` page (linke
 from the footer of list pages) renders it for people.
 
 `frontend/` asks for `/vndbserve/...` from the browser and
-`NEOVNDB_API_BASE` (default `http://127.0.0.1:5090/vndbserve`) from the
+`NEOVNDB_API_BASE` (default `http://127.0.0.1:17030/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
 
 Caddy has no `.env`; it takes its settings from the environment, each with a
@@ -94,11 +94,11 @@ the edge with it:
 
 | Variable | Default | What it is |
 | --- | --- | --- |
-| `NEOVNDB_BIND` | `:5090` | where the edge listens |
-| `VNDBSERVE_UPSTREAM` | `127.0.0.1:5100` | the read API |
-| `IMGSERVE_UPSTREAM` | `127.0.0.1:5101` | the image mirror |
-| `USERSERVE_UPSTREAM` | `127.0.0.1:5102` | the user service |
-| `NEXT_UPSTREAM` | `127.0.0.1:3000` | the site |
+| `NEOVNDB_BIND` | `:17030` | where the edge listens |
+| `VNDBSERVE_UPSTREAM` | `127.0.0.1:17031` | the read API |
+| `IMGSERVE_UPSTREAM` | `127.0.0.1:17032` | the image mirror |
+| `USERSERVE_UPSTREAM` | `127.0.0.1:17033` | the user service |
+| `NEXT_UPSTREAM` | `127.0.0.1:17034` | the site |
 | `NEOVNDB_IMAGE_DIR` | `../data/images` | stored images, served straight off disk |
 
 ## Running it
@@ -120,8 +120,11 @@ still appear.
 It refuses to start on a port that is already in use rather than guessing, waits
 until each service actually answers, and prints the tail of a log for any that
 does not. The three services' ports and the image directory come from their
-`.env` files, not from the script, and are handed on to the edge; Next and the
-edge keep 3000 and 5090. Each process logs to `<name>.out.log` and
+`.env` files, not from the script, and are handed on to the edge; a real
+environment variable of the same name outranks the file, as it does in the
+services. Next and the edge keep 17034 and 17030 unless `NEOVNDB_WEB_PORT` or
+`NEOVNDB_EDGE_PORT` moves them, and server-rendered pages are pointed at
+whichever edge the script started. Each process logs to `<name>.out.log` and
 `<name>.err.log` in its own directory.
 
 By hand it is five processes, each from its own directory, each reading the
@@ -129,17 +132,17 @@ By hand it is five processes, each from its own directory, each reading the
 process rather than running them all from the root:
 
 ```sh
-cd backend/vndb  && go run ./cmd/neovndb serve     # :5100  the read API
-cd backend/vndb  && go run ./cmd/neovndb images    # :5101  the image mirror
-cd backend/users && go run ./cmd/users             # :5102  accounts and lists
-cd frontend      && npm run dev                    # :3000  the site
-cd edge          && caddy run                      # :5090  the only address
+cd backend/vndb  && go run ./cmd/neovndb serve     # :17031  the read API
+cd backend/vndb  && go run ./cmd/neovndb images    # :17032  the image mirror
+cd backend/users && go run ./cmd/users             # :17033  accounts and lists
+cd frontend      && npm run dev                    # :17034  the site
+cd edge          && caddy run                      # :17030  the only address
 ```
 
-Then open <http://127.0.0.1:5090>.
+Then open <http://127.0.0.1:17030>.
 
 `caddy run` must start from `edge/`, because the image roots in the snippet are
-written relative to it. Open the site on :5090, never :3000: nothing but the
+written relative to it. Open the site on :17030, never :17034: nothing but the
 edge serves `/imgserve` and `/userserve`, and the dev server only accepts its
 hot-reload connection from the edge's origin because `next.config.ts` names it
 -- without that no page hydrates, which looks like images that never appear
@@ -231,7 +234,7 @@ cd frontend      && npm run test:e2e   # needs the site up (start.ps1)
 ```
 
 Only the end-to-end tests need a running service; they drive Chromium
-through the edge (`E2E_BASE_URL`, default `http://127.0.0.1:5090`). The user service's storage tests need a
+through the edge (`E2E_BASE_URL`, default `http://127.0.0.1:17030`). The user service's storage tests need a
 database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
 whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
 it, which is why any other name is refused. The same variable lets the

@@ -53,8 +53,8 @@ export const test = base.extend<{ user: User; admin: User }>({
       env: { ...process.env, NEOVNDB_USERS_DB_URL: process.env.NEOVNDB_USERS_TEST_DB_URL },
     })
     for (const [prefix, service] of [
-      ["vndbserve", "http://127.0.0.1:5100"],
-      ["imgserve", "http://127.0.0.1:5101"],
+      ["vndbserve", "http://127.0.0.1:17031"],
+      ["imgserve", "http://127.0.0.1:17032"],
     ]) {
       await context.route(`**/${prefix}/admin/**`, async (route) => {
         const url = route.request().url().replace(new RegExp(`^.*?/${prefix}`), service)

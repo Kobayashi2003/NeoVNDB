@@ -14,7 +14,7 @@
 #
 # To gate browsing behind sign-in, put this at the top of each gated prefix:
 #
-#   forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+#   forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:17033} {
 #       uri /auth/verify
 #   }
 #
@@ -32,10 +32,10 @@
 handle_path /vndbserve/* {
 	@neovndb_admin path /admin/*
 	handle @neovndb_admin {
-		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:17033} {
 			uri /auth/admin
 		}
-		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}
+		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:17031}
 	}
 
 	# Anything not listed stays loopback-only.
@@ -44,7 +44,7 @@ handle_path /vndbserve/* {
 		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|meta/(generation|fields/[a-z]+|extlinks|openapi)|health)$
 	}
 	handle @neovndb_read {
-		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:5100}
+		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:17031}
 	}
 	handle {
 		respond 403
@@ -78,7 +78,7 @@ handle_path /imgserve/* {
 		# A miss: imgserve fetches it from vndb, stores it and answers.
 		handle {
 			rewrite * /img{path}
-			reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101} {
+			reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:17032} {
 				# A cold image is a round trip to t.vndb.org and can take seconds.
 				transport http {
 					read_timeout 30s
@@ -93,15 +93,15 @@ handle_path /imgserve/* {
 		path /health
 	}
 	handle @neovndb_img_health {
-		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101}
+		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:17032}
 	}
 
 	@neovndb_img_admin path /admin/*
 	handle @neovndb_img_admin {
-		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:5102} {
+		forward_auth {$USERSERVE_UPSTREAM:127.0.0.1:17033} {
 			uri /auth/admin
 		}
-		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:5101}
+		reverse_proxy {$IMGSERVE_UPSTREAM:127.0.0.1:17032}
 	}
 
 	handle {
@@ -110,5 +110,5 @@ handle_path /imgserve/* {
 }
 
 handle_path /userserve/* {
-	reverse_proxy {$USERSERVE_UPSTREAM:127.0.0.1:5102}
+	reverse_proxy {$USERSERVE_UPSTREAM:127.0.0.1:17033}
 }

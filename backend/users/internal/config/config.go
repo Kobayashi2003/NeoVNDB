@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultHost = "127.0.0.1"
-	defaultPort = 5102
+	defaultPort = 17033
 
 	defaultMaxConns       = 8
 	defaultConnectTimeout = 10 * time.Second

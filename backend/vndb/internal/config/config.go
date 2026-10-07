@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultHost           = "127.0.0.1"
-	defaultPort           = 5100
+	defaultPort           = 17031
 	defaultMaxConns       = 16
 	defaultMinConns       = 2
 	defaultConnLifetime   = time.Hour
@@ -58,7 +58,7 @@ const (
 
 	// Originals only, byte-exact; thumbnails are vndb's own (cv.t, st).
 	defaultImageDir        = "../../data/images"
-	defaultImagePort       = 5101
+	defaultImagePort       = 17032
 	defaultImageMaxBytes   = 32 << 20
 	defaultImageFetchLimit = 30 * time.Second
 	// Concurrent fetches from vndb's CDN.
