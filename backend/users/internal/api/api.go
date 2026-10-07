@@ -58,6 +58,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /login", s.login)
 	mux.HandleFunc("POST /logout", s.signedIn(s.logout))
 	mux.HandleFunc("POST /logout-everywhere", s.signedIn(s.logoutEverywhere))
+	mux.HandleFunc("GET /session", s.whoIs)
 	mux.HandleFunc("GET /me", s.signedIn(s.me))
 	mux.HandleFunc("POST /me/password", s.signedIn(s.changePassword))
 	mux.HandleFunc("POST /me/delete", s.signedIn(s.deleteAccount))
