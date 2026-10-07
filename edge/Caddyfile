@@ -11,11 +11,11 @@
 	admin off
 }
 
-{$NEOVNDB_BIND::5090} {
+{$NEOVNDB_BIND::17030} {
 	import Caddyfile.snippet
 
 	# The catch-all belongs to the site block, not the snippet.
 	handle {
-		reverse_proxy {$NEXT_UPSTREAM:127.0.0.1:3000}
+		reverse_proxy {$NEXT_UPSTREAM:127.0.0.1:17034}
 	}
 }

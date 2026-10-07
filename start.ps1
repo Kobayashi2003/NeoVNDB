@@ -58,9 +58,16 @@ $pidFile = Join-Path $root '.running.json'
 # directory -- are read from the services' .env files rather than repeated
 # here, so changing one there cannot leave this script or the edge on the old
 # value. Each falls back to the default the service itself would use. Next and
-# the edge have no .env of their own and keep 3000 and 5090.
+# the edge have no .env of their own: NEOVNDB_WEB_PORT and NEOVNDB_EDGE_PORT
+# move them, and otherwise they keep 17034 and 17030.
+#
+# A real environment variable outranks the file, as it does in the services
+# themselves -- otherwise a port set in the environment would move the service
+# while this script and the edge kept looking for it on the old one.
 function Get-EnvValue {
     param([string]$Dir, [string]$Key, [string]$Fallback)
+    $fromEnv = [Environment]::GetEnvironmentVariable($Key)
+    if ($fromEnv) { return $fromEnv }
     $file = Join-Path $Dir '.env'
     if (Test-Path $file) {
         $line = Select-String -Path $file -Pattern "^\s*$Key\s*=\s*(.+?)\s*$" -ErrorAction SilentlyContinue |
@@ -89,11 +96,11 @@ $webDir   = Join-Path $root 'frontend'
 $edgeDir  = Join-Path $root 'edge'
 
 $ports = @{
-    api    = Get-EnvPort $vndbDir  'NEOVNDB_PORT'        5100
-    img    = Get-EnvPort $vndbDir  'NEOVNDB_IMAGE_PORT'  5101
-    users  = Get-EnvPort $usersDir 'NEOVNDB_USERS_PORT'  5102
-    web    = 3000
-    edge   = 5090
+    api    = Get-EnvPort $vndbDir  'NEOVNDB_PORT'        17031
+    img    = Get-EnvPort $vndbDir  'NEOVNDB_IMAGE_PORT'  17032
+    users  = Get-EnvPort $usersDir 'NEOVNDB_USERS_PORT'  17033
+    web    = Get-EnvPort $webDir   'NEOVNDB_WEB_PORT'    17034
+    edge   = Get-EnvPort $edgeDir  'NEOVNDB_EDGE_PORT'   17030
 }
 
 function Write-Step { param([string]$Text) Write-Host "  $Text" -ForegroundColor DarkGray }
@@ -185,6 +192,11 @@ $env:USERSERVE_UPSTREAM = "127.0.0.1:$($ports.users)"
 $env:NEXT_UPSTREAM      = "127.0.0.1:$($ports.web)"
 # The edge serves stored images straight off disk, from where the mirror puts them.
 $env:NEOVNDB_IMAGE_DIR         = Get-EnvDir $vndbDir 'NEOVNDB_IMAGE_DIR' '../../data/images'
+# Server-rendered pages reach the read API through the edge started below, so
+# they follow it when it moves -- unless the environment already names another.
+if (-not $env:NEOVNDB_API_BASE) {
+    $env:NEOVNDB_API_BASE = "http://127.0.0.1:$($ports.edge)/vndbserve"
+}
 
 # --- Build ----------------------------------------------------------------
 # Before anything starts: on Windows a running binary cannot be overwritten,
@@ -231,7 +243,10 @@ function Start-Child {
     return $proc
 }
 
+# package.json names the default port; a second -p after it wins, which is how
+# NEOVNDB_WEB_PORT reaches Next.
 $webArgs = if ($Prod) { @('run', 'start') } else { @('run', 'dev') }
+$webArgs += @('--', '-p', "$($ports.web)")
 
 Start-Child 'api'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('serve')  'api'    | Out-Null
 Start-Child 'img'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('images') 'img'    | Out-Null

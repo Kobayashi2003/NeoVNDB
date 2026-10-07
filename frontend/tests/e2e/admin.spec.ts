@@ -34,7 +34,7 @@ test("an administrator sees the mirror, the translations and the accounts", asyn
   await expect(page.getByLabel("Name translation").first()).toBeVisible()
 
   // A description that loses its markup is refused, and nothing is stored.
-  const refused = await page.request.put("http://127.0.0.1:5100/admin/trans", {
+  const refused = await page.request.put("http://127.0.0.1:17031/admin/trans", {
     data: { category: "trait", id: 1162, field: "description", target: "リンクを落とした訳" },
   })
   expect(refused.status()).toBe(400)

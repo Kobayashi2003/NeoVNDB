@@ -4,7 +4,7 @@
  *  browsers do. A path in the browser; Node has no origin, so an address. */
 const BASE =
   typeof window === "undefined"
-    ? (process.env.NEOVNDB_API_BASE ?? "http://127.0.0.1:5090/vndbserve")
+    ? (process.env.NEOVNDB_API_BASE ?? "http://127.0.0.1:17030/vndbserve")
     : "/vndbserve"
 
 export interface Page<T> {

@@ -16,7 +16,7 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:5090",
+    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:17030",
     viewport: { width: 1280, height: 900 },
   },
 })
