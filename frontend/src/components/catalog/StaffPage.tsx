@@ -1,5 +1,5 @@
-/** A person: credits and voice roles as two tabs (separate tables
- *  upstream). Aliases get their own card, since credits elsewhere show the
+/** A person: the works they are credited on, and the characters they
+ *  voiced, as two tabs (separate tables upstream). Aliases get their own card, since credits elsewhere show the
  *  alias used; the person's own name is marked. */
 
 import { iconOf } from "@/lib/icons"
@@ -26,7 +26,7 @@ export async function StaffPage({
   const path = `/${s.id}`
   const [credited, voiced] = await Promise.all([
     countOf("v", { staff: s.id }),
-    countOf("v", { seiyuu: s.id }),
+    countOf("c", { seiyuu: s.id }),
   ])
 
   return (
@@ -38,7 +38,7 @@ export async function StaffPage({
       empty="No works are credited to this person."
       tabs={[
         { value: "credited", label: "Credited on", count: credited, type: "v", filters: { staff: s.id } },
-        { value: "voiced", label: "Voice roles", count: voiced, type: "v", filters: { seiyuu: s.id } },
+        { value: "voiced", label: "Voiced characters", count: voiced, type: "c", filters: { seiyuu: s.id } },
       ]}
       action={<DetailControls id={s.id} />}
       aside={

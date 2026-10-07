@@ -39,7 +39,9 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
       empty="No characters carry this trait."
       tabs={[
         { value: "all", label: "Including child traits", count: inherited, type: "c", filters: { trait: t.id } },
-        { value: "direct", label: "Assigned directly", count: direct, type: "c", filters: { dtrait: t.id } },
+        // The direct ones are among the rest, so an equal count is the same
+        // list; left out then, with the other empty tabs.
+        { value: "direct", label: "Assigned directly", count: direct === inherited ? 0 : direct, type: "c", filters: { dtrait: t.id } },
       ]}
       action={<DetailControls id={t.id} />}
       aside={

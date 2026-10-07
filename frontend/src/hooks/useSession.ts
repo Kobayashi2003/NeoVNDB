@@ -9,8 +9,8 @@ import {
   login,
   logout,
   logoutEverywhere,
-  me,
   register,
+  session,
   type User,
 } from "@/lib/user"
 import { forgetCollections } from "./useCollections"
@@ -61,7 +61,7 @@ function ask(): void {
   const settle = (user: User | null) => {
     if (current.status === "unknown") hold(user)
   }
-  me().then(settle, () => settle(null))
+  session().then(settle, () => settle(null))
 }
 
 function subscribe(notify: () => void): () => void {

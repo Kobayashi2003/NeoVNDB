@@ -27,8 +27,16 @@ export function Tabs({
   tabs: Tab[]
   active: string
 }) {
-  // One tab is not a choice, and a strip of one reads as a broken strip.
-  if (tabs.length < 2) return null
+  // One tab is not a choice, but it still says what is listed: shown as a
+  // label rather than a link.
+  if (tabs.length === 1) {
+    return (
+      <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
+        {tabs[0].label}
+        <span className="ml-1.5 tabular-nums text-muted">{tabs[0].count.toLocaleString()}</span>
+      </span>
+    )
+  }
 
   return (
     <div className="flex flex-wrap gap-1" role="tablist">
@@ -41,16 +49,6 @@ export function Tabs({
           </>
         )
         const shape = "rounded-full px-3 py-1 text-xs font-medium transition-colors"
-
-        // A tab with nothing behind it is still worth showing -- that this
-        // person voiced nobody is an answer -- but it is not worth a click.
-        if (tab.count === 0 && !here) {
-          return (
-            <span key={tab.value} role="tab" aria-selected={false} aria-disabled className={cn(shape, "text-muted/40")}>
-              {label}
-            </span>
-          )
-        }
 
         return (
           <Link

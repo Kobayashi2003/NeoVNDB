@@ -13,6 +13,7 @@ import { Section } from "@/components/ui/Section"
 import { DetailControls } from "@/components/ui/DetailControls"
 import { usePrefs } from "@/hooks/usePrefs"
 import { useSpoilerLevel } from "@/hooks/useSpoilerLevel"
+import { SpoilerScope } from "@/components/ui/Spoiler"
 import { CharacterAppearances } from "./CharacterAppearances"
 import { CharacterInfoPanel } from "./CharacterInfoPanel"
 import { CharacterInstances } from "./CharacterInstances"
@@ -71,7 +72,9 @@ export function CharacterPage({
         <Section title="Description">
           <InfoCard padding="block">
             <Collapsible>
-              <BBCode text={character.description} />
+              <SpoilerScope level={spoiler.level}>
+                <BBCode text={character.description} />
+              </SpoilerScope>
             </Collapsible>
           </InfoCard>
         </Section>

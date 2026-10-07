@@ -52,7 +52,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return answer as T
 }
 
-export const me = () => call<User>("GET", "/me")
+/** Who is signed in, or null. */
+export const session = () => call<{ user: User | null }>("GET", "/session").then((r) => r.user)
 
 export const login = (username: string, password: string) =>
   call<User>("POST", "/login", { username, password })
