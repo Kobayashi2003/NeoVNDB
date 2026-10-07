@@ -1,5 +1,6 @@
-/** A producer: works it developed, works it developed or published, and
- *  its releases, as three tabs. */
+/** A producer: works it developed, works it published, the two together, and
+ *  its releases, as tabs. Empty ones are left out, and so is the combined one
+ *  when it is no more than one of the others. */
 
 import Link from "next/link"
 import { iconOf } from "@/lib/icons"
@@ -33,11 +34,15 @@ export async function ProducerPage({
   params: Params
 }) {
   const path = `/${p.id}`
-  const [developed, involved, released] = await Promise.all([
+  const [developed, published, involved, released] = await Promise.all([
     countOf("v", { developer: p.id }),
+    countOf("v", { publisher: p.id }),
     countOf("v", { producer: p.id }),
     countOf("r", { producer: p.id }),
   ])
+  // Either side alone is a subset of both together, so an equal count is the
+  // same list under a longer name.
+  const both = involved === developed || involved === published ? 0 : involved
 
   return (
     <CatalogPage
@@ -48,7 +53,8 @@ export async function ProducerPage({
       empty="No works are credited to this producer."
       tabs={[
         { value: "developed", label: "Developed", count: developed, type: "v", filters: { developer: p.id } },
-        { value: "involved", label: "Developed or published", count: involved, type: "v", filters: { producer: p.id } },
+        { value: "published", label: "Published", count: published, type: "v", filters: { publisher: p.id } },
+        { value: "involved", label: "Developed or published", count: both, type: "v", filters: { producer: p.id } },
         { value: "releases", label: "Releases", count: released, type: "r", filters: { producer: p.id } },
       ]}
       action={<DetailControls id={p.id} />}

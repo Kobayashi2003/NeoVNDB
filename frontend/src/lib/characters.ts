@@ -35,6 +35,12 @@ export function readSex(
   }
 }
 
+/** A description's [spoiler] passages count as major: that is the level at
+ *  which they show (components/ui/Spoiler). */
+function hasSpoilerMarkup(text: string | null | undefined): boolean {
+  return !!text && /\[spoiler\]/i.test(text)
+}
+
 /** Whether anything is hidden at each spoiler level, counting spoiler traits.
  *  Sexual traits are left out: they are gated by the content level instead. */
 export function spoilerExtent(
@@ -45,7 +51,7 @@ export function spoilerExtent(
   let major = false
   for (const c of characters) {
     if (c.spoiler === 1) minor = true
-    if (c.spoiler === 2) major = true
+    if (c.spoiler === 2 || hasSpoilerMarkup(c.description)) major = true
     for (const t of allowedTraits(c.traits, explicit)) {
       if (t.spoiler === 1) minor = true
       if (t.spoiler === 2) major = true
@@ -93,6 +99,7 @@ export function characterSpoilerExtent(
   const hidden = (apparent: string | null, spoiler: string | null) =>
     !!apparent && !!spoiler && spoiler !== apparent && spoiler !== "n"
   if (
+    hasSpoilerMarkup(character.description) ||
     hidden(character.sex, character.spoil_sex) ||
     hidden(character.gender, character.spoil_gender) ||
     character.instance_of_spoiler === 2

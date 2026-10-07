@@ -32,8 +32,12 @@ export async function CatalogPage({
   params: Params
   empty?: React.ReactNode
 }) {
+  // A tab with nothing behind it is left out; a page whose every tab is
+  // empty keeps the first, to say so.
+  const offered = tabs.filter((t) => t.count > 0)
+  const shown = offered.length > 0 ? offered : [tabs[0]]
   const wanted = one(params, "tab")
-  const active = tabs.find((t) => t.value === wanted) ?? tabs[0]
+  const active = shown.find((t) => t.value === wanted) ?? shown[0]
   const data = await fetchResults(active.type, params, active.filters)
 
   return (
@@ -46,7 +50,7 @@ export async function CatalogPage({
       }
     >
       <div className="flex flex-wrap items-center gap-2">
-        <Tabs path={path} params={params} tabs={tabs} active={active.value} />
+        <Tabs path={path} params={params} tabs={shown} active={active.value} />
         {/* The same list on the type's own page, as a condition that more can
             be added to. */}
         <Link

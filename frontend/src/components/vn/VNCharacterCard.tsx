@@ -1,6 +1,7 @@
 /** One character in full: portrait, physical details, aliases, description.
  *  Used by the slider and the expanded view. Spoiler traits can be revealed per
- *  card, never below the section's level. */
+ *  card, never below the section's level, and only until that level changes:
+ *  the section's control is the reader's last word. */
 "use client"
 
 import { useState } from "react"
@@ -53,7 +54,11 @@ export function VNCharacterCard({
   onExpand?: () => void
 }) {
   const { original, explicit, sexual, violence } = usePrefs()
-  const [revealed, setRevealed] = useState<SpoilerLevel>(0)
+  // What this card revealed, and at which section level: a new section level
+  // drops it rather than letting it hold the card open past the control.
+  const [reveal, setReveal] = useState<{ at: SpoilerLevel; level: SpoilerLevel }>({ at: spoilerLevel, level: 0 })
+  const revealed = reveal.at === spoilerLevel ? reveal.level : 0
+  const setRevealed = (level: SpoilerLevel) => setReveal({ at: spoilerLevel, level })
 
   const level = Math.max(spoilerLevel, revealed) as SpoilerLevel
   const traits = groupTraits(character.traits, level, explicit)
@@ -201,7 +206,7 @@ export function VNCharacterCard({
                   minor={traits.hiddenMinor}
                   major={traits.hiddenMajor}
                   noun="trait"
-                  onReveal={(to) => setRevealed((at) => (to > at ? to : at))}
+                  onReveal={(to) => setRevealed(to > revealed ? to : revealed)}
                 />
               </div>
             )}

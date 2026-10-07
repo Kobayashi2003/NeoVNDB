@@ -13,6 +13,7 @@ import { TabBar, type Tab } from "@/components/ui/TabBar"
 import { Tooltip } from "@/components/ui/Tooltip"
 import { VNCharacterTile } from "./VNCharacterTile"
 import { VNCharacterSlider } from "./VNCharacterSlider"
+import { SpoilerScope } from "@/components/ui/Spoiler"
 import { usePrefs, type CharacterLayout } from "@/hooks/usePrefs"
 import type { Character } from "@/lib/types"
 
@@ -66,11 +67,13 @@ export function VNCharacters({
       </div>
 
       {layout === "slider" ? (
-        <VNCharacterSlider
-          characters={shown}
-          spoilerLevel={spoiler.level}
-          onExpand={onExpand}
-        />
+        <SpoilerScope level={spoiler.level}>
+          <VNCharacterSlider
+            characters={shown}
+            spoilerLevel={spoiler.level}
+            onExpand={onExpand}
+          />
+        </SpoilerScope>
       ) : (
         <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((c) => (

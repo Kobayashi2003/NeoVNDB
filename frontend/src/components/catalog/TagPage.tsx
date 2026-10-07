@@ -28,7 +28,9 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
       empty="No visual novels carry this tag."
       tabs={[
         { value: "all", label: "Including child tags", count: inherited, type: "v", filters: { tag: t.id } },
-        { value: "direct", label: "Tagged directly", count: direct, type: "v", filters: { dtag: t.id } },
+        // The direct ones are among the rest, so an equal count is the same
+        // list; left out then, with the other empty tabs.
+        { value: "direct", label: "Tagged directly", count: direct === inherited ? 0 : direct, type: "v", filters: { dtag: t.id } },
       ]}
       action={<DetailControls id={t.id} />}
       aside={
