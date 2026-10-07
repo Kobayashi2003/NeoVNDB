@@ -51,6 +51,7 @@ export interface Seiyuu {
   id: string
   /** The alias credited for this voice role, not the person's own name. */
   name: string
+  original: string | null
   note: string | null
   /** The VN this credit is for; characters carry credits from every work. */
   vn: string
@@ -97,6 +98,7 @@ export interface Character {
 export interface Appearance {
   id: string
   title: string
+  alttitle: string | null
   released: string
   /** main, primary, side or appears. */
   role: string
@@ -184,6 +186,7 @@ export interface Drm {
 export interface Release {
   id: string
   title: string | null
+  alttitle: string | null
   released: string
   /** complete, partial or trial, as this VN records it. */
   rtype: string
@@ -207,13 +210,12 @@ export interface Release {
 }
 
 export interface ReleaseDetail extends Release {
-  alttitle: string | null
   olang: string
   catalog: string | null
   gtin: string | null
   images: ReleaseImage[]
   vns: ReleasedVN[]
-  supersedes: { id: string; title: string }[]
+  supersedes: { id: string; title: string; alttitle: string | null }[]
 }
 
 /** Package scans or store art; cover-kind, so one size only. */
@@ -233,6 +235,7 @@ export interface ReleaseImage {
 export interface ReleasedVN {
   id: string
   title: string
+  alttitle: string | null
   rtype: string
 }
 
@@ -249,6 +252,7 @@ export interface Screenshot {
 export interface Relation {
   id: string
   title: string
+  alttitle: string | null
   relation: string
   official: boolean
 }
@@ -336,6 +340,7 @@ export interface CharacterRow {
 export interface ReleaseRow {
   id: string
   title: string | null
+  alttitle: string | null
   released: string
   minage: number | null
   platforms: string[]

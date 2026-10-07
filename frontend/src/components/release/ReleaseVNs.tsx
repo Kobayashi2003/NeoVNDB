@@ -6,6 +6,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { enumLabel } from "@/lib/enums"
 import type { ReleasedVN } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 /** Complete reads as the plain case; the other two are qualifications. */
 const RTYPE_CLASS: Record<string, string> = {
@@ -31,7 +32,7 @@ export function ReleaseVNs({ vns }: { vns: ReleasedVN[] }) {
             {enumLabel("RTYPE", v.rtype)}
           </span>
           <Link href={`/${v.id}`} className="min-w-0 text-sm transition-colors hover:text-accent coarse:py-1">
-            {v.title}
+            <Name name={v.title} original={v.alttitle} />
           </Link>
         </div>
       ))}

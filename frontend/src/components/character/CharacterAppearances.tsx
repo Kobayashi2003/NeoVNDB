@@ -12,6 +12,7 @@ import { Segmented, type Option } from "@/components/ui/Segmented"
 import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
 import type { SpoilerControl } from "@/hooks/useSpoilerLevel"
 import type { Appearance, Seiyuu } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 type Order = "role" | "date"
 
@@ -89,7 +90,7 @@ export function CharacterAppearances({
 
             <div className="min-w-0 flex-1">
               <Link href={`/${a.id}`} className="text-sm leading-snug transition-colors hover:text-accent coarse:py-1">
-                {a.title}
+                <Name name={a.title} original={a.alttitle} />
               </Link>
               {a.release && (
                 <p className="mt-0.5 truncate text-xs text-muted">
@@ -103,7 +104,7 @@ export function CharacterAppearances({
                 <p key={`${s.id}-${i}`} className="mt-0.5 truncate text-xs text-muted">
                   <span className="text-muted/60">CV </span>
                   <Link href={`/${s.id}`} className="hover:text-accent coarse:py-1">
-                    {s.name}
+                    <Name name={s.name} original={s.original} />
                   </Link>
                   {s.note && <span className="text-muted/60"> ({s.note})</span>}
                 </p>

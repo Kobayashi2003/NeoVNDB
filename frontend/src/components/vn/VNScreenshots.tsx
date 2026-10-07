@@ -6,6 +6,7 @@ import { useState } from "react"
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
 import { Lightbox, type LightboxImage } from "@/components/ui/Lightbox"
 import { shouldBlur } from "@/lib/content"
+import { display } from "@/lib/format"
 import { imageURL } from "@/lib/images"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { Release, Screenshot } from "@/lib/types"
@@ -17,11 +18,13 @@ export function VNScreenshots({
   screenshots: Screenshot[]
   releases: Release[]
 }) {
-  const { sexual, violence } = usePrefs()
+  const { sexual, violence, original } = usePrefs()
   const [open, setOpen] = useState<number | null>(null)
 
-  const titleOf = (id: string | null) =>
-    releases.find((r) => r.id === id)?.title ?? null
+  const titleOf = (id: string | null) => {
+    const r = releases.find((r) => r.id === id)
+    return r ? display(r.title, r.alttitle, original) || null : null
+  }
 
   const images: LightboxImage[] = screenshots.map((s) => ({
     url: s.url,

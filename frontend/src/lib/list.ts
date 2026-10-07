@@ -53,7 +53,7 @@ export const LIST: Record<string, ListSpec> = {
   r: {
     type: "release",
     label: "Releases",
-    fields: ["title", "released", "minage", "platforms", "official", "patch", "freeware"].join(","),
+    fields: ["title", "alttitle", "released", "minage", "platforms", "official", "patch", "freeware"].join(","),
     sorts: [BY_TITLE, { value: "released", label: "Release date", descending: true }],
     defaultSort: "released",
   },

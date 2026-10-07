@@ -16,6 +16,7 @@ import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoC
 import { VNRelations } from "./VNRelations"
 import { usePrefs } from "@/hooks/usePrefs"
 import type { VN } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 /** Finished, in development, or cancelled -- coloured because the middle one
  *  and the last one mean very different things to a reader deciding to start. */
@@ -87,7 +88,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
               <InlineList
                 items={vn.developers.map((d) => (
                   <Link key={d.id} href={`/${d.id}`} className="hover:text-accent coarse:py-1">
-                    {d.name}
+                    <Name name={d.name} original={d.original} />
                   </Link>
                 ))}
               />
@@ -106,7 +107,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
                     {p.lang && iconOf("LANGUAGE", p.lang) && (
                       <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
                     )}
-                    <span className="truncate">{p.name}</span>
+                    <span className="truncate"><Name name={p.name} original={p.original} /></span>
                   </Link>
                 ))}
               </div>

@@ -21,6 +21,7 @@ import { usePrefs } from "@/hooks/usePrefs"
 import { SexLine } from "@/components/character/SexLine"
 import type { Character } from "@/lib/types"
 import type { SpoilerLevel } from "@/hooks/useSpoilerLevel"
+import { Name } from "@/components/ui/Name"
 
 /** A run of "label value" pairs on one line, separated by dim middots. Absent
  *  values drop out, and a line with nothing left does not render. */
@@ -163,7 +164,7 @@ export function VNCharacterCard({
                   href={`/${s.id}`}
                   className="transition-colors hover:text-accent"
                 >
-                  {s.name}
+                  <Name name={s.name} original={s.original} />
                   {s.note && <span className="text-muted/60"> ({s.note})</span>}
                 </Link>
               ))}

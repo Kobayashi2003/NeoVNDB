@@ -12,6 +12,7 @@ import { Icon } from "@/components/ui/Icon"
 import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoCard"
 import { Tooltip } from "@/components/ui/Tooltip"
 import type { ReleaseDetail } from "@/lib/types"
+import { Name } from "@/components/ui/Name"
 
 /** Three independent facts vndb records about how a release was published. */
 function publication(r: ReleaseDetail): string[] {
@@ -106,7 +107,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
                 {p.lang && iconOf("LANGUAGE", p.lang) && (
                   <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
                 )}
-                <span className="truncate">{p.name}</span>
+                <span className="truncate"><Name name={p.name} original={p.original} /></span>
                 <span className="shrink-0 text-muted">
                   {p.developer && p.publisher
                     ? "(dev, pub)"
@@ -127,7 +128,7 @@ export function ReleaseInfoPanel({ release: r }: { release: ReleaseDetail }) {
           <div className="flex flex-col gap-0.5 text-xs">
             {r.supersedes.map((s) => (
               <Link key={s.id} href={`/${s.id}`} className="truncate text-white/80 hover:text-accent coarse:py-1">
-                {s.title}
+                <Name name={s.title} original={s.alttitle} />
               </Link>
             ))}
           </div>

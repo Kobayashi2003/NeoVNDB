@@ -27,13 +27,13 @@ export const VN_PAGE = [
   "characters.traits.name", "characters.traits.group_name",
   "characters.traits.spoiler", "characters.traits.lie",
   "characters.traits.translation.name", "characters.traits.group_translation",
-  "characters.seiyuu.name", "characters.seiyuu.note", "characters.seiyuu.vn",
+  "characters.seiyuu.name", "characters.seiyuu.original", "characters.seiyuu.note", "characters.seiyuu.vn",
 
   // eid names the edition a credit is for; editions describes it.
   "staff.name", "staff.original", "staff.role", "staff.note", "staff.eid",
   "editions.eid", "editions.name", "editions.lang", "editions.official",
 
-  "releases.title", "releases.released", "releases.rtype", "releases.minage",
+  "releases.title", "releases.alttitle", "releases.released", "releases.rtype", "releases.minage",
   "releases.patch", "releases.official", "releases.freeware", "releases.uncensored",
   "releases.has_ero", "releases.voiced", "releases.resolution", "releases.notes",
   "releases.animation", "releases.platforms", "releases.media", "releases.engine",
@@ -44,7 +44,7 @@ export const VN_PAGE = [
   "screenshots.url", "screenshots.thumbnail", "screenshots.dims",
   "screenshots.sexual", "screenshots.violence", "screenshots.release",
 
-  "relations.title", "relations.relation", "relations.official",
+  "relations.title", "relations.alttitle", "relations.relation", "relations.official",
 
   // Drawn as list cards, so asked for with exactly the list's fields.
   ...LIST.v.fields.split(",").map((f) => `similar.${f}`),
@@ -62,9 +62,9 @@ export const CHARACTER_PAGE = [
   "traits.name", "traits.group_name", "traits.spoiler", "traits.lie",
   "traits.translation.name", "traits.group_translation",
 
-  "vns.title", "vns.released", "vns.role", "vns.spoiler", "vns.release",
+  "vns.title", "vns.alttitle", "vns.released", "vns.role", "vns.spoiler", "vns.release",
 
-  "seiyuu.name", "seiyuu.note", "seiyuu.vn",
+  "seiyuu.name", "seiyuu.original", "seiyuu.note", "seiyuu.vn",
 
   "instance_of", "instance_of_spoiler",
   "instances.name", "instances.original", "instances.spoiler",
@@ -93,10 +93,10 @@ export const RELEASE_PAGE = [
   "extlinks.site", "extlinks.label", "extlinks.url",
 
   // rtype is per VN: one disc can be complete for one work and a trial of another.
-  "vns.title", "vns.rtype",
+  "vns.title", "vns.alttitle", "vns.rtype",
   "producers.name", "producers.original", "producers.lang",
   "producers.developer", "producers.publisher",
-  "supersedes.title",
+  "supersedes.title", "supersedes.alttitle",
 ].join(",")
 
 export const PRODUCER_PAGE = [
