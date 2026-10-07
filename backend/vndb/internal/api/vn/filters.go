@@ -60,10 +60,14 @@ var filters = map[string]query.FilterFunc{
 		Owner: "t.vid = vn.id", ID: "t.tag", Score: "t.rating", Spoiler: "t.spoiler",
 		Join: "tags g ON g.id = t.tag"}.Filter(),
 
-	// developers are a cached array on the row; publishers are not, so that
-	// one goes through the releases.
+	// developers are a cached array on the row; publishers are not, so those
+	// go through the releases. producer is either.
 	"developer": query.Relation{Type: vndb.TypeProducer,
 		From: "producers p", Owner: "p.id = ANY(vn.c_developers)", ID: "p.id"}.Filter(),
+	"publisher": query.Relation{Type: vndb.TypeProducer,
+		From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
+		Owner: "rv.vid = vn.id AND rp.publisher", ID: "rp.pid",
+		Join: "producers p ON p.id = rp.pid"}.Filter(),
 	"producer": query.Relation{Type: vndb.TypeProducer,
 		From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
 		Owner: "rv.vid = vn.id", ID: "rp.pid",

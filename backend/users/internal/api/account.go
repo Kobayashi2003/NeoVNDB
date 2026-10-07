@@ -171,6 +171,31 @@ func (s *Server) logoutEverywhere(w http.ResponseWriter, r *http.Request, userID
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// whoIs is who is signed in, or null: being signed out is an answer here,
+// not an error, so a page asking on every load does not log a failed request.
+func (s *Server) whoIs(w http.ResponseWriter, r *http.Request) {
+	token := auth.TokenFrom(r, s.cfg.SecureCookie)
+	if token == "" {
+		send(w, http.StatusOK, map[string]any{"user": nil})
+		return
+	}
+	userID, _, err := s.store.Session(r.Context(), token)
+	if errors.Is(err, store.ErrNotFound) {
+		send(w, http.StatusOK, map[string]any{"user": nil})
+		return
+	}
+	if err != nil {
+		s.oops(w, "reading session", err)
+		return
+	}
+	user, err := s.store.UserByID(r.Context(), userID)
+	if err != nil {
+		s.oops(w, "reading user", err)
+		return
+	}
+	send(w, http.StatusOK, map[string]any{"user": user})
+}
+
 func (s *Server) me(w http.ResponseWriter, r *http.Request, userID int32) {
 	user, err := s.store.UserByID(r.Context(), userID)
 	if err != nil {
