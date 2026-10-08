@@ -87,6 +87,12 @@ from the footer of list pages) renders it for people.
 `NEOVNDB_API_BASE` (default `http://127.0.0.1:17030/vndbserve`) from the
 server, so a deployment points that one variable at its own edge.
 
+Another device on the network (a phone) opens the site at this machine's LAN
+address, `http://192.168.x.y:17030`. The Next dev server only serves its
+scripts to hosts it was told about -- refused, a page shows its text but no
+images and cannot sign in -- so `next.config.ts` lets in this machine's own
+addresses, and `NEOVNDB_DEV_ORIGINS` adds any other name it is reached by.
+
 Caddy has no `.env`; it takes its settings from the environment, each with a
 default that suits a local checkout. `start.ps1` sets all of them from the
 services' own `.env` files, so a port or image directory changed there moves
