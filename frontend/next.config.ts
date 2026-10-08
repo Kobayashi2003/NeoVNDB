@@ -5,9 +5,9 @@ import type { NextConfig } from "next";
  *  phone opening http://192.168.x.y:17030 -- is let in too. */
 function ownAddresses(): string[] {
   return Object.values(networkInterfaces())
-    .flat()
-    .filter((a) => a && !a.internal)
-    .map((a) => a!.address);
+    .flatMap((list) => list ?? [])
+    .filter((a) => !a.internal)
+    .map((a) => a.address);
 }
 
 const nextConfig: NextConfig = {
