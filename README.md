@@ -113,7 +113,7 @@ the edge with it:
 .\start.ps1            # builds, starts all five, Ctrl+C stops them again
 .\start.ps1 -Prod      # a production build of the frontend instead of the dev server
 .\start.ps1 -NoImages  # draw the site without fetching a single cover
-.\start.ps1 -Stop      # stop a run that was left behind
+.\start.ps1 -Stop      # stop a run that was left behind (or .\stop.ps1)
 .\start.ps1 -Force     # take the ports from whatever already holds them
 ```
 
