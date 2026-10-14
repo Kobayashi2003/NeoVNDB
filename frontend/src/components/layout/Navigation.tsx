@@ -90,6 +90,8 @@ export function Navigation() {
       const link = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
       if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download'))
         return;
+      // A link that knows this click will not take it anywhere says so.
+      if (link.hasAttribute('data-inert')) return;
       startNavigation(link.href);
     };
     // Capturing: next/link prevents the default to navigate on the client,

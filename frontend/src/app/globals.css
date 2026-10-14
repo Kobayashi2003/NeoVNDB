@@ -129,6 +129,18 @@ html {
   translate: 0 0.04em;
 }
 
+/* React Flow's credit on the relation graph, which its licence asks to keep
+   unless one pays: kept, but in the site's quietest text rather than a chip. */
+.react-flow .react-flow__attribution {
+  background: transparent;
+  padding: 0 0.75rem 0.5rem;
+}
+.react-flow .react-flow__attribution a {
+  color: var(--muted);
+  opacity: 0.4;
+  font-size: 0.625rem;
+}
+
 /* `backwards`, not `both`: a retained transform would make this element the
    containing block for fixed overlays inside it. */
 .animate-slide-up-fade {

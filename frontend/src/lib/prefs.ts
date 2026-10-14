@@ -15,6 +15,11 @@ export interface Prefs {
   /** Starting level for every section. */
   spoiler: SpoilerLevel;
   layout: CharacterLayout;
+  /** The relation graph: cards with covers, titles in release-year layers, and
+   *  the overview map. */
+  graphCovers: boolean;
+  graphYears: boolean;
+  graphOverview: boolean;
 }
 
 export const DEFAULTS: Prefs = {
@@ -23,6 +28,9 @@ export const DEFAULTS: Prefs = {
   violence: 'tame',
   spoiler: 0,
   layout: 'grid',
+  graphCovers: true,
+  graphYears: false,
+  graphOverview: true,
 };
 
 export const PREFS_COOKIE = 'neovndb.prefs';
@@ -47,6 +55,11 @@ export function readPrefs(raw: string | undefined | null): Prefs {
         ? (saved.spoiler as SpoilerLevel)
         : DEFAULTS.spoiler,
       layout: pick(saved.layout, ['grid', 'slider'], DEFAULTS.layout),
+      graphCovers:
+        typeof saved.graphCovers === 'boolean' ? saved.graphCovers : DEFAULTS.graphCovers,
+      graphYears: typeof saved.graphYears === 'boolean' ? saved.graphYears : DEFAULTS.graphYears,
+      graphOverview:
+        typeof saved.graphOverview === 'boolean' ? saved.graphOverview : DEFAULTS.graphOverview,
     };
   } catch {
     return DEFAULTS;

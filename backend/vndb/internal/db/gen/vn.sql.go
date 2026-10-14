@@ -409,22 +409,33 @@ func (q *Queries) VNEditionList(ctx context.Context, ids []int32) ([]VNEditionLi
 }
 
 const vNGraphNodes = `-- name: VNGraphNodes :many
-SELECT v.id, v.olang, v.c_released, t.title, t.latin
+SELECT v.id, v.olang, v.c_released, v.devstatus, v.c_rating, v.c_image,
+       t.title, t.latin,
+       i.width, i.height, i.c_sexual_avg, i.c_violence_avg, i.c_votecount
   FROM vn v
   LEFT JOIN vn_titles t ON t.id = v.id AND t.lang = v.olang
+  LEFT JOIN images i ON i.kind = 'cv' AND i.num = v.c_image
  WHERE v.id = ANY($1::int[])
 `
 
 type VNGraphNodesRow struct {
-	ID        int32   `db:"id" json:"id"`
-	Olang     string  `db:"olang" json:"olang"`
-	CReleased int32   `db:"c_released" json:"c_released"`
-	Title     *string `db:"title" json:"title"`
-	Latin     *string `db:"latin" json:"latin"`
+	ID           int32   `db:"id" json:"id"`
+	Olang        string  `db:"olang" json:"olang"`
+	CReleased    int32   `db:"c_released" json:"c_released"`
+	Devstatus    int16   `db:"devstatus" json:"devstatus"`
+	CRating      *int16  `db:"c_rating" json:"c_rating"`
+	CImage       *int32  `db:"c_image" json:"c_image"`
+	Title        *string `db:"title" json:"title"`
+	Latin        *string `db:"latin" json:"latin"`
+	Width        *int16  `db:"width" json:"width"`
+	Height       *int16  `db:"height" json:"height"`
+	CSexualAvg   *int16  `db:"c_sexual_avg" json:"c_sexual_avg"`
+	CViolenceAvg *int16  `db:"c_violence_avg" json:"c_violence_avg"`
+	CVotecount   *int16  `db:"c_votecount" json:"c_votecount"`
 }
 
-// The nodes a graph draws: title in the entity's own language, plus the two
-// fields the layout orders by.
+// The nodes a graph draws: title in the entity's own language, the fields the
+// layout orders by, and what a card shows -- status, rating and cover.
 func (q *Queries) VNGraphNodes(ctx context.Context, ids []int32) ([]VNGraphNodesRow, error) {
 	rows, err := q.db.Query(ctx, vNGraphNodes, ids)
 	if err != nil {
@@ -438,8 +449,16 @@ func (q *Queries) VNGraphNodes(ctx context.Context, ids []int32) ([]VNGraphNodes
 			&i.ID,
 			&i.Olang,
 			&i.CReleased,
+			&i.Devstatus,
+			&i.CRating,
+			&i.CImage,
 			&i.Title,
 			&i.Latin,
+			&i.Width,
+			&i.Height,
+			&i.CSexualAvg,
+			&i.CViolenceAvg,
+			&i.CVotecount,
 		); err != nil {
 			return nil, err
 		}

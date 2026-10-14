@@ -73,11 +73,14 @@ SELECT r.id, r.vid, r.relation, r.official, w.depth
  ORDER BY w.depth, r.id, r.vid;
 
 -- name: VNGraphNodes :many
--- The nodes a graph draws: title in the entity's own language, plus the two
--- fields the layout orders by.
-SELECT v.id, v.olang, v.c_released, t.title, t.latin
+-- The nodes a graph draws: title in the entity's own language, the fields the
+-- layout orders by, and what a card shows -- status, rating and cover.
+SELECT v.id, v.olang, v.c_released, v.devstatus, v.c_rating, v.c_image,
+       t.title, t.latin,
+       i.width, i.height, i.c_sexual_avg, i.c_violence_avg, i.c_votecount
   FROM vn v
   LEFT JOIN vn_titles t ON t.id = v.id AND t.lang = v.olang
+  LEFT JOIN images i ON i.kind = 'cv' AND i.num = v.c_image
  WHERE v.id = ANY(@ids::int[]);
 
 -- name: GetCovers :many
