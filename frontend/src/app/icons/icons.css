@@ -324,46 +324,72 @@
 }
 
 /* ─── Character sex icons ─────────────────────────────────────────────────── */
+/* The sprite draws these in dark grey, which vanishes on this site's dark
+   background. The sprite is a mask instead, so only its shape is used and each
+   sex has a colour of its own: told apart at a glance, not only by shape. */
 [class^='icon-char-'] {
-  background-image: url(./icons.svg);
+  mask-image: url(./icons.svg);
+  mask-repeat: no-repeat;
+  background-color: var(--color-muted);
   width: 16px;
   height: 16px;
   display: inline-block;
   flex-shrink: 0;
 }
 .icon-char-a {
-  background-position: 0px 0;
+  mask-position: 0px 0;
+  background-color: #a3e635;
 }
 .icon-char-b {
-  background-position: -26px 0;
+  mask-position: -26px 0;
+  background-color: #c084fc;
 }
 .icon-char-f {
-  background-position: -52px 0;
+  mask-position: -52px 0;
+  background-color: #f472b6;
 }
 .icon-char-m {
-  background-position: -78px 0;
+  mask-position: -78px 0;
+  background-color: #60a5fa;
 }
 .icon-char-n {
-  background-position: -104px 0;
+  mask-position: -104px 0;
 }
 .icon-char-o {
-  background-position: -130px 0;
+  mask-position: -130px 0;
+  background-color: #facc15;
 }
 .icon-char-u {
-  background-position: -156px 0;
+  mask-position: -156px 0;
 }
 
-.charsex-m {
-  filter: invert(81%) sepia(89%) saturate(786%) hue-rotate(109deg) brightness(104%) contrast(106%);
+/* ─── Release type (complete / partial / trial) ─────────────────────────── */
+/* Tiny pixel boxes in the flag sprite, in colours too dark for this page; the
+   same mask treatment as the sex icons, at twice the size. */
+[class^='icon-rt'] {
+  mask-image: url(./icons.png);
+  mask-size: 78px 430px;
+  mask-repeat: no-repeat;
+  display: inline-block;
+  flex-shrink: 0;
 }
-.charsex-f {
-  filter: invert(25%) sepia(99%) saturate(4716%) hue-rotate(291deg) brightness(108%) contrast(133%);
+.icon-rtcomplete {
+  mask-position: -40px -12px;
+  width: 14px;
+  height: 14px;
+  background-color: #4ade80;
 }
-.charsex-b {
-  filter: invert(16%) sepia(72%) saturate(5487%) hue-rotate(356deg) brightness(95%) contrast(121%);
+.icon-rtpartial {
+  mask-position: -62px -18px;
+  width: 14px;
+  height: 8px;
+  background-color: #c084fc;
 }
-.charsex-n {
-  filter: invert(96%) sepia(38%) saturate(2940%) hue-rotate(358deg) brightness(104%) contrast(105%);
+.icon-rttrial {
+  mask-position: -14px -46px;
+  width: 8px;
+  height: 8px;
+  background-color: #f87171;
 }
 
 /* ─── Release / media / voiced icons ─────────────────────────────────────── */
@@ -408,16 +434,19 @@
 .icon-rel-reso-custom {
   background-position: -2098px 0;
 }
+/* The microphone is drawn dark and recoloured per level; as a mask it keeps
+   vndb's colours (red none, orange ero only, yellow partly, green fully) bright
+   enough to read here. */
 .icon-rel-voiced {
-  background-position: -2124px 0;
+  background: #f87171;
+  mask: url(./icons.svg) -2124px 0 no-repeat;
 }
-/* Voiced color variants (applied alongside icon-rel-voiced) */
 .icon-rel-v2 {
-  filter: hue-rotate(30deg);
+  background: #fb923c;
 }
 .icon-rel-v3 {
-  filter: invert(100%) hue-rotate(240deg);
+  background: #facc15;
 }
 .icon-rel-v4 {
-  filter: hue-rotate(80deg);
+  background: #4ade80;
 }

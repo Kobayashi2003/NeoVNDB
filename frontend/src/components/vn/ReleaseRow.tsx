@@ -61,7 +61,7 @@ export function ReleaseRow({ release: r, striped }: { release: Release; striped:
           {r.platforms.map(p => (
             <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />
           ))}
-          <Icon cls={`icon-rt${r.rtype}`} title={r.rtype} />
+          <Icon cls={`icon-rt${r.rtype}`} title={enumLabel('RTYPE', r.rtype)} />
         </span>
       </div>
 
