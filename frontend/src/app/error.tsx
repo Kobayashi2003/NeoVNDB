@@ -1,22 +1,22 @@
 /** Render error page. Usually a backend process isn't running, so retrying
  *  is offered first. */
-"use client"
+'use client';
 
-import { useEffect } from "react"
-import { Trouble } from "@/components/ui/Trouble"
+import { useEffect } from 'react';
+import { Trouble } from '@/components/ui/Trouble';
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // The server keeps the detail and hands the browser only a digest; this
     // puts the two ends of that in the same place for whoever is debugging.
-    console.error("page failed", error)
-  }, [error])
+    console.error('page failed', error);
+  }, [error]);
 
   return (
     <Trouble
@@ -31,9 +31,10 @@ export default function Error({
         </button>
       }
     >
-      The page could not be drawn. If this keeps happening, the read API is
-      probably not answering.
-      {error.digest && <span className="mt-2 block font-mono text-xs text-muted/60">{error.digest}</span>}
+      The page could not be drawn. If this keeps happening, the read API is probably not answering.
+      {error.digest && (
+        <span className="mt-2 block font-mono text-xs text-muted/60">{error.digest}</span>
+      )}
     </Trouble>
-  )
+  );
 }

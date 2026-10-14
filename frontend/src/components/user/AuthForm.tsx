@@ -1,53 +1,53 @@
 /** Sign-in and sign-up in one form. The service's error messages are shown
  *  as written (it deliberately doesn't say which of name or password was
  *  wrong). */
-"use client"
+'use client';
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { errorText, RULES } from "@/lib/user"
-import { useSession } from "@/hooks/useSession"
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { errorText, RULES } from '@/lib/user';
+import { useSession } from '@/hooks/useSession';
 
 /** These two, which are no place to arrive already signed in. */
-const AUTH = new Set(["/login", "/register"])
+const AUTH = new Set(['/login', '/register']);
 
 /** Where to go afterwards: only a path on this site (an off-site `next`
  *  would be an open redirect), and never back to this page. */
 function safe(next: string | undefined): string | null {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return null
-  return AUTH.has(next.split("?")[0]) ? null : next
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return null;
+  return AUTH.has(next.split('?')[0]) ? null : next;
 }
 
-export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: string }) {
-  const session = useSession()
-  const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+export function AuthForm({ mode, next }: { mode: 'login' | 'register'; next?: string }) {
+  const session = useSession();
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const registering = mode === "register"
-  const carry = safe(next)
+  const registering = mode === 'register';
+  const carry = safe(next);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    const username = String(form.get("username") ?? "")
-    const password = String(form.get("password") ?? "")
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const username = String(form.get('username') ?? '');
+    const password = String(form.get('password') ?? '');
 
-    setBusy(true)
-    setError(null)
+    setBusy(true);
+    setError(null);
     try {
       if (registering) {
-        await session.signUp(username, password, String(form.get("email") ?? ""))
+        await session.signUp(username, password, String(form.get('email') ?? ''));
       } else {
-        await session.signIn(username, password)
+        await session.signIn(username, password);
       }
       // Nothing is rendered from the session on the server, so there is no
       // stale markup to throw away -- only somewhere to be.
-      router.push(carry ?? "/")
+      router.push(carry ?? '/');
     } catch (err) {
-      setError(errorText(err))
-      setBusy(false)
+      setError(errorText(err));
+      setBusy(false);
     }
   }
 
@@ -57,11 +57,11 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
       className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-white/5 bg-surface p-6"
     >
       <div>
-        <h1 className="text-lg font-bold">{registering ? "Create an account" : "Sign in"}</h1>
+        <h1 className="text-lg font-bold">{registering ? 'Create an account' : 'Sign in'}</h1>
         <p className="mt-1 text-xs text-muted">
           {registering
-            ? "An account holds the lists you keep. Nothing else about you is stored."
-            : "To reach the lists you keep."}
+            ? 'An account holds the lists you keep. Nothing else about you is stored.'
+            : 'To reach the lists you keep.'}
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
         name="password"
         label="Password"
         type="password"
-        autoComplete={registering ? "new-password" : "current-password"}
+        autoComplete={registering ? 'new-password' : 'current-password'}
         hint={registering ? RULES.password : undefined}
         required
       />
@@ -101,20 +101,20 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
         disabled={busy}
         className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-hover disabled:opacity-60"
       >
-        {busy ? "…" : registering ? "Create account" : "Sign in"}
+        {busy ? '…' : registering ? 'Create account' : 'Sign in'}
       </button>
 
       <p className="text-xs text-muted">
-        {registering ? "Already have an account? " : "No account yet? "}
+        {registering ? 'Already have an account? ' : 'No account yet? '}
         <Link
-          href={`${registering ? "/login" : "/register"}${carry ? `?next=${encodeURIComponent(carry)}` : ""}`}
+          href={`${registering ? '/login' : '/register'}${carry ? `?next=${encodeURIComponent(carry)}` : ''}`}
           className="text-accent transition-colors hover:underline coarse:py-1"
         >
-          {registering ? "Sign in" : "Create one"}
+          {registering ? 'Sign in' : 'Create one'}
         </Link>
       </p>
     </form>
-  )
+  );
 }
 
 function Field({
@@ -133,5 +133,5 @@ function Field({
       />
       {hint && <span className="text-[0.6875rem] text-muted">{hint}</span>}
     </label>
-  )
+  );
 }

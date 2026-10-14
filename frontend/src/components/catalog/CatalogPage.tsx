@@ -2,15 +2,15 @@
  *  a listing of what it applies to, using the type's own list (cards, sorts,
  *  paging). Tabs choose which listing; all state stays in the address. */
 
-import Link from "next/link"
-import { ListFilter } from "lucide-react"
-import { asExpression } from "@/lib/conditions"
-import { one, type Params } from "@/lib/href"
-import { LIST } from "@/lib/list"
-import { fetchResults } from "@/lib/results"
-import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
-import { ResultsPanel } from "@/components/list/ResultsPanel"
-import { Tabs, type Tab } from "@/components/list/Tabs"
+import Link from 'next/link';
+import { ListFilter } from 'lucide-react';
+import { asExpression } from '@/lib/conditions';
+import { one, type Params } from '@/lib/href';
+import { LIST } from '@/lib/list';
+import { fetchResults } from '@/lib/results';
+import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
+import { ResultsPanel } from '@/components/list/ResultsPanel';
+import { Tabs, type Tab } from '@/components/list/Tabs';
 
 export async function CatalogPage({
   title,
@@ -22,32 +22,28 @@ export async function CatalogPage({
   params,
   empty,
 }: {
-  title: React.ReactNode
-  subtitle?: React.ReactNode
-  aside: React.ReactNode
-  action?: React.ReactNode
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  aside: React.ReactNode;
+  action?: React.ReactNode;
   /** At least one. The first is the default and is left out of the address. */
-  tabs: [Tab, ...Tab[]]
-  path: string
-  params: Params
-  empty?: React.ReactNode
+  tabs: [Tab, ...Tab[]];
+  path: string;
+  params: Params;
+  empty?: React.ReactNode;
 }) {
   // A tab with nothing behind it is left out; a page whose every tab is
   // empty keeps the first, to say so.
-  const offered = tabs.filter((t) => t.count > 0)
-  const shown = offered.length > 0 ? offered : [tabs[0]]
-  const wanted = one(params, "tab")
-  const active = shown.find((t) => t.value === wanted) ?? shown[0]
-  const data = await fetchResults(active.type, params, active.filters)
+  const offered = tabs.filter(t => t.count > 0);
+  const shown = offered.length > 0 ? offered : [tabs[0]];
+  const wanted = one(params, 'tab');
+  const active = shown.find(t => t.value === wanted) ?? shown[0];
+  const data = await fetchResults(active.type, params, active.filters);
 
   return (
     <DetailShell
       header={<DetailHeader title={title} subtitle={subtitle} action={action} />}
-      aside={
-        <>
-          {aside}
-        </>
-      }
+      aside={<>{aside}</>}
     >
       <div className="flex flex-wrap items-center gap-2">
         <Tabs path={path} params={params} tabs={shown} active={active.value} />
@@ -66,8 +62,8 @@ export async function CatalogPage({
         path={path}
         params={params}
         data={data}
-        empty={empty ?? "Nothing here yet."}
+        empty={empty ?? 'Nothing here yet.'}
       />
     </DetailShell>
-  )
+  );
 }

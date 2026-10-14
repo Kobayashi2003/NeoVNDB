@@ -4,22 +4,22 @@
  *  840 is measured: the worst case (a max-length username, view button and
  *  search control) leaves 11px spare. Re-measure before adding anything. It
  *  stays one row at every width, which `--header-h` relies on. */
-"use client"
+'use client';
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Search } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { LIST } from "@/lib/list"
-import { SHORT, TYPES } from "./shelves"
-import { BrowseMenu } from "./BrowseMenu"
-import { SearchField } from "./SearchField"
-import { ViewMenu } from "./ViewMenu"
-import { UserMenu } from "@/components/user/UserMenu"
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { LIST } from '@/lib/list';
+import { SHORT, TYPES } from './shelves';
+import { BrowseMenu } from './BrowseMenu';
+import { SearchField } from './SearchField';
+import { ViewMenu } from './ViewMenu';
+import { UserMenu } from '@/components/user/UserMenu';
 
 export function Header() {
-  const pathname = usePathname()
-  const here = /^\/([vrcpsgi])\d*$/.exec(pathname)?.[1]
+  const pathname = usePathname();
+  const here = /^\/([vrcpsgi])\d*$/.exec(pathname)?.[1];
 
   return (
     <header className="sticky top-0 z-40 h-(--header-h) shrink-0 border-b border-white/10 bg-background/80 backdrop-blur-md">
@@ -37,17 +37,17 @@ export function Header() {
           aria-label="Browse"
           className="hidden min-w-0 flex-1 items-center gap-1 min-[840px]:flex"
         >
-          {TYPES.map((type) => (
+          {TYPES.map(type => (
             <Link
               key={type}
               href={`/${type}`}
-              aria-current={type === here ? "page" : undefined}
+              aria-current={type === here ? 'page' : undefined}
               title={LIST[type].label}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors',
                 type === here
-                  ? "bg-white/15 text-white"
-                  : "text-muted hover:bg-white/10 hover:text-white",
+                  ? 'bg-white/15 text-white'
+                  : 'text-muted hover:bg-white/10 hover:text-white',
               )}
             >
               {SHORT[type]}
@@ -73,5 +73,5 @@ export function Header() {
         <UserMenu />
       </div>
     </header>
-  )
+  );
 }

@@ -1,29 +1,29 @@
 /** The card surface every sidebar panel sits on, and the rows that go in it. */
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 /** `padding="rows"` suits a stack of InfoRows, which carry their own vertical
  *  padding; `"block"` suits free-form content. */
 export function InfoCard({
-  padding = "rows",
+  padding = 'rows',
   className,
   children,
 }: {
-  padding?: "rows" | "block"
-  className?: string
-  children: React.ReactNode
+  padding?: 'rows' | 'block';
+  className?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-white/5 bg-surface",
-        padding === "rows" ? "px-3 py-1" : "px-3 py-2",
+        'rounded-lg border border-white/5 bg-surface',
+        padding === 'rows' ? 'px-3 py-1' : 'px-3 py-2',
         className,
       )}
     >
       {children}
     </div>
-  )
+  );
 }
 
 /** An InfoCard with the standard mini heading. */
@@ -32,9 +32,9 @@ export function TitledCard({
   action,
   children,
 }: {
-  title: string
-  action?: React.ReactNode
-  children: React.ReactNode
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <InfoCard padding="block">
@@ -44,7 +44,7 @@ export function TitledCard({
       </div>
       {children}
     </InfoCard>
-  )
+  );
 }
 
 /** A label and its value: stacked below sm, side by side from sm up.
@@ -55,17 +55,17 @@ export function InfoRow({ label, children }: { label: string; children: React.Re
       <span className="shrink-0 pt-0.5 text-xs text-muted sm:w-24">{label}</span>
       <div className="flex min-w-0 flex-1 flex-wrap gap-1 text-xs text-white/90">{children}</div>
     </div>
-  )
+  );
 }
 
 /** Values joined by a separator dimmer than the values themselves, which is
  *  how a multi-value field reads without giving each one a box. */
 export function InlineList({
   items,
-  separator = ", ",
+  separator = ', ',
 }: {
-  items: React.ReactNode[]
-  separator?: string
+  items: React.ReactNode[];
+  separator?: string;
 }) {
   return (
     <span>
@@ -76,5 +76,5 @@ export function InlineList({
         </span>
       ))}
     </span>
-  )
+  );
 }

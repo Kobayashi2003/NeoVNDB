@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react"
+import { ChevronRight } from 'lucide-react';
 
 /** A main-column heading. The short accent tick anchors it and lifts it off
  *  the body without the weight of a full divider. */
@@ -9,12 +9,12 @@ export function Section({
   onTitleClick,
   children,
 }: {
-  title: string
-  count?: number
-  action?: React.ReactNode
+  title: string;
+  count?: number;
+  action?: React.ReactNode;
   /** When set the heading becomes a button, with a chevron to say so. */
-  onTitleClick?: () => void
-  children: React.ReactNode
+  onTitleClick?: () => void;
+  children: React.ReactNode;
 }) {
   const heading = (
     <>
@@ -29,7 +29,7 @@ export function Section({
         />
       )}
     </>
-  )
+  );
 
   return (
     <section>
@@ -50,5 +50,5 @@ export function Section({
       </h2>
       {children}
     </section>
-  )
+  );
 }

@@ -1,12 +1,12 @@
 /** A collection's bulk actions -- move and remove -- in the shared ActionBar. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Check, FolderInput, Loader2, Trash2, X } from "lucide-react"
-import { MenuLabel, MenuPanel, menuItem } from "@/components/ui/Menu"
-import type { Collection } from "@/lib/user"
-import { ActionBar } from "@/components/ui/Selection"
-import { useMenu } from "@/hooks/useMenu"
+import { useState } from 'react';
+import { Check, FolderInput, Loader2, Trash2, X } from 'lucide-react';
+import { MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
+import type { Collection } from '@/lib/user';
+import { ActionBar } from '@/components/ui/Selection';
+import { useMenu } from '@/hooks/useMenu';
 
 export function SelectBar({
   chosen,
@@ -20,21 +20,21 @@ export function SelectBar({
   onRemove,
   onClose,
 }: {
-  chosen: number
-  pageSize: number
-  allOnPage: boolean
+  chosen: number;
+  pageSize: number;
+  allOnPage: boolean;
   /** Where a move could go: the reader's other lists of this same kind. */
-  lists: Collection[]
-  busy: boolean
-  error: string | null
-  onAll: () => void
-  onMove: (to: number) => void
-  onRemove: () => void
-  onClose: () => void
+  lists: Collection[];
+  busy: boolean;
+  error: string | null;
+  onAll: () => void;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+  onClose: () => void;
 }) {
-  const [picking, setPicking] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const { box, panel: menu } = useMenu(picking, setPicking)
+  const [picking, setPicking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const { box, panel: menu } = useMenu(picking, setPicking);
 
   return (
     <ActionBar
@@ -48,10 +48,10 @@ export function SelectBar({
       <div ref={box} className="relative">
         <button
           type="button"
-          onClick={() => setPicking((o) => !o)}
+          onClick={() => setPicking(o => !o)}
           disabled={chosen === 0 || busy || lists.length === 0}
           aria-expanded={picking}
-          title={lists.length === 0 ? "No other list of this kind" : "Move to another list"}
+          title={lists.length === 0 ? 'No other list of this kind' : 'Move to another list'}
           className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
         >
           <FolderInput className="icon-text h-4 w-4 shrink-0" aria-hidden />
@@ -62,13 +62,13 @@ export function SelectBar({
           // Upward: the bar sits at the foot of the screen.
           <MenuPanel ref={menu} above scroll>
             <MenuLabel>Move to</MenuLabel>
-            {lists.map((list) => (
+            {lists.map(list => (
               <button
                 key={list.id}
                 type="button"
                 onClick={() => {
-                  setPicking(false)
-                  onMove(list.id)
+                  setPicking(false);
+                  onMove(list.id);
                 }}
                 className={menuItem()}
               >
@@ -88,8 +88,8 @@ export function SelectBar({
           <button
             type="button"
             onClick={() => {
-              setConfirming(false)
-              onRemove()
+              setConfirming(false);
+              onRemove();
             }}
             disabled={busy}
             aria-label="Yes, remove them"
@@ -123,5 +123,5 @@ export function SelectBar({
         </button>
       )}
     </ActionBar>
-  )
+  );
 }

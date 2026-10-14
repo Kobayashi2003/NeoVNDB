@@ -1,18 +1,18 @@
 /** The instance group: one recurring character as several entries, linked
  *  to a parent through chars.main (one direction only, so the group is read
  *  from the parent). Each link carries its own spoiler level. */
-"use client"
+'use client';
 
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { thumbnailURL } from "@/lib/images"
-import { display } from "@/lib/format"
-import { shouldBlur } from "@/lib/content"
-import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
-import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
-import { usePrefs } from "@/hooks/usePrefs"
-import type { SpoilerControl } from "@/hooks/useSpoilerLevel"
-import type { Instance } from "@/lib/types"
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { thumbnailURL } from '@/lib/images';
+import { display } from '@/lib/format';
+import { shouldBlur } from '@/lib/content';
+import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
+import { SpoilerReveals } from '@/components/ui/SpoilerReveals';
+import { usePrefs } from '@/hooks/usePrefs';
+import type { SpoilerControl } from '@/hooks/useSpoilerLevel';
+import type { Instance } from '@/lib/types';
 
 export function CharacterInstances({
   parent,
@@ -21,20 +21,20 @@ export function CharacterInstances({
   spoiler,
 }: {
   /** The character at the top of the group, when this page is not it. */
-  parent: Instance | null
-  instances: Instance[]
-  currentId: string
-  spoiler: SpoilerControl
+  parent: Instance | null;
+  instances: Instance[];
+  currentId: string;
+  spoiler: SpoilerControl;
 }) {
-  const shown = instances.filter((c) => c.spoiler <= spoiler.level)
-  const hiddenMinor = instances.filter((c) => c.spoiler === 1 && spoiler.level < 1).length
-  const hiddenMajor = instances.filter((c) => c.spoiler === 2 && spoiler.level < 2).length
+  const shown = instances.filter(c => c.spoiler <= spoiler.level);
+  const hiddenMinor = instances.filter(c => c.spoiler === 1 && spoiler.level < 1).length;
+  const hiddenMajor = instances.filter(c => c.spoiler === 2 && spoiler.level < 2).length;
 
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
         {parent && <InstanceTile character={parent} currentId={currentId} isParent />}
-        {shown.map((c) => (
+        {shown.map(c => (
           <InstanceTile key={c.id} character={c} currentId={currentId} />
         ))}
       </div>
@@ -51,7 +51,7 @@ export function CharacterInstances({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function InstanceTile({
@@ -59,15 +59,15 @@ function InstanceTile({
   currentId,
   isParent,
 }: {
-  character: Instance
-  currentId: string
-  isParent?: boolean
+  character: Instance;
+  currentId: string;
+  isParent?: boolean;
 }) {
-  const { original, sexual, violence } = usePrefs()
-  const here = character.id === currentId
+  const { original, sexual, violence } = usePrefs();
+  const here = character.id === currentId;
   const blur =
     !!character.image &&
-    shouldBlur(character.image.sexual, character.image.violence, sexual, violence)
+    shouldBlur(character.image.sexual, character.image.violence, sexual, violence);
 
   const body = (
     <>
@@ -80,14 +80,12 @@ function InstanceTile({
             height={character.image.dims[1]}
             wrapperClassName="h-full w-full"
             className={cn(
-              "h-full w-full object-cover object-top transition-[filter] duration-300",
-              blur && "scale-105 blur-xl",
+              'h-full w-full object-cover object-top transition-[filter] duration-300',
+              blur && 'scale-105 blur-xl',
             )}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted">
-            No image
-          </div>
+          <div className="flex h-full items-center justify-center text-xs text-muted">No image</div>
         )}
       </div>
       <div className="flex flex-col gap-0.5 p-2">
@@ -95,30 +93,36 @@ function InstanceTile({
           {display(character.name, character.original, original)}
         </p>
         {(isParent || here) && (
-          <p className="text-xs text-muted">{here ? "This page" : "The original"}</p>
+          <p className="text-xs text-muted">{here ? 'This page' : 'The original'}</p>
         )}
       </div>
     </>
-  )
+  );
 
   const frame = cn(
-    "flex h-full flex-col overflow-hidden rounded-lg border bg-surface",
+    'flex h-full flex-col overflow-hidden rounded-lg border bg-surface',
     here
-      ? "border-accent/50"
+      ? 'border-accent/50'
       : character.spoiler === 2
-        ? "border-orange-500/50"
+        ? 'border-orange-500/50'
         : character.spoiler === 1
-          ? "border-yellow-500/40"
-          : "border-white/5",
-  )
+          ? 'border-yellow-500/40'
+          : 'border-white/5',
+  );
 
   // The entry the reader is already on is shown for context, not as a way back
   // to itself.
-  if (here) return <div className={frame}>{body}</div>
+  if (here) return <div className={frame}>{body}</div>;
 
   return (
-    <Link href={`/${character.id}`} className={cn(frame, "transition-transform duration-200 hover:scale-[1.02] hover:border-white/20")}>
+    <Link
+      href={`/${character.id}`}
+      className={cn(
+        frame,
+        'transition-transform duration-200 hover:scale-[1.02] hover:border-white/20',
+      )}
+    >
       {body}
     </Link>
-  )
+  );
 }

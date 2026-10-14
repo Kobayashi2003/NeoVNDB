@@ -1,9 +1,9 @@
 /** Rating several at once: one rating for all of them, or none. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Check, Loader2, Star, StarOff, X } from "lucide-react"
-import { ActionBar } from "@/components/ui/Selection"
+import { useState } from 'react';
+import { Check, Loader2, Star, StarOff, X } from 'lucide-react';
+import { ActionBar } from '@/components/ui/Selection';
 
 export function RatingsBar({
   chosen,
@@ -16,17 +16,17 @@ export function RatingsBar({
   onClear,
   onClose,
 }: {
-  chosen: number
-  pageSize: number
-  allOnPage: boolean
-  busy: boolean
-  error: string | null
-  onAll: () => void
-  onRate: (value: number) => void
-  onClear: () => void
-  onClose: () => void
+  chosen: number;
+  pageSize: number;
+  allOnPage: boolean;
+  busy: boolean;
+  error: string | null;
+  onAll: () => void;
+  onRate: (value: number) => void;
+  onClear: () => void;
+  onClose: () => void;
 }) {
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <ActionBar
@@ -41,7 +41,7 @@ export function RatingsBar({
           fit a phone's width beside the rest of the bar. */}
       <div className="flex items-center text-amber-300" role="group" aria-label="Rate them">
         <Star className="mx-1 h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
-        {[1, 2, 3, 4, 5].map((n) => (
+        {[1, 2, 3, 4, 5].map(n => (
           <button
             key={n}
             type="button"
@@ -61,14 +61,18 @@ export function RatingsBar({
           <button
             type="button"
             onClick={() => {
-              setConfirming(false)
-              onClear()
+              setConfirming(false);
+              onClear();
             }}
             disabled={busy}
             aria-label="Yes, clear their ratings"
             className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Check className="h-4 w-4" aria-hidden />
+            )}
           </button>
           <button
             type="button"
@@ -92,5 +96,5 @@ export function RatingsBar({
         </button>
       )}
     </ActionBar>
-  )
+  );
 }

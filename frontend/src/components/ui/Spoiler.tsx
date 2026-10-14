@@ -6,23 +6,29 @@
  *  and one clicked open closes again as soon as the control changes -- the
  *  control is the reader's last word on what they want to see. Outside any
  *  scope, a click is the only control there is. */
-"use client"
+'use client';
 
-import { createContext, useContext, useState } from "react"
-import type { SpoilerLevel } from "@/lib/content"
+import { createContext, useContext, useState } from 'react';
+import type { SpoilerLevel } from '@/lib/content';
 
-const Level = createContext<SpoilerLevel | null>(null)
+const Level = createContext<SpoilerLevel | null>(null);
 
-export function SpoilerScope({ level, children }: { level: SpoilerLevel; children: React.ReactNode }) {
-  return <Level.Provider value={level}>{children}</Level.Provider>
+export function SpoilerScope({
+  level,
+  children,
+}: {
+  level: SpoilerLevel;
+  children: React.ReactNode;
+}) {
+  return <Level.Provider value={level}>{children}</Level.Provider>;
 }
 
 export function Spoiler({ children }: { children: React.ReactNode }) {
-  const level = useContext(Level)
+  const level = useContext(Level);
   // The level it was opened at: a change of level is a new decision.
-  const [openedAt, setOpenedAt] = useState<SpoilerLevel | -1 | null>(null)
-  const shown = level === 2 || (openedAt !== null && openedAt === (level ?? -1))
-  if (shown) return <span>{children}</span>
+  const [openedAt, setOpenedAt] = useState<SpoilerLevel | -1 | null>(null);
+  const shown = level === 2 || (openedAt !== null && openedAt === (level ?? -1));
+  if (shown) return <span>{children}</span>;
 
   return (
     <button
@@ -34,5 +40,5 @@ export function Spoiler({ children }: { children: React.ReactNode }) {
     >
       {children}
     </button>
-  )
+  );
 }

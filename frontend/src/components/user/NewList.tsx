@@ -1,38 +1,38 @@
 /** "New list" at the foot of a save menu: it becomes a name field, and
  *  `onCreate` makes the list and saves into it. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Check, Loader2, Plus, X } from "lucide-react"
-import { MenuDivider, menuItem } from "@/components/ui/Menu"
-import { errorText, RULES } from "@/lib/user"
+import { useState } from 'react';
+import { Check, Loader2, Plus, X } from 'lucide-react';
+import { MenuDivider, menuItem } from '@/components/ui/Menu';
+import { errorText, RULES } from '@/lib/user';
 
 export function NewList({
   onCreate,
   onError,
 }: {
-  onCreate: (name: string) => Promise<void>
-  onError: (message: string | null) => void
+  onCreate: (name: string) => Promise<void>;
+  onError: (message: string | null) => void;
 }) {
-  const [naming, setNaming] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [naming, setNaming] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const name = String(new FormData(form).get("name") ?? "").trim()
-    if (!name) return
+    e.preventDefault();
+    const form = e.currentTarget;
+    const name = String(new FormData(form).get('name') ?? '').trim();
+    if (!name) return;
 
-    setBusy(true)
-    onError(null)
+    setBusy(true);
+    onError(null);
     try {
-      await onCreate(name)
-      form.reset()
-      setNaming(false)
+      await onCreate(name);
+      form.reset();
+      setNaming(false);
     } catch (err) {
-      onError(errorText(err))
+      onError(errorText(err));
     }
-    setBusy(false)
+    setBusy(false);
   }
 
   if (!naming) {
@@ -42,13 +42,13 @@ export function NewList({
         <button
           type="button"
           onClick={() => setNaming(true)}
-          className={menuItem({ className: "text-muted" })}
+          className={menuItem({ className: 'text-muted' })}
         >
           <Plus className="icon-text size-3.5 shrink-0" aria-hidden />
           New list
         </button>
       </>
-    )
+    );
   }
 
   return (
@@ -80,8 +80,8 @@ export function NewList({
         <button
           type="button"
           onClick={() => {
-            setNaming(false)
-            onError(null)
+            setNaming(false);
+            onError(null);
           }}
           aria-label="Cancel"
           className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-white/10 hover:text-white"
@@ -90,5 +90,5 @@ export function NewList({
         </button>
       </form>
     </>
-  )
+  );
 }

@@ -1,47 +1,47 @@
 /** A character grid tile. Portraits are cropped to vndb's most common ratio
  *  so the grid stays uniform; the card shows them whole. */
-"use client"
+'use client';
 
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { thumbnailURL } from "@/lib/images"
-import { iconOf } from "@/lib/icons"
-import { CHARACTER_ROLE_TEXT, enumLabel } from "@/lib/enums"
-import { readSex } from "@/lib/characters"
-import { display } from "@/lib/format"
-import { shouldBlur } from "@/lib/content"
-import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
-import { Tooltip } from "@/components/ui/Tooltip"
-import { usePrefs } from "@/hooks/usePrefs"
-import { SexLine } from "@/components/character/SexLine"
-import type { Character } from "@/lib/types"
-import { Name } from "@/components/ui/Name"
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { thumbnailURL } from '@/lib/images';
+import { iconOf } from '@/lib/icons';
+import { CHARACTER_ROLE_TEXT, enumLabel } from '@/lib/enums';
+import { readSex } from '@/lib/characters';
+import { display } from '@/lib/format';
+import { shouldBlur } from '@/lib/content';
+import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { usePrefs } from '@/hooks/usePrefs';
+import { SexLine } from '@/components/character/SexLine';
+import type { Character } from '@/lib/types';
+import { Name } from '@/components/ui/Name';
 
 export function VNCharacterTile({
   character,
   spoilerLevel,
 }: {
-  character: Character
-  spoilerLevel: number
+  character: Character;
+  spoilerLevel: number;
 }) {
-  const { original, sexual, violence } = usePrefs()
+  const { original, sexual, violence } = usePrefs();
   const blur =
     !!character.image &&
-    shouldBlur(character.image.sexual, character.image.violence, sexual, violence)
-  const sex = readSex(character.sex, character.spoil_sex, spoilerLevel)
+    shouldBlur(character.image.sexual, character.image.violence, sexual, violence);
+  const sex = readSex(character.sex, character.spoil_sex, spoilerLevel);
 
   return (
     <Link href={`/${character.id}`} className="group block h-full">
       <div
         className={cn(
-          "flex h-full flex-col overflow-hidden rounded-lg border bg-surface transition-transform duration-200 hover:scale-[1.02]",
+          'flex h-full flex-col overflow-hidden rounded-lg border bg-surface transition-transform duration-200 hover:scale-[1.02]',
           // The edge carries the character's own spoiler weight, so a revealed
           // one stands apart from the characters that were always shown.
           character.spoiler === 2
-            ? "border-orange-500/50 hover:border-orange-500/70"
+            ? 'border-orange-500/50 hover:border-orange-500/70'
             : character.spoiler === 1
-              ? "border-yellow-500/40 hover:border-yellow-500/60"
-              : "border-white/5 hover:border-white/20",
+              ? 'border-yellow-500/40 hover:border-yellow-500/60'
+              : 'border-white/5 hover:border-white/20',
         )}
       >
         <div className="relative aspect-[17/20] w-full shrink-0 overflow-hidden bg-elevated">
@@ -53,8 +53,8 @@ export function VNCharacterTile({
               height={character.image.dims[1]}
               wrapperClassName="h-full w-full"
               className={cn(
-                "h-full w-full object-cover object-top transition-[filter] duration-300",
-                blur && "scale-105 blur-xl",
+                'h-full w-full object-cover object-top transition-[filter] duration-300',
+                blur && 'scale-105 blur-xl',
               )}
             />
           ) : (
@@ -64,11 +64,11 @@ export function VNCharacterTile({
           )}
           <span
             className={cn(
-              "absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 to-transparent px-2 py-1.5 text-xs",
-              CHARACTER_ROLE_TEXT[character.role] ?? "text-white/70",
+              'absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 to-transparent px-2 py-1.5 text-xs',
+              CHARACTER_ROLE_TEXT[character.role] ?? 'text-white/70',
             )}
           >
-            {enumLabel("CHARACTER_ROLE", character.role)}
+            {enumLabel('CHARACTER_ROLE', character.role)}
           </span>
         </div>
 
@@ -80,7 +80,7 @@ export function VNCharacterTile({
           {sex && (
             <SexLine
               reading={sex}
-              icon={iconOf("CHARACTER_SEX", sex.code)}
+              icon={iconOf('CHARACTER_SEX', sex.code)}
               className="text-xs text-muted/80"
             />
           )}
@@ -91,7 +91,7 @@ export function VNCharacterTile({
               {character.seiyuu.map((s, i) => (
                 <Tooltip key={`${s.id}-${i}`} label={s.note}>
                   <span>
-                    {i > 0 && ", "}
+                    {i > 0 && ', '}
                     <Name name={s.name} original={s.original} />
                   </span>
                 </Tooltip>
@@ -101,5 +101,5 @@ export function VNCharacterTile({
         </div>
       </div>
     </Link>
-  )
+  );
 }

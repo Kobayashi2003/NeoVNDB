@@ -2,32 +2,26 @@
  *  voiced, as two tabs (separate tables upstream). Aliases get their own card, since credits elsewhere show the
  *  alias used; the person's own name is marked. */
 
-import { iconOf } from "@/lib/icons"
-import { enumLabel } from "@/lib/enums"
-import { BBCode } from "@/lib/bbcode"
-import { cn } from "@/lib/utils"
-import type { Params } from "@/lib/href"
-import { countOf } from "@/lib/results"
-import { Collapsible } from "@/components/ui/Collapsible"
-import { Icon } from "@/components/ui/Icon"
-import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
-import { Name } from "@/components/ui/Name"
-import { DetailControls } from "@/components/ui/DetailControls"
-import { CatalogPage } from "./CatalogPage"
-import type { StaffDetail } from "@/lib/types"
+import { iconOf } from '@/lib/icons';
+import { enumLabel } from '@/lib/enums';
+import { BBCode } from '@/lib/bbcode';
+import { cn } from '@/lib/utils';
+import type { Params } from '@/lib/href';
+import { countOf } from '@/lib/results';
+import { Collapsible } from '@/components/ui/Collapsible';
+import { Icon } from '@/components/ui/Icon';
+import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
+import { Name } from '@/components/ui/Name';
+import { DetailControls } from '@/components/ui/DetailControls';
+import { CatalogPage } from './CatalogPage';
+import type { StaffDetail } from '@/lib/types';
 
-export async function StaffPage({
-  staff: s,
-  params,
-}: {
-  staff: StaffDetail
-  params: Params
-}) {
-  const path = `/${s.id}`
+export async function StaffPage({ staff: s, params }: { staff: StaffDetail; params: Params }) {
+  const path = `/${s.id}`;
   const [credited, voiced] = await Promise.all([
-    countOf("v", { staff: s.id }),
-    countOf("c", { seiyuu: s.id }),
-  ])
+    countOf('v', { staff: s.id }),
+    countOf('c', { seiyuu: s.id }),
+  ]);
 
   return (
     <CatalogPage
@@ -37,21 +31,36 @@ export async function StaffPage({
       params={params}
       empty="No works are credited to this person."
       tabs={[
-        { value: "credited", label: "Credited on", count: credited, type: "v", filters: { staff: s.id } },
-        { value: "voiced", label: "Voiced characters", count: voiced, type: "c", filters: { seiyuu: s.id } },
+        {
+          value: 'credited',
+          label: 'Credited on',
+          count: credited,
+          type: 'v',
+          filters: { staff: s.id },
+        },
+        {
+          value: 'voiced',
+          label: 'Voiced characters',
+          count: voiced,
+          type: 'c',
+          filters: { seiyuu: s.id },
+        },
       ]}
       action={<DetailControls id={s.id} />}
       aside={
         <>
           <InfoCard>
             <InfoRow label="Language">
-              <Icon cls={iconOf("LANGUAGE", s.lang)} title={enumLabel("LANGUAGE", s.lang)} />
-              <span>{enumLabel("LANGUAGE", s.lang)}</span>
+              <Icon cls={iconOf('LANGUAGE', s.lang)} title={enumLabel('LANGUAGE', s.lang)} />
+              <span>{enumLabel('LANGUAGE', s.lang)}</span>
             </InfoRow>
             {s.gender && (
               <InfoRow label="Gender">
-                <Icon cls={iconOf("CHARACTER_SEX", s.gender)} title={enumLabel("GENDER", s.gender)} />
-                <span>{enumLabel("GENDER", s.gender)}</span>
+                <Icon
+                  cls={iconOf('CHARACTER_SEX', s.gender)}
+                  title={enumLabel('GENDER', s.gender)}
+                />
+                <span>{enumLabel('GENDER', s.gender)}</span>
               </InfoRow>
             )}
           </InfoCard>
@@ -67,10 +76,10 @@ export async function StaffPage({
           {s.aliases.length > 1 && (
             <TitledCard title="Names">
               <div className="flex flex-col gap-1 text-xs">
-                {s.aliases.map((a) => (
+                {s.aliases.map(a => (
                   <span
                     key={a.aid}
-                    className={cn("truncate", a.ismain ? "text-white/90" : "text-muted")}
+                    className={cn('truncate', a.ismain ? 'text-white/90' : 'text-muted')}
                   >
                     <Name name={a.name} original={a.original} />
                     {a.ismain && <span className="ml-1.5 text-muted">(own name)</span>}
@@ -99,5 +108,5 @@ export async function StaffPage({
         </>
       }
     />
-  )
+  );
 }

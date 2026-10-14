@@ -2,26 +2,25 @@
  *  five-page window so the control keeps its width; a gap opens a box for
  *  any other page. */
 
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { withParams, type Params } from "@/lib/href"
-import { PageJump } from "./PageJump"
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { withParams, type Params } from '@/lib/href';
+import { PageJump } from './PageJump';
 
-const STEP =
-  "flex h-8 min-w-8 items-center justify-center rounded px-2 text-xs transition-colors"
+const STEP = 'flex h-8 min-w-8 items-center justify-center rounded px-2 text-xs transition-colors';
 
 /** The page numbers to draw: a window around the current page, plus both ends,
  *  with gaps marked. */
-function window(current: number, last: number): (number | "gap")[] {
-  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+function window(current: number, last: number): (number | 'gap')[] {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
 
-  const near = [current - 1, current, current + 1].filter((n) => n > 1 && n < last)
-  const out: (number | "gap")[] = [1]
-  if (near[0] > 2) out.push("gap")
-  out.push(...near)
-  if (near[near.length - 1] < last - 1) out.push("gap")
-  out.push(last)
-  return out
+  const near = [current - 1, current, current + 1].filter(n => n > 1 && n < last);
+  const out: (number | 'gap')[] = [1];
+  if (near[0] > 2) out.push('gap');
+  out.push(...near);
+  if (near[near.length - 1] < last - 1) out.push('gap');
+  out.push(last);
+  return out;
 }
 
 export function Pagination({
@@ -31,17 +30,17 @@ export function Pagination({
   count,
   pageSize,
 }: {
-  path: string
-  params: Params
-  page: number
-  count: number
-  pageSize: number
+  path: string;
+  params: Params;
+  page: number;
+  count: number;
+  pageSize: number;
 }) {
-  const last = Math.max(1, Math.ceil(count / pageSize))
-  if (last <= 1) return null
+  const last = Math.max(1, Math.ceil(count / pageSize));
+  if (last <= 1) return null;
 
-  const at = Math.min(page, last)
-  const href = (n: number) => withParams(path, params, { page: n === 1 ? null : n })
+  const at = Math.min(page, last);
+  const href = (n: number) => withParams(path, params, { page: n === 1 ? null : n });
 
   return (
     <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Pages">
@@ -50,19 +49,19 @@ export function Pagination({
       </Step>
 
       {window(at, last).map((n, i) =>
-        n === "gap" ? (
+        n === 'gap' ? (
           <PageJump key={`gap-${i}`} path={path} params={params} last={last} className={STEP} />
         ) : (
           <Link
             key={n}
             href={href(n)}
-            aria-current={n === at ? "page" : undefined}
+            aria-current={n === at ? 'page' : undefined}
             className={cn(
               STEP,
-              "tabular-nums",
+              'tabular-nums',
               n === at
-                ? "bg-accent font-medium text-black"
-                : "text-muted hover:bg-white/10 hover:text-white",
+                ? 'bg-accent font-medium text-black'
+                : 'text-muted hover:bg-white/10 hover:text-white',
             )}
           >
             {n}
@@ -74,7 +73,7 @@ export function Pagination({
         &rsaquo;
       </Step>
     </nav>
-  )
+  );
 }
 
 function Step({
@@ -83,21 +82,25 @@ function Step({
   label,
   children,
 }: {
-  href: string
-  disabled: boolean
-  label: string
-  children: React.ReactNode
+  href: string;
+  disabled: boolean;
+  label: string;
+  children: React.ReactNode;
 }) {
   if (disabled) {
     return (
-      <span aria-hidden className={cn(STEP, "cursor-not-allowed text-muted/30")}>
+      <span aria-hidden className={cn(STEP, 'cursor-not-allowed text-muted/30')}>
         {children}
       </span>
-    )
+    );
   }
   return (
-    <Link href={href} aria-label={label} className={cn(STEP, "text-muted hover:bg-white/10 hover:text-white")}>
+    <Link
+      href={href}
+      aria-label={label}
+      className={cn(STEP, 'text-muted hover:bg-white/10 hover:text-white')}
+    >
       {children}
     </Link>
-  )
+  );
 }

@@ -3,17 +3,17 @@
  *  Not found and gone wrong are the same page with different words, so they
  *  are the same component: a heading, a sentence a reader can act on, and a
  *  way out that is never the back button. */
-import Link from "next/link"
+import Link from 'next/link';
 
 export function Trouble({
   title,
   children,
   action,
 }: {
-  title: string
-  children: React.ReactNode
+  title: string;
+  children: React.ReactNode;
   /** Offered before the links home, where there is something to try. */
-  action?: React.ReactNode
+  action?: React.ReactNode;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-page flex-col px-4 py-16 animate-slide-up-fade">
@@ -31,5 +31,5 @@ export function Trouble({
         </div>
       </div>
     </main>
-  )
+  );
 }

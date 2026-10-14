@@ -2,9 +2,9 @@
  *  here is left as written -- showing the markup is better than swallowing the
  *  text around it. */
 
-import { Fragment } from "react"
-import Link from "next/link"
-import { Spoiler } from "@/components/ui/Spoiler"
+import { Fragment } from 'react';
+import Link from 'next/link';
+import { Spoiler } from '@/components/ui/Spoiler';
 
 /** [raw] and [code] come first: what they contain is not markup, so the
  *  scanner must consume them whole before anything inside can match. */
@@ -18,76 +18,83 @@ const TOKEN = new RegExp(
     String.raw`\[(?<tag>b|i|u|s)\]([\s\S]*?)\[\/\k<tag>\]`,
     // A bare id such as v17 or c521; vndb links these wherever they appear.
     String.raw`\b([vrcpsgi]\d+)\b`,
-  ].join("|"),
-  "g",
-)
+  ].join('|'),
+  'g',
+);
 
 /** Web addresses and paths on this site; anything else (javascript:, data:)
  *  stays as its label. */
-const LINKABLE = /^(https?:\/\/|\/(?!\/))/i
+const LINKABLE = /^(https?:\/\/|\/(?!\/))/i;
 
 const EMPHASIS: Record<string, string> = {
-  b: "font-semibold",
-  i: "italic",
-  u: "underline",
-  s: "line-through",
-}
+  b: 'font-semibold',
+  i: 'italic',
+  u: 'underline',
+  s: 'line-through',
+};
 
 export function BBCode({ text }: { text: string }) {
-  return <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/90">{render(text)}</div>
+  return (
+    <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/90">{render(text)}</div>
+  );
 }
 
 /** Nested markup renders inline, inside its parent's element. */
 function render(text: string): React.ReactNode[] {
-  const out: React.ReactNode[] = []
-  let last = 0
+  const out: React.ReactNode[] = [];
+  let last = 0;
 
   for (const m of text.matchAll(TOKEN)) {
-    const [whole, raw, code, quote, spoiler, href, label, tag, emphasised, id] = m
-    if (m.index > last) out.push(text.slice(last, m.index))
-    last = m.index + whole.length
-    const key = last
+    const [whole, raw, code, quote, spoiler, href, label, tag, emphasised, id] = m;
+    if (m.index > last) out.push(text.slice(last, m.index));
+    last = m.index + whole.length;
+    const key = last;
 
     if (raw !== undefined) {
-      out.push(raw)
+      out.push(raw);
     } else if (code !== undefined) {
       out.push(
         <code key={key} className="rounded bg-white/10 px-1 text-xs">
           {code}
         </code>,
-      )
+      );
     } else if (quote !== undefined) {
       out.push(
         <blockquote key={key} className="my-2 border-l-2 border-accent/40 pl-3 text-muted">
           {render(quote)}
         </blockquote>,
-      )
+      );
     } else if (spoiler !== undefined) {
-      out.push(<Spoiler key={key}>{spoiler}</Spoiler>)
+      out.push(<Spoiler key={key}>{spoiler}</Spoiler>);
     } else if (href !== undefined && !LINKABLE.test(href)) {
-      out.push(<Fragment key={key}>{render(label)}</Fragment>)
+      out.push(<Fragment key={key}>{render(label)}</Fragment>);
     } else if (href !== undefined) {
       out.push(
-        <a key={key} href={href} rel="noreferrer noopener" className="text-accent hover:text-accent-hover">
+        <a
+          key={key}
+          href={href}
+          rel="noreferrer noopener"
+          className="text-accent hover:text-accent-hover"
+        >
           {label}
         </a>,
-      )
+      );
     } else if (tag !== undefined) {
       out.push(
         <span key={key} className={EMPHASIS[tag]}>
           {render(emphasised)}
         </span>,
-      )
+      );
     } else if (id !== undefined) {
       out.push(
         <Link key={key} href={`/${id}`} className="text-accent hover:text-accent-hover">
           {id}
         </Link>,
-      )
+      );
     }
   }
-  out.push(text.slice(last))
-  return out
+  out.push(text.slice(last));
+  return out;
 }
 
 /** The same text with its markup taken off, for somewhere a link cannot go.
@@ -97,8 +104,8 @@ function render(text: string): React.ReactNode[] {
  *  answer there: the full text is one click away with its markup intact. */
 export function plain(text: string): string {
   return text
-    .replace(/\[url=[^\]]+\]([\s\S]*?)\[\/url\]/g, "$1")
-    .replace(/\[\/?(?:b|i|u|s|spoiler|quote|code|raw)\]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
+    .replace(/\[url=[^\]]+\]([\s\S]*?)\[\/url\]/g, '$1')
+    .replace(/\[\/?(?:b|i|u|s|spoiler|quote|code|raw)\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

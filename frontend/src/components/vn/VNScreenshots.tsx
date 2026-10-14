@@ -1,45 +1,45 @@
 /** Screenshots grouped by the release they came from, opening into one viewer
  *  that walks the whole set rather than the group. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import { ImageWithFallback } from "@/components/ui/ImageWithFallback"
-import { Lightbox, type LightboxImage } from "@/components/ui/Lightbox"
-import { shouldBlur } from "@/lib/content"
-import { display } from "@/lib/format"
-import { imageURL } from "@/lib/images"
-import { usePrefs } from "@/hooks/usePrefs"
-import type { Release, Screenshot } from "@/lib/types"
+import { useState } from 'react';
+import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
+import { Lightbox, type LightboxImage } from '@/components/ui/Lightbox';
+import { shouldBlur } from '@/lib/content';
+import { display } from '@/lib/format';
+import { imageURL } from '@/lib/images';
+import { usePrefs } from '@/hooks/usePrefs';
+import type { Release, Screenshot } from '@/lib/types';
 
 export function VNScreenshots({
   screenshots,
   releases,
 }: {
-  screenshots: Screenshot[]
-  releases: Release[]
+  screenshots: Screenshot[];
+  releases: Release[];
 }) {
-  const { sexual, violence, original } = usePrefs()
-  const [open, setOpen] = useState<number | null>(null)
+  const { sexual, violence, original } = usePrefs();
+  const [open, setOpen] = useState<number | null>(null);
 
   const titleOf = (id: string | null) => {
-    const r = releases.find((r) => r.id === id)
-    return r ? display(r.title, r.alttitle, original) || null : null
-  }
+    const r = releases.find(r => r.id === id);
+    return r ? display(r.title, r.alttitle, original) || null : null;
+  };
 
-  const images: LightboxImage[] = screenshots.map((s) => ({
+  const images: LightboxImage[] = screenshots.map(s => ({
     url: s.url,
     blurred: shouldBlur(s.sexual, s.violence, sexual, violence),
     caption: titleOf(s.release),
-  }))
+  }));
 
   // Grouped for display, but each thumbnail keeps its index in the flat list
   // so the viewer can move between groups without knowing they exist.
-  const groups: { title: string | null; items: number[] }[] = []
+  const groups: { title: string | null; items: number[] }[] = [];
   screenshots.forEach((s, i) => {
-    const last = groups.at(-1)
-    if (last && last.title === titleOf(s.release)) last.items.push(i)
-    else groups.push({ title: titleOf(s.release), items: [i] })
-  })
+    const last = groups.at(-1);
+    if (last && last.title === titleOf(s.release)) last.items.push(i);
+    else groups.push({ title: titleOf(s.release), items: [i] });
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,7 +47,7 @@ export function VNScreenshots({
         <div key={gi}>
           {group.title && <p className="mb-2 truncate text-xs text-muted">{group.title}</p>}
           <div className="flex flex-wrap gap-1.5">
-            {group.items.map((i) => (
+            {group.items.map(i => (
               <button
                 key={i}
                 onClick={() => setOpen(i)}
@@ -67,7 +67,7 @@ export function VNScreenshots({
                   height={screenshots[i].dims[1]}
                   wrapperClassName="h-full"
                   className={`h-full w-auto transition-[filter] duration-300 ${
-                    images[i].blurred ? "scale-105 blur-md" : ""
+                    images[i].blurred ? 'scale-105 blur-md' : ''
                   }`}
                 />
               </button>
@@ -80,5 +80,5 @@ export function VNScreenshots({
         <Lightbox images={images} index={open} onIndex={setOpen} onClose={() => setOpen(null)} />
       )}
     </div>
-  )
+  );
 }

@@ -1,48 +1,48 @@
 /** A label on hover, focus and tap (`title` is slow and unreachable by
  *  touch). Portalled to the body to escape scroll clipping; closes on scroll,
  *  so its position is set once when it opens. */
-"use client"
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
-import { cn } from "@/lib/utils"
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 export function Tooltip({
   label,
   className,
   children,
 }: {
-  label: React.ReactNode
-  className?: string
-  children: React.ReactNode
+  label: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
 }) {
-  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
-  const ref = useRef<HTMLSpanElement>(null)
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
 
   const show = useCallback(() => {
-    const box = ref.current?.getBoundingClientRect()
-    if (box) setAt({ x: box.left + box.width / 2, y: box.top })
-  }, [])
-  const hide = useCallback(() => setAt(null), [])
+    const box = ref.current?.getBoundingClientRect();
+    if (box) setAt({ x: box.left + box.width / 2, y: box.top });
+  }, []);
+  const hide = useCallback(() => setAt(null), []);
 
   useEffect(() => {
-    if (!at) return
+    if (!at) return;
     // Registered after the opening event has finished propagating, so the tap
     // that opened this one does not immediately close it.
-    window.addEventListener("scroll", hide, true)
-    window.addEventListener("touchstart", hide)
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('touchstart', hide);
     return () => {
-      window.removeEventListener("scroll", hide, true)
-      window.removeEventListener("touchstart", hide)
-    }
-  }, [at, hide])
+      window.removeEventListener('scroll', hide, true);
+      window.removeEventListener('touchstart', hide);
+    };
+  }, [at, hide]);
 
-  if (label === null || label === undefined || label === "") return <>{children}</>
+  if (label === null || label === undefined || label === '') return <>{children}</>;
 
   return (
     <span
       ref={ref}
-      className={cn("inline-flex", className)}
+      className={cn('inline-flex', className)}
       onMouseEnter={show}
       onMouseLeave={hide}
       onFocus={show}
@@ -62,5 +62,5 @@ export function Tooltip({
           document.body,
         )}
     </span>
-  )
+  );
 }

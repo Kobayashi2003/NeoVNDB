@@ -2,23 +2,23 @@
  *  direct ones. Shown under its group ("Hair / Blonde"), since names alone are
  *  often ambiguous. */
 
-import Link from "next/link"
-import type { Params } from "@/lib/href"
-import { countOf } from "@/lib/results"
-import { Collapsible } from "@/components/ui/Collapsible"
-import { InfoCard, InfoRow, TitledCard } from "@/components/ui/InfoCard"
-import { DetailControls } from "@/components/ui/DetailControls"
-import { Description } from "@/components/ui/Description"
-import { Name } from "@/components/ui/Name"
-import { CatalogPage } from "./CatalogPage"
-import type { TraitDetail } from "@/lib/types"
+import Link from 'next/link';
+import type { Params } from '@/lib/href';
+import { countOf } from '@/lib/results';
+import { Collapsible } from '@/components/ui/Collapsible';
+import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
+import { DetailControls } from '@/components/ui/DetailControls';
+import { Description } from '@/components/ui/Description';
+import { Name } from '@/components/ui/Name';
+import { CatalogPage } from './CatalogPage';
+import type { TraitDetail } from '@/lib/types';
 
 export async function TraitPage({ trait: t, params }: { trait: TraitDetail; params: Params }) {
-  const path = `/${t.id}`
+  const path = `/${t.id}`;
   const [inherited, direct] = await Promise.all([
-    countOf("c", { trait: t.id }),
-    countOf("c", { dtrait: t.id }),
-  ])
+    countOf('c', { trait: t.id }),
+    countOf('c', { dtrait: t.id }),
+  ]);
 
   return (
     <CatalogPage
@@ -27,7 +27,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
         t.group_name &&
         t.group_id && (
           <p className="mt-1 text-sm text-muted">
-            in{" "}
+            in{' '}
             <Link href={`/${t.group_id}`} className="hover:text-accent coarse:py-1">
               <Name name={t.group_name} original={t.group_translation} />
             </Link>
@@ -38,10 +38,22 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
       params={params}
       empty="No characters carry this trait."
       tabs={[
-        { value: "all", label: "Including child traits", count: inherited, type: "c", filters: { trait: t.id } },
+        {
+          value: 'all',
+          label: 'Including child traits',
+          count: inherited,
+          type: 'c',
+          filters: { trait: t.id },
+        },
         // The direct ones are among the rest, so an equal count is the same
         // list; left out then, with the other empty tabs.
-        { value: "direct", label: "Assigned directly", count: direct === inherited ? 0 : direct, type: "c", filters: { dtrait: t.id } },
+        {
+          value: 'direct',
+          label: 'Assigned directly',
+          count: direct === inherited ? 0 : direct,
+          type: 'c',
+          filters: { dtrait: t.id },
+        },
       ]}
       action={<DetailControls id={t.id} />}
       aside={
@@ -61,16 +73,16 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
               <InfoRow label="Use">
                 <span className="text-muted">
                   {!t.applicable && !t.searchable
-                    ? "Grouping only"
+                    ? 'Grouping only'
                     : !t.applicable
-                      ? "Not applicable to new entries"
-                      : "Not searchable"}
+                      ? 'Not applicable to new entries'
+                      : 'Not searchable'}
                 </span>
               </InfoRow>
             )}
             {t.aliases.length > 0 && (
               <InfoRow label="Aliases">
-                <span className="text-muted">{t.aliases.join(", ")}</span>
+                <span className="text-muted">{t.aliases.join(', ')}</span>
               </InfoRow>
             )}
           </InfoCard>
@@ -78,10 +90,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           {t.description && (
             <TitledCard title="About">
               <Collapsible>
-                <Description
-                  text={t.description}
-                  translation={t.translation?.description}
-                />
+                <Description text={t.description} translation={t.translation?.description} />
               </Collapsible>
             </TitledCard>
           )}
@@ -89,8 +98,12 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           {t.parents.length > 0 && (
             <TitledCard title="Parent traits">
               <div className="flex flex-col gap-0.5 text-xs">
-                {t.parents.map((p) => (
-                  <Link key={p.id} href={`/${p.id}`} className="truncate text-white/80 hover:text-accent coarse:py-1">
+                {t.parents.map(p => (
+                  <Link
+                    key={p.id}
+                    href={`/${p.id}`}
+                    className="truncate text-white/80 hover:text-accent coarse:py-1"
+                  >
                     <Name name={p.name} original={p.translation?.name ?? null} />
                     {p.main && t.parents.length > 1 && (
                       <span className="ml-1.5 text-muted">(main)</span>
@@ -104,7 +117,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           {t.children.length > 0 && (
             <TitledCard title="Child traits">
               <div className="flex flex-col gap-0.5 text-xs">
-                {t.children.map((c) => (
+                {t.children.map(c => (
                   <Link
                     key={c.id}
                     href={`/${c.id}`}
@@ -124,5 +137,5 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
         </>
       }
     />
-  )
+  );
 }

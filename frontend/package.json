@@ -2,11 +2,18 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev -p 17034",
     "build": "next build",
     "start": "next start -p 17034",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run --config tests/vitest.config.mts",
     "test:watch": "vitest --config tests/vitest.config.mts",
     "typecheck:tests": "tsc --noEmit -p tests",
@@ -15,21 +22,23 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.44.0",
-    "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^24",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.4",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^5"
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.12.0",
+    "eslint-config-next": "16.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
   }
 }

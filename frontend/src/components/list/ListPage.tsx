@@ -1,32 +1,32 @@
 /** A listing of one type. All state is in the address; every parameter the
  *  API does not reserve (f= included) is passed through as a filter. */
 
-import { FILTERS } from "@/lib/filters"
-import { withParams, type Params } from "@/lib/href"
-import { LIST } from "@/lib/list"
-import { fetchResults } from "@/lib/results"
-import { DataAge } from "@/components/layout/DataAge"
-import { FilterBar } from "./FilterBar"
-import { ResultsPanel } from "./ResultsPanel"
-import { SearchBox } from "./SearchBox"
+import { FILTERS } from '@/lib/filters';
+import { withParams, type Params } from '@/lib/href';
+import { LIST } from '@/lib/list';
+import { fetchResults } from '@/lib/results';
+import { DataAge } from '@/components/layout/DataAge';
+import { FilterBar } from './FilterBar';
+import { ResultsPanel } from './ResultsPanel';
+import { SearchBox } from './SearchBox';
 
-const RESERVED = new Set(["fields", "sort", "reverse", "page", "limit"])
+const RESERVED = new Set(['fields', 'sort', 'reverse', 'page', 'limit']);
 
 export function filtersOf(params: Params): Record<string, string> {
-  const out: Record<string, string> = {}
+  const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
-    if (RESERVED.has(key)) continue
-    const single = Array.isArray(value) ? value[0] : value
-    if (single) out[key] = single
+    if (RESERVED.has(key)) continue;
+    const single = Array.isArray(value) ? value[0] : value;
+    if (single) out[key] = single;
   }
-  return out
+  return out;
 }
 
 export async function ListPage({ type, params }: { type: string; params: Params }) {
-  const path = `/${type}`
-  const filters = filtersOf(params)
-  const search = filters.search ?? ""
-  const data = await fetchResults(type, params, filters)
+  const path = `/${type}`;
+  const filters = filtersOf(params);
+  const search = filters.search ?? '';
+  const data = await fetchResults(type, params, filters);
 
   return (
     <main className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 py-4 pb-12 animate-slide-up-fade">
@@ -58,7 +58,7 @@ export async function ListPage({ type, params }: { type: string; params: Params 
         sortMenu={false}
         empty={
           <>
-            Nothing matched.{" "}
+            Nothing matched.{' '}
             {search && (
               <a
                 href={withParams(path, params, { search: null, page: null })}
@@ -73,5 +73,5 @@ export async function ListPage({ type, params }: { type: string; params: Params 
 
       <DataAge />
     </main>
-  )
+  );
 }
