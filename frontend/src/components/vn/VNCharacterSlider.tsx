@@ -1,15 +1,15 @@
 /** One character card at a time, height-capped; the fade at the cut opens
  *  the expanded view. */
-"use client"
+'use client';
 
-import { useCallback, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { VNCharacterCard } from "./VNCharacterCard"
-import type { Character } from "@/lib/types"
-import type { SpoilerLevel } from "@/hooks/useSpoilerLevel"
+import { useCallback, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { VNCharacterCard } from './VNCharacterCard';
+import type { Character } from '@/lib/types';
+import type { SpoilerLevel } from '@/hooks/useSpoilerLevel';
 
 const ARROW =
-  "flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent"
+  'flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent';
 
 export function VNCharacterSlider({
   characters,
@@ -17,32 +17,32 @@ export function VNCharacterSlider({
   onExpand,
 }: {
   /** Already filtered by role and spoiler level. */
-  characters: Character[]
-  spoilerLevel: SpoilerLevel
-  onExpand?: (id: string) => void
+  characters: Character[];
+  spoilerLevel: SpoilerLevel;
+  onExpand?: (id: string) => void;
 }) {
-  const [index, setIndex] = useState(0)
-  const total = characters.length
+  const [index, setIndex] = useState(0);
+  const total = characters.length;
 
   // Reset to the first card when the filtered list changes, during render so
   // the index is never stale. Compared by ids: the parent rebuilds the array
   // every render, so identity changes on unrelated preference toggles.
-  const signature = characters.map((c) => c.id).join()
-  const [tracked, setTracked] = useState(signature)
+  const signature = characters.map(c => c.id).join();
+  const [tracked, setTracked] = useState(signature);
   if (tracked !== signature) {
-    setTracked(signature)
-    setIndex(0)
+    setTracked(signature);
+    setIndex(0);
   }
 
   const step = useCallback(
-    (by: number) => setIndex((at) => Math.min(Math.max(at + by, 0), Math.max(total - 1, 0))),
+    (by: number) => setIndex(at => Math.min(Math.max(at + by, 0), Math.max(total - 1, 0))),
     [total],
-  )
+  );
 
-  if (total === 0) return null
+  if (total === 0) return null;
 
-  const at = Math.min(index, total - 1)
-  const current = characters[at]
+  const at = Math.min(index, total - 1);
+  const current = characters[at];
 
   return (
     <div className="flex flex-col gap-3">
@@ -76,5 +76,5 @@ export function VNCharacterSlider({
         </button>
       </div>
     </div>
-  )
+  );
 }

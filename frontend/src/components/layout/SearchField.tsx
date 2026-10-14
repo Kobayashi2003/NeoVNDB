@@ -1,20 +1,20 @@
 /** Header search, navigating to /q on submit (not per keystroke). /q
  *  handles a typed id, so links from elsewhere get the same treatment. */
-"use client"
+'use client';
 
-import { useNavigate } from "@/components/layout/Navigation"
-import { SearchPill } from "@/components/ui/SearchPill"
+import { useNavigate } from '@/components/layout/Navigation';
+import { SearchPill } from '@/components/ui/SearchPill';
 
 export function SearchField({
-  initial = "",
+  initial = '',
   className,
   autoFocus,
 }: {
-  initial?: string
-  className?: string
-  autoFocus?: boolean
+  initial?: string;
+  className?: string;
+  autoFocus?: boolean;
 }) {
-  const router = useNavigate()
+  const router = useNavigate();
 
   return (
     <SearchPill
@@ -24,11 +24,11 @@ export function SearchField({
       label="Search everything"
       placeholder="Search everything"
       autoFocus={autoFocus}
-      onSearch={(raw) => {
-        const term = raw.trim()
-        if (term) router.push(`/q?q=${encodeURIComponent(term)}`)
+      onSearch={raw => {
+        const term = raw.trim();
+        if (term) router.push(`/q?q=${encodeURIComponent(term)}`);
       }}
       className={className}
     />
-  )
+  );
 }

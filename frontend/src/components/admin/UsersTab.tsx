@@ -1,49 +1,59 @@
 /** Every account, and what an administrator may do to one that is not their
  *  own. Their own is refused by the service too: this page is the way in. */
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { accounts, deleteAccountAsAdmin, setAdmin, signOutAccount, type Account } from "@/lib/admin"
-import { errorText } from "@/lib/user"
-import { Button, Trouble, when } from "./parts"
+import { useEffect, useState } from 'react';
+import {
+  accounts,
+  deleteAccountAsAdmin,
+  setAdmin,
+  signOutAccount,
+  type Account,
+} from '@/lib/admin';
+import { errorText } from '@/lib/user';
+import { Button, Trouble, when } from './parts';
 
 export function UsersTab({ self }: { self: number }) {
-  const [list, setList] = useState<Account[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [reads, setReads] = useState(0)
-  const [busy, setBusy] = useState(false)
-  const [deleting, setDeleting] = useState<number | null>(null)
+  const [list, setList] = useState<Account[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [reads, setReads] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   useEffect(() => {
-    let live = true
+    let live = true;
     accounts().then(
-      (got) => {
-        if (live) setList(got)
+      got => {
+        if (live) setList(got);
       },
-      (err) => {
-        if (live) setError(errorText(err))
+      err => {
+        if (live) setError(errorText(err));
       },
-    )
+    );
     return () => {
-      live = false
-    }
-  }, [reads])
+      live = false;
+    };
+  }, [reads]);
 
   async function act(change: () => Promise<unknown>) {
-    setBusy(true)
-    setError(null)
+    setBusy(true);
+    setError(null);
     try {
-      await change()
+      await change();
     } catch (err) {
-      setError(errorText(err))
+      setError(errorText(err));
     }
-    setDeleting(null)
-    setBusy(false)
-    setReads((n) => n + 1)
+    setDeleting(null);
+    setBusy(false);
+    setReads(n => n + 1);
   }
 
   if (!list) {
-    return error ? <Trouble text={error} /> : <div className="h-40 animate-pulse rounded-lg bg-white/5" aria-hidden />
+    return error ? (
+      <Trouble text={error} />
+    ) : (
+      <div className="h-40 animate-pulse rounded-lg bg-white/5" aria-hidden />
+    );
   }
 
   return (
@@ -63,7 +73,7 @@ export function UsersTab({ self }: { self: number }) {
             </tr>
           </thead>
           <tbody className="tabular-nums">
-            {list.map((a) => (
+            {list.map(a => (
               <tr key={a.id} className="border-t border-white/5 align-middle">
                 <td className="px-3 py-2">
                   <span className="font-medium">{a.username}</span>
@@ -75,7 +85,9 @@ export function UsersTab({ self }: { self: number }) {
                 <td className="px-3 py-2">{a.items.toLocaleString()}</td>
                 <td className="px-3 py-2">{a.ratings}</td>
                 <td className="px-3 py-2">
-                  {a.sessions > 0 ? `${a.sessions} session${a.sessions === 1 ? "" : "s"}, last ${when(a.last_seen)}` : "—"}
+                  {a.sessions > 0
+                    ? `${a.sessions} session${a.sessions === 1 ? '' : 's'}, last ${when(a.last_seen)}`
+                    : '—'}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {a.id === self ? (
@@ -83,7 +95,11 @@ export function UsersTab({ self }: { self: number }) {
                   ) : deleting === a.id ? (
                     <span className="flex items-center justify-end gap-2">
                       Delete {a.username} and all their lists?
-                      <Button danger disabled={busy} onClick={() => act(() => deleteAccountAsAdmin(a.id))}>
+                      <Button
+                        danger
+                        disabled={busy}
+                        onClick={() => act(() => deleteAccountAsAdmin(a.id))}
+                      >
                         Delete
                       </Button>
                       <Button disabled={busy} onClick={() => setDeleting(null)}>
@@ -92,10 +108,16 @@ export function UsersTab({ self }: { self: number }) {
                     </span>
                   ) : (
                     <span className="flex justify-end gap-2">
-                      <Button disabled={busy} onClick={() => act(() => setAdmin(a.id, !a.is_admin))}>
-                        {a.is_admin ? "Revoke admin" : "Make admin"}
+                      <Button
+                        disabled={busy}
+                        onClick={() => act(() => setAdmin(a.id, !a.is_admin))}
+                      >
+                        {a.is_admin ? 'Revoke admin' : 'Make admin'}
                       </Button>
-                      <Button disabled={busy || a.sessions === 0} onClick={() => act(() => signOutAccount(a.id))}>
+                      <Button
+                        disabled={busy || a.sessions === 0}
+                        onClick={() => act(() => signOutAccount(a.id))}
+                      >
                         Sign out
                       </Button>
                       <Button danger disabled={busy} onClick={() => setDeleting(a.id)}>
@@ -110,5 +132,5 @@ export function UsersTab({ self }: { self: number }) {
         </table>
       </div>
     </div>
-  )
+  );
 }

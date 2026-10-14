@@ -1,11 +1,11 @@
 /** Small pieces the builder's popovers share. */
-"use client"
+'use client';
 
-import { Search, X } from "lucide-react"
-import { menuItem } from "@/components/ui/Menu"
+import { Search, X } from 'lucide-react';
+import { menuItem } from '@/components/ui/Menu';
 
 export const INPUT =
-  "rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs text-white outline-none [color-scheme:dark] placeholder:text-muted focus:border-white/30"
+  'rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs text-white outline-none [color-scheme:dark] placeholder:text-muted focus:border-white/30';
 
 export function SearchBox({
   value,
@@ -13,10 +13,10 @@ export function SearchBox({
   label,
   onEnter,
 }: {
-  value: string
-  onChange: (v: string) => void
-  label: string
-  onEnter: () => void
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  onEnter: () => void;
 }) {
   return (
     <div className="mx-1 mb-1 flex items-center gap-2 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
@@ -24,18 +24,18 @@ export function SearchBox({
       <input
         autoFocus
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key !== "Enter") return
-          e.preventDefault()
-          onEnter()
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          onEnter();
         }}
         placeholder={`${label}…`}
         aria-label={label}
         className="-my-1.5 min-w-0 flex-1 bg-transparent py-1.5 text-xs outline-none placeholder:text-muted"
       />
     </div>
-  )
+  );
 }
 
 export function DoneButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
@@ -48,19 +48,29 @@ export function DoneButton({ onClick, disabled }: { onClick: () => void; disable
     >
       Done
     </button>
-  )
+  );
 }
 
-export function RemoveItem({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+export function RemoveItem({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <>
       <div className="-mx-1 my-1 h-px bg-white/10" role="separator" />
-      <button type="button" onClick={onClick} className={menuItem({ className: "text-red-300 hover:text-red-200" })}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={menuItem({ className: 'text-red-300 hover:text-red-200' })}
+      >
         <X className="icon-text size-3.5" aria-hidden />
         {children}
       </button>
     </>
-  )
+  );
 }
 
 export function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -74,5 +84,5 @@ export function RemoveButton({ label, onClick }: { label: string; onClick: () =>
     >
       <X className="size-3" aria-hidden />
     </button>
-  )
+  );
 }

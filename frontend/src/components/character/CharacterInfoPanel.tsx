@@ -1,33 +1,33 @@
 /** The character sidebar: the portrait, then what the dump records about the
  *  person rather than about their appearances. */
-"use client"
+'use client';
 
-import { iconOf } from "@/lib/icons"
-import { readSex } from "@/lib/characters"
-import { birthday, bust, display } from "@/lib/format"
-import { shouldBlur } from "@/lib/content"
-import { Cover } from "@/components/ui/Cover"
-import { InfoCard, InfoRow, InlineList } from "@/components/ui/InfoCard"
-import { usePrefs } from "@/hooks/usePrefs"
-import type { SpoilerControl } from "@/hooks/useSpoilerLevel"
-import { SexLine } from "./SexLine"
-import type { CharacterDetail } from "@/lib/types"
+import { iconOf } from '@/lib/icons';
+import { readSex } from '@/lib/characters';
+import { birthday, bust, display } from '@/lib/format';
+import { shouldBlur } from '@/lib/content';
+import { Cover } from '@/components/ui/Cover';
+import { InfoCard, InfoRow, InlineList } from '@/components/ui/InfoCard';
+import { usePrefs } from '@/hooks/usePrefs';
+import type { SpoilerControl } from '@/hooks/useSpoilerLevel';
+import { SexLine } from './SexLine';
+import type { CharacterDetail } from '@/lib/types';
 
 export function CharacterInfoPanel({
   character,
   spoiler,
 }: {
-  character: CharacterDetail
-  spoiler: SpoilerControl
+  character: CharacterDetail;
+  spoiler: SpoilerControl;
 }) {
-  const { original, sexual, violence } = usePrefs()
+  const { original, sexual, violence } = usePrefs();
   const blur =
     !!character.image &&
-    shouldBlur(character.image.sexual, character.image.violence, sexual, violence)
+    shouldBlur(character.image.sexual, character.image.violence, sexual, violence);
 
-  const sex = readSex(character.sex, character.spoil_sex, spoiler.level)
-  const gender = readSex(character.gender, character.spoil_gender, spoiler.level, "GENDER")
-  const aliases = character.aliases.filter((a) => a.spoiler <= spoiler.level)
+  const sex = readSex(character.sex, character.spoil_sex, spoiler.level);
+  const gender = readSex(character.gender, character.spoil_gender, spoiler.level, 'GENDER');
+  const aliases = character.aliases.filter(a => a.spoiler <= spoiler.level);
 
   return (
     // Stacked below lg the portrait sits beside the facts rather than above
@@ -45,12 +45,12 @@ export function CharacterInfoPanel({
       <InfoCard className="min-w-0 flex-1 lg:flex-none">
         {sex && (
           <InfoRow label="Sex">
-            <SexLine reading={sex} icon={iconOf("CHARACTER_SEX", sex.code)} />
+            <SexLine reading={sex} icon={iconOf('CHARACTER_SEX', sex.code)} />
           </InfoRow>
         )}
         {gender && (
           <InfoRow label="Gender">
-            <SexLine reading={gender} icon={iconOf("CHARACTER_SEX", gender.code)} />
+            <SexLine reading={gender} icon={iconOf('CHARACTER_SEX', gender.code)} />
           </InfoRow>
         )}
         {character.age !== null && <InfoRow label="Age">{character.age}</InfoRow>}
@@ -70,13 +70,11 @@ export function CharacterInfoPanel({
         {aliases.length > 0 && (
           <InfoRow label="Aliases">
             <span className="text-muted">
-              <InlineList
-                items={aliases.map((a) => display(a.latin, a.name, original) || a.name)}
-              />
+              <InlineList items={aliases.map(a => display(a.latin, a.name, original) || a.name)} />
             </span>
           </InfoRow>
         )}
       </InfoCard>
     </div>
-  )
+  );
 }

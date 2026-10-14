@@ -3,7 +3,7 @@
  *  The link carries where it was shown from, so signing in comes back here
  *  rather than dropping the reader on the front page having forgotten what
  *  they were after. */
-import Link from "next/link"
+import Link from 'next/link';
 
 export function SignInFirst({ next, children }: { next: string; children: React.ReactNode }) {
   return (
@@ -16,5 +16,5 @@ export function SignInFirst({ next, children }: { next: string; children: React.
         Sign in
       </Link>
     </div>
-  )
+  );
 }

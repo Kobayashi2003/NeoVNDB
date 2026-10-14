@@ -1,12 +1,12 @@
 /** An image that opens the full-size original in the lightbox. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { imageURL, thumbnailURL } from "@/lib/images"
-import { ImageWithFallback } from "./ImageWithFallback"
-import { Lightbox } from "./Lightbox"
-import type { Image } from "@/lib/types"
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { imageURL, thumbnailURL } from '@/lib/images';
+import { ImageWithFallback } from './ImageWithFallback';
+import { Lightbox } from './Lightbox';
+import type { Image } from '@/lib/types';
 
 export function Cover({
   image,
@@ -16,26 +16,26 @@ export function Cover({
   imageClassName,
   thumbnail = false,
 }: {
-  image: Image
-  alt: string
-  blurred: boolean
+  image: Image;
+  alt: string;
+  blurred: boolean;
   /** Sizes the frame; the image fills its width. */
-  className?: string
-  imageClassName?: string
+  className?: string;
+  imageClassName?: string;
   /** vndb's thumbnail where the frame is small; the viewer always gets the
    *  original. */
-  thumbnail?: boolean
+  thumbnail?: boolean;
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`View ${alt || "image"} full size`}
+        aria-label={`View ${alt || 'image'} full size`}
         className={cn(
-          "group relative block overflow-hidden rounded-lg bg-elevated transition-shadow hover:ring-2 hover:ring-accent",
+          'group relative block overflow-hidden rounded-lg bg-elevated transition-shadow hover:ring-2 hover:ring-accent',
           className,
         )}
       >
@@ -46,8 +46,8 @@ export function Cover({
           height={image.dims[1]}
           wrapperClassName="w-full"
           className={cn(
-            "h-auto w-full transition-[filter,transform] duration-300 group-hover:scale-[1.02]",
-            blurred && "blur-2xl",
+            'h-auto w-full transition-[filter,transform] duration-300 group-hover:scale-[1.02]',
+            blurred && 'blur-2xl',
             imageClassName,
           )}
         />
@@ -62,5 +62,5 @@ export function Cover({
         />
       )}
     </>
-  )
+  );
 }

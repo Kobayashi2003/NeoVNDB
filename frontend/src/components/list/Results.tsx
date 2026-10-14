@@ -1,23 +1,37 @@
 /** Results laid out for their type. Card building and arrangement are
  *  separate so a caller can wrap each card (collections add a checkbox);
  *  inside a selecting Collecting, cards become checkboxes on their own. */
-"use client"
+'use client';
 
-import { Fragment, useEffect } from "react"
+import { Fragment, useEffect } from 'react';
 import {
-  CharacterCard, COVER, GoneCard, PORTRAIT, ProducerCard, ReleaseCard, StaffCard, TagCard, TraitCard,
+  CharacterCard,
+  COVER,
+  GoneCard,
+  PORTRAIT,
+  ProducerCard,
+  ReleaseCard,
+  StaffCard,
+  TagCard,
+  TraitCard,
   VNCard,
-} from "./ResultCards"
+} from './ResultCards';
 import {
   isGone,
-  type CharacterRow, type ProducerRow, type ReleaseRow, type StaffRow, type TagRow, type TraitRow,
+  type CharacterRow,
+  type ProducerRow,
+  type ReleaseRow,
+  type StaffRow,
+  type TagRow,
+  type TraitRow,
   type VNRow,
-} from "@/lib/types"
-import { Selectable } from "@/components/ui/Selection"
-import { useSelection } from "./Collecting"
+} from '@/lib/types';
+import { Selectable } from '@/components/ui/Selection';
+import { useSelection } from './Collecting';
 
-const GRID = "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7"
-const LIST = "rounded-lg border border-white/5 bg-surface"
+const GRID =
+  'grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7';
+const LIST = 'rounded-lg border border-white/5 bg-surface';
 
 /** How each type is laid out. Pictures are looked for by eye and go in a
  *  grid; the rest are looked for by name, and a grid of identical text boxes
@@ -30,29 +44,29 @@ const SHAPES: Record<string, { ratio?: string; card: (row: never) => React.React
   s: { card: (r: StaffRow) => <StaffCard row={r} /> },
   g: { card: (r: TagRow) => <TagCard row={r} /> },
   i: { card: (r: TraitRow) => <TraitCard row={r} /> },
-}
+};
 
 function build(type: string, rows: unknown[]): { layout: string; cards: Card[] } | null {
-  const shape = SHAPES[type]
-  if (!shape) return null
-  const grid = shape.ratio !== undefined
+  const shape = SHAPES[type];
+  if (!shape) return null;
+  const grid = shape.ratio !== undefined;
   return {
     layout: grid ? GRID : LIST,
-    cards: (rows as { id: string }[]).map((r) => ({
+    cards: (rows as { id: string }[]).map(r => ({
       id: r.id,
       grid,
       node: isGone(r) ? <GoneCard id={r.id} ratio={shape.ratio} /> : shape.card(r as never),
     })),
-  }
+  };
 }
 
 interface Card {
-  id: string
-  node: React.ReactNode
+  id: string;
+  node: React.ReactNode;
   /** A tile in a grid, rather than a row in a stack. Whatever a caller puts
    *  around a card has to go somewhere different in the two: a tile has a
    *  picture to sit on top of, a row has its own leading icon already. */
-  grid: boolean
+  grid: boolean;
 }
 
 export function Results({
@@ -60,21 +74,21 @@ export function Results({
   rows,
   wrap,
 }: {
-  type: string
-  rows: unknown[]
+  type: string;
+  rows: unknown[];
   /** Put something around each card. */
-  wrap?: (card: Card) => React.ReactNode
+  wrap?: (card: Card) => React.ReactNode;
 }) {
-  const built = build(type, rows)
-  const selection = useSelection()
-  const ids = built?.cards.map((c) => c.id).join(",") ?? ""
-  const showing = selection?.showing
+  const built = build(type, rows);
+  const selection = useSelection();
+  const ids = built?.cards.map(c => c.id).join(',') ?? '';
+  const showing = selection?.showing;
 
   useEffect(() => {
-    showing?.(ids ? ids.split(",") : [])
-  }, [showing, ids])
+    showing?.(ids ? ids.split(',') : []);
+  }, [showing, ids]);
 
-  if (!built) return null
+  if (!built) return null;
 
   // Inside a Collecting that is selecting, cards become checkboxes.
   const around =
@@ -89,15 +103,15 @@ export function Results({
             {card.node}
           </Selectable>
         )
-      : undefined)
+      : undefined);
 
   return (
     <div className={built.layout}>
-      {built.cards.map((card) => (
+      {built.cards.map(card => (
         // A fragment rather than a wrapper element: the card has to stay a
         // direct child of the grid or the layout is not a grid any more.
         <Fragment key={card.id}>{around ? around(card) : card.node}</Fragment>
       ))}
     </div>
-  )
+  );
 }

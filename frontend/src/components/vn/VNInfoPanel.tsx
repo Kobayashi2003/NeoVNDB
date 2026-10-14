@@ -1,35 +1,35 @@
 /** The sidebar: the cover, then the facts that belong beside it, the rating
  *  first. */
-"use client"
+'use client';
 
-import Link from "next/link"
-import { Share2 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { iconOf } from "@/lib/icons"
-import { enumLabel } from "@/lib/enums"
-import { shouldBlur } from "@/lib/content"
-import { publishers } from "@/lib/vn"
-import { display, length, releaseDate, score } from "@/lib/format"
-import { Cover } from "@/components/ui/Cover"
-import { Icon } from "@/components/ui/Icon"
-import { InfoCard, InfoRow, InlineList, TitledCard } from "@/components/ui/InfoCard"
-import { VNRelations } from "./VNRelations"
-import { usePrefs } from "@/hooks/usePrefs"
-import type { VN } from "@/lib/types"
-import { Name } from "@/components/ui/Name"
+import Link from 'next/link';
+import { Share2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { iconOf } from '@/lib/icons';
+import { enumLabel } from '@/lib/enums';
+import { shouldBlur } from '@/lib/content';
+import { publishers } from '@/lib/vn';
+import { display, length, releaseDate, score } from '@/lib/format';
+import { Cover } from '@/components/ui/Cover';
+import { Icon } from '@/components/ui/Icon';
+import { InfoCard, InfoRow, InlineList, TitledCard } from '@/components/ui/InfoCard';
+import { VNRelations } from './VNRelations';
+import { usePrefs } from '@/hooks/usePrefs';
+import type { VN } from '@/lib/types';
+import { Name } from '@/components/ui/Name';
 
 /** Finished, in development, or cancelled -- coloured because the middle one
  *  and the last one mean very different things to a reader deciding to start. */
 const DEVSTATUS_CLASS: Record<number, string> = {
-  0: "bg-green-500/20 text-green-400",
-  1: "bg-yellow-500/20 text-yellow-400",
-  2: "bg-red-500/20 text-red-400",
-}
+  0: 'bg-green-500/20 text-green-400',
+  1: 'bg-yellow-500/20 text-yellow-400',
+  2: 'bg-red-500/20 text-red-400',
+};
 
 export function VNInfoPanel({ vn }: { vn: VN }) {
-  const { original, sexual, violence } = usePrefs()
-  const blur = !!vn.image && shouldBlur(vn.image.sexual, vn.image.violence, sexual, violence)
-  const published = publishers(vn.releases)
+  const { original, sexual, violence } = usePrefs();
+  const blur = !!vn.image && shouldBlur(vn.image.sexual, vn.image.violence, sexual, violence);
+  const published = publishers(vn.releases);
 
   return (
     <>
@@ -40,7 +40,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
         {vn.image && (
           <Cover
             image={vn.image}
-            alt={vn.title ?? ""}
+            alt={vn.title ?? ''}
             blurred={blur}
             className="w-32 shrink-0 self-start border border-white/5 sm:w-40 lg:w-full"
           />
@@ -54,11 +54,11 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           <InfoRow label="Status">
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-medium",
-                DEVSTATUS_CLASS[vn.devstatus] ?? "bg-white/10 text-white/60",
+                'rounded-full px-2 py-0.5 text-xs font-medium',
+                DEVSTATUS_CLASS[vn.devstatus] ?? 'bg-white/10 text-white/60',
               )}
             >
-              {enumLabel("DEVSTATUS", vn.devstatus)}
+              {enumLabel('DEVSTATUS', vn.devstatus)}
             </span>
           </InfoRow>
 
@@ -67,18 +67,22 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           <InfoRow label="Length">{length(vn.length, vn.length_minutes, vn.length_votes)}</InfoRow>
 
           <InfoRow label="Platform">
-            {vn.platforms.map((p) => (
-              <Icon key={p} cls={iconOf("PLATFORM", p)} title={enumLabel("PLATFORM", p)} />
+            {vn.platforms.map(p => (
+              <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />
             ))}
           </InfoRow>
 
           <InfoRow label="Language">
-            {vn.languages.map((l) => (
+            {vn.languages.map(l => (
               <Icon
                 key={l}
-                cls={iconOf("LANGUAGE", l)}
-                title={l === vn.olang ? `${enumLabel("LANGUAGE", l)} (original)` : enumLabel("LANGUAGE", l)}
-                className={cn(l === vn.olang && "rounded-xs ring-1 ring-accent")}
+                cls={iconOf('LANGUAGE', l)}
+                title={
+                  l === vn.olang
+                    ? `${enumLabel('LANGUAGE', l)} (original)`
+                    : enumLabel('LANGUAGE', l)
+                }
+                className={cn(l === vn.olang && 'rounded-xs ring-1 ring-accent')}
               />
             ))}
           </InfoRow>
@@ -86,7 +90,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           {vn.developers.length > 0 && (
             <InfoRow label="Developer">
               <InlineList
-                items={vn.developers.map((d) => (
+                items={vn.developers.map(d => (
                   <Link key={d.id} href={`/${d.id}`} className="hover:text-accent coarse:py-1">
                     <Name name={d.name} original={d.original} />
                   </Link>
@@ -98,16 +102,21 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           {published.length > 0 && (
             <InfoRow label="Publisher">
               <div className="flex w-full flex-col gap-1">
-                {published.map((p) => (
+                {published.map(p => (
                   <Link
                     key={p.id}
                     href={`/${p.id}`}
                     className="flex items-center gap-1.5 transition-colors hover:text-accent coarse:py-1"
                   >
-                    {p.lang && iconOf("LANGUAGE", p.lang) && (
-                      <Icon cls={iconOf("LANGUAGE", p.lang)} title={enumLabel("LANGUAGE", p.lang)} />
+                    {p.lang && iconOf('LANGUAGE', p.lang) && (
+                      <Icon
+                        cls={iconOf('LANGUAGE', p.lang)}
+                        title={enumLabel('LANGUAGE', p.lang)}
+                      />
                     )}
-                    <span className="truncate"><Name name={p.name} original={p.original} /></span>
+                    <span className="truncate">
+                      <Name name={p.name} original={p.original} />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -116,7 +125,7 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
 
           {vn.aliases.length > 0 && (
             <InfoRow label="Aliases">
-              <span className="text-muted">{vn.aliases.join(", ")}</span>
+              <span className="text-muted">{vn.aliases.join(', ')}</span>
             </InfoRow>
           )}
         </InfoCard>
@@ -144,15 +153,15 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
           {/* Not links: an anime is not a thing this database holds, so there
               is nowhere here to send a reader who clicks one. */}
           <ul className="flex flex-col gap-1 text-xs">
-            {vn.anime.map((a) => (
+            {vn.anime.map(a => (
               <li key={a.id} className="flex items-baseline gap-2">
                 <span className="min-w-0 flex-1 text-white/90">
                   {display(a.title, a.original, original)}
                 </span>
                 <span className="shrink-0 text-muted">
-                  {a.type && enumLabel("ANIME_TYPE", a.type)}
-                  {a.type && a.year ? " " : ""}
-                  {a.year ?? ""}
+                  {a.type && enumLabel('ANIME_TYPE', a.type)}
+                  {a.type && a.year ? ' ' : ''}
+                  {a.year ?? ''}
                 </span>
               </li>
             ))}
@@ -177,11 +186,11 @@ export function VNInfoPanel({ vn }: { vn: VN }) {
         </TitledCard>
       )}
     </>
-  )
+  );
 }
 
 function Rating({ value, votes }: { value: number | null; votes: number }) {
-  if (value === null) return <span className="text-muted">No rating</span>
+  if (value === null) return <span className="text-muted">No rating</span>;
   return (
     // Wrapping, because beside the cover on a phone this column is about
     // 114px and "84.50 / 100 (8,726)" is not.
@@ -190,5 +199,5 @@ function Rating({ value, votes }: { value: number | null; votes: number }) {
       <span className="text-muted">/ 100</span>
       {votes > 0 && <span className="text-muted">({votes.toLocaleString()})</span>}
     </span>
-  )
+  );
 }

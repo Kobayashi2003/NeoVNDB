@@ -1,16 +1,16 @@
 /** The rounded search field that searches on submit, not per keystroke: a
  *  list page's, a collection's and the header's. What differs between them
  *  goes in `before` (a label) and `after` (a clear link). */
-"use client"
+'use client';
 
-import { Search } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function SearchPill({
   name,
-  initial = "",
+  initial = '',
   label,
-  placeholder = "Search",
+  placeholder = 'Search',
   onSearch,
   autoFocus,
   role,
@@ -18,26 +18,26 @@ export function SearchPill({
   before,
   after,
 }: {
-  name: string
-  initial?: string
-  label: string
-  placeholder?: string
-  onSearch: (term: string) => void
-  autoFocus?: boolean
-  role?: "search"
-  className?: string
-  before?: React.ReactNode
-  after?: React.ReactNode
+  name: string;
+  initial?: string;
+  label: string;
+  placeholder?: string;
+  onSearch: (term: string) => void;
+  autoFocus?: boolean;
+  role?: 'search';
+  className?: string;
+  before?: React.ReactNode;
+  after?: React.ReactNode;
 }) {
   return (
     <form
       role={role}
-      onSubmit={(e) => {
-        e.preventDefault()
-        onSearch(String(new FormData(e.currentTarget).get(name) ?? ""))
+      onSubmit={e => {
+        e.preventDefault();
+        onSearch(String(new FormData(e.currentTarget).get(name) ?? ''));
       }}
       className={cn(
-        "flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5 transition-colors focus-within:border-white/30",
+        'flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1.5 transition-colors focus-within:border-white/30',
         className,
       )}
     >
@@ -54,5 +54,5 @@ export function SearchPill({
       />
       {after}
     </form>
-  )
+  );
 }

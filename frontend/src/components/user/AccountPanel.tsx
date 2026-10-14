@@ -1,20 +1,20 @@
 /** The account page, rendered on the client (the server doesn't know the
  *  reader), so it starts in an "unknown" state rather than signed out. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { errorText, RULES } from "@/lib/user"
-import { useSession } from "@/hooks/useSession"
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { errorText, RULES } from '@/lib/user';
+import { useSession } from '@/hooks/useSession';
 
 export function AccountPanel() {
-  const session = useSession()
+  const session = useSession();
 
-  if (session.status === "unknown") {
-    return <div className="h-40 w-full max-w-sm animate-pulse rounded-lg bg-white/5" aria-hidden />
+  if (session.status === 'unknown') {
+    return <div className="h-40 w-full max-w-sm animate-pulse rounded-lg bg-white/5" aria-hidden />;
   }
-  if (session.status === "out" || !session.user) {
+  if (session.status === 'out' || !session.user) {
     return (
       <div className="w-full max-w-sm rounded-lg border border-white/5 bg-surface p-6 text-sm">
         <p className="text-muted">This page is about your account, so it needs one.</p>
@@ -25,10 +25,10 @@ export function AccountPanel() {
           Sign in
         </Link>
       </div>
-    )
+    );
   }
 
-  const { user } = session
+  const { user } = session;
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-4">
@@ -56,35 +56,38 @@ export function AccountPanel() {
       <PasswordForm />
       <DeleteForm />
     </div>
-  )
+  );
 }
 
 function PasswordForm() {
-  const session = useSession()
-  const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const session = useSession();
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const data = new FormData(form)
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
 
-    setBusy(true)
-    setError(null)
-    setDone(false)
+    setBusy(true);
+    setError(null);
+    setDone(false);
     try {
-      await session.setPassword(String(data.get("current") ?? ""), String(data.get("next") ?? ""))
-      form.reset()
-      setDone(true)
+      await session.setPassword(String(data.get('current') ?? ''), String(data.get('next') ?? ''));
+      form.reset();
+      setDone(true);
     } catch (err) {
-      setError(errorText(err))
+      setError(errorText(err));
     }
-    setBusy(false)
+    setBusy(false);
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg border border-white/5 bg-surface p-6">
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-4 rounded-lg border border-white/5 bg-surface p-6"
+    >
       <div>
         <h2 className="text-sm font-semibold">Change password</h2>
         {/* Said here because it is surprising the first time and deliberate:
@@ -106,13 +109,7 @@ function PasswordForm() {
       </label>
       <label className="flex flex-col gap-1">
         <span className="text-xs font-medium text-muted">New password</span>
-        <input
-          name="next"
-          type="password"
-          autoComplete="new-password"
-          required
-          className={FIELD}
-        />
+        <input name="next" type="password" autoComplete="new-password" required className={FIELD} />
         <span className="text-[0.6875rem] text-muted">{RULES.password}</span>
       </label>
 
@@ -128,23 +125,23 @@ function PasswordForm() {
         disabled={busy}
         className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold transition-colors hover:bg-white/20 disabled:opacity-60"
       >
-        {busy ? "…" : "Change password"}
+        {busy ? '…' : 'Change password'}
       </button>
     </form>
-  )
+  );
 }
 
 const FIELD =
-  "rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30"
+  'rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30';
 
 /** Folded until asked for, and asks for the password again: there is no
  *  undo, and a session alone may be a borrowed browser. */
 function DeleteForm() {
-  const session = useSession()
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const session = useSession();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (!open) {
     return (
@@ -155,19 +152,19 @@ function DeleteForm() {
       >
         Delete account…
       </button>
-    )
+    );
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
     try {
-      await session.deleteAccount(String(new FormData(e.currentTarget).get("password") ?? ""))
-      router.push("/")
+      await session.deleteAccount(String(new FormData(e.currentTarget).get('password') ?? ''));
+      router.push('/');
     } catch (err) {
-      setError(errorText(err))
-      setBusy(false)
+      setError(errorText(err));
+      setBusy(false);
     }
   }
 
@@ -208,13 +205,13 @@ function DeleteForm() {
           disabled={busy}
           className="flex-1 rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-60"
         >
-          {busy ? "…" : "Delete my account"}
+          {busy ? '…' : 'Delete my account'}
         </button>
         <button
           type="button"
           onClick={() => {
-            setOpen(false)
-            setError(null)
+            setOpen(false);
+            setError(null);
           }}
           className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold transition-colors hover:bg-white/20"
         >
@@ -222,5 +219,5 @@ function DeleteForm() {
         </button>
       </div>
     </form>
-  )
+  );
 }

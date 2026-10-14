@@ -1,7 +1,7 @@
-import type { Metadata } from "next"
-import { CollectionsPanel } from "@/components/user/CollectionsPanel"
+import type { Metadata } from 'next';
+import { CollectionsPanel } from '@/components/user/CollectionsPanel';
 
-export const metadata: Metadata = { title: "Your lists - NeoVNDB" }
+export const metadata: Metadata = { title: 'Your lists - NeoVNDB' };
 
 export default function CollectionsPage() {
   return (
@@ -9,5 +9,5 @@ export default function CollectionsPage() {
       <h1 className="mb-4 text-xl font-bold sm:text-2xl">Your lists</h1>
       <CollectionsPanel />
     </main>
-  )
+  );
 }

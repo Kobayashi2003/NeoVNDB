@@ -1,40 +1,40 @@
 /** The character page, with one spoiler control for everything (sex,
  *  traits, works, instances). Each section still counts what it hides. */
-"use client"
+'use client';
 
-import { BBCode } from "@/lib/bbcode"
-import { characterSpoilerExtent } from "@/lib/characters"
-import { display } from "@/lib/format"
-import { cn } from "@/lib/utils"
-import { Collapsible } from "@/components/ui/Collapsible"
-import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
-import { InfoCard } from "@/components/ui/InfoCard"
-import { Section } from "@/components/ui/Section"
-import { DetailControls } from "@/components/ui/DetailControls"
-import { usePrefs } from "@/hooks/usePrefs"
-import { useSpoilerLevel } from "@/hooks/useSpoilerLevel"
-import { SpoilerScope } from "@/components/ui/Spoiler"
-import { CharacterAppearances } from "./CharacterAppearances"
-import { CharacterInfoPanel } from "./CharacterInfoPanel"
-import { CharacterInstances } from "./CharacterInstances"
-import { CharacterTraits } from "./CharacterTraits"
-import type { CharacterDetail, Instance } from "@/lib/types"
+import { BBCode } from '@/lib/bbcode';
+import { characterSpoilerExtent } from '@/lib/characters';
+import { display } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { Collapsible } from '@/components/ui/Collapsible';
+import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
+import { InfoCard } from '@/components/ui/InfoCard';
+import { Section } from '@/components/ui/Section';
+import { DetailControls } from '@/components/ui/DetailControls';
+import { usePrefs } from '@/hooks/usePrefs';
+import { useSpoilerLevel } from '@/hooks/useSpoilerLevel';
+import { SpoilerScope } from '@/components/ui/Spoiler';
+import { CharacterAppearances } from './CharacterAppearances';
+import { CharacterInfoPanel } from './CharacterInfoPanel';
+import { CharacterInstances } from './CharacterInstances';
+import { CharacterTraits } from './CharacterTraits';
+import type { CharacterDetail, Instance } from '@/lib/types';
 
 export function CharacterPage({
   character,
   parent,
 }: {
-  character: CharacterDetail
+  character: CharacterDetail;
   /** The character at the top of the instance group, when this one is not it.
    *  chars.main only points one way, so the siblings come from up there. */
-  parent: { character: Instance; instances: Instance[] } | null
+  parent: { character: Instance; instances: Instance[] } | null;
 }) {
-  const { original, explicit } = usePrefs()
-  const extent = characterSpoilerExtent(character, explicit)
-  const spoiler = useSpoilerLevel(extent.minor, extent.major)
+  const { original, explicit } = usePrefs();
+  const extent = characterSpoilerExtent(character, explicit);
+  const spoiler = useSpoilerLevel(extent.minor, extent.major);
 
-  const group = parent ? parent.instances : character.instances
-  const hasGroup = group.length > 0 || parent !== null
+  const group = parent ? parent.instances : character.instances;
+  const hasGroup = group.length > 0 || parent !== null;
 
   return (
     <DetailShell
@@ -53,7 +53,10 @@ export function CharacterPage({
               {spoiler.any && (
                 <button
                   onClick={spoiler.cycle}
-                  className={cn("shrink-0 text-xs transition-colors coarse:py-1", spoiler.className)}
+                  className={cn(
+                    'shrink-0 text-xs transition-colors coarse:py-1',
+                    spoiler.className,
+                  )}
                 >
                   {spoiler.label}
                 </button>
@@ -107,5 +110,5 @@ export function CharacterPage({
         </Section>
       )}
     </DetailShell>
-  )
+  );
 }

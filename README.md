@@ -141,7 +141,7 @@ process rather than running them all from the root:
 cd backend/vndb  && go run ./cmd/neovndb serve     # :17031  the read API
 cd backend/vndb  && go run ./cmd/neovndb images    # :17032  the image mirror
 cd backend/users && go run ./cmd/users             # :17033  accounts and lists
-cd frontend      && npm run dev                    # :17034  the site
+cd frontend      && pnpm dev                       # :17034  the site
 cd edge          && caddy run                      # :17030  the only address
 ```
 
@@ -152,8 +152,8 @@ written relative to it. Open the site on :17030, never :17034: nothing but the
 edge serves `/imgserve` and `/userserve`, and the dev server only accepts its
 hot-reload connection from the edge's origin because `next.config.ts` names it
 -- without that no page hydrates, which looks like images that never appear
-and a header that never learns who is signed in. `npm run dev` is the one to
-use while editing; `npm run build && npm start` serves a production build,
+and a header that never learns who is signed in. `pnpm dev` is the one to
+use while editing; `pnpm build && pnpm start` serves a production build,
 which is what the numbers in the CLS notes were measured against -- and which
 will not pick up a source change until it is rebuilt.
 
@@ -163,7 +163,7 @@ generation: without one it starts and says so, and every query fails until
 
 ## Setup
 
-Requires Go 1.27+, Node 20.9+, PostgreSQL 15+, Caddy 2 for the edge, and
+Requires Go 1.27+, Node 24, pnpm, PostgreSQL 15+, Caddy 2 for the edge, and
 `sqlc` to regenerate the query layer. Each part reads the `.env` beside it;
 every `.env.sample` lists every setting that part reads, with the value a
 deployment wants. `.env` files are not in git.
@@ -182,7 +182,7 @@ cp .env.sample .env          # adjust NEOVNDB_USERS_DB_URL
 createdb neovndb_users       # the schema is applied when the service starts
 
 cd ../../frontend
-npm install                  # .env.sample documents its two settings; the defaults suit a checkout
+pnpm install                 # .env.sample documents its two settings; the defaults suit a checkout
 ```
 
 For local work the `.env` files turn the limits off (0 means no ceiling) and
@@ -219,7 +219,7 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | `backup` | Dump the user database now, into `NEOVNDB_USERS_BACKUP_DIR` |
 | `admin <username> [off]` | Make an account an administrator, or stop it being one; the first one can only come from here |
 
-`frontend` (`npm run <script>`):
+`frontend` (`pnpm <script>`):
 
 | Script | What it does |
 | --- | --- |
@@ -235,8 +235,8 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 ```sh
 cd backend/vndb  && go test ./...
 cd backend/users && go test ./...
-cd frontend      && npm test
-cd frontend      && npm run test:e2e   # needs the site up (start.ps1)
+cd frontend      && pnpm test
+cd frontend      && pnpm test:e2e   # needs the site up (start.ps1)
 ```
 
 Only the end-to-end tests need a running service; they drive Chromium

@@ -1,13 +1,13 @@
 /** All of the reader's lists, grouped by type (a list's type decides what
  *  can go on it). Renaming and deleting happen here. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import Link from "next/link"
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { LIST } from "@/lib/list"
-import { TYPES } from "@/components/layout/shelves"
+import { useState } from 'react';
+import Link from 'next/link';
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { LIST } from '@/lib/list';
+import { TYPES } from '@/components/layout/shelves';
 import {
   createCollection,
   deleteCollection,
@@ -15,29 +15,28 @@ import {
   RULES,
   errorText,
   type Collection,
-} from "@/lib/user"
-import { useSession } from "@/hooks/useSession"
-import { refreshCollections, useCollections } from "@/hooks/useCollections"
-import { SignInFirst } from "./SignInFirst"
-
+} from '@/lib/user';
+import { useSession } from '@/hooks/useSession';
+import { refreshCollections, useCollections } from '@/hooks/useCollections';
+import { SignInFirst } from './SignInFirst';
 
 export function CollectionsPanel() {
-  const session = useSession()
+  const session = useSession();
   // The same lists the column on a list's page shows, so a change here is
   // there too.
-  const held = useCollections(session.status === "in")
-  const lists = held.lists
-  const [trouble, setError] = useState<string | null>(null)
-  const error = trouble ?? held.error
+  const held = useCollections(session.status === 'in');
+  const lists = held.lists;
+  const [trouble, setError] = useState<string | null>(null);
+  const error = trouble ?? held.error;
 
-  if (session.status === "unknown") {
-    return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+  if (session.status === 'unknown') {
+    return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
   }
-  if (session.status === "out") {
-    return <SignInFirst next="/u">Your lists are yours, so they need an account.</SignInFirst>
+  if (session.status === 'out') {
+    return <SignInFirst next="/u">Your lists are yours, so they need an account.</SignInFirst>;
   }
 
-  const changed = () => void refreshCollections()
+  const changed = () => void refreshCollections();
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -47,18 +46,18 @@ export function CollectionsPanel() {
         </p>
       )}
 
-      {TYPES.map((type) => (
+      {TYPES.map(type => (
         <Shelf
           key={type}
           type={type}
-          lists={lists?.filter((l) => l.type === type) ?? null}
+          lists={lists?.filter(l => l.type === type) ?? null}
           onError={setError}
           onChange={changed}
           onAdd={changed}
         />
       ))}
     </div>
-  )
+  );
 }
 
 function Shelf({
@@ -68,27 +67,27 @@ function Shelf({
   onChange,
   onAdd,
 }: {
-  type: string
-  lists: Collection[] | null
-  onError: (message: string | null) => void
-  onChange: () => void
-  onAdd: () => void
+  type: string;
+  lists: Collection[] | null;
+  onError: (message: string | null) => void;
+  onChange: () => void;
+  onAdd: () => void;
 }) {
-  const [naming, setNaming] = useState(false)
+  const [naming, setNaming] = useState(false);
 
   async function create(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const name = String(new FormData(form).get("name") ?? "").trim()
-    if (!name) return
-    onError(null)
+    e.preventDefault();
+    const form = e.currentTarget;
+    const name = String(new FormData(form).get('name') ?? '').trim();
+    if (!name) return;
+    onError(null);
     try {
-      await createCollection(type, name)
-      onAdd()
-      form.reset()
-      setNaming(false)
+      await createCollection(type, name);
+      onAdd();
+      form.reset();
+      setNaming(false);
     } catch (err) {
-      onError(errorText(err))
+      onError(errorText(err));
     }
   }
 
@@ -98,7 +97,7 @@ function Shelf({
         <h2 className="text-sm font-semibold">{LIST[type].label}</h2>
         <button
           type="button"
-          onClick={() => setNaming((on) => !on)}
+          onClick={() => setNaming(on => !on)}
           className="flex shrink-0 items-center gap-1 text-xs text-muted transition-colors hover:text-white"
         >
           <Plus className="icon-text h-3 w-3" aria-hidden />
@@ -128,7 +127,10 @@ function Shelf({
       {lists === null ? (
         // Built from the same parts as a real row, so the placeholder has exactly
         // its height and nothing shifts when the rows arrive.
-        <div className="flex animate-pulse items-center rounded-lg bg-white/5 px-3 py-1.5" aria-hidden>
+        <div
+          className="flex animate-pulse items-center rounded-lg bg-white/5 px-3 py-1.5"
+          aria-hidden
+        >
           <span className="p-1">
             <span className="block h-3.5 w-3.5" />
           </span>
@@ -137,13 +139,13 @@ function Shelf({
         <p className="text-xs text-muted">No lists yet.</p>
       ) : (
         <ul className="flex flex-col gap-1">
-          {lists.map((list) => (
+          {lists.map(list => (
             <Row key={list.id} list={list} onError={onError} onChange={onChange} />
           ))}
         </ul>
       )}
     </section>
-  )
+  );
 }
 
 function Row({
@@ -151,45 +153,48 @@ function Row({
   onError,
   onChange,
 }: {
-  list: Collection
-  onError: (message: string | null) => void
-  onChange: () => void
+  list: Collection;
+  onError: (message: string | null) => void;
+  onChange: () => void;
 }) {
-  const [editing, setEditing] = useState(false)
-  const [confirming, setConfirming] = useState(false)
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   async function rename(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const name = String(new FormData(e.currentTarget).get("name") ?? "").trim()
+    e.preventDefault();
+    const name = String(new FormData(e.currentTarget).get('name') ?? '').trim();
     if (!name || name === list.name) {
-      setEditing(false)
-      return
+      setEditing(false);
+      return;
     }
-    onError(null)
+    onError(null);
     try {
-      await renameCollection(list.id, name)
-      onChange()
-      setEditing(false)
+      await renameCollection(list.id, name);
+      onChange();
+      setEditing(false);
     } catch (err) {
-      onError(errorText(err))
+      onError(errorText(err));
     }
   }
 
   async function remove() {
-    onError(null)
+    onError(null);
     try {
-      await deleteCollection(list.id)
-      onChange()
+      await deleteCollection(list.id);
+      onChange();
     } catch (err) {
-      onError(errorText(err))
-      setConfirming(false)
+      onError(errorText(err));
+      setConfirming(false);
     }
   }
 
   if (editing) {
     return (
       <li>
-        <form onSubmit={rename} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-1.5">
+        <form
+          onSubmit={rename}
+          className="flex items-center gap-2 rounded-lg bg-surface px-3 py-1.5"
+        >
           <input
             name="name"
             autoFocus
@@ -206,7 +211,7 @@ function Row({
           </IconButton>
         </form>
       </li>
-    )
+    );
   }
 
   return (
@@ -239,21 +244,21 @@ function Row({
         </>
       )}
     </li>
-  )
+  );
 }
 
 function IconButton({
   label,
   tone,
-  type = "button",
+  type = 'button',
   onClick,
   children,
 }: {
-  label: string
-  tone?: "accent" | "danger"
-  type?: "button" | "submit"
-  onClick?: () => void
-  children: React.ReactNode
+  label: string;
+  tone?: 'accent' | 'danger';
+  type?: 'button' | 'submit';
+  onClick?: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
@@ -262,13 +267,13 @@ function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "shrink-0 rounded p-1 transition-colors hover:bg-white/10",
-        tone === "accent" && "text-accent",
-        tone === "danger" && "text-red-400",
-        !tone && "text-muted hover:text-white",
+        'shrink-0 rounded p-1 transition-colors hover:bg-white/10',
+        tone === 'accent' && 'text-accent',
+        tone === 'danger' && 'text-red-400',
+        !tone && 'text-muted hover:text-white',
       )}
     >
       {children}
     </button>
-  )
+  );
 }

@@ -1,37 +1,37 @@
 /** One page of results with its sort and paging controls. Shared by the
  *  listings and the catalogue pages; `path` is where its links point. */
 
-import { LIST, PAGE_SIZE } from "@/lib/list"
-import { cn } from "@/lib/utils"
-import type { Params } from "@/lib/href"
-import type { Results as ResultsData } from "@/lib/results"
-import { Pagination } from "./Pagination"
-import { Results } from "./Results"
-import { SortLinks } from "./SortLinks"
-import { Collecting, SelectToggle } from "./Collecting"
+import { LIST, PAGE_SIZE } from '@/lib/list';
+import { cn } from '@/lib/utils';
+import type { Params } from '@/lib/href';
+import type { Results as ResultsData } from '@/lib/results';
+import { Pagination } from './Pagination';
+import { Results } from './Results';
+import { SortLinks } from './SortLinks';
+import { Collecting, SelectToggle } from './Collecting';
 
 export function ResultsPanel({
   type,
   path,
   params,
   data,
-  empty = "Nothing matched.",
+  empty = 'Nothing matched.',
   controls,
   action,
   sortMenu = true,
 }: {
   /** The type letter, which names both the spec and the result shape. */
-  type: string
-  path: string
-  params: Params
-  data: ResultsData
-  empty?: React.ReactNode
+  type: string;
+  path: string;
+  params: Params;
+  data: ResultsData;
+  empty?: React.ReactNode;
   /** The page's own controls, on the sort row before the sorts. */
-  controls?: React.ReactNode
+  controls?: React.ReactNode;
   /** Rendered opposite the sort links -- tabs, or a count. */
-  action?: React.ReactNode
+  action?: React.ReactNode;
   /** False where the page puts the narrow-screen sort menu elsewhere. */
-  sortMenu?: boolean
+  sortMenu?: boolean;
 }) {
   return (
     <Collecting type={type}>
@@ -40,9 +40,9 @@ export function ResultsPanel({
             line entire, rather than a label parting from what it labels. */}
         <div
           className={cn(
-            "flex flex-wrap items-center gap-x-5 gap-y-2",
+            'flex flex-wrap items-center gap-x-5 gap-y-2',
             // A phone shows the row only for Select, when signed in.
-            !sortMenu && !controls && !action && "hidden has-[[data-select]]:flex sm:flex",
+            !sortMenu && !controls && !action && 'hidden has-[[data-select]]:flex sm:flex',
           )}
         >
           {controls}
@@ -80,5 +80,5 @@ export function ResultsPanel({
         )}
       </div>
     </Collecting>
-  )
+  );
 }

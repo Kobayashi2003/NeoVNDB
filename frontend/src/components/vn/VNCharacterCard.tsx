@@ -2,32 +2,32 @@
  *  Used by the slider and the expanded view. Spoiler traits can be revealed per
  *  card, never below the section's level, and only until that level changes:
  *  the section's control is the reader's last word. */
-"use client"
+'use client';
 
-import { useState } from "react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { iconOf } from "@/lib/icons"
-import { CHARACTER_ROLE_CLASS, enumLabel } from "@/lib/enums"
-import { readSex } from "@/lib/characters"
-import { groupTraits } from "@/lib/traits"
-import { birthday, bust, display } from "@/lib/format"
-import { shouldBlur } from "@/lib/content"
-import { BBCode } from "@/lib/bbcode"
-import { Cover } from "@/components/ui/Cover"
-import { InlineList } from "@/components/ui/InfoCard"
-import { SpoilerReveals } from "@/components/ui/SpoilerReveals"
-import { usePrefs } from "@/hooks/usePrefs"
-import { SexLine } from "@/components/character/SexLine"
-import type { Character } from "@/lib/types"
-import type { SpoilerLevel } from "@/hooks/useSpoilerLevel"
-import { Name } from "@/components/ui/Name"
+import { useState } from 'react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { iconOf } from '@/lib/icons';
+import { CHARACTER_ROLE_CLASS, enumLabel } from '@/lib/enums';
+import { readSex } from '@/lib/characters';
+import { groupTraits } from '@/lib/traits';
+import { birthday, bust, display } from '@/lib/format';
+import { shouldBlur } from '@/lib/content';
+import { BBCode } from '@/lib/bbcode';
+import { Cover } from '@/components/ui/Cover';
+import { InlineList } from '@/components/ui/InfoCard';
+import { SpoilerReveals } from '@/components/ui/SpoilerReveals';
+import { usePrefs } from '@/hooks/usePrefs';
+import { SexLine } from '@/components/character/SexLine';
+import type { Character } from '@/lib/types';
+import type { SpoilerLevel } from '@/hooks/useSpoilerLevel';
+import { Name } from '@/components/ui/Name';
 
 /** A run of "label value" pairs on one line, separated by dim middots. Absent
  *  values drop out, and a line with nothing left does not render. */
 function Stats({ items }: { items: [string, React.ReactNode][] }) {
-  const present = items.filter(([, value]) => value !== null && value !== undefined)
-  if (present.length === 0) return null
+  const present = items.filter(([, value]) => value !== null && value !== undefined);
+  if (present.length === 0) return null;
   return (
     <div className="flex flex-wrap items-baseline gap-y-0.5 text-xs">
       {present.map(([label, value], i) => (
@@ -38,7 +38,7 @@ function Stats({ items }: { items: [string, React.ReactNode][] }) {
         </span>
       ))}
     </div>
-  )
+  );
 }
 
 export function VNCharacterCard({
@@ -47,45 +47,48 @@ export function VNCharacterCard({
   clamp,
   onExpand,
 }: {
-  character: Character
-  spoilerLevel: SpoilerLevel
+  character: Character;
+  spoilerLevel: SpoilerLevel;
   /** Cap the height and close it with a fade -- the slider's preview form. */
-  clamp?: boolean
+  clamp?: boolean;
   /** Invoked from the fade, to open this character in the expanded view. */
-  onExpand?: () => void
+  onExpand?: () => void;
 }) {
-  const { original, explicit, sexual, violence } = usePrefs()
+  const { original, explicit, sexual, violence } = usePrefs();
   // What this card revealed, and at which section level: a new section level
   // drops it rather than letting it hold the card open past the control.
-  const [reveal, setReveal] = useState<{ at: SpoilerLevel; level: SpoilerLevel }>({ at: spoilerLevel, level: 0 })
-  const revealed = reveal.at === spoilerLevel ? reveal.level : 0
-  const setRevealed = (level: SpoilerLevel) => setReveal({ at: spoilerLevel, level })
+  const [reveal, setReveal] = useState<{ at: SpoilerLevel; level: SpoilerLevel }>({
+    at: spoilerLevel,
+    level: 0,
+  });
+  const revealed = reveal.at === spoilerLevel ? reveal.level : 0;
+  const setRevealed = (level: SpoilerLevel) => setReveal({ at: spoilerLevel, level });
 
-  const level = Math.max(spoilerLevel, revealed) as SpoilerLevel
-  const traits = groupTraits(character.traits, level, explicit)
-  const sex = readSex(character.sex, character.spoil_sex, level)
-  const gender = readSex(character.gender, character.spoil_gender, level, "GENDER")
+  const level = Math.max(spoilerLevel, revealed) as SpoilerLevel;
+  const traits = groupTraits(character.traits, level, explicit);
+  const sex = readSex(character.sex, character.spoil_sex, level);
+  const gender = readSex(character.gender, character.spoil_gender, level, 'GENDER');
   const blur =
     !!character.image &&
-    shouldBlur(character.image.sexual, character.image.violence, sexual, violence)
+    shouldBlur(character.image.sexual, character.image.violence, sexual, violence);
 
-  const aliases = character.aliases.filter((a) => a.spoiler <= level)
+  const aliases = character.aliases.filter(a => a.spoiler <= level);
 
   return (
     <div
       className={cn(
-        "relative gap-4 rounded-lg border bg-surface p-3",
+        'relative gap-4 rounded-lg border bg-surface p-3',
         character.spoiler === 2
-          ? "border-orange-500/50"
+          ? 'border-orange-500/50'
           : character.spoiler === 1
-            ? "border-yellow-500/40"
-            : "border-white/5",
+            ? 'border-yellow-500/40'
+            : 'border-white/5',
         // The clamped preview keeps the portrait beside the text at every
         // width, because it is already height-limited; the full card stacks
         // them on a phone, where a side-by-side portrait leaves no room to read.
         clamp
-          ? "flex max-h-80 overflow-hidden"
-          : "flex flex-col items-center sm:flex-row sm:items-stretch",
+          ? 'flex max-h-80 overflow-hidden'
+          : 'flex flex-col items-center sm:flex-row sm:items-stretch',
       )}
     >
       {character.image && (
@@ -109,48 +112,50 @@ export function VNCharacterCard({
           </Link>
           <span
             className={cn(
-              "shrink-0 rounded px-1.5 py-0.5 text-xs font-medium",
-              CHARACTER_ROLE_CLASS[character.role] ?? "bg-white/10 text-white/60",
+              'shrink-0 rounded px-1.5 py-0.5 text-xs font-medium',
+              CHARACTER_ROLE_CLASS[character.role] ?? 'bg-white/10 text-white/60',
             )}
           >
-            {enumLabel("CHARACTER_ROLE", character.role)}
+            {enumLabel('CHARACTER_ROLE', character.role)}
           </span>
         </div>
 
-        {sex && <SexLine reading={sex} icon={iconOf("CHARACTER_SEX", sex.code)} className="text-xs" />}
+        {sex && (
+          <SexLine reading={sex} icon={iconOf('CHARACTER_SEX', sex.code)} className="text-xs" />
+        )}
         {gender && (
           <SexLine
             reading={gender}
-            icon={iconOf("CHARACTER_SEX", gender.code)}
+            icon={iconOf('CHARACTER_SEX', gender.code)}
             className="text-xs text-white/70"
           />
         )}
 
         <Stats
           items={[
-            ["Age", character.age],
-            ["Birthday", birthday(character.birthday)],
-            ["Blood", character.blood_type?.toUpperCase() ?? null],
+            ['Age', character.age],
+            ['Birthday', birthday(character.birthday)],
+            ['Blood', character.blood_type?.toUpperCase() ?? null],
           ]}
         />
         <Stats
           items={[
-            ["Height", character.height && `${character.height} cm`],
-            ["Weight", character.weight && `${character.weight} kg`],
+            ['Height', character.height && `${character.height} cm`],
+            ['Weight', character.weight && `${character.weight} kg`],
           ]}
         />
         <Stats
           items={[
-            ["Bust", bust(character.bust, character.cup)],
-            ["Waist", character.waist && `${character.waist} cm`],
-            ["Hips", character.hips && `${character.hips} cm`],
+            ['Bust', bust(character.bust, character.cup)],
+            ['Waist', character.waist && `${character.waist} cm`],
+            ['Hips', character.hips && `${character.hips} cm`],
           ]}
         />
 
         {aliases.length > 0 && (
           <p className="text-xs">
             <span className="mr-1 text-muted">Aliases</span>
-            <InlineList items={aliases.map((a) => display(a.latin, a.name, original) || a.name)} />
+            <InlineList items={aliases.map(a => display(a.latin, a.name, original) || a.name)} />
           </p>
         )}
 
@@ -180,18 +185,18 @@ export function VNCharacterCard({
                   {display(group, list[0]?.group_translation ?? null, original)}
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  {list.map((t) => (
+                  {list.map(t => (
                     <Link
                       key={t.id}
                       href={`/${t.id}`}
-                      title={t.lie ? "Flagged as untrue" : undefined}
+                      title={t.lie ? 'Flagged as untrue' : undefined}
                       className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs transition-colors",
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs transition-colors',
                         t.lie
-                          ? "bg-white/5 text-muted line-through hover:bg-white/10"
-                          : "bg-white/10 text-white/90 hover:bg-white/20",
-                        t.spoiler === 1 && "border border-yellow-500/30",
-                        t.spoiler === 2 && "border border-orange-500/40",
+                          ? 'bg-white/5 text-muted line-through hover:bg-white/10'
+                          : 'bg-white/10 text-white/90 hover:bg-white/20',
+                        t.spoiler === 1 && 'border border-yellow-500/30',
+                        t.spoiler === 2 && 'border border-orange-500/40',
                       )}
                     >
                       {display(t.name, t.translation?.name ?? null, original)}
@@ -207,7 +212,7 @@ export function VNCharacterCard({
                   minor={traits.hiddenMinor}
                   major={traits.hiddenMajor}
                   noun="trait"
-                  onReveal={(to) => setRevealed(to > revealed ? to : revealed)}
+                  onReveal={to => setRevealed(to > revealed ? to : revealed)}
                 />
               </div>
             )}
@@ -234,5 +239,5 @@ export function VNCharacterCard({
         </button>
       )}
     </div>
-  )
+  );
 }

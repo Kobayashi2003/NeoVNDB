@@ -1,28 +1,28 @@
 /** The release page, led by the works it contains. No spoiler control:
  *  nothing about a release is spoiler-gated, but content levels still apply to
  *  its images. */
-"use client"
+'use client';
 
-import { BBCode } from "@/lib/bbcode"
-import { iconOf } from "@/lib/icons"
-import { enumLabel } from "@/lib/enums"
-import { display } from "@/lib/format"
-import { Collapsible } from "@/components/ui/Collapsible"
-import { DetailHeader, DetailShell } from "@/components/ui/DetailShell"
-import { Icon } from "@/components/ui/Icon"
-import { InfoCard } from "@/components/ui/InfoCard"
-import { DetailControls } from "@/components/ui/DetailControls"
-import { Section } from "@/components/ui/Section"
-import { usePrefs } from "@/hooks/usePrefs"
-import { ReleaseDRM } from "./ReleaseDRM"
-import { ReleaseImages } from "./ReleaseImages"
-import { ReleaseInfoPanel } from "./ReleaseInfoPanel"
-import { ReleaseTitles } from "./ReleaseTitles"
-import { ReleaseVNs } from "./ReleaseVNs"
-import type { ReleaseDetail } from "@/lib/types"
+import { BBCode } from '@/lib/bbcode';
+import { iconOf } from '@/lib/icons';
+import { enumLabel } from '@/lib/enums';
+import { display } from '@/lib/format';
+import { Collapsible } from '@/components/ui/Collapsible';
+import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
+import { Icon } from '@/components/ui/Icon';
+import { InfoCard } from '@/components/ui/InfoCard';
+import { DetailControls } from '@/components/ui/DetailControls';
+import { Section } from '@/components/ui/Section';
+import { usePrefs } from '@/hooks/usePrefs';
+import { ReleaseDRM } from './ReleaseDRM';
+import { ReleaseImages } from './ReleaseImages';
+import { ReleaseInfoPanel } from './ReleaseInfoPanel';
+import { ReleaseTitles } from './ReleaseTitles';
+import { ReleaseVNs } from './ReleaseVNs';
+import type { ReleaseDetail } from '@/lib/types';
 
 export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
-  const { original } = usePrefs()
+  const { original } = usePrefs();
 
   return (
     <DetailShell
@@ -30,8 +30,8 @@ export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
         <DetailHeader
           title={
             <span className="flex items-baseline gap-2">
-              {iconOf("LANGUAGE", r.olang) && (
-                <Icon cls={iconOf("LANGUAGE", r.olang)} title={enumLabel("LANGUAGE", r.olang)} />
+              {iconOf('LANGUAGE', r.olang) && (
+                <Icon cls={iconOf('LANGUAGE', r.olang)} title={enumLabel('LANGUAGE', r.olang)} />
               )}
               <span className="min-w-0">{display(r.title, r.alttitle, original) || r.id}</span>
             </span>
@@ -85,5 +85,5 @@ export function ReleasePage({ release: r }: { release: ReleaseDetail }) {
         </Section>
       )}
     </DetailShell>
-  )
+  );
 }

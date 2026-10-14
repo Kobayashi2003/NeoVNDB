@@ -1,18 +1,18 @@
 /** Full-screen image viewer (arrows and Escape; blurred images stay blurred
  *  until clicked). Portalled to the body: `position: fixed` resolves against
  *  any ancestor with a transform or backdrop-filter, and this page has both. */
-"use client"
+'use client';
 
-import { useCallback, useEffect, useState } from "react"
-import { createPortal } from "react-dom"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
-import { imageURL } from "@/lib/images"
-import { ImageWithFallback } from "./ImageWithFallback"
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { imageURL } from '@/lib/images';
+import { ImageWithFallback } from './ImageWithFallback';
 
 export interface LightboxImage {
-  url: string
-  blurred: boolean
-  caption?: string | null
+  url: string;
+  blurred: boolean;
+  caption?: string | null;
 }
 
 export function Lightbox({
@@ -21,40 +21,40 @@ export function Lightbox({
   onIndex,
   onClose,
 }: {
-  images: LightboxImage[]
-  index: number
-  onIndex: (index: number) => void
-  onClose: () => void
+  images: LightboxImage[];
+  index: number;
+  onIndex: (index: number) => void;
+  onClose: () => void;
 }) {
-  const [revealed, setRevealed] = useState(false)
-  const image = images[index]
+  const [revealed, setRevealed] = useState(false);
+  const image = images[index];
 
   const step = useCallback(
     (by: number) => {
-      onIndex((index + by + images.length) % images.length)
-      setRevealed(false)
+      onIndex((index + by + images.length) % images.length);
+      setRevealed(false);
     },
     [index, images.length, onIndex],
-  )
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
-      else if (e.key === "ArrowRight") step(1)
-      else if (e.key === "ArrowLeft") step(-1)
-    }
-    window.addEventListener("keydown", onKey)
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'ArrowLeft') step(-1);
+    };
+    window.addEventListener('keydown', onKey);
     // The page behind must not scroll while this is over it.
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = previous
-    }
-  }, [onClose, step])
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose, step]);
 
-  if (!image) return null
-  const hidden = image.blurred && !revealed
+  if (!image) return null;
+  const hidden = image.blurred && !revealed;
 
   return createPortal(
     <div
@@ -79,23 +79,24 @@ export function Lightbox({
       </div>
 
       <div className="flex min-h-0 flex-1 items-center justify-center gap-2 px-2 pb-6">
-        {images.length > 1 && (
-          <Arrow side="left" onClick={() => step(-1)} />
-        )}
+        {images.length > 1 && <Arrow side="left" onClick={() => step(-1)} />}
         {/* Stops the backdrop's close handler: clicking the image should
             reveal it, not dismiss the viewer. */}
-        <div className="flex min-h-0 min-w-0 flex-1 justify-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex min-h-0 min-w-0 flex-1 justify-center"
+          onClick={e => e.stopPropagation()}
+        >
           <button
             onClick={() => hidden && setRevealed(true)}
             className="min-h-0 min-w-0"
-            aria-label={hidden ? "Reveal image" : undefined}
+            aria-label={hidden ? 'Reveal image' : undefined}
           >
             {/* No width: the viewer is the one place the original is wanted. */}
             <ImageWithFallback
               src={imageURL(image.url)}
-              alt={image.caption ?? ""}
+              alt={image.caption ?? ''}
               className={`max-h-[80vh] max-w-full rounded object-contain transition-[filter] duration-300 ${
-                hidden ? "blur-2xl" : ""
+                hidden ? 'blur-2xl' : ''
               }`}
             />
           </button>
@@ -104,21 +105,21 @@ export function Lightbox({
       </div>
     </div>,
     document.body,
-  )
+  );
 }
 
-function Arrow({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
-  const Chevron = side === "left" ? ChevronLeft : ChevronRight
+function Arrow({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
+  const Chevron = side === 'left' ? ChevronLeft : ChevronRight;
   return (
     <button
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick()
+      onClick={e => {
+        e.stopPropagation();
+        onClick();
       }}
-      aria-label={side === "left" ? "Previous" : "Next"}
+      aria-label={side === 'left' ? 'Previous' : 'Next'}
       className="shrink-0 rounded-full p-2 text-muted transition-colors hover:bg-white/10 hover:text-white"
     >
       <Chevron className="h-7 w-7" aria-hidden />
     </button>
-  )
+  );
 }

@@ -152,11 +152,15 @@ if ($Stop) {
 # --- Prerequisites --------------------------------------------------------
 
 Write-Host "`nNeoVNDB" -ForegroundColor Cyan
-foreach ($tool in 'go', 'npm', 'caddy') {
+foreach ($tool in 'go', 'node', 'pnpm', 'caddy') {
     if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
         Write-Bad "$tool is not on PATH"
         return
     }
+}
+if (-not (Test-Path (Join-Path $webDir 'node_modules'))) {
+    Write-Bad 'frontend dependencies are not installed; run `pnpm install` in frontend/'
+    return
 }
 
 $busy = @()
@@ -213,7 +217,7 @@ if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
 if ($Prod) {
     Write-Step 'building frontend (production)'
     Push-Location $webDir
-    try { & npm.cmd run build | Out-Null } finally { Pop-Location }
+    try { pnpm build | Out-Null } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { Write-Bad 'next build failed'; return }
 }
 
@@ -243,15 +247,15 @@ function Start-Child {
     return $proc
 }
 
-# package.json names the default port; a second -p after it wins, which is how
-# NEOVNDB_WEB_PORT reaches Next.
-$webArgs = if ($Prod) { @('run', 'start') } else { @('run', 'dev') }
-$webArgs += @('--', '-p', "$($ports.web)")
+# Next runs straight through node rather than a pnpm shim, so Stop-Tree reaches
+# the server itself.
+$nextBin = Join-Path $webDir 'node_modules/next/dist/bin/next'
+$webArgs = @($nextBin, ($Prod ? 'start' : 'dev'), '-p', "$($ports.web)")
 
 Start-Child 'api'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('serve')  'api'    | Out-Null
 Start-Child 'img'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('images') 'img'    | Out-Null
 Start-Child 'users' $usersDir (Join-Path $usersDir 'bin/users.exe')   @()         'users'  | Out-Null
-Start-Child 'web'   $webDir   'npm.cmd'                              $webArgs    'next'   | Out-Null
+Start-Child 'web'   $webDir   'node'                                 $webArgs    'next'   | Out-Null
 Start-Child 'edge'  $edgeDir  'caddy'                                @('run')    'caddy'  | Out-Null
 
 $started | ConvertTo-Json -AsArray | Set-Content $pidFile -Encoding utf8
