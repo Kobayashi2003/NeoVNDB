@@ -19,9 +19,16 @@ type GraphOpts struct {
 }
 
 type Graph struct {
-	Root      string      `json:"root"`
-	Depth     int         `json:"depth"`
+	Root  string `json:"root"`
+	Depth int    `json:"depth"`
+	// MaxDepth is the deepest walk this server allows, so a client can offer
+	// every depth there is; Reach is the deepest step any returned title sits at.
+	MaxDepth int `json:"max_depth"`
+	Reach    int `json:"reach"`
+	// Truncated says the component continues past what was returned; Capped
+	// says the node ceiling stopped it, which more depth will not get past.
 	Truncated bool        `json:"truncated"`
+	Capped    bool        `json:"capped"`
 	Nodes     []GraphNode `json:"nodes"`
 	Edges     []GraphEdge `json:"edges"`
 }
@@ -33,6 +40,11 @@ type GraphNode struct {
 	Released string  `json:"released"`
 	Lang     string  `json:"lang"`
 	Depth    int     `json:"depth"`
+	// What a card shows beside the title: the same shapes as the vn type's
+	// devstatus, rating and image fields.
+	Devstatus int16          `json:"devstatus"`
+	Rating    any            `json:"rating"`
+	Image     map[string]any `json:"image"`
 }
 
 type GraphEdge struct {
@@ -76,7 +88,7 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		}
 	}
 
-	graph := &Graph{Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth}
+	graph := &Graph{Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth, MaxDepth: opt.MaxDepth}
 	included := map[int32]bool{root: true}
 	var kept []gen.VNRelationGraphRow
 
@@ -86,6 +98,7 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		}
 		if !included[e.Vid] && opt.MaxNodes > 0 && len(included) >= opt.MaxNodes {
 			graph.Truncated = true
+			graph.Capped = true
 			continue
 		}
 		included[e.Vid] = true
@@ -124,15 +137,28 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 	graph.Nodes = make([]GraphNode, 0, len(nodes))
 	for _, n := range nodes {
 		node := GraphNode{
-			ID:       vndb.FormatID(vndb.TypeVN, n.ID),
-			Released: vndb.FormatReleased(n.CReleased),
-			Lang:     n.Olang,
-			Depth:    depthOf[n.ID],
+			ID:        vndb.FormatID(vndb.TypeVN, n.ID),
+			Released:  vndb.FormatReleased(n.CReleased),
+			Lang:      n.Olang,
+			Depth:     depthOf[n.ID],
+			Devstatus: n.Devstatus,
+			Rating:    tenths(n.CRating),
+		}
+		// Width is null only when the images table has no row for the cover; a
+		// cover nobody can size or rate is left out rather than shown unrated.
+		if n.CImage != nil && n.Width != nil {
+			node.Image = map[string]any{
+				"url":      vndb.ImageURL("cv", *n.CImage),
+				"dims":     []int16{*n.Width, *n.Height},
+				"sexual":   query.ContentLevel(*n.CSexualAvg, *n.CVotecount),
+				"violence": query.ContentLevel(*n.CViolenceAvg, *n.CVotecount),
+			}
 		}
 		if n.Title != nil {
 			node.Title = query.PreferLatin(*n.Title, n.Latin)
 			node.Original = query.OriginalOf(*n.Title, n.Latin)
 		}
+		graph.Reach = max(graph.Reach, node.Depth)
 		graph.Nodes = append(graph.Nodes, node)
 	}
 	return graph, nil
