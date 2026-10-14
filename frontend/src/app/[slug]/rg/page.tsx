@@ -7,7 +7,7 @@
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { ApiError, byId, relationGraph } from '@/lib/api';
 import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ import { RelationGraph } from '@/components/graph/RelationGraph';
 import type { RelationGraph as Graph } from '@/lib/graph';
 
 const DEFAULT_DEPTH = 2;
+/** As many step numbers as fit across the heading card. */
+const MAX_PILLS = 8;
 
 export default async function RelationGraphPage({ params, searchParams }: PageProps<'/[slug]/rg'>) {
   const { slug } = await params;
@@ -76,9 +78,9 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
   );
 }
 
-/** One step per depth the API allows. A step that cannot change the graph --
- *  past where it ends, or past the node ceiling it already hit -- is shown but
- *  not offered. */
+/** The steps worth taking, and no others: none past where the graph ends or
+ *  past the node ceiling it already hit. Within the card's width they are a
+ *  row of numbers; beyond it, a stepper. */
 function Steps({
   slug,
   query,
@@ -89,76 +91,102 @@ function Steps({
   graph: Graph;
 }) {
   const { depth } = graph;
-  // 0 is "no ceiling"; offer a few steps past wherever the reader is.
-  const most = graph.max_depth || Math.max(5, depth + 1);
-  const last = graph.capped ? depth : graph.truncated ? most : graph.reach;
+  const ceiling = graph.max_depth || Infinity;
+  // The deepest step that draws anything new: where the graph ends, one past
+  // the reader's while it goes on, and no further once the node ceiling hit.
+  const useful = graph.capped
+    ? depth
+    : graph.truncated
+      ? Math.min(ceiling, depth + 1)
+      : Math.max(1, graph.reach);
+  // A depth past where the graph ends draws the same graph as its end.
+  const shown = Math.min(depth, useful);
+  // While it goes on, a few steps are offered at once rather than one by one.
+  const offered =
+    graph.truncated && !graph.capped ? Math.min(ceiling, Math.max(5, useful)) : useful;
   const count = `${graph.nodes.length} ${graph.nodes.length === 1 ? 'title' : 'titles'}`;
-  const more = graph.truncated && !graph.capped && depth < most;
+  const href = (d: number) =>
+    withParams(`/${slug}/rg`, query, { depth: d === DEFAULT_DEPTH ? null : String(d) });
+  const label = (d: number) => `${d} ${d === 1 ? 'step' : 'steps'} out`;
 
+  const bar = 'flex w-fit items-center gap-0.5 rounded-full border border-white/10 p-0.5';
+
+  // One element rather than fragments: this is handed to the client panel as a
+  // prop, and fragments from here once drew a missing-key warning there.
   return (
-    <>
-      <nav
-        aria-label="Steps out"
-        className="flex w-fit items-center gap-0.5 rounded-full border border-white/10 p-0.5"
-      >
-        {Array.from({ length: most }, (_, i) => i + 1).map(d => {
-          const label = `${d} ${d === 1 ? 'step' : 'steps'} out`;
-          const style = 'w-6 rounded-full py-0.5 text-center text-xs font-medium tabular-nums';
-          if (d !== depth && d > Math.max(last, 1)) {
-            return (
-              <span
-                key={d}
-                aria-disabled
-                aria-label={label}
-                title="Nothing more is shown this far out"
-                className={cn(style, 'cursor-default text-muted/30')}
-              >
-                {d}
-              </span>
-            );
-          }
-          return (
+    <div className="flex flex-col gap-2">
+      {offered <= MAX_PILLS ? (
+        <nav aria-label="Steps out" className={bar}>
+          {Array.from({ length: offered }, (_, i) => i + 1).map(d => (
             <Link
               key={d}
-              href={withParams(`/${slug}/rg`, query, {
-                depth: d === DEFAULT_DEPTH ? null : String(d),
-              })}
-              aria-current={d === depth ? 'page' : undefined}
-              aria-label={label}
+              href={href(d)}
+              aria-current={d === shown ? 'page' : undefined}
+              aria-label={label(d)}
               className={cn(
-                style,
-                'transition-colors',
-                d === depth
+                'w-6 rounded-full py-0.5 text-center text-xs font-medium tabular-nums transition-colors',
+                d === shown
                   ? 'bg-white/20 text-white'
                   : 'text-muted hover:bg-white/10 hover:text-white',
               )}
             >
               {d}
             </Link>
-          );
-        })}
-      </nav>
+          ))}
+        </nav>
+      ) : (
+        // Too many steps for a row of numbers: one step either way instead.
+        <nav aria-label="Steps out" className={bar}>
+          <StepLink href={shown > 1 ? href(shown - 1) : null} label="One step fewer">
+            <Minus />
+          </StepLink>
+          <span aria-current="page" className="px-2 text-xs font-medium tabular-nums text-white">
+            {label(shown)}
+          </span>
+          <StepLink href={shown < useful ? href(shown + 1) : null} label="One step more">
+            <Plus />
+          </StepLink>
+        </nav>
+      )}
       <p className="text-[0.6875rem] leading-snug text-muted">
         {graph.capped
           ? `${count}, the most one graph shows; it stops here.`
           : !graph.truncated
             ? `${count}; nothing further out.`
-            : more
+            : depth < ceiling
               ? `${count}, and more further out.`
               : `${count}, and more further out than a graph goes.`}
-        {more && (
-          <>
-            {' '}
-            <Link
-              href={withParams(`/${slug}/rg`, query, { depth: String(depth + 1) })}
-              className="text-accent transition-colors hover:text-accent-hover"
-            >
-              One step more
-            </Link>
-          </>
-        )}
       </p>
-    </>
+    </div>
+  );
+}
+
+function StepLink({
+  href,
+  label,
+  children,
+}: {
+  href: string | null;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const style = 'flex h-6 w-6 items-center justify-center rounded-full [&>svg]:h-3.5 [&>svg]:w-3.5';
+  if (!href) {
+    return (
+      <span aria-disabled aria-label={label} className={cn(style, 'text-muted/30')}>
+        {children}
+      </span>
+    );
+  }
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      className={cn(style, 'text-muted transition-colors hover:bg-white/10 hover:text-white')}
+    >
+      {children}
+    </Link>
   );
 }
 
