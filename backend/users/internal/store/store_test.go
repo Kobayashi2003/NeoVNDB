@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kobayashi/neovndb-users/internal/config"
@@ -32,6 +33,7 @@ func open(t *testing.T) *Store {
 	if !strings.HasSuffix(pc.ConnConfig.Database, "_test") {
 		t.Fatalf("refusing to empty %q: a test database's name ends in _test", pc.ConnConfig.Database)
 	}
+	hold(t, url)
 
 	ctx := context.Background()
 	s, err := Open(ctx, &config.Config{DatabaseURL: url, MaxConns: 4, ConnectTimeout: 5 * time.Second})
@@ -358,5 +360,23 @@ func TestDeleteUser(t *testing.T) {
 	}
 	if _, _, err := s.Session(ctx, "token-kept"); err != nil {
 		t.Errorf("the other reader was signed out: %v", err)
+	}
+}
+
+// testLock serialises tests that empty the test database. The store and api
+// packages both do, and go test runs packages at once; the lock is a
+// session's, so closing the connection at cleanup releases it.
+const testLock = 727
+
+func hold(t *testing.T, url string) {
+	t.Helper()
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close(ctx) })
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, testLock); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/api/vn"
@@ -53,6 +54,36 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 			"count":   total,
 			"more":    req.Offset()+len(results) < total,
 		}, nil
+	})
+}
+
+// facet counts one filter's values under the rest of the request: what each
+// choice in that filter's menu would leave. ?values= names the choices.
+func (s *Server) facet(w http.ResponseWriter, r *http.Request) {
+	entity, name := r.PathValue("type"), r.PathValue("filter")
+	resolver, ok := s.resolvers[entity].(query.Faceted)
+	if !ok {
+		fail(w, http.StatusNotFound, fmt.Sprintf("unknown type %q", entity))
+		return
+	}
+	req, err := query.Parse(s.cat, s.resolvers[entity].Registry(), s.limits, r)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	values := query.SplitValues(req.Filters["values"])
+	delete(req.Filters, "values")
+
+	ctx, cancel := s.withTimeout(r.Context())
+	defer cancel()
+
+	key := cache.Key(s.gen.current(ctx), "facet", name, strings.Join(values, ","), req.Canonical(entity))
+	s.cached(ctx, w, key, "facet", func() (any, error) {
+		counts, err := resolver.Facet(ctx, req, name, values)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"counts": counts}, nil
 	})
 }
 

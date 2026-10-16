@@ -78,46 +78,14 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		return nil, err
 	}
 
-	// w.depth is the depth of the edge's source, and a node can be reached by
-	// several paths, so the shortest one wins.
-	depthOf := map[int32]int{root: 0}
-	for _, e := range rows {
-		d := int(e.Depth)
-		if cur, seen := depthOf[e.ID]; !seen || d < cur {
-			depthOf[e.ID] = d
-		}
+	w := walk(root, rows, depth, opt.MaxNodes)
+	graph := &Graph{
+		Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth, MaxDepth: opt.MaxDepth,
+		Truncated: w.truncated, Capped: w.capped,
 	}
+	included, depthOf := w.included, w.depthOf
 
-	graph := &Graph{Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth, MaxDepth: opt.MaxDepth}
-	included := map[int32]bool{root: true}
-	var kept []gen.VNRelationGraphRow
-
-	for _, e := range rows {
-		if depthOf[e.ID] >= depth {
-			continue // its target would sit past the boundary
-		}
-		if !included[e.Vid] && opt.MaxNodes > 0 && len(included) >= opt.MaxNodes {
-			graph.Truncated = true
-			graph.Capped = true
-			continue
-		}
-		included[e.Vid] = true
-		if _, seen := depthOf[e.Vid]; !seen {
-			depthOf[e.Vid] = depthOf[e.ID] + 1
-		}
-		kept = append(kept, e)
-	}
-
-	// Anything the boundary points at but that did not make the cut is what
-	// "truncated" means, rather than inferring it from the depth alone.
-	for _, e := range rows {
-		if included[e.ID] && !included[e.Vid] {
-			graph.Truncated = true
-			break
-		}
-	}
-
-	for _, e := range kept {
+	for _, e := range w.kept {
 		graph.Edges = append(graph.Edges, GraphEdge{
 			From:     vndb.FormatID(vndb.TypeVN, e.ID),
 			To:       vndb.FormatID(vndb.TypeVN, e.Vid),
@@ -162,4 +130,53 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		graph.Nodes = append(graph.Nodes, node)
 	}
 	return graph, nil
+}
+
+// walked is what one depth of a graph keeps of the rows walked for it.
+type walked struct {
+	kept      []gen.VNRelationGraphRow
+	included  map[int32]bool
+	depthOf   map[int32]int
+	truncated bool
+	capped    bool
+}
+
+// walk keeps the edges a graph of this depth shows, from rows that run one
+// layer deeper, stopping at maxNodes titles (0: no ceiling).
+func walk(root int32, rows []gen.VNRelationGraphRow, depth, maxNodes int) walked {
+	// A row's depth is that of its edge's source, and a node can be reached by
+	// several paths, so the shortest one wins.
+	w := walked{included: map[int32]bool{root: true}, depthOf: map[int32]int{root: 0}}
+	for _, e := range rows {
+		d := int(e.Depth)
+		if cur, seen := w.depthOf[e.ID]; !seen || d < cur {
+			w.depthOf[e.ID] = d
+		}
+	}
+
+	for _, e := range rows {
+		if w.depthOf[e.ID] >= depth {
+			continue // its target would sit past the boundary
+		}
+		if !w.included[e.Vid] && maxNodes > 0 && len(w.included) >= maxNodes {
+			w.truncated = true
+			w.capped = true
+			continue
+		}
+		w.included[e.Vid] = true
+		if _, seen := w.depthOf[e.Vid]; !seen {
+			w.depthOf[e.Vid] = w.depthOf[e.ID] + 1
+		}
+		w.kept = append(w.kept, e)
+	}
+
+	// Anything the boundary points at but that did not make the cut is what
+	// "truncated" means, rather than inferring it from the depth alone.
+	for _, e := range rows {
+		if w.included[e.ID] && !w.included[e.Vid] {
+			w.truncated = true
+			break
+		}
+	}
+	return w
 }

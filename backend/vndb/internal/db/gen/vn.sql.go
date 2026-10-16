@@ -278,11 +278,15 @@ func (q *Queries) VNAnimeList(ctx context.Context, ids []int32) ([]VNAnimeListRo
 }
 
 const vNCharacterList = `-- name: VNCharacterList :many
-SELECT cv.vid AS vn_id, cv.role, cv.spoil, c.id, c.c_lang, c.image, c.sex
+SELECT cv.vid AS vn_id,
+       (array_agg(cv.role ORDER BY array_position(
+           ARRAY['main', 'primary', 'side', 'appears'], cv.role)))[1]::text AS role,
+       MIN(cv.spoil)::smallint AS spoil, c.id, c.c_lang, c.image, c.sex
   FROM chars_vns cv
   JOIN chars c ON c.id = cv.id
  WHERE cv.vid = ANY($1::int[])
- ORDER BY cv.vid, cv.role, c.id
+ GROUP BY cv.vid, c.id
+ ORDER BY cv.vid, role, c.id
 `
 
 type VNCharacterListRow struct {
@@ -295,6 +299,11 @@ type VNCharacterListRow struct {
 	Sex   string `db:"sex" json:"sex"`
 }
 
+// chars_vns has a row per release a character is in, each with its own role
+// and spoiler level, so one character can come back five times. A work lists
+// each character once, as vndb does: the weightiest role any release gives it,
+// and the mildest spoiler level, since it is no secret in a release that shows
+// it openly.
 func (q *Queries) VNCharacterList(ctx context.Context, ids []int32) ([]VNCharacterListRow, error) {
 	rows, err := q.db.Query(ctx, vNCharacterList, ids)
 	if err != nil {

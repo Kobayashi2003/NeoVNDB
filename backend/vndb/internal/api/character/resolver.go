@@ -60,3 +60,7 @@ func (r *Resolver) Resolve(ctx context.Context, req *query.Request) ([]map[strin
 	results, err := fields.Apply(ctx, r, page, req.Fields)
 	return results, total, err
 }
+
+func (r *Resolver) Facet(ctx context.Context, req *query.Request, name string, values []string) (map[string]int, error) {
+	return query.Facet(ctx, r.store.Pool(), spec, req, name, values)
+}

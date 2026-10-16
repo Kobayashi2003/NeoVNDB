@@ -130,3 +130,15 @@ func TestImageURL(t *testing.T) {
 		t.Errorf("ImageURL = %q", got)
 	}
 }
+
+func TestParseIDsCeiling(t *testing.T) {
+	if _, err := ParseIDs(TypeVN, "v1,v2,v3", 2); err == nil {
+		t.Error("three ids over a ceiling of two were accepted")
+	}
+	if ids, err := ParseIDs(TypeVN, "v1, v2,", 2); err != nil || len(ids) != 2 {
+		t.Errorf("two ids, blanks skipped: %v %v", ids, err)
+	}
+	if _, err := ParseIDs(TypeVN, "v1,v2,v3", 0); err != nil {
+		t.Errorf("no ceiling: %v", err)
+	}
+}

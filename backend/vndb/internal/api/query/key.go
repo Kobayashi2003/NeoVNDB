@@ -38,6 +38,9 @@ func (r *Request) Canonical(entity string) string {
 	b.WriteString(strconv.Itoa(r.Page))
 	b.WriteByte('/')
 	b.WriteString(strconv.Itoa(r.Limit))
+	if r.Paged {
+		b.WriteString("+paged")
+	}
 
 	b.WriteString("|x=")
 	writeSelection(&b, r.Fields)
