@@ -78,6 +78,21 @@ export async function list<T>(
   return get<Page<T>>(`/${type}`, params);
 }
 
+/** How many results each of `values` would leave if chosen for `filter`,
+ *  under the rest of `filters` (the filter's own value is set aside). */
+export async function facet(
+  type: string,
+  filter: string,
+  values: string[],
+  filters: Record<string, string>,
+): Promise<Record<string, number>> {
+  const answer = await get<{ counts: Record<string, number> }>(`/facets/${type}/${filter}`, {
+    ...filters,
+    values: values.join(','),
+  });
+  return answer.counts;
+}
+
 export interface LinkSite {
   site: string;
   label: string;

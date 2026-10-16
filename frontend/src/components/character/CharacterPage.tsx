@@ -3,7 +3,7 @@
 'use client';
 
 import { BBCode } from '@/lib/bbcode';
-import { characterSpoilerExtent } from '@/lib/characters';
+import { byWork, characterSpoilerExtent } from '@/lib/characters';
 import { display } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Collapsible } from '@/components/ui/Collapsible';
@@ -32,6 +32,7 @@ export function CharacterPage({
   const { original, explicit } = usePrefs();
   const extent = characterSpoilerExtent(character, explicit);
   const spoiler = useSpoilerLevel(extent.minor, extent.major);
+  const works = byWork(character.vns);
 
   const group = parent ? parent.instances : character.instances;
   const hasGroup = group.length > 0 || parent !== null;
@@ -89,13 +90,9 @@ export function CharacterPage({
         </Section>
       )}
 
-      {character.vns.length > 0 && (
-        <Section title="Appearances" count={character.vns.length}>
-          <CharacterAppearances
-            appearances={character.vns}
-            seiyuu={character.seiyuu}
-            spoiler={spoiler}
-          />
+      {works.length > 0 && (
+        <Section title="Appearances" count={works.length}>
+          <CharacterAppearances appearances={works} seiyuu={character.seiyuu} spoiler={spoiler} />
         </Section>
       )}
 

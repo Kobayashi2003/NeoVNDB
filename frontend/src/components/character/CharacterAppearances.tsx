@@ -6,12 +6,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { CHARACTER_ROLE_CLASS, enumLabel } from '@/lib/enums';
-import { ROLE_ORDER } from '@/lib/characters';
+import { roleRank as rank, type WorkAppearance } from '@/lib/characters';
 import { releaseDate } from '@/lib/format';
 import { Segmented, type Option } from '@/components/ui/Segmented';
 import { SpoilerReveals } from '@/components/ui/SpoilerReveals';
 import type { SpoilerControl } from '@/hooks/useSpoilerLevel';
-import type { Appearance, Seiyuu } from '@/lib/types';
+import type { Seiyuu } from '@/lib/types';
 import { Name } from '@/components/ui/Name';
 
 type Order = 'role' | 'date';
@@ -21,17 +21,13 @@ const ORDERS: Option<Order>[] = [
   { value: 'date', label: 'By date' },
 ];
 
-function rank(role: string): number {
-  const at = ROLE_ORDER.indexOf(role);
-  return at === -1 ? ROLE_ORDER.length : at;
-}
-
 export function CharacterAppearances({
   appearances,
   seiyuu,
   spoiler,
 }: {
-  appearances: Appearance[];
+  /** Once per work: see byWork. */
+  appearances: WorkAppearance[];
   seiyuu: Seiyuu[];
   spoiler: SpoilerControl;
 }) {
@@ -95,12 +91,17 @@ export function CharacterAppearances({
               >
                 <Name name={a.title} original={a.alttitle} />
               </Link>
-              {a.release && (
+              {a.releases.length > 0 && (
                 <p className="mt-0.5 truncate text-xs text-muted">
                   Only in{' '}
-                  <Link href={`/${a.release}`} className="hover:text-white/70">
-                    {a.release}
-                  </Link>
+                  {a.releases.map((r, i) => (
+                    <span key={r}>
+                      {i > 0 && ', '}
+                      <Link href={`/${r}`} className="hover:text-white/70">
+                        {r}
+                      </Link>
+                    </span>
+                  ))}
                 </p>
               )}
               {voices.get(a.id)?.map((s, i) => (

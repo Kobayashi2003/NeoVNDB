@@ -3,7 +3,7 @@
 
 import { enumLabel } from './enums';
 import { allowedTraits } from './traits';
-import type { Character, CharacterDetail } from './types';
+import type { Appearance, Character, CharacterDetail } from './types';
 
 export interface SexReading {
   /** Always the apparent code. */
@@ -83,6 +83,43 @@ export function forVN(characters: Character[], vnId: string): Character[] {
   }));
 }
 
+/** One work as a character's page lists it. */
+export interface WorkAppearance extends Omit<Appearance, 'release'> {
+  /** The releases it is limited to; empty when it is in the work as a whole. */
+  releases: string[];
+}
+
+/** A character's works, once each. vndb records a character per release, each
+ *  time with its own role and spoiler level, so one work can come back several
+ *  times: it keeps the weightiest role, the mildest spoiler level (no secret in
+ *  a release that shows it openly), and the releases only if every row named
+ *  one. */
+export function byWork(appearances: Appearance[]): WorkAppearance[] {
+  const works = new Map<string, WorkAppearance & { everywhere: boolean }>();
+  for (const a of appearances) {
+    const seen = works.get(a.id);
+    if (!seen) {
+      const { release, ...rest } = a;
+      works.set(a.id, { ...rest, releases: release ? [release] : [], everywhere: !release });
+      continue;
+    }
+    if (roleRank(a.role) < roleRank(seen.role)) seen.role = a.role;
+    seen.spoiler = Math.min(seen.spoiler, a.spoiler);
+    if (a.release) seen.releases.push(a.release);
+    else seen.everywhere = true;
+  }
+  return [...works.values()].map(({ everywhere, ...w }) => ({
+    ...w,
+    releases: everywhere ? [] : w.releases,
+  }));
+}
+
+/** Where a role sits in ROLE_ORDER; unknown ones after all of them. */
+export function roleRank(role: string): number {
+  const at = ROLE_ORDER.indexOf(role);
+  return at === -1 ? ROLE_ORDER.length : at;
+}
+
 /** Spoiler extent for the character page's single control: traits, vns,
  *  instances, aliases and spoiled sex/gender. */
 export function characterSpoilerExtent(
@@ -91,7 +128,7 @@ export function characterSpoilerExtent(
 ): { minor: boolean; major: boolean } {
   const levels: number[] = [
     ...allowedTraits(character.traits, explicit).map(t => t.spoiler),
-    ...character.vns.map(v => v.spoiler),
+    ...byWork(character.vns).map(v => v.spoiler),
     ...character.instances.map(i => i.spoiler),
     ...character.aliases.map(a => a.spoiler),
   ];

@@ -48,10 +48,11 @@ export async function CatalogPage({
       <div className="flex flex-wrap items-center gap-2">
         <Tabs path={path} params={params} tabs={shown} active={active.value} />
         {/* The same list on the type's own page, as a condition that more can
-            be added to. */}
+            be added to. Pulled out by its padding: with no fill until hovered,
+            its text is its edge, and that lines up with the list below. */}
         <Link
           href={`/${active.type}?f=${encodeURIComponent(asExpression(active.filters))}`}
-          className="ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+          className="-mr-3 ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
         >
           <ListFilter className="icon-text size-3" aria-hidden />
           Refine in {LIST[active.type].label}

@@ -19,7 +19,9 @@ const TOKEN = new RegExp(
     // A bare id such as v17 or c521; vndb links these wherever they appear.
     String.raw`\b([vrcpsgi]\d+)\b`,
   ].join('|'),
-  'g',
+  // vndb reads its tags in any case: descriptions carry [URL=...] as often
+  // as [url=...]. Ids are only ever lower case; render() checks that itself.
+  'gi',
 );
 
 /** Web addresses and paths on this site; anything else (javascript:, data:)
@@ -81,10 +83,12 @@ function render(text: string): React.ReactNode[] {
       );
     } else if (tag !== undefined) {
       out.push(
-        <span key={key} className={EMPHASIS[tag]}>
+        <span key={key} className={EMPHASIS[tag.toLowerCase()]}>
           {render(emphasised)}
         </span>,
       );
+    } else if (id !== undefined && id[0] !== id[0].toLowerCase()) {
+      out.push(id);
     } else if (id !== undefined) {
       out.push(
         <Link key={key} href={`/${id}`} className="text-accent hover:text-accent-hover">
@@ -104,8 +108,8 @@ function render(text: string): React.ReactNode[] {
  *  answer there: the full text is one click away with its markup intact. */
 export function plain(text: string): string {
   return text
-    .replace(/\[url=[^\]]+\]([\s\S]*?)\[\/url\]/g, '$1')
-    .replace(/\[\/?(?:b|i|u|s|spoiler|quote|code|raw)\]/g, '')
+    .replace(/\[url=[^\]]+\]([\s\S]*?)\[\/url\]/gi, '$1')
+    .replace(/\[\/?(?:b|i|u|s|spoiler|quote|code|raw)\]/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

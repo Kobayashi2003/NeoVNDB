@@ -9,7 +9,7 @@ import { Code2, Wand2 } from 'lucide-react';
 import { ApiError, list } from '@/lib/api';
 import { TIDY_RULES } from '@/lib/conditions';
 import { group, type Group, outline, parse, print, tidy } from '@/lib/expr';
-import { type Params, withParams } from '@/lib/href';
+import { filtersOf, type Params, withParams } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { cn } from '@/lib/utils';
 import { type Builder, BuilderContext, describe, prune, update } from './context';
@@ -170,12 +170,9 @@ function usePreview(type: string, params: Params, expression: string | null): st
     if (expression === null) return;
     let live = true;
     const timer = setTimeout(() => {
-      const filters: Record<string, string> = {};
-      for (const [k, v] of Object.entries(params)) {
-        const one = Array.isArray(v) ? v[0] : v;
-        if (one && !['f', 'page', 'sort', 'reverse', 'limit', 'fields'].includes(k))
-          filters[k] = one;
-      }
+      // The address's own f= is what is being edited: the draft replaces it.
+      const filters = filtersOf(params);
+      delete filters.f;
       if (expression) filters.f = expression;
       list(LIST[type].type, { fields: 'id', limit: 1, filters }).then(
         page =>

@@ -22,6 +22,21 @@ export function withParams(
   return query ? `${path}?${query}` : path;
 }
 
+/** Parameters the API reads as paging and shape rather than filters. */
+const RESERVED = new Set(['fields', 'sort', 'reverse', 'page', 'limit']);
+
+/** A listing's address as API filters: every parameter the API does not
+ *  reserve, f= included. */
+export function filtersOf(params: Params): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (RESERVED.has(key)) continue;
+    const single = Array.isArray(value) ? value[0] : value;
+    if (single) out[key] = single;
+  }
+  return out;
+}
+
 /** The single value of a query parameter, ignoring a repeat. */
 export function one(params: Params, key: string): string | undefined {
   const value = params[key];

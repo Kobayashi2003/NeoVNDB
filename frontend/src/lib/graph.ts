@@ -41,6 +41,28 @@ export interface RelationGraph {
   edges: GraphEdge[];
 }
 
+/** Which steps out a graph's page offers. `useful` is the deepest that draws
+ *  anything new: where the graph ends, one past the reader's while it goes on,
+ *  and no further once the node ceiling hit. `shown` is the step drawn, since a
+ *  depth past the end draws the same graph as the end. `offered` is how many
+ *  to list: while the graph goes on, a few at once rather than one by one.
+ *  `deeper` says the server would walk further at all. */
+export function steps(
+  graph: Pick<RelationGraph, 'depth' | 'max_depth' | 'reach' | 'truncated' | 'capped'>,
+) {
+  const { depth } = graph;
+  const ceiling = graph.max_depth || Infinity;
+  const useful = graph.capped
+    ? depth
+    : graph.truncated
+      ? Math.min(ceiling, depth + 1)
+      : Math.max(1, graph.reach);
+  const shown = Math.min(depth, useful);
+  const offered =
+    graph.truncated && !graph.capped ? Math.min(ceiling, Math.max(5, useful)) : useful;
+  return { useful, shown, offered, deeper: depth < ceiling };
+}
+
 /** vndb stores both halves of each relation; the backward half (inverse ->
  *  forward) is dropped so each pair draws once. */
 const INVERSE: Record<string, string> = { preq: 'seq', par: 'side', orig: 'fan' };

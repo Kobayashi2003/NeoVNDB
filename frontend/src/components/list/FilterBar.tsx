@@ -7,13 +7,15 @@
  *  filter) beside the sort menu, with what is active listed underneath. */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, ListFilter, SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { facet } from '@/lib/api';
+import { LIST } from '@/lib/list';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { MenuLabel, MenuMark, MenuPanel, menuAction, menuItem } from '@/components/ui/Menu';
-import { one, withParams, type Params } from '@/lib/href';
+import { filtersOf, one, withParams, type Params } from '@/lib/href';
 import { useMenu } from '@/hooks/useMenu';
 import type { Choice, Filter } from '@/lib/filters';
 import { ConditionBuilder } from './conditions/ConditionBuilder';
@@ -125,6 +127,7 @@ export function FilterBar({
           {filters.map(filter => (
             <FilterMenu
               key={filter.key}
+              type={type}
               path={path}
               params={params}
               filter={filter}
@@ -172,6 +175,7 @@ export function FilterBar({
         {filters.map(filter => (
           <FilterMenu
             key={filter.key}
+            type={type}
             path={path}
             params={params}
             filter={filter}
@@ -236,13 +240,48 @@ function summary(filter: Filter, chosen: string[]): string {
   return `${chosen.length} chosen`;
 }
 
+/** How many results each choice would leave, asked for once the menu opens and
+ *  again only when the rest of the address changes. Null until it answers, and
+ *  for good if it cannot: the menu works the same without the numbers. */
+function useCounts(open: boolean, type: string, filter: Filter, params: Params) {
+  const request = useMemo(
+    () => ({
+      type: LIST[type].type,
+      filter: filter.key,
+      values: filter.choices.map(c => c.value),
+      filters: filtersOf(params),
+    }),
+    [type, filter, params],
+  );
+  const key = JSON.stringify(request);
+  const [answer, setAnswer] = useState<{ key: string; counts: Record<string, number> } | null>(
+    null,
+  );
+  const have = answer?.key === key;
+
+  useEffect(() => {
+    if (!open || have) return;
+    let live = true;
+    facet(request.type, request.filter, request.values, request.filters)
+      .then(counts => live && setAnswer({ key, counts }))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [open, have, key, request]);
+
+  return have ? answer.counts : null;
+}
+
 function FilterMenu({
+  type,
   path,
   params,
   filter,
   chosen,
   row = false,
 }: {
+  type: string;
   path: string;
   params: Params;
   filter: Filter;
@@ -252,6 +291,7 @@ function FilterMenu({
 }) {
   const [open, setOpen] = useState(false);
   const { box, panel: menu } = useMenu(open, setOpen);
+  const counts = useCounts(open, type, filter, params);
   const cleared = withParams(path, params, { [filter.key]: null, page: null });
 
   return (
@@ -321,6 +361,7 @@ function FilterMenu({
               choice={choice}
               on={chosen.includes(choice.value)}
               multiple={!!filter.multiple}
+              count={counts?.[choice.value]}
             />
           ))}
         </MenuPanel>
@@ -334,21 +375,31 @@ function Option({
   choice,
   on,
   multiple,
+  count,
 }: {
   href: string;
   choice: Choice;
   on: boolean;
   multiple: boolean;
+  /** What choosing it would leave, once known. */
+  count?: number;
 }) {
   return (
     <Link
       href={href}
-      className={menuItem({ className: on ? 'text-white' : undefined })}
+      className={menuItem({
+        className: cn(on && 'text-white', count === 0 && !on && 'text-muted/60'),
+      })}
       aria-current={on || undefined}
     >
       <MenuMark kind={multiple ? 'check' : 'radio'} on={on} />
       {choice.icon && <span className={cn(choice.icon, 'shrink-0')} aria-hidden />}
       <span className="truncate">{choice.label}</span>
+      {count !== undefined && (
+        <span className="ml-auto pl-3 text-xs tabular-nums text-muted">
+          {count.toLocaleString()}
+        </span>
+      )}
     </Link>
   );
 }
