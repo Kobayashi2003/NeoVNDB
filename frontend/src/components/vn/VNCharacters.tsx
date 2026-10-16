@@ -14,6 +14,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { VNCharacterTile } from './VNCharacterTile';
 import { VNCharacterSlider } from './VNCharacterSlider';
 import { SpoilerScope } from '@/components/ui/Spoiler';
+import { SpoilerReveals } from '@/components/ui/SpoilerReveals';
 import { usePrefs, type CharacterLayout } from '@/hooks/usePrefs';
 import type { Character } from '@/lib/types';
 
@@ -75,13 +76,20 @@ export function VNCharacters({
           {shown.map(c => (
             <VNCharacterTile key={c.id} character={c} spoilerLevel={spoiler.level} />
           ))}
+        </div>
+      )}
 
-          {hiddenMinor > 0 && (
-            <HiddenTile count={hiddenMinor} tone="minor" onReveal={() => spoiler.set(1)} />
-          )}
-          {hiddenMajor > 0 && (
-            <HiddenTile count={hiddenMajor} tone="major" onReveal={() => spoiler.set(2)} />
-          )}
+      {/* A line of pills, as for hidden tags: a card the size of a portrait
+          for "+2" was the biggest thing in the section. */}
+      {(hiddenMinor > 0 || hiddenMajor > 0) && (
+        <div className="flex flex-wrap gap-1.5">
+          <SpoilerReveals
+            minor={hiddenMinor}
+            major={hiddenMajor}
+            noun="character"
+            className="py-1"
+            onReveal={spoiler.set}
+          />
         </div>
       )}
     </div>
@@ -108,45 +116,5 @@ function LayoutToggle({
         <Glyph className="h-4 w-4" aria-hidden />
       </button>
     </Tooltip>
-  );
-}
-
-/** A grid cell standing in for the characters a spoiler level is holding back,
- *  so the gap in the grid is legible rather than merely absent. */
-function HiddenTile({
-  count,
-  tone,
-  onReveal,
-}: {
-  count: number;
-  tone: 'minor' | 'major';
-  onReveal: () => void;
-}) {
-  const minor = tone === 'minor';
-  return (
-    <button
-      onClick={onReveal}
-      className={cn(
-        'flex h-full min-h-48 flex-col items-center justify-center gap-1.5 rounded-lg border p-4 transition-colors',
-        minor
-          ? 'border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10'
-          : 'border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10',
-      )}
-    >
-      <span className={cn('text-sm font-semibold', minor ? 'text-yellow-400' : 'text-orange-400')}>
-        +{count}
-      </span>
-      <span
-        className={cn(
-          'text-center text-xs leading-relaxed',
-          minor ? 'text-yellow-500/70' : 'text-orange-500/70',
-        )}
-      >
-        {tone} spoiler character{count === 1 ? '' : 's'}
-      </span>
-      <span className={cn('text-xs', minor ? 'text-yellow-500/40' : 'text-orange-500/40')}>
-        click to reveal
-      </span>
-    </button>
   );
 }

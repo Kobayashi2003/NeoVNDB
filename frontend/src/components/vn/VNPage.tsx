@@ -18,8 +18,8 @@ import { VNCharacters } from './VNCharacters';
 import { VNCharactersPanel } from './VNCharactersPanel';
 import { VNStaff } from './VNStaff';
 import { VNReleases } from './VNReleases';
-import { Results } from '@/components/list/Results';
 import { VNScreenshots } from './VNScreenshots';
+import { VNSimilar } from './VNSimilar';
 import type { VN } from '@/lib/types';
 
 export function VNPage({ vn }: { vn: VN }) {
@@ -103,9 +103,7 @@ export function VNPage({ vn }: { vn: VN }) {
           {vn.similar.length > 0 && (
             // Not vndb's: works alike in their tags, related ones left out
             // (they are in the sidebar), computed at each import.
-            <Section title="Similar" count={vn.similar.length}>
-              <Results type="v" rows={vn.similar} />
-            </Section>
+            <VNSimilar rows={vn.similar} />
           )}
         </>
       )}

@@ -13,7 +13,7 @@ import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
 import { Name } from '@/components/ui/Name';
 import { RelationGraph } from '@/components/graph/RelationGraph';
-import type { RelationGraph as Graph } from '@/lib/graph';
+import { steps, type RelationGraph as Graph } from '@/lib/graph';
 
 const DEFAULT_DEPTH = 2;
 /** As many step numbers as fit across the heading card. */
@@ -90,20 +90,7 @@ function Steps({
   query: Record<string, string | string[] | undefined>;
   graph: Graph;
 }) {
-  const { depth } = graph;
-  const ceiling = graph.max_depth || Infinity;
-  // The deepest step that draws anything new: where the graph ends, one past
-  // the reader's while it goes on, and no further once the node ceiling hit.
-  const useful = graph.capped
-    ? depth
-    : graph.truncated
-      ? Math.min(ceiling, depth + 1)
-      : Math.max(1, graph.reach);
-  // A depth past where the graph ends draws the same graph as its end.
-  const shown = Math.min(depth, useful);
-  // While it goes on, a few steps are offered at once rather than one by one.
-  const offered =
-    graph.truncated && !graph.capped ? Math.min(ceiling, Math.max(5, useful)) : useful;
+  const { useful, shown, offered, deeper } = steps(graph);
   const count = `${graph.nodes.length} ${graph.nodes.length === 1 ? 'title' : 'titles'}`;
   const href = (d: number) =>
     withParams(`/${slug}/rg`, query, { depth: d === DEFAULT_DEPTH ? null : String(d) });
@@ -153,7 +140,7 @@ function Steps({
           ? `${count}, the most one graph shows; it stops here.`
           : !graph.truncated
             ? `${count}; nothing further out.`
-            : depth < ceiling
+            : deeper
               ? `${count}, and more further out.`
               : `${count}, and more further out than a graph goes.`}
       </p>

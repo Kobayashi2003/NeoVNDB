@@ -2,25 +2,13 @@
  *  API does not reserve (f= included) is passed through as a filter. */
 
 import { FILTERS } from '@/lib/filters';
-import { withParams, type Params } from '@/lib/href';
+import { filtersOf, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
 import { DataAge } from '@/components/layout/DataAge';
 import { FilterBar } from './FilterBar';
 import { ResultsPanel } from './ResultsPanel';
 import { SearchBox } from './SearchBox';
-
-const RESERVED = new Set(['fields', 'sort', 'reverse', 'page', 'limit']);
-
-export function filtersOf(params: Params): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(params)) {
-    if (RESERVED.has(key)) continue;
-    const single = Array.isArray(value) ? value[0] : value;
-    if (single) out[key] = single;
-  }
-  return out;
-}
 
 export async function ListPage({ type, params }: { type: string; params: Params }) {
   const path = `/${type}`;

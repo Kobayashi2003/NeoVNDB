@@ -1,5 +1,5 @@
 /** Search across all seven types at once. A whole id (v17) redirects to
- *  that entry instead of searching. */
+ *  that entry instead of searching, and so does a search with one match. */
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -13,6 +13,7 @@ import { Results } from '@/components/list/Results';
 import { Collecting, SelectToggle } from '@/components/list/Collecting';
 import { SearchField } from '@/components/layout/SearchField';
 import { DataAge } from '@/components/layout/DataAge';
+import { Section } from '@/components/ui/Section';
 
 export const metadata: Metadata = { title: 'Search - NeoVNDB' };
 
@@ -45,6 +46,11 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
   const groups = term ? await Promise.all(TYPES.map(type => ask(type, term))) : [];
   const found = groups.filter(g => g.count > 0);
 
+  // One match in all seven kinds is the one that was meant, as on vndb. Only
+  // when every kind answered: one that failed may have held a second.
+  const only = found.length === 1 && found[0].count === 1 ? found[0].rows[0] : null;
+  if (only && groups.every(g => !g.failed)) redirect(`/${(only as { id: string }).id}`);
+
   return (
     <main className="mx-auto flex w-full max-w-page flex-col px-4 py-6 pb-12 animate-slide-up-fade">
       <div className="mb-6 flex flex-col gap-3">
@@ -65,18 +71,10 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
         <div data-results className="flex flex-col gap-8">
           {found.map(({ type, rows, count, vns }) => (
             <Collecting key={type} type={type}>
-              <section className="flex flex-col gap-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="flex items-baseline gap-2 text-sm font-semibold">
-                    <span
-                      className="inline-block h-3 w-0.5 translate-y-0.5 rounded bg-accent"
-                      aria-hidden
-                    />
-                    {LIST[type].label}
-                    <span className="text-xs font-normal tabular-nums text-muted">
-                      {count.toLocaleString()}
-                    </span>
-                  </h2>
+              <Section
+                title={LIST[type].label}
+                count={count}
+                action={
                   <div className="flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1 text-xs">
                     {vns.map(v => (
                       <Link
@@ -101,9 +99,10 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
                       </Link>
                     )}
                   </div>
-                </div>
+                }
+              >
                 <Results type={type} rows={rows} />
-              </section>
+              </Section>
             </Collecting>
           ))}
         </div>
@@ -131,10 +130,11 @@ async function ask(type: string, term: string) {
     }).catch(() => null),
     Promise.all((TO_VN[type] ?? []).map(v => related(v.filter, term))),
   ]);
-  if (!answer) return { type, rows: [] as unknown[], count: 0, vns: [] };
+  if (!answer) return { type, rows: [] as unknown[], count: 0, vns: [], failed: true };
   const labels = TO_VN[type] ?? [];
   return {
     type,
+    failed: false,
     rows: answer.results,
     count: answer.count,
     vns: vns

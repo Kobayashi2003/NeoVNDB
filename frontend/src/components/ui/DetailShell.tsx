@@ -2,6 +2,7 @@
  *  viewport-high box; below that one column, header then sidebar then body. */
 
 import { cn } from '@/lib/utils';
+import { SectionNav } from './SectionNav';
 
 export function DetailShell({
   header,
@@ -45,6 +46,7 @@ export function DetailShell({
       >
         <div className="mb-6">{header}</div>
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
+        <SectionNav />
         <div className="flex flex-col gap-8">{children}</div>
       </div>
     </main>

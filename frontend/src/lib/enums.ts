@@ -276,8 +276,8 @@ export const CHARACTER_ROLE_CLASS: Record<string, string> = {
   appears: 'bg-white/5 text-white/40',
 };
 
-// The same colours without a fill, for a role written over an image where a
-// badge would fight the picture.
+// The same colours as text alone, for a role written over an image on a dark
+// badge of its own.
 export const CHARACTER_ROLE_TEXT: Record<string, string> = {
   main: 'text-green-400',
   primary: 'text-blue-400',

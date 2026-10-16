@@ -150,9 +150,10 @@ export function ShelfPanel({
 
     const hydrate = async (owned: Owned[]) => {
       if (owned.length === 0) return [];
+      // No limit: an id lookup without one returns every row it names, and a
+      // limit the length of a long list would be over the page size ceiling.
       const answer = await query<{ id: string }>(spec.type, {
         fields: spec.fields,
-        limit: owned.length,
         filters: { id: owned.map(o => o.id).join(',') },
       });
       const byId = new Map(answer.results.map(r => [r.id, r]));
@@ -199,7 +200,6 @@ export function ShelfPanel({
         // The read API says which match; the order stays the service's.
         const found = await query<{ id: string }>(spec.type, {
           fields: 'id',
-          limit: whole.items.length,
           filters: { id: ids, search },
         });
         const hit = new Set(found.results.map(r => r.id));

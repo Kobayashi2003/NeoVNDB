@@ -64,7 +64,10 @@ export function VNCharacterTile({
           )}
           <span
             className={cn(
-              'absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 to-transparent px-2 py-1.5 text-xs',
+              // A small dark badge rather than a fade: most portraits are on
+              // white, where a fade the height of the text leaves the coloured
+              // words on grey.
+              'absolute bottom-1.5 left-1.5 rounded bg-black/75 px-1.5 py-0.5 text-xs font-medium backdrop-blur-sm',
               CHARACTER_ROLE_TEXT[character.role] ?? 'text-white/70',
             )}
           >

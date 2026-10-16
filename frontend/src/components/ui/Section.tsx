@@ -21,7 +21,11 @@ export function Section({
       <span className="text-sm font-bold uppercase tracking-wider transition-colors group-hover:text-accent">
         {title}
       </span>
-      {count !== undefined && <span className="text-xs font-normal text-muted">{count}</span>}
+      {count !== undefined && (
+        <span className="text-xs font-normal tabular-nums text-muted">
+          {count.toLocaleString()}
+        </span>
+      )}
       {onTitleClick && (
         <ChevronRight
           className="icon-caps h-4 w-4 text-muted transition-colors group-hover:text-accent"
@@ -31,8 +35,16 @@ export function Section({
     </>
   );
 
+  // Named for the section nav, which finds sections by these and scrolls to
+  // their ids. The scroll margin keeps a heading clear of that nav, which
+  // sticks under the site header until the column scrolls on its own.
   return (
-    <section>
+    <section
+      id={sectionId(title)}
+      data-section={title}
+      data-count={count?.toLocaleString()}
+      className="scroll-mt-[calc(var(--header-h)+4rem)] lg:scroll-mt-16"
+    >
       <h2 className="mb-3 flex items-center gap-2.5">
         <span className="h-4 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
         {onTitleClick ? (
@@ -51,4 +63,12 @@ export function Section({
       {children}
     </section>
   );
+}
+
+/** "Voiced characters" is #voiced-characters: a section can be linked to. */
+function sectionId(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }

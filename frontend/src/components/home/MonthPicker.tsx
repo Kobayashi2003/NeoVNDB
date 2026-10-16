@@ -84,7 +84,7 @@ export function MonthPicker({
             <button
               type="button"
               onClick={() => setShowing(y => y - 1)}
-              aria-label={`${showing - 1}`}
+              aria-label={`Months of ${showing - 1}`}
               className="rounded-full p-1 text-muted transition-colors hover:bg-white/10 hover:text-white"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden />
@@ -93,7 +93,7 @@ export function MonthPicker({
             <button
               type="button"
               onClick={() => setShowing(y => y + 1)}
-              aria-label={`${showing + 1}`}
+              aria-label={`Months of ${showing + 1}`}
               className="rounded-full p-1 text-muted transition-colors hover:bg-white/10 hover:text-white"
             >
               <ChevronRight className="h-4 w-4" aria-hidden />

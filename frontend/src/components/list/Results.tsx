@@ -32,6 +32,11 @@ import { useSelection } from './Collecting';
 const GRID =
   'grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7';
 const LIST = 'rounded-lg border border-white/5 bg-surface';
+/** The grid's tiles in one sideways row, each about a grid column wide. The
+ *  scroll box clips, so it is padded out by the room a tile's hover growth and
+ *  border need, and pulled back by as much to stay in line. */
+const STRIP =
+  '-mx-1 grid auto-cols-[9.5rem] grid-flow-col items-stretch gap-3 overflow-x-auto overscroll-x-contain scroll-px-1 px-1 pb-2 pt-1 snap-x snap-mandatory sm:auto-cols-[10.5rem] [&>*]:snap-start';
 
 /** How each type is laid out. Pictures are looked for by eye and go in a
  *  grid; the rest are looked for by name, and a grid of identical text boxes
@@ -73,11 +78,14 @@ export function Results({
   type,
   rows,
   wrap,
+  strip = false,
 }: {
   type: string;
   rows: unknown[];
   /** Put something around each card. */
   wrap?: (card: Card) => React.ReactNode;
+  /** One row that scrolls sideways instead of a grid that grows downward. */
+  strip?: boolean;
 }) {
   const built = build(type, rows);
   const selection = useSelection();
@@ -106,7 +114,7 @@ export function Results({
       : undefined);
 
   return (
-    <div className={built.layout}>
+    <div className={strip && built.cards[0]?.grid ? STRIP : built.layout}>
       {built.cards.map(card => (
         // A fragment rather than a wrapper element: the card has to stay a
         // direct child of the grid or the layout is not a grid any more.

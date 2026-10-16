@@ -162,25 +162,36 @@ export function CharacterCard({ row }: { row: CharacterRow }) {
   );
 }
 
+/** Platforms come after the title, so every title starts at the same place
+ *  however many platforms the row before it had. On a phone the date and age
+ *  columns would leave the title a few letters, so they go under it. */
 export function ReleaseCard({ row }: { row: ReleaseRow }) {
+  const date = <span className="tabular-nums">{releaseDate(row.released)}</span>;
+  const platforms = row.platforms
+    .slice(0, 5)
+    .map(p => <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />);
+
   return (
     <Row href={`/${row.id}`}>
-      <span className="w-24 shrink-0 text-xs tabular-nums text-muted">
-        {releaseDate(row.released)}
-      </span>
-      <span className="w-14 shrink-0 text-xs">
+      <span className="hidden w-24 shrink-0 text-xs text-muted sm:block">{date}</span>
+      <span className="hidden w-14 shrink-0 text-xs sm:block">
         <AgeRating minage={row.minage} />
       </span>
-      <span className="inline-flex shrink-0 items-center gap-1">
-        {row.platforms.slice(0, 5).map(p => (
-          <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />
-        ))}
+      <span className={cn('min-w-0 flex-1', !row.official && 'opacity-60')}>
+        <span className="block truncate text-sm">
+          <Name name={row.title} original={row.alttitle} />
+          {row.patch && <span className="ml-1 text-xs text-muted">(patch)</span>}
+          {!row.official && <span className="ml-1 text-xs text-muted">(unofficial)</span>}
+          {row.freeware && <span className="ml-1 text-xs text-muted">(freeware)</span>}
+        </span>
+        <span className="mt-0.5 flex items-center gap-2 text-xs text-muted sm:hidden">
+          {date}
+          <AgeRating minage={row.minage} />
+          <span className="inline-flex items-center gap-1">{platforms}</span>
+        </span>
       </span>
-      <span className={cn('min-w-0 flex-1 truncate text-sm', !row.official && 'opacity-60')}>
-        <Name name={row.title} original={row.alttitle} />
-        {row.patch && <span className="ml-1 text-xs text-muted">(patch)</span>}
-        {!row.official && <span className="ml-1 text-xs text-muted">(unofficial)</span>}
-        {row.freeware && <span className="ml-1 text-xs text-muted">(freeware)</span>}
+      <span className="hidden shrink-0 items-center gap-1 self-center sm:inline-flex">
+        {platforms}
       </span>
     </Row>
   );
@@ -232,7 +243,10 @@ export function TagCard({ row }: { row: TagRow }) {
           <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(description)}</span>
         )}
       </span>
-      <span className="shrink-0 text-xs text-muted">{enumLabel('CATEGORY', row.category)}</span>
+      {/* The description needs the room more than the category on a phone. */}
+      <span className="hidden shrink-0 text-xs text-muted sm:inline">
+        {enumLabel('CATEGORY', row.category)}
+      </span>
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted">
         {row.vn_count.toLocaleString()}
       </span>
@@ -259,7 +273,11 @@ export function TraitCard({ row }: { row: TraitRow }) {
           <span className="ml-2 line-clamp-1 text-xs text-muted">{plain(description)}</span>
         )}
       </span>
-      {row.sexual && <span className="shrink-0 text-xs text-rose-400/80">sexual</span>}
+      {row.sexual && (
+        <span className="hidden shrink-0 text-xs text-muted sm:inline">
+          {enumLabel('CATEGORY', 'ero')}
+        </span>
+      )}
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted">
         {row.char_count.toLocaleString()}
       </span>
