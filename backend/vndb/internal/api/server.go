@@ -96,6 +96,7 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	// The graph returns a graph rather than a page of rows, so it has its own
 	// route instead of being a filter on the unified endpoint.
 	mux.HandleFunc("GET /vn/{id}/relations", s.relationGraph)
+	mux.HandleFunc("GET /facets/{type}/{filter}", s.facet)
 	mux.HandleFunc("GET /{type}", s.query)
 	return recovering(s.log, logging(s.log, mux))
 }

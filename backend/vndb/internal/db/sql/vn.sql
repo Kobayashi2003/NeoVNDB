@@ -144,11 +144,20 @@ SELECT rv.vid AS vn_id, rv.rtype, r.id, r.released, r.official, r.patch,
  ORDER BY rv.vid, r.released, r.id;
 
 -- name: VNCharacterList :many
-SELECT cv.vid AS vn_id, cv.role, cv.spoil, c.id, c.c_lang, c.image, c.sex
+-- chars_vns has a row per release a character is in, each with its own role
+-- and spoiler level, so one character can come back five times. A work lists
+-- each character once, as vndb does: the weightiest role any release gives it,
+-- and the mildest spoiler level, since it is no secret in a release that shows
+-- it openly.
+SELECT cv.vid AS vn_id,
+       (array_agg(cv.role ORDER BY array_position(
+           ARRAY['main', 'primary', 'side', 'appears'], cv.role)))[1]::text AS role,
+       MIN(cv.spoil)::smallint AS spoil, c.id, c.c_lang, c.image, c.sex
   FROM chars_vns cv
   JOIN chars c ON c.id = cv.id
  WHERE cv.vid = ANY(@ids::int[])
- ORDER BY cv.vid, cv.role, c.id;
+ GROUP BY cv.vid, c.id
+ ORDER BY cv.vid, role, c.id;
 
 -- name: GetCharImages :many
 SELECT num, width, height, c_sexual_avg, c_violence_avg, c_votecount

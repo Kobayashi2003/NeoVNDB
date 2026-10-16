@@ -58,3 +58,17 @@ func TestParseRequestCost(t *testing.T) {
 		t.Errorf("no ceiling: %v", err)
 	}
 }
+
+// An id lookup returns every row it names unless it asks for a page; asked
+// with the default numbers or without any, it is a different request.
+func TestParsePaged(t *testing.T) {
+	whole, _ := parse("id=v1,v2", lim)
+	paged, _ := parse("id=v1,v2&page=1", lim)
+	limited, _ := parse("id=v1,v2&limit=24", lim)
+	if whole.Paged || !paged.Paged || !limited.Paged {
+		t.Errorf("paged: %v %v %v", whole.Paged, paged.Paged, limited.Paged)
+	}
+	if whole.Canonical("vn") == paged.Canonical("vn") {
+		t.Error("a paged and a whole id lookup share a cache key")
+	}
+}

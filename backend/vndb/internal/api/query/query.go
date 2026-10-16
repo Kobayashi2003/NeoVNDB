@@ -31,7 +31,9 @@ type Request struct {
 	Reverse bool
 	Page    int
 	Limit   int
-	Limits  Limits
+	// Paged says page= or limit= was given, which an id lookup honours.
+	Paged  bool
+	Limits Limits
 }
 
 // Reserved parameter names; everything else in the query string is a filter.
@@ -55,6 +57,7 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		Page:    1,
 		Limit:   lim.PageSize,
 		Limits:  lim,
+		Paged:   values.Has("page") || values.Has("limit"),
 	}
 
 	if raw := values.Get("page"); raw != "" {

@@ -48,6 +48,15 @@ func (s *Server) openapi(w http.ResponseWriter, r *http.Request) {
 		"parameters": []any{pathParam("id", "A visual novel id, v17")},
 		"responses":  ok("Nodes and edges"),
 	}}
+	paths["/facets/{type}/{filter}"] = map[string]any{"get": map[string]any{
+		"summary": "How many rows each value of one filter would leave, under the rest of the query",
+		"parameters": []any{
+			pathParam("type", "One of the types"),
+			pathParam("filter", "One of that type's filters; its own value in the query is set aside"),
+			queryParam("values", "The values to count, comma-separated: values=en,ja"),
+		},
+		"responses": ok("Counts by value"),
+	}}
 	paths["/meta/fields/{type}"] = map[string]any{"get": map[string]any{
 		"summary":    "The fields one type offers, with how they nest",
 		"parameters": []any{pathParam("type", "One of the types")},

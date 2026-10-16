@@ -33,6 +33,23 @@ func TestSearchTerms(t *testing.T) {
 	}
 }
 
+func TestSearchCeiling(t *testing.T) {
+	search := SearchFilter("v", "vn")
+	tight := lim
+	tight.MaxSearchTerms = 2
+	if err := search(&Builder{Limits: tight}, "ever out infinity"); err == nil || !IsClientError(err) {
+		t.Errorf("three words over a ceiling of two: %v", err)
+	}
+	// A quoted phrase is one term however many words it holds.
+	if err := search(&Builder{Limits: tight}, `ever "out of infinity"`); err != nil {
+		t.Errorf("two terms: %v", err)
+	}
+	tight.MaxSearchTerms = 0 // no ceiling
+	if err := search(&Builder{Limits: tight}, "a b c d e f g h i j"); err != nil {
+		t.Errorf("no ceiling: %v", err)
+	}
+}
+
 func TestSearchRankOrder(t *testing.T) {
 	spec := PageSpec{Alias: "vn", SearchEntity: "v", Popularity: "vn.c_votecount",
 		Sorts: map[string]Sort{"id": {Expr: "vn.id"}, "searchrank": {}}}

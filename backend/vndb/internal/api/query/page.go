@@ -52,36 +52,15 @@ type Sort struct {
 }
 
 // Page runs one filtered, ordered page and returns the rows with the total. A
-// lookup by id is a primary-key hit and skips paging.
+// lookup by id returns every row it names unless it asks for a page: a
+// detail page wants its one row whatever the default page size, but a
+// collection sorted by a vndb field pages through its ids like any list.
 func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	req *Request, scan pgx.RowToFunc[T]) ([]T, int, error) {
 
 	b := &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget}
-
-	byID := false
-	if raw, ok := req.Filters[idFilter]; ok {
-		ids, err := vndb.ParseIDs(spec.IDType, raw, req.Limits.MaxIDs)
-		if err != nil {
-			return nil, 0, BadRequest("%v", err)
-		}
-		b.Where(spec.Alias+".id = ANY(%s)", ids)
-		byID = true
-	}
-	for name, value := range req.Filters {
-		if name == idFilter {
-			continue
-		}
-		apply, ok := spec.Filters[name]
-		if !ok {
-			return nil, 0, BadRequest("unknown filter %q", name)
-		}
-		if err := apply(b, value); err != nil {
-			return nil, 0, err
-		}
-	}
-
-	// The expression is ANDed with the plain parameters.
-	if err := b.Expr(req.expr, spec.Filters); err != nil {
+	byID, err := conditions(spec, req, b, "")
+	if err != nil {
 		return nil, 0, err
 	}
 
@@ -101,7 +80,8 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	}
 	sql := fmt.Sprintf("SELECT %s.*, COUNT(*) OVER ()::int AS total FROM %s WHERE %s ORDER BY %s",
 		spec.Alias, from, where, ordering)
-	if !byID {
+	whole := byID && !req.Paged
+	if !whole {
 		sql += fmt.Sprintf(" LIMIT %s OFFSET %s", b.Arg(req.Limit), b.Arg(req.Offset()))
 	}
 
@@ -119,11 +99,38 @@ func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	}
 	// An empty page carries no count, so past the end a matching filter would
 	// report zero; only then is a second statement worth it.
-	if byID || req.Offset() == 0 {
+	if whole || req.Offset() == 0 {
 		return page, 0, nil
 	}
 	total, err := count(ctx, pool, spec, where, conds)
 	return page, total, err
+}
+
+// conditions adds every condition of a request to b, leaving out the filter
+// named skip; byID says an id= lookup is among them.
+func conditions(spec PageSpec, req *Request, b *Builder, skip string) (byID bool, err error) {
+	if raw, ok := req.Filters[idFilter]; ok {
+		ids, err := vndb.ParseIDs(spec.IDType, raw, req.Limits.MaxIDs)
+		if err != nil {
+			return false, BadRequest("%v", err)
+		}
+		b.Where(spec.Alias+".id = ANY(%s)", ids)
+		byID = true
+	}
+	for name, value := range req.Filters {
+		if name == idFilter || name == skip {
+			continue
+		}
+		apply, ok := spec.Filters[name]
+		if !ok {
+			return false, BadRequest("unknown filter %q", name)
+		}
+		if err := apply(b, value); err != nil {
+			return false, err
+		}
+	}
+	// The expression is ANDed with the plain parameters.
+	return byID, b.Expr(req.expr, spec.Filters)
 }
 
 func count(ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
