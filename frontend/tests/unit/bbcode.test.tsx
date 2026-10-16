@@ -30,6 +30,15 @@ describe('BBCode', () => {
     expect(html('[color=red]x[/color]')).toContain('[color=red]');
   });
 
+  it('reads tags in any case, as vndb does, but ids only in lower case', () => {
+    expect(html('[URL=https://vndb.org/g1903]sprite[/URL]')).toContain(
+      'href="https://vndb.org/g1903"',
+    );
+    expect(html('[B]bold[/B]')).toContain('<span class="font-semibold">');
+    expect(html('V17')).not.toContain('href');
+    expect(plain('a [URL=https://x.org]link[/URL] [I]b[/I]')).toBe('a link b');
+  });
+
   it('links only to web addresses', () => {
     for (const href of ['javascript:alert(1)', 'data:text/html,x', ' javascript:x']) {
       expect(html(`[url=${href}]x[/url]`)).not.toContain('href=');
