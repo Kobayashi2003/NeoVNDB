@@ -6,6 +6,7 @@ import {
   pathUnion,
   roundedPath,
   simplify,
+  steps,
   subgraph,
   tidyEdges,
   yearLayers,
@@ -111,5 +112,30 @@ describe('edge geometry', () => {
     ];
     expect(roundedPath(pts, 10)).toBe('M0,0 L0,90 Q0,100 10,100 L100,100');
     expect(midpoint(pts)).toEqual({ x: 0, y: 100 });
+  });
+});
+
+describe('steps', () => {
+  const at = (depth: number, over: Partial<RelationGraph> = {}) =>
+    steps({ depth, max_depth: 0, reach: depth, truncated: true, capped: false, ...over });
+
+  it('offers a few steps while the graph goes on, one past the reader', () => {
+    expect(at(2)).toEqual({ useful: 3, shown: 2, offered: 5, deeper: true });
+    expect(at(7)).toMatchObject({ useful: 8, offered: 8 });
+  });
+
+  it('stops where the graph ends, drawing a deeper ask as that end', () => {
+    // v5390: reach 5 at any depth from 5 up.
+    expect(at(11, { reach: 5, truncated: false })).toMatchObject({
+      useful: 5,
+      shown: 5,
+      offered: 5,
+    });
+  });
+
+  it('goes no further than the node ceiling, or the server, allows', () => {
+    expect(at(4, { capped: true })).toMatchObject({ useful: 4, shown: 4, offered: 4 });
+    expect(at(8, { max_depth: 8 })).toMatchObject({ useful: 8, offered: 8, deeper: false });
+    expect(at(2, { max_depth: 3 })).toMatchObject({ offered: 3 });
   });
 });
