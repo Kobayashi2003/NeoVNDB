@@ -54,8 +54,8 @@ function subscribe(notify: () => void): () => void {
   };
 }
 
-function update(change: Partial<Prefs>): void {
-  current = { ...snapshot(), ...change };
+function apply(next: Prefs): void {
+  current = next;
   writeCookie(current);
   try {
     window.localStorage.setItem(PREFS_STORAGE, JSON.stringify(current));
@@ -63,6 +63,30 @@ function update(change: Partial<Prefs>): void {
     // Only the cross-tab signal; the cookie already holds the value.
   }
   for (const notify of listeners) notify();
+}
+
+/** Set while a reader is signed in (hooks/accountPrefs.ts): every change the
+ *  reader makes here is then also kept on their account. */
+let keep: ((prefs: Prefs) => void) | null = null;
+
+export function keepPrefsWith(save: ((prefs: Prefs) => void) | null): void {
+  keep = save;
+}
+
+function update(change: Partial<Prefs>): void {
+  apply({ ...snapshot(), ...change });
+  keep?.(snapshot());
+}
+
+/** The account's preferences, taken over without being sent back. */
+export function adoptPrefs(prefs: Prefs): void {
+  const now = snapshot();
+  if ((Object.keys(prefs) as (keyof Prefs)[]).every(k => prefs[k] === now[k])) return;
+  apply(prefs);
+}
+
+export function currentPrefs(): Prefs {
+  return snapshot();
 }
 
 /** Supplied by the root layout, the only reader of the cookie. */

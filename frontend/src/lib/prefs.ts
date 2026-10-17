@@ -46,22 +46,28 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 export function readPrefs(raw: string | undefined | null): Prefs {
   if (!raw) return DEFAULTS;
   try {
-    const saved = JSON.parse(raw) as Partial<Prefs>;
-    return {
-      original: typeof saved.original === 'boolean' ? saved.original : DEFAULTS.original,
-      sexual: pick(saved.sexual, ['safe', 'suggestive', 'explicit'], DEFAULTS.sexual),
-      violence: pick(saved.violence, ['tame', 'violent', 'brutal'], DEFAULTS.violence),
-      spoiler: ([0, 1, 2] as const).includes(saved.spoiler as 0 | 1 | 2)
-        ? (saved.spoiler as SpoilerLevel)
-        : DEFAULTS.spoiler,
-      layout: pick(saved.layout, ['grid', 'slider'], DEFAULTS.layout),
-      graphCovers:
-        typeof saved.graphCovers === 'boolean' ? saved.graphCovers : DEFAULTS.graphCovers,
-      graphYears: typeof saved.graphYears === 'boolean' ? saved.graphYears : DEFAULTS.graphYears,
-      graphOverview:
-        typeof saved.graphOverview === 'boolean' ? saved.graphOverview : DEFAULTS.graphOverview,
-    };
+    return prefsFrom(JSON.parse(raw));
   } catch {
     return DEFAULTS;
   }
+}
+
+/** The same for an object already parsed: what the reader's account holds,
+ *  which another device, perhaps older or newer, may have written. */
+export function prefsFrom(value: unknown): Prefs {
+  if (typeof value !== 'object' || value === null) return DEFAULTS;
+  const saved = value as Partial<Prefs>;
+  return {
+    original: typeof saved.original === 'boolean' ? saved.original : DEFAULTS.original,
+    sexual: pick(saved.sexual, ['safe', 'suggestive', 'explicit'], DEFAULTS.sexual),
+    violence: pick(saved.violence, ['tame', 'violent', 'brutal'], DEFAULTS.violence),
+    spoiler: ([0, 1, 2] as const).includes(saved.spoiler as 0 | 1 | 2)
+      ? (saved.spoiler as SpoilerLevel)
+      : DEFAULTS.spoiler,
+    layout: pick(saved.layout, ['grid', 'slider'], DEFAULTS.layout),
+    graphCovers: typeof saved.graphCovers === 'boolean' ? saved.graphCovers : DEFAULTS.graphCovers,
+    graphYears: typeof saved.graphYears === 'boolean' ? saved.graphYears : DEFAULTS.graphYears,
+    graphOverview:
+      typeof saved.graphOverview === 'boolean' ? saved.graphOverview : DEFAULTS.graphOverview,
+  };
 }

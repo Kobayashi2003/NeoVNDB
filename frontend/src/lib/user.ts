@@ -181,6 +181,29 @@ export const setRatings = (items: string[], value: number) =>
 export const clearRatings = (items: string[]) =>
   call<{ changed: number }>('POST', '/ratings/clear', { items });
 
+/** The preferences kept on the account, as some device last sent them; null
+ *  until one has. Read them with prefsFrom, which takes any shape. */
+export const accountPrefs = () => call<{ prefs: unknown }>('GET', '/me/prefs').then(r => r.prefs);
+
+export const saveAccountPrefs = (prefs: object) => call<void>('PUT', '/me/prefs', prefs);
+
+export interface SavedSearch {
+  id: number;
+  type: string;
+  name: string;
+  /** A listing's query, without the ? (lib/searches.ts). */
+  query: string;
+  created_at: string;
+}
+
+export const savedSearches = (type: string) =>
+  call<{ results: SavedSearch[] }>('GET', `/searches?type=${type}`).then(r => r.results);
+
+export const saveSearch = (type: string, name: string, query: string) =>
+  call<SavedSearch>('POST', '/searches', { type, name, query });
+
+export const deleteSearch = (id: number) => call<void>('DELETE', `/searches/${id}`);
+
 /** Mirrors the service's validation. */
 export const RULES = {
   username: '2 to 32 characters: letters, digits, - and _',
