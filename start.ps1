@@ -23,7 +23,14 @@
     it away from the machine holding the image mirror, where every image is a
     request that has to time out before the page gives up on it. The boxes are
     still drawn at the size the image would have taken. With -Prod this is
-    baked into the build, so the next -Prod run without it has to build again.
+    baked into the build, so changing it needs -Build.
+
+.PARAMETER Build
+    Build the Go services first, and with -Prod the frontend too. Without it
+    the existing build runs, and a missing one stops the script.
+
+.PARAMETER NoBrowser
+    Do not open the site in the browser once it answers.
 
 .PARAMETER Stop
     Stop what a previous run started, and exit.
@@ -33,13 +40,16 @@
     this, a busy port stops the script.
 
 .EXAMPLE
+    .\start.ps1 -Build
     .\start.ps1
-    .\start.ps1 -Prod
+    .\start.ps1 -Prod -Build
     .\start.ps1 -Stop
 #>
 [CmdletBinding()]
 param(
     [switch]$Prod,
+    [switch]$Build,
+    [switch]$NoBrowser,
     [switch]$NoImages,
     [switch]$Stop,
     [switch]$Force
@@ -206,19 +216,32 @@ if (-not $env:NEOVNDB_API_BASE) {
 # Before anything starts: on Windows a running binary cannot be overwritten,
 # so building afterwards would fail on the second run of the day.
 
-Write-Step 'building backend/vndb'
-& go -C $vndbDir build -o bin/neovndb.exe ./cmd/neovndb
-if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
+if ($Build) {
+    Write-Step 'building backend/vndb'
+    & go -C $vndbDir build -o bin/neovndb.exe ./cmd/neovndb
+    if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
 
-Write-Step 'building backend/users'
-& go -C $usersDir build -o bin/users.exe ./cmd/users
-if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
+    Write-Step 'building backend/users'
+    & go -C $usersDir build -o bin/users.exe ./cmd/users
+    if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
 
-if ($Prod) {
-    Write-Step 'building frontend (production)'
-    Push-Location $webDir
-    try { pnpm build | Out-Null } finally { Pop-Location }
-    if ($LASTEXITCODE -ne 0) { Write-Bad 'next build failed'; return }
+    if ($Prod) {
+        Write-Step 'building frontend (production)'
+        Push-Location $webDir
+        try { pnpm build | Out-Null } finally { Pop-Location }
+        if ($LASTEXITCODE -ne 0) { Write-Bad 'next build failed'; return }
+    }
+}
+
+$missing = @(
+    (Join-Path $vndbDir 'bin/neovndb.exe'),
+    (Join-Path $usersDir 'bin/users.exe')
+) + $(if ($Prod) { @(Join-Path $webDir '.next/BUILD_ID') } else { @() }) |
+    Where-Object { -not (Test-Path $_) }
+if ($missing) {
+    foreach ($m in $missing) { Write-Bad "not built: $m" }
+    Write-Step 'run again with -Build'
+    return
 }
 
 # --- Start ----------------------------------------------------------------
@@ -314,6 +337,7 @@ if ($failed) {
 
 Write-Host ''
 Write-Good "http://127.0.0.1:$($ports.edge)"
+if (-not $NoBrowser) { Start-Process "http://127.0.0.1:$($ports.edge)" }
 if ($NoImages) { Write-Step 'images off' }
 Write-Step 'Ctrl+C stops everything'
 Write-Host ''
