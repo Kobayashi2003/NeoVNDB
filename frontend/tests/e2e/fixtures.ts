@@ -55,10 +55,14 @@ export const test = base.extend<{ user: User; admin: User }>({
       cwd: join(__dirname, '../../../backend/users'),
       env: { ...process.env, NEOVNDB_USERS_DB_URL: process.env.NEOVNDB_USERS_TEST_DB_URL },
     });
-    for (const [prefix, service] of [
-      ['vndbserve', 'http://127.0.0.1:17031'],
-      ['imgserve', 'http://127.0.0.1:17032'],
-    ]) {
+    // The deployment check's edge asks the throwaway service itself.
+    const bypass = process.env.E2E_DEPLOYED
+      ? []
+      : [
+          ['vndbserve', 'http://127.0.0.1:17031'],
+          ['imgserve', 'http://127.0.0.1:17032'],
+        ];
+    for (const [prefix, service] of bypass) {
       await context.route(`**/${prefix}/admin/**`, async route => {
         const url = route
           .request()

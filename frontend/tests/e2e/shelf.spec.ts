@@ -18,6 +18,31 @@ test("a list orders by the reader's rating and shows it on the cards", async ({ 
   await expect(page.getByTitle('Your rating: 5')).toBeVisible();
 });
 
+test('a list ordered by a vndb field pages through it, not the whole list on every page', async ({
+  page,
+  user,
+}) => {
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Long' })
+  ).json()) as { id: number };
+  // Thirty well-known works: more than a page of 24.
+  const items = Array.from({ length: 30 }, (_, i) => `v${i + 1}`);
+  await user.call('POST', `/collections/${list.id}/marks/add`, { items });
+
+  const ids = async (url: string) => {
+    await page.goto(url);
+    const cards = page.locator("[data-results] a[href^='/v']");
+    await expect(cards.first()).toBeVisible();
+    return cards.evaluateAll(as => as.map(a => a.getAttribute('href')));
+  };
+  const first = await ids(`/u/${list.id}?sort=rating&reverse=true`);
+  const second = await ids(`/u/${list.id}?sort=rating&reverse=true&page=2`);
+  expect(first).toHaveLength(24);
+  expect(second.length).toBeGreaterThan(0);
+  expect(second.length).toBeLessThanOrEqual(6);
+  expect(second.filter(id => first.includes(id))).toEqual([]);
+});
+
 test('moving between lists redraws the list, not the column beside it', async ({ page, user }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   const first = (await (

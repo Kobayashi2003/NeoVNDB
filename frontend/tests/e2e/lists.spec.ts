@@ -24,7 +24,9 @@ test('the page gap jumps anywhere and clamps', async ({ page }) => {
 });
 
 test('menus move with the arrow keys', async ({ page }) => {
-  await page.goto('/v');
+  // Keys are handled once the page is live; a click before that opens the menu
+  // from the server's markup with nothing listening yet.
+  await page.goto('/v', { waitUntil: 'networkidle' });
   await page.locator('button[aria-expanded]:visible', { hasText: 'Length' }).click();
   await page.keyboard.press('ArrowDown');
   await expect(page.locator(':focus')).toHaveText(/Very Short/);

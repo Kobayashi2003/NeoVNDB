@@ -17,7 +17,8 @@
     "test": "vitest run --config tests/vitest.config.mts",
     "test:watch": "vitest --config tests/vitest.config.mts",
     "typecheck:tests": "tsc --noEmit -p tests",
-    "test:e2e": "playwright test -c tests/e2e/playwright.config.mts"
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.mts",
+    "test:e2e:deployed": "playwright test -c tests/e2e/playwright.deployed.config.mts"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.0",
