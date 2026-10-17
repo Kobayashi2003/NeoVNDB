@@ -50,10 +50,11 @@ async function waitFor(name: string, url: string, tries = 150) {
   throw new Error(`${name} did not start (${url})`);
 }
 
-/** Whether a command runs at all, for a message that says what to install. */
+/** Whether a command runs at all, for a message that says what to install.
+ *  Through the shell, because pnpm on Windows is a .cmd script. */
 function onPath(cmd: string, versionArg: string): boolean {
   try {
-    execFileSync(cmd, [versionArg], { stdio: 'ignore' });
+    execFileSync(cmd, [versionArg], { stdio: 'ignore', shell: true });
     return true;
   } catch {
     return false;

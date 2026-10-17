@@ -9,7 +9,8 @@
  *  only known once the page is live, and a row arriving then pushed the whole
  *  column down (a CLS of 0.026 on a slow line). Whether it shows at all is
  *  left to CSS (globals.css): fewer than three sections need no map, and a
- *  :has() rule knows that from the server's markup. */
+ *  :has() rule knows that from the server's markup once the column has been
+ *  parsed to its end (DetailShell's marker). */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
