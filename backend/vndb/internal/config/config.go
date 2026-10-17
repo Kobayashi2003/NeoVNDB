@@ -38,7 +38,8 @@ const (
 	defaultMaxSearchTerms = 8
 	defaultMaxFilterNodes = 64
 	defaultMaxIDs         = 1000
-	defaultMaxFieldDepth  = 3
+	// The site's own VN page asks for characters.traits.translation.name.
+	defaultMaxFieldDepth = 4
 	// Estimated field values per response; follows vndb's ceiling.
 	defaultMaxCost = 100_000
 

@@ -19,6 +19,6 @@ type Limits struct {
 func DefaultLimits() Limits {
 	return Limits{
 		PageSize: 24, MaxPageSize: 100, MaxIDs: 1000,
-		MaxFieldDepth: 3, MaxCost: 100_000, MaxSearchTerms: 8, MaxFilterNodes: 64,
+		MaxFieldDepth: 4, MaxCost: 100_000, MaxSearchTerms: 8, MaxFilterNodes: 64,
 	}
 }

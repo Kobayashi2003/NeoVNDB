@@ -124,6 +124,20 @@ func TestSourcesRunOncePerRequest(t *testing.T) {
 	}
 }
 
+// A field nested past the ceiling is refused; 0 lifts it.
+func TestFieldDepthCeiling(t *testing.T) {
+	cat, _ := setup()
+	reg := testTable.Registry()
+	if _, err := ParseFields(cat, reg, 2, "tags.kids.name"); err == nil || !IsClientError(err) {
+		t.Errorf("three deep under a ceiling of two: %v", err)
+	}
+	for _, depth := range []int{3, 0} {
+		if _, err := ParseFields(cat, reg, depth, "tags.kids.name"); err != nil {
+			t.Errorf("three deep under %d: %v", depth, err)
+		}
+	}
+}
+
 // A fragment that names a target accepts that target's fields without listing
 // them, and rejects what the target does not have.
 func TestTargetSuppliesSubfields(t *testing.T) {
