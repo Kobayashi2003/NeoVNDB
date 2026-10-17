@@ -120,8 +120,15 @@ html[data-selecting] [data-scroll-top] {
 /* The section nav (components/ui/SectionNav) maps a page of three sections or
    more. Decided here rather than in the component, which only learns the
    sections once the page is live: this already holds in the server's markup,
-   so the row's space is there, or not, from the first paint. */
-[data-scroll-top]:not(:has(section[data-section] ~ section[data-section] ~ section[data-section]))
+   so the row's space is there, or not, from the first paint.
+   Only once the column's end marker is parsed, though, which the first paint
+   waits for where rel=expect works (DetailShell). Elsewhere a slow line draws
+   a page before all of it has arrived, and counting the sections that far hid
+   the row, which then pushed the column down when the rest came (a CLS of
+   0.026 on /v17); the row keeps its place until then instead. */
+[data-scroll-top]:has(> [data-column-end]):not(
+    :has(section[data-section] ~ section[data-section] ~ section[data-section])
+  )
   [data-section-nav] {
   display: none;
 }

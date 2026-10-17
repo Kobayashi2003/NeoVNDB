@@ -48,6 +48,15 @@ export function DetailShell({
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
         <SectionNav />
         <div className="flex flex-col gap-8">{children}</div>
+        {/* Whether the section row shows depends on the whole column
+            (globals.css), and on a slow line the browser would draw a long
+            column before all of it had arrived: a page that needs no row drew
+            one and then lost it (a CLS of 0.026 on /p24), or the reverse. So
+            the first paint waits for this marker; React hoists the link into
+            the head. Where rel=expect is unknown the row keeps its place until
+            the marker is parsed. */}
+        <link rel="expect" href="#column-end" blocking="render" />
+        <span id="column-end" data-column-end hidden />
       </div>
     </main>
   );
