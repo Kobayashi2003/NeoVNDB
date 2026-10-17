@@ -1,9 +1,10 @@
-/** Full-screen image viewer (arrows and Escape; blurred images stay blurred
- *  until clicked). Portalled to the body: `position: fixed` resolves against
- *  any ancestor with a transform or backdrop-filter, and this page has both. */
+/** Full-screen image viewer (arrows, Home, End, the wheel and Escape; blurred
+ *  images stay blurred until clicked). Portalled to the body: `position:
+ *  fixed` resolves against any ancestor with a transform or backdrop-filter,
+ *  and this page has both. */
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { imageURL } from '@/lib/images';
@@ -37,11 +38,30 @@ export function Lightbox({
     [index, images.length, onIndex],
   );
 
+  // One image per notch of the wheel, however fast it spins: a trackpad sends
+  // dozens of small events for one flick.
+  const wheeled = useRef(0);
+  const onWheel = (e: React.WheelEvent) => {
+    if (images.length < 2 || Math.abs(e.deltaY) < 4) return;
+    const now = performance.now();
+    if (now - wheeled.current < 250) return;
+    wheeled.current = now;
+    step(e.deltaY > 0 ? 1 : -1);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight') step(1);
-      else if (e.key === 'ArrowLeft') step(-1);
+      const to: Record<string, () => void> = {
+        Escape: onClose,
+        ArrowRight: () => step(1),
+        ArrowLeft: () => step(-1),
+        Home: () => step(-index),
+        End: () => step(images.length - 1 - index),
+      };
+      if (!to[e.key]) return;
+      // Handled here, so the page's own shortcuts (paging) leave it alone.
+      e.preventDefault();
+      to[e.key]();
     };
     window.addEventListener('keydown', onKey);
     // The page behind must not scroll while this is over it.
@@ -51,7 +71,7 @@ export function Lightbox({
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = previous;
     };
-  }, [onClose, step]);
+  }, [onClose, step, index, images.length]);
 
   if (!image) return null;
   const hidden = image.blurred && !revealed;
@@ -63,6 +83,7 @@ export function Lightbox({
       aria-modal="true"
       aria-label="Screenshot viewer"
       onClick={onClose}
+      onWheel={onWheel}
     >
       <div className="flex items-center justify-between px-4 py-3 text-sm text-muted">
         <span className="truncate">{image.caption}</span>

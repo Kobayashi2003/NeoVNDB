@@ -20,14 +20,18 @@ export function useDismiss<T extends HTMLElement>(open: boolean, close: () => vo
     const away = (e: MouseEvent) => {
       if (!inside.current?.contains(e.target as Node)) latest.current();
     };
+    // In the capture phase and marked handled: one Escape closes the nearest
+    // thing, this popover, and not also what it was opened over (a selection).
     const escape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') latest.current();
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      latest.current();
     };
     document.addEventListener('mousedown', away);
-    document.addEventListener('keydown', escape);
+    document.addEventListener('keydown', escape, true);
     return () => {
       document.removeEventListener('mousedown', away);
-      document.removeEventListener('keydown', escape);
+      document.removeEventListener('keydown', escape, true);
     };
   }, [open]);
 

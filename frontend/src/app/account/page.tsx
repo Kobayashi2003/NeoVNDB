@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: 'Account - NeoVNDB' };
 
 export default function AccountPage() {
   return (
-    <main className="flex flex-1 items-start justify-center px-4 py-10 animate-slide-up-fade">
+    <main className="flex flex-1 items-start justify-center px-4 py-10">
       <AccountPanel />
     </main>
   );

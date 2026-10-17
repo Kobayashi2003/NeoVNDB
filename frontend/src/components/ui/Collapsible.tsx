@@ -1,6 +1,12 @@
 /** Clamps long prose and offers to unfold it -- but only once it measures tall
  *  enough to be worth clamping, so a two-line description never grows a
- *  pointless button. */
+ *  pointless button.
+ *
+ *  The clamp is there from the server's markup on, and the offer to unfold
+ *  sits inside the clamped box, over the fade: whether the text is long is only
+ *  known once the page is live, and anything that changed height then moved
+ *  everything under it (sidebars under an About card shifted on a slow line).
+ *  A short text is below the clamp anyway, so clamping it changes nothing. */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -27,31 +33,35 @@ export function Collapsible({
     return () => observer.disconnect();
   }, [maxHeight]);
 
+  const toggle = (
+    <button
+      onClick={() => setOpen(!open)}
+      className="relative flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent coarse:py-1"
+    >
+      <ChevronDown
+        className={`icon-text h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+        aria-hidden
+      />
+      {open ? 'Show less' : 'Show more'}
+    </button>
+  );
+
   return (
     <div className="relative">
       <div
         ref={body}
-        style={{ maxHeight: open || !overflows ? undefined : maxHeight }}
+        style={{ maxHeight: open ? undefined : maxHeight }}
         className="overflow-hidden"
       >
         {children}
       </div>
 
       {overflows && !open && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[var(--surface)] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 flex h-12 items-end bg-gradient-to-t from-[var(--surface)] from-30% to-transparent">
+          {toggle}
+        </div>
       )}
-      {overflows && (
-        <button
-          onClick={() => setOpen(!open)}
-          className="relative mt-1 flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent coarse:py-1"
-        >
-          <ChevronDown
-            className={`icon-text h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
-            aria-hidden
-          />
-          {open ? 'Show less' : 'Show more'}
-        </button>
-      )}
+      {overflows && open && <div className="mt-1">{toggle}</div>}
     </div>
   );
 }

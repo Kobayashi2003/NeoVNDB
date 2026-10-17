@@ -45,7 +45,17 @@ export function VNCharacterSlider({
   const current = characters[at];
 
   return (
-    <div className="flex flex-col gap-3">
+    // ← and → step while the focus is anywhere in it (its own arrows, a link
+    // on the card), and are then this slider's rather than the page's.
+    <div
+      className="flex flex-col gap-3"
+      onKeyDown={e => {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        step(e.key === 'ArrowRight' ? 1 : -1);
+      }}
+    >
       <VNCharacterCard
         key={current.id}
         character={current}

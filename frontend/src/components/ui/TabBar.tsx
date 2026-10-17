@@ -2,6 +2,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { rowKeys } from '@/hooks/rowKeys';
 
 export interface Tab {
   value: string;
@@ -19,7 +20,7 @@ export function TabBar({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-1" role="tablist">
+    <div className="flex flex-wrap gap-1" role="tablist" onKeyDown={rowKeys({ choose: true })}>
       {tabs.map(tab => (
         <button
           key={tab.value}

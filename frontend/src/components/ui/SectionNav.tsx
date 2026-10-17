@@ -3,11 +3,18 @@
  *  go anywhere else on it. In place it is a row like a catalogue page's tabs;
  *  once it sticks it floats on a card, as the relation graph's controls do, so
  *  the text passing under it stays out of its way. The row scrolls sideways
- *  when it outgrows a phone. Fewer than three sections need no map. */
+ *  when it outgrows a phone.
+ *
+ *  The row is drawn on the server, empty, at its full height: the sections are
+ *  only known once the page is live, and a row arriving then pushed the whole
+ *  column down (a CLS of 0.026 on a slow line). Whether it shows at all is
+ *  left to CSS (globals.css): fewer than three sections need no map, and a
+ *  :has() rule knows that from the server's markup. */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useSidewaysWheel } from '@/hooks/useSidewaysWheel';
 
 interface Mark {
   id: string;
@@ -25,6 +32,8 @@ export function SectionNav() {
   const [marks, setMarks] = useState<Mark[]>([]);
   const [current, setCurrent] = useState<string | null>(null);
   const [stuck, setStuck] = useState(false);
+  // On a phone the row outgrows the screen and scrolls sideways.
+  useSidewaysWheel(nav, 'ul');
 
   useEffect(() => {
     // The column the sections are in: its own scroll box from lg up, the
@@ -96,21 +105,20 @@ export function SectionNav() {
       row.scrollLeft = left + lit.offsetWidth - row.clientWidth;
   }, [current]);
 
-  if (marks.length < 3) return <div ref={spot} hidden />;
-
   return (
     <>
       <div ref={spot} aria-hidden />
       <nav
         ref={nav}
         aria-label="Sections"
+        data-section-nav
         // Pulled left by the card's padding and border, so in place the first
         // pill lines up with the headings below.
         className="sticky top-[calc(var(--header-h)+0.5rem)] z-20 -ml-[5px] mb-5 w-fit max-w-[calc(100%+5px)] lg:top-2"
       >
         <ul
           className={cn(
-            'flex gap-1 overflow-x-auto rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-200 [scrollbar-width:none]',
+            'flex min-h-[34px] gap-1 overflow-x-auto rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-200 [scrollbar-width:none]',
             stuck
               ? 'border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md'
               : 'border-transparent',

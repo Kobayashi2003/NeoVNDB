@@ -354,7 +354,13 @@ export function ShelfPanel({
       )}
 
       {held === null ? (
-        <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+        // Keyed apart from the results, so they arrive as a new element rather
+        // than as this one moved and grown, which counts as a layout shift.
+        <div
+          key="waiting"
+          className="h-64 w-full animate-pulse rounded-lg bg-white/5"
+          aria-hidden
+        />
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted">
           {search ? (
@@ -373,7 +379,12 @@ export function ShelfPanel({
           )}
         </p>
       ) : (
-        <div data-results data-stale={stale || undefined} className="flex flex-col gap-4">
+        <div
+          key="results"
+          data-results
+          data-stale={stale || undefined}
+          className="flex flex-col gap-4"
+        >
           <Results
             type={shownType}
             rows={rows}

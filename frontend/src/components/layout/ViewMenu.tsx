@@ -4,13 +4,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Flame, Languages, Swords } from 'lucide-react';
+import { Eye, EyeOff, Flame, Keyboard, Languages, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePrefs } from '@/hooks/usePrefs';
 import { useMenu } from '@/hooks/useMenu';
 import { Segmented, type Option } from '@/components/ui/Segmented';
 import type { SexualLevel, SpoilerLevel, ViolenceLevel } from '@/lib/content';
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from '@/components/ui/Menu';
+import { SHOW_SHORTCUTS } from './Shortcuts';
 
 /** The two scales. Their colours climb with them, so a raised one is
  *  recognisable without reading the word. */
@@ -120,6 +121,20 @@ export function ViewMenu() {
                 Names as first written; Japanese for tags and traits
               </span>
             </span>
+          </button>
+          <MenuDivider />
+          {/* Where the keys can be found without knowing to press ?. */}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              window.dispatchEvent(new Event(SHOW_SHORTCUTS));
+            }}
+            className={menuItem()}
+          >
+            <Keyboard className="size-3.5 shrink-0 text-muted" aria-hidden />
+            <span className="flex-1">Keyboard shortcuts</span>
+            <kbd className="font-mono text-[0.6875rem] text-muted">?</kbd>
           </button>
         </MenuPanel>
       )}

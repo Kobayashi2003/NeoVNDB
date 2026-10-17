@@ -9,6 +9,7 @@ import {
   login,
   logout,
   logoutEverywhere,
+  NAME_COOKIE,
   register,
   session,
   type User,
@@ -48,9 +49,17 @@ function announce(): void {
 
 function hold(user: User | null): void {
   current = user ? { status: 'in', user } : OUT;
+  remember(user);
   // Whoever signs in next must not see the last reader's lists, even briefly.
   if (!user) forgetCollections();
   announce();
+}
+
+/** Keeps NAME_COOKIE in step with the session (see lib/user.ts). */
+function remember(user: User | null): void {
+  document.cookie = user
+    ? `${NAME_COOKIE}=${encodeURIComponent(user.username)}; path=/; max-age=31536000; samesite=lax`
+    : `${NAME_COOKIE}=; path=/; max-age=0; samesite=lax`;
 }
 
 /** Asked once per page load. A late answer is ignored if the reader signed in

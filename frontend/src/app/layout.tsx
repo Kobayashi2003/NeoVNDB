@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { Righteous } from 'next/font/google';
 import './globals.css';
-import { Suspense } from 'react';
+import { Suspense, ViewTransition } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
+import { Shortcuts } from '@/components/layout/Shortcuts';
 import { PrefsRendered } from '@/hooks/usePrefs';
 import { PREFS_COOKIE, readPrefs } from '@/lib/prefs';
+import { NAME_COOKIE } from '@/lib/user';
 
 /** The wordmark face, bound to a variable so only the logo uses it.
  *  next/font self-hosts it with a metric-matched fallback, so nothing reflows
@@ -29,7 +31,9 @@ export const metadata: Metadata = {
  *  chosen script without a correction after hydration. This makes these pages
  *  per-reader rather than static. */
 export default async function RootLayout({ children }: LayoutProps<'/'>) {
-  const prefs = readPrefs((await cookies()).get(PREFS_COOKIE)?.value);
+  const jar = await cookies();
+  const prefs = readPrefs(jar.get(PREFS_COOKIE)?.value);
+  const name = jar.get(NAME_COOKIE)?.value ?? null;
 
   return (
     <html lang="en" className={`${display.variable} h-full antialiased`}>
@@ -39,8 +43,11 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
           <Suspense fallback={null}>
             <Navigation />
           </Suspense>
-          <Header />
-          {children}
+          <Header name={name} />
+          <Shortcuts />
+          {/* Every navigation is a transition, so this crossfades one page into
+              the next (globals.css, .page) while the header holds still. */}
+          <ViewTransition default="page">{children}</ViewTransition>
         </PrefsRendered>
       </body>
     </html>

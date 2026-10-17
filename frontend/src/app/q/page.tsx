@@ -52,7 +52,7 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
   if (only && groups.every(g => !g.failed)) redirect(`/${(only as { id: string }).id}`);
 
   return (
-    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-6 pb-12 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-6 pb-12">
       <div className="mb-6 flex flex-col gap-3">
         <h1 className="text-xl font-bold sm:text-2xl">Search</h1>
         <SearchField initial={term} className="w-full max-w-xl" autoFocus={!term} />

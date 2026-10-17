@@ -16,7 +16,7 @@ export function Trouble({
   action?: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-16 animate-slide-up-fade">
+    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-16">
       <div className="w-full max-w-lg rounded-xl border border-white/10 bg-surface p-6">
         <h1 className="text-lg font-semibold">{title}</h1>
         <p className="mt-2 text-sm text-muted">{children}</p>

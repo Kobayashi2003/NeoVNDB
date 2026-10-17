@@ -29,17 +29,25 @@ export function CollectionsPanel() {
   const [trouble, setError] = useState<string | null>(null);
   const error = trouble ?? held.error;
 
-  if (session.status === 'unknown') {
-    return <div className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
-  }
   if (session.status === 'out') {
     return <SignInFirst next="/u">Your lists are yours, so they need an account.</SignInFirst>;
+  }
+  // One block until the lists are in, then every shelf at once. Shelves drawn
+  // with a row each while waiting were pushed down by any shelf above that
+  // turned out to hold two lists (a CLS of 0.11 on a slow line); content that
+  // replaces a placeholder moves nothing.
+  if (session.status === 'unknown' || (lists === null && !held.error)) {
+    // Keyed apart from the panel, so the panel is a new element rather than
+    // this one grown: one that grows and moves counts as a shift.
+    return (
+      <div key="waiting" className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+    );
   }
 
   const changed = () => void refreshCollections();
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div key="lists" className="flex w-full flex-col gap-6">
       {error && (
         <p role="alert" className="text-xs text-red-400">
           {error}
