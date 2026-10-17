@@ -110,8 +110,10 @@ the edge with it:
 ## Running it
 
 ```powershell
-.\start.ps1            # builds, starts all five, Ctrl+C stops them again
-.\start.ps1 -Prod      # a production build of the frontend instead of the dev server
+.\start.ps1 -Build     # builds, starts all five, opens the site; Ctrl+C stops them again
+.\start.ps1            # the same with the existing build
+.\start.ps1 -Prod      # a production build of the frontend (built with -Build) instead of the dev server
+.\start.ps1 -NoBrowser # do not open the site in the browser
 .\start.ps1 -NoImages  # draw the site without fetching a single cover
 .\start.ps1 -Stop      # stop a run that was left behind (or .\stop.ps1)
 .\start.ps1 -Force     # take the ports from whatever already holds them
@@ -188,10 +190,44 @@ pnpm install                 # .env.sample documents its two settings; the defau
 For local work the `.env` files turn the limits off (0 means no ceiling) and
 lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 
+## Deploying
+
+What changes between a checkout and a served site, in order:
+
+1. **Ceilings.** Start each service's `.env` from its `.env.sample` and keep
+   the sample's numbers: page size, filter conditions, search words, ids per
+   lookup, field depth, response cost, graph depth and titles, list sizes,
+   sign-in and sign-up attempts. A checkout runs with them lifted; every one
+   of them has a test showing it is enforced.
+2. **Cookies.** `NEOVNDB_USERS_SECURE_COOKIE=true` once the site is served
+   over https; the session cookie then also carries the `__Host-` prefix.
+   Keep `NEOVNDB_USERS_BCRYPT_COST=12`.
+3. **Paths.** Set `NEOVNDB_IMAGE_DIR` absolute: the image mirror and the edge
+   both read it, from different working directories. The dump, image and
+   backup directories want room: about 0.4 GB of archives (two kept), the
+   image store, which grows as the crawl fills it, and the user backups.
+4. **The site.** `pnpm build`, then serve it with `next start` (`.\start.ps1
+   -Prod -Build` does both). Point `NEOVNDB_API_BASE` at the edge as the server
+   reaches it. `NEOVNDB_DEV_ORIGINS` only matters to the dev server.
+5. **The edge.** Either run `edge/Caddyfile` behind whatever terminates TLS,
+   or import `edge/Caddyfile.snippet` into the site block of a shared edge:
+   it is written for that (prefixed matcher names, no catch-all of its own).
+   Only the edge faces the outside; every service binds 127.0.0.1.
+6. **Accounts.** The first administrator can only be made on the machine:
+   `go run ./cmd/users admin <name>` in `backend/users`.
+7. **Check it.** `pnpm test:e2e:deployed` in `frontend/` (with
+   `NEOVNDB_USERS_TEST_DB_URL` set) runs every end-to-end test against a
+   second site configured as a deployment is -- the samples' ceilings, a
+   production build, an edge of its own -- beside the running one, so what
+   the ceilings do to the pages shows before anyone meets it.
+
+`start.ps1` runs all five processes either way; a service manager can run the
+five commands under "Running it" directly, each from its own directory.
+
 ## Commands
 
 `backend/vndb`, one binary with a subcommand per role (`go run ./cmd/neovndb
-<command>`, or `bin/neovndb.exe` once `start.ps1` has built it):
+<command>`, or `bin/neovndb.exe` once `start.ps1 -Build` has built it):
 
 | Command | What it does |
 | --- | --- |
@@ -226,8 +262,9 @@ lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
 | `dev` | The dev server; reach it through the edge |
 | `build` / `start` | A production build, and serving it |
 | `lint` | ESLint |
-| `test` / `test:watch` | The unit tests in `tests/unit/`, once or on every change |
+| `test` / `test:watch` | The unit and component tests in `tests/`, once or on every change |
 | `test:e2e` | The end-to-end tests in `tests/e2e/`, against the running site |
+| `test:e2e:deployed` | The same, against a deployment-configured copy it starts beside it |
 | `typecheck:tests` | Type-check the tests, which the app's own `tsc` leaves out |
 
 ## Tests
@@ -244,9 +281,17 @@ through the edge (`E2E_BASE_URL`, default `http://127.0.0.1:17030`). The user se
 database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
 whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
 it, which is why any other name is refused. The same variable lets the
-end-to-end tests start a throwaway user service of their own on :5199 and
-exercise signed-in pages; without it those tests skip. Frontend tests live in
-`frontend/tests/`, never in `src/`.
+end-to-end tests start a throwaway user service of their own on :17035 and
+exercise signed-in pages; without it those tests skip. The tests read it from
+the environment, not from a `.env`. Frontend tests live in `frontend/tests/`,
+never in `src/`.
+
+`layout.spec.ts` opens every main page, signed-in ones included, at 320, 390,
+768, 1024 and 1440px and fails on anything spilling sideways or on a link or
+button left under something fixed to the window once scrolled to the end,
+then measures layout shift on a throttled line. `E2E_SHOTS=<folder>` keeps a screenshot of
+each, for a look by eye. `pnpm test:e2e:deployed` runs the whole suite against
+a deployment-configured copy of the site on :17036-17038 (see "Deploying").
 
 ## Scheduled work
 
