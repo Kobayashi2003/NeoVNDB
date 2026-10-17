@@ -7,3 +7,7 @@
 # Editor and OS noise.
 .DS_Store
 Thumbs.db
+
+# Snapshots, screenshots and console logs the Playwright browser tool writes
+# into whichever directory it was run from.
+.playwright-mcp/

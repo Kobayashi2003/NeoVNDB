@@ -83,10 +83,57 @@ test('a filter menu says how many each choice would leave', async ({ page }) => 
 });
 
 test('the relation graph lists only the steps worth taking', async ({ page }) => {
-  // v5390's graph ends five steps out, so asking for eleven shows the fifth.
-  await page.goto('/v5390/rg?depth=11');
+  // v5390's graph ends five steps out, so asking for eight shows the fifth.
+  // Eight, the deepest a deployment allows; a checkout allows any.
+  await page.goto('/v5390/rg?depth=8', { waitUntil: 'networkidle' });
   const steps = page.getByRole('navigation', { name: 'Steps out' });
   await expect(steps.getByRole('link')).toHaveCount(5);
   await expect(steps.locator('[aria-current=page]')).toHaveText('5');
   await expect(page.getByText(/nothing further out/)).toBeVisible();
+});
+
+test('the keys page through a list and move about a page', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  // The keys are the page's once it is live.
+  await page.goto('/v', { waitUntil: 'networkidle' });
+  await page.keyboard.press('ArrowRight');
+  await expect(page).toHaveURL(/page=2/);
+  await page.keyboard.press('ArrowLeft');
+  await expect(page).not.toHaveURL(/page=/);
+
+  await page.keyboard.press('/');
+  await expect(page.locator('main input[type="search"]')).toBeFocused();
+  // Typing in it is typing, not paging.
+  await page.keyboard.press('ArrowRight');
+  await expect(page).not.toHaveURL(/page=/);
+
+  await page.goto('/v17', { waitUntil: 'networkidle' });
+  await page.keyboard.press('j');
+  await expect(sections(page).locator('[aria-current]')).toHaveText(/Tags/);
+  await page.keyboard.press('?');
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('moving to another page fades one into the next', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { transitions: number };
+    w.transitions = 0;
+    const start = document.startViewTransition?.bind(document);
+    if (start)
+      document.startViewTransition = ((...a: Parameters<typeof start>) => {
+        w.transitions++;
+        return start(...a);
+      }) as typeof start;
+  });
+  await page.goto('/v');
+  const before = await page.evaluate(
+    () => (window as unknown as { transitions: number }).transitions,
+  );
+  await page.locator('nav[aria-label="Pages"] a[aria-label="Next"]').click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { transitions: number }).transitions))
+    .toBeGreaterThan(before);
 });

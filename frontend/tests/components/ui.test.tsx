@@ -13,6 +13,8 @@ import { TabBar } from '@/components/ui/TabBar';
 import { Selectable } from '@/components/ui/Selection';
 import { Trouble } from '@/components/ui/Trouble';
 import { usePrefs } from '@/hooks/usePrefs';
+import { Collapsible } from '@/components/ui/Collapsible';
+import { UserMenu } from '@/components/user/UserMenu';
 
 describe('Section', () => {
   it('is an anchor the rail and a link can find', () => {
@@ -94,8 +96,14 @@ describe('SectionNav', () => {
   });
 
   it('stays out of the way of a short page', () => {
-    page(['Description', 'Tags']);
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument();
+    // globals.css hides it with this rule, from the server's markup on.
+    const hidden =
+      '[data-scroll-top]:not(:has(section[data-section] ~ section[data-section] ~ section[data-section])) [data-section-nav]';
+    const { unmount } = page(['Description', 'Tags']);
+    expect(document.querySelector(hidden)).not.toBeNull();
+    unmount();
+    page(['Description', 'Tags', 'Releases']);
+    expect(document.querySelector(hidden)).toBeNull();
   });
 
   it('follows sections that come and go', async () => {
@@ -223,5 +231,46 @@ describe('small pieces', () => {
   it('offers a way out of a page with nothing to show', () => {
     render(<Trouble title="Nothing here">Gone.</Trouble>);
     expect(screen.getByRole('link', { name: 'Front page' })).toHaveAttribute('href', '/');
+  });
+});
+
+describe('holding still while a page loads', () => {
+  it('clamps long prose from the first render, and offers the rest over the fade', async () => {
+    // jsdom lays nothing out; this text measures tall.
+    const was = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollHeight')!;
+    Object.defineProperty(Element.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => 600,
+    });
+    try {
+      const { container } = render(
+        <Collapsible>
+          <p>long</p>
+        </Collapsible>,
+      );
+      const body = container.querySelector<HTMLElement>('.overflow-hidden')!;
+      expect(body.style.maxHeight).toBe('220px');
+      // Over the fade, inside the clamped height: nothing below it moves.
+      const more = screen.getByRole('button', { name: /show more/i });
+      expect(more.parentElement).toHaveClass('absolute');
+      await userEvent.click(more);
+      expect(body.style.maxHeight).toBe('');
+      expect(screen.getByRole('button', { name: /show less/i })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(Element.prototype, 'scrollHeight', was);
+    }
+  });
+
+  it("draws the account control at last time's name while the session is asked for", () => {
+    // A session that has not answered yet.
+    vi.stubGlobal('fetch', () => new Promise(() => {}));
+    try {
+      const { container } = render(<UserMenu name="a-returning-reader" />);
+      expect(container.textContent).toContain('a-returning-reader');
+      expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+      expect(container.firstElementChild).toHaveClass('max-w-36', 'text-transparent');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
