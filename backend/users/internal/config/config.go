@@ -50,6 +50,9 @@ const (
 	// How much of a list may be handed over at once for the read API to sort
 	// or search. Same ceiling, same reason.
 	defaultMaxItems = 1000
+	// Named searches per reader, of every type together. Each is a row of a
+	// couple of hundred bytes; this only stops a script filling the table.
+	defaultMaxSearches = 200
 
 	// The one database that cannot be rebuilt is copied weekly, and the last
 	// eight copies -- two months -- are kept. Relative to backend/users.
@@ -76,6 +79,7 @@ type Config struct {
 	PageSize        int
 	MaxPageSize     int
 	MaxItems        int
+	MaxSearches     int
 	SignInTries     int
 	SignInWindow    time.Duration
 	SignUpTries     int
@@ -114,6 +118,7 @@ func Load() (*Config, error) {
 		PageSize:        envInt("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
 		MaxPageSize:     envInt("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
 		MaxItems:        envInt("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
+		MaxSearches:     envInt("NEOVNDB_USERS_MAX_SEARCHES", defaultMaxSearches),
 		SignInTries:     envInt("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
 		SignInWindow:    envDuration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
 		SignUpTries:     envInt("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),

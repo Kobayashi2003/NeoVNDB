@@ -62,6 +62,12 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /me", s.signedIn(s.me))
 	mux.HandleFunc("POST /me/password", s.signedIn(s.changePassword))
 	mux.HandleFunc("POST /me/delete", s.signedIn(s.deleteAccount))
+	mux.HandleFunc("GET /me/prefs", s.signedIn(s.prefs))
+	mux.HandleFunc("PUT /me/prefs", s.signedIn(s.setPrefs))
+
+	mux.HandleFunc("GET /searches", s.signedIn(s.searches))
+	mux.HandleFunc("POST /searches", s.signedIn(s.createSearch))
+	mux.HandleFunc("DELETE /searches/{id}", s.signedIn(s.deleteSearch))
 
 	mux.HandleFunc("GET /collections", s.signedIn(s.listCollections))
 	mux.HandleFunc("POST /collections", s.signedIn(s.createCollection))

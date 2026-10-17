@@ -58,3 +58,22 @@ CREATE TABLE IF NOT EXISTS ratings (
     rated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, type, item)
 );
+
+-- The reader's display preferences, as the site wrote them. Kept, not read:
+-- what the fields mean is the site's business, so a new one needs nothing here.
+CREATE TABLE IF NOT EXISTS prefs (
+    user_id    integer     PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    value      jsonb       NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- A listing kept under a name: the type's page and the query of its address.
+CREATE TABLE IF NOT EXISTS searches (
+    id         integer     GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id    integer     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    type       char(1)     NOT NULL,
+    name       text        NOT NULL,
+    query      text        NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (user_id, type, name)
+);
