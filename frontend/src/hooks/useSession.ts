@@ -14,6 +14,7 @@ import {
   session,
   type User,
 } from '@/lib/user';
+import { linkPrefs } from './accountPrefs';
 import { forgetCollections } from './useCollections';
 
 export interface Session {
@@ -50,6 +51,7 @@ function announce(): void {
 function hold(user: User | null): void {
   current = user ? { status: 'in', user } : OUT;
   remember(user);
+  linkPrefs(!!user);
   // Whoever signs in next must not see the last reader's lists, even briefly.
   if (!user) forgetCollections();
   announce();

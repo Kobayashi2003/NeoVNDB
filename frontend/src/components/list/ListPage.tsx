@@ -8,6 +8,7 @@ import { fetchResults } from '@/lib/results';
 import { DataAge } from '@/components/layout/DataAge';
 import { FilterBar } from './FilterBar';
 import { ResultsPanel } from './ResultsPanel';
+import { SavedSearches } from './SavedSearches';
 import { SearchBox } from './SearchBox';
 
 export async function ListPage({ type, params }: { type: string; params: Params }) {
@@ -27,7 +28,10 @@ export async function ListPage({ type, params }: { type: string; params: Params 
             </span>
           )}
         </h1>
-        <SearchBox path={path} params={params} initial={search} />
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <SearchBox path={path} params={params} initial={search} />
+          <SavedSearches type={type} params={params} />
+        </div>
       </div>
 
       <FilterBar

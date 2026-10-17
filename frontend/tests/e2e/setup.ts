@@ -131,6 +131,7 @@ export default async function setup() {
             NEOVNDB_USERS_PAGE_SIZE: sample.NEOVNDB_USERS_PAGE_SIZE,
             NEOVNDB_USERS_MAX_PAGE_SIZE: sample.NEOVNDB_USERS_MAX_PAGE_SIZE,
             NEOVNDB_USERS_MAX_ITEMS: sample.NEOVNDB_USERS_MAX_ITEMS,
+            NEOVNDB_USERS_MAX_SEARCHES: sample.NEOVNDB_USERS_MAX_SEARCHES,
           }
         : {}),
       NEOVNDB_USERS_DB_URL: db,

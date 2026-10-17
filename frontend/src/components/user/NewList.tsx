@@ -1,5 +1,6 @@
 /** "New list" at the foot of a save menu: it becomes a name field, and
- *  `onCreate` makes the list and saves into it. */
+ *  `onCreate` makes the list and saves into it. The words can change, for
+ *  naming something else the same way (a search). */
 'use client';
 
 import { useState } from 'react';
@@ -10,9 +11,18 @@ import { errorText, RULES } from '@/lib/user';
 export function NewList({
   onCreate,
   onError,
+  label = 'New list',
+  placeholder = 'List name',
+  submit: submitLabel = 'Create list',
+  field = 'New list name',
 }: {
   onCreate: (name: string) => Promise<void>;
   onError: (message: string | null) => void;
+  label?: string;
+  placeholder?: string;
+  submit?: string;
+  /** The field's accessible name. */
+  field?: string;
 }) {
   const [naming, setNaming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -45,7 +55,7 @@ export function NewList({
           className={menuItem({ className: 'text-muted' })}
         >
           <Plus className="icon-text size-3.5 shrink-0" aria-hidden />
-          New list
+          {label}
         </button>
       </>
     );
@@ -61,14 +71,14 @@ export function NewList({
           name="name"
           autoFocus
           maxLength={RULES.listName}
-          placeholder="List name"
-          aria-label="New list name"
+          placeholder={placeholder}
+          aria-label={field}
           className="min-w-0 flex-1 rounded-lg border border-white/10 bg-background/40 px-2 py-1 text-xs outline-none transition-colors focus:border-white/30"
         />
         <button
           type="submit"
           disabled={busy}
-          aria-label="Create list"
+          aria-label={submitLabel}
           className="shrink-0 rounded p-1 text-accent transition-colors hover:bg-white/10 disabled:opacity-40"
         >
           {busy ? (
