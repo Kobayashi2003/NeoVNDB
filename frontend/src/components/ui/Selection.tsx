@@ -3,6 +3,7 @@
  *  bar are the caller's (a collection moves and removes; results save). */
 'use client';
 
+import { useEffect } from 'react';
 import { Check, CheckSquare, Square, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -70,6 +71,26 @@ export function ActionBar({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  // While it floats over the foot of the window, the page and every column
+  // that scrolls on its own end with room for it (globals.css), or the last
+  // thing on the page -- the page links -- sat under it.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-selecting', '');
+    return () => root.removeAttribute('data-selecting');
+  }, []);
+
+  // Escape ends choosing, unless something nearer used it (a menu closing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
       <div className="pointer-events-auto flex max-w-full flex-col gap-1 rounded-2xl border border-white/15 bg-[var(--overlay)] p-1.5 shadow-2xl shadow-black/60 animate-slide-up-fade">

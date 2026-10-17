@@ -12,7 +12,15 @@ export function AccountPanel() {
   const session = useSession();
 
   if (session.status === 'unknown') {
-    return <div className="h-40 w-full max-w-sm animate-pulse rounded-lg bg-white/5" aria-hidden />;
+    // Keyed apart from the panel, so the panel is a new element rather than
+    // this one moved and grown (a layout shift).
+    return (
+      <div
+        key="waiting"
+        className="h-40 w-full max-w-sm animate-pulse rounded-lg bg-white/5"
+        aria-hidden
+      />
+    );
   }
   if (session.status === 'out' || !session.user) {
     return (
@@ -31,7 +39,7 @@ export function AccountPanel() {
   const { user } = session;
 
   return (
-    <div className="flex w-full max-w-sm flex-col gap-4">
+    <div key="account" className="flex w-full max-w-sm flex-col gap-4">
       <div className="rounded-lg border border-white/5 bg-surface p-6">
         <h1 className="text-lg font-bold">{user.username}</h1>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">

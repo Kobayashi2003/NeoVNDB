@@ -1,8 +1,10 @@
 /** A catalogue page's tabs, as links. Switching resets page and sort, since
- *  they belonged to a different list. */
+ *  they belonged to a different list. A client component for the arrow keys. */
+'use client';
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { rowKeys } from '@/hooks/rowKeys';
 import { withParams, type Params } from '@/lib/href';
 
 export interface Tab {
@@ -39,7 +41,7 @@ export function Tabs({
   }
 
   return (
-    <div className="flex flex-wrap gap-1" role="tablist">
+    <div className="flex flex-wrap gap-1" role="tablist" onKeyDown={rowKeys()}>
       {tabs.map((tab, i) => {
         const here = tab.value === active;
         const label = (

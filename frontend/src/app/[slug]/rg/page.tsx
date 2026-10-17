@@ -41,7 +41,7 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
     // A graph the API refused to draw is not a missing page; say which it is.
     const why = e instanceof ApiError && e.status === 400 ? e.message : 'Something went wrong.';
     return (
-      <main className="mx-auto w-full max-w-page px-4 py-8 animate-slide-up-fade">
+      <main className="mx-auto w-full max-w-page px-4 py-8">
         <Back id={slug} />
         <p role="alert" className="mt-4 text-sm text-red-400">
           {why}

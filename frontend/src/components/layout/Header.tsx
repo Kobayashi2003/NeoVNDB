@@ -17,7 +17,9 @@ import { SearchField } from './SearchField';
 import { ViewMenu } from './ViewMenu';
 import { UserMenu } from '@/components/user/UserMenu';
 
-export function Header() {
+/** `name` is who was signed in last time, for the account control's size
+ *  until the session answers (see NAME_COOKIE). */
+export function Header({ name }: { name: string | null }) {
   const pathname = usePathname();
   const here = /^\/([vrcpsgi])\d*$/.exec(pathname)?.[1];
 
@@ -70,7 +72,7 @@ export function Header() {
         </Link>
 
         <ViewMenu />
-        <UserMenu />
+        <UserMenu name={name} />
       </div>
     </header>
   );

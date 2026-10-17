@@ -20,6 +20,13 @@ export interface Collection {
   created_at: string;
 }
 
+/** The signed-in reader's name, kept in a plain cookie for one purpose: the
+ *  server cannot know who is reading (the session is the user service's, and
+ *  pages stay the same for everyone), so the header draws its account control
+ *  at this name's width while the session is asked for, and nothing beside it
+ *  moves when the answer comes. Not a credential; cleared on signing out. */
+export const NAME_COOKIE = 'neovndb.name';
+
 /** The service's messages are written for the reader and shown as-is. */
 export class UserError extends Error {
   constructor(

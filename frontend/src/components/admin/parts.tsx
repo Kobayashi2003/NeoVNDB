@@ -21,7 +21,7 @@ export function Card({
   return (
     <section
       className={cn(
-        'flex flex-col gap-3 rounded-lg border border-white/5 bg-surface p-4',
+        'flex min-w-0 flex-col gap-3 rounded-lg border border-white/5 bg-surface p-4',
         className,
       )}
     >
@@ -67,7 +67,9 @@ export function Facts({ rows }: { rows: [string, React.ReactNode][] }) {
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
           <dt className="text-muted">{label}</dt>
-          <dd className="min-w-0 break-words tabular-nums">{value}</dd>
+          {/* anywhere, not break-word: only anywhere lets a long path shrink the
+              column, rather than breaking only once it has already overflowed. */}
+          <dd className="min-w-0 tabular-nums [overflow-wrap:anywhere]">{value}</dd>
         </div>
       ))}
     </dl>

@@ -3,6 +3,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { rowKeys } from '@/hooks/rowKeys';
 
 export interface Option<T extends string> {
   value: T;
@@ -31,6 +32,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
+      onKeyDown={rowKeys({ choose: true })}
       className={cn(
         'flex items-center overflow-hidden rounded-full border border-white/10',
         className,

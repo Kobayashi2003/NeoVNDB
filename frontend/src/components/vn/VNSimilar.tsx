@@ -1,13 +1,15 @@
 /** Works alike in their tags, as one sideways row of covers: twenty of them
  *  would otherwise be the longest thing on the page, and covers are looked
  *  through by eye rather than read down. The arrows page by what is on
- *  screen; a wheel, a trackpad or a swipe scroll it as well. */
+ *  screen; a wheel (rolled up and down, as most are), a trackpad or a swipe
+ *  scroll it as well. */
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Results } from '@/components/list/Results';
 import { Section } from '@/components/ui/Section';
+import { useSidewaysWheel } from '@/hooks/useSidewaysWheel';
 import type { VNRow } from '@/lib/types';
 
 /** Results' own container, the element that scrolls. */
@@ -20,6 +22,7 @@ const ARROW =
 export function VNSimilar({ rows }: { rows: VNRow[] }) {
   const box = useRef<HTMLDivElement>(null);
   const [ends, setEnds] = useState({ start: true, end: false });
+  useSidewaysWheel(box, ':scope > *');
 
   const measure = useCallback(() => {
     const s = stripIn(box.current);

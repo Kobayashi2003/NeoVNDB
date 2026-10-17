@@ -19,7 +19,10 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
   const { box, panel: menu } = useMenu(open, setOpen);
 
   return (
-    <div ref={box} className={cn('relative min-w-0 flex-1', className)}>
+    // A container: the room left beside the logo decides whether the shelf's
+    // name fits. Where it does not (a phone with a long name signed in) the
+    // button is its icon alone, rather than the name cut to "B.".
+    <div ref={box} className={cn('@container relative min-w-0 flex-1', className)}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -31,7 +34,9 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
         )}
       >
         <Library className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span className="truncate">{here ? SHORT[here] : 'Browse'}</span>
+        <span className="hidden truncate @min-[6.5rem]:inline">
+          {here ? SHORT[here] : 'Browse'}
+        </span>
         <ChevronDown
           className={cn('icon-text h-3 w-3 shrink-0 transition-transform', open && 'rotate-180')}
           aria-hidden

@@ -1,5 +1,7 @@
 /** The header's account control. The session is unknown during the server
- *  render, so a same-size placeholder is drawn first to avoid a jump. */
+ *  render, so a same-size placeholder is drawn first to avoid a jump: the
+ *  size of "Sign in", or of the name signed in last time (NAME_COOKIE), whose
+ *  button is wider and would otherwise push the search field aside. */
 'use client';
 
 import { useState } from 'react';
@@ -20,10 +22,25 @@ import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
 
-export function UserMenu() {
+/** The signed-in button's shape, which the placeholder copies. */
+const NAME_BUTTON = 'flex max-w-36 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium';
+
+export function UserMenu({ name }: { name: string | null }) {
   const session = useSession();
 
   if (session.status === 'unknown') {
+    if (name) {
+      // The signed-in button's own shape, with the name drawn but unseen.
+      return (
+        <span
+          className={cn(NAME_BUTTON, 'shrink-0 animate-pulse bg-white/5 text-transparent')}
+          aria-hidden
+        >
+          <span className="truncate">{name}</span>
+          <ChevronDown className="icon-text h-3 w-3 shrink-0" />
+        </span>
+      );
+    }
     return <span className="h-6 w-16 shrink-0 animate-pulse rounded-full bg-white/5" aria-hidden />;
   }
   if (session.status === 'out') return <SignInLink />;
@@ -82,7 +99,7 @@ function SignedIn() {
         // One cap at every width. When the bar runs out of room it is the
         // browse control beside this that gives way, not the name: that label
         // is a shorthand for a menu one tap away, and a name is who you are.
-        className="flex max-w-36 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/20"
+        className={cn(NAME_BUTTON, 'bg-white/10 transition-colors hover:bg-white/20')}
       >
         <span className="truncate">{session.user?.username}</span>
         <ChevronDown
