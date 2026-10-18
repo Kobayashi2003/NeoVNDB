@@ -145,12 +145,18 @@ export function SavedSearches({ type, params }: { type: string; params: Params }
               )}
             </>
           ) : (
-            <p className="px-2.5 py-1.5 text-xs text-muted">
-              <Link href="/login" className="text-accent hover:underline">
+            <div className="m-1 flex flex-col items-start gap-2.5 rounded-lg bg-white/[0.04] p-3">
+              <p className="text-xs text-muted">
+                Name a search to come back to it, on this device or any other.
+              </p>
+              <Link
+                href={`/login?next=${encodeURIComponent(href(query))}`}
+                onClick={() => setOpen(false)}
+                className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-background transition-colors hover:bg-accent-hover"
+              >
                 Sign in
-              </Link>{' '}
-              to name searches and find them on any device.
-            </p>
+              </Link>
+            </div>
           )}
 
           {error && (

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { midway } from './transition';
 
 const sections = (page: import('@playwright/test').Page) =>
   page.getByRole('navigation', { name: 'Sections' });
@@ -114,6 +115,49 @@ test('the keys page through a list and move about a page', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('a page left scrolled down fades where it was, under the header', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/v', { waitUntil: 'networkidle' });
+  await page.mouse.move(700, 500);
+  await page.mouse.wheel(0, 1500);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(500);
+  const { before, held } = await midway(page, () =>
+    page.locator('header a[href="/c"]').first().click(),
+  );
+  // Not jumped to the top of the old page as the new one scrolls up.
+  expect(held.page).toEqual(before);
+  expect(held.header).toBeGreaterThan(0);
+});
+
+test('leaving a page drops the images still loading on it', async ({ page }) => {
+  // Covers the mirror has not fetched yet, held open. Over HTTP/1.1 six of these
+  // used to hold every connection, and the next page waited behind them.
+  await page.route('**/imgserve/img/**', () => new Promise(() => {}));
+  // Neither load nor network idle comes while they hang. The click is only
+  // seen once the progress bar (components/layout/Navigation.tsx) is hydrated.
+  await page.goto('/v', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const bar = document.querySelector('[class*="z-[70]"]');
+    return !!bar && Object.keys(bar).some(k => k.startsWith('__reactFiber'));
+  });
+  const loading = await page.evaluate(() => {
+    const held = [...document.images].filter(i => !i.complete && i.getAttribute('src'));
+    (window as unknown as { held: HTMLImageElement[] }).held = held;
+    return held.length;
+  });
+  expect(loading).toBeGreaterThan(0);
+
+  await page.locator('header a[href="/p"]').first().click();
+  await expect(page.locator('h1')).toContainText('Producers');
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { held: HTMLImageElement[] }).held.filter(i => i.hasAttribute('src'))
+          .length,
+    ),
+  ).toBe(0);
 });
 
 test('moving to another page fades one into the next', async ({ page }) => {

@@ -4,8 +4,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { ShieldCheck } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
+import { SignInFirst } from '@/components/user/SignInFirst';
 import { TabBar } from '@/components/ui/TabBar';
 import { MirrorTab } from './MirrorTab';
 import { TranslationsTab } from './TranslationsTab';
@@ -26,12 +27,9 @@ export function AdminPanel() {
   }
   if (session.status === 'out' || !session.user) {
     return (
-      <Notice>
-        This page is for administrators, so it needs you signed in.{' '}
-        <Link href="/login?next=%2Fadmin" className="text-accent hover:underline">
-          Sign in
-        </Link>
-      </Notice>
+      <SignInFirst next="/admin" icon={ShieldCheck} title="Administrators only">
+        This page is for administrators, so it needs you signed in.
+      </SignInFirst>
     );
   }
   if (!session.user.is_admin) {

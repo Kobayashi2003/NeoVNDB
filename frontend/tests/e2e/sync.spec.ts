@@ -103,8 +103,12 @@ test('signed out, a listing still remembers this device’s recent searches', as
   await expect(page.getByText('Recent on this device')).toBeVisible();
   const recent = page.getByRole('link', { name: '“key”' });
   await expect(recent).toHaveAttribute('href', '/p?search=key');
+  // Signing in from here comes back to this search.
   await expect(
-    page.locator('p', { hasText: 'to name searches' }).getByRole('link', { name: 'Sign in' }),
-  ).toBeVisible();
+    page
+      .locator('div', { has: page.getByText('Name a search to come back to it') })
+      .getByRole('link', { name: 'Sign in', exact: true })
+      .last(),
+  ).toHaveAttribute('href', '/login?next=%2Fp%3Fsort%3Dtitle');
   await expect(page.getByRole('link', { name: 'sort=title' })).toHaveCount(0);
 });

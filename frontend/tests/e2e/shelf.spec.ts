@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { midway } from './transition';
 
 test("a list orders by the reader's rating and shows it on the cards", async ({ page, user }) => {
   const list = (await (
@@ -65,6 +66,28 @@ test('moving between lists redraws the list, not the column beside it', async ({
   expect(
     await page.evaluate(() => document.contains((window as unknown as { column: Element }).column)),
   ).toBe(true);
+});
+
+test('the page of lists and a list fade into each other without scaling', async ({
+  page,
+  user,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await user.call('POST', '/collections', { type: 'v', name: 'Kept' });
+
+  // /u is a narrower column than a list's page: the old page was drawn at the
+  // new one's width, one frame blown up going in and shrunk coming out.
+  await page.goto('/u', { waitUntil: 'networkidle' });
+  let { before, held } = await midway(page, () => page.getByRole('link', { name: 'Kept' }).click());
+  expect(held.page).toEqual(before);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Kept');
+
+  await page.waitForLoadState('networkidle');
+  ({ before, held } = await midway(page, () =>
+    page.getByRole('link', { name: 'Manage lists' }).click(),
+  ));
+  expect(held.page).toEqual(before);
+  await expect(page).toHaveURL(/\/u$/);
 });
 
 test('ratings are changed several at once on the ratings page', async ({ page, user }) => {

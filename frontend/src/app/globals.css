@@ -202,17 +202,22 @@ html[data-selecting] [data-scroll-top] {
 /* One page into the next (the <ViewTransition default="page"> around every
    page, app/layout.tsx): the old one leaves fast so the two never compete,
    and the new one arrives a beat later with a short rise, which reads as
-   "here is the answer". The header stays outside it and stands still. The
-   group's own resize is not animated: two pages of different heights would
-   be stretched into each other. */
+   "here is the answer". The header stays outside it and stands still.
+   The group keeps the old page's box until that page is gone, then takes the
+   new one's in a single step. Each snapshot is drawn at the group's width, so
+   a group already at the new size scaled the old page (/u, narrower than a
+   list, was blown up; the reverse shrunk), and one already at the new place
+   showed a page left scrolled down from its top. Interpolating the box
+   instead would stretch one page into the other. */
 ::view-transition-group(.page) {
-  animation: none;
+  animation-duration: 100ms;
+  animation-timing-function: step-end;
 }
 ::view-transition-old(.page) {
-  animation: 120ms ease-out both page-out;
+  animation: 100ms ease-out both page-out;
 }
 ::view-transition-new(.page) {
-  animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both page-in;
+  animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both page-in;
 }
 @keyframes page-out {
   to {
@@ -228,6 +233,14 @@ html[data-selecting] [data-scroll-top] {
 /* Clicks during the fade reach the live page underneath. */
 ::view-transition {
   pointer-events: none;
+}
+/* The header is its own layer, above the page: a page left scrolled down
+   holds its place while it fades (above), which reaches under the header. */
+.site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(site-header) {
+  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,10 +3,11 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UserRound } from 'lucide-react';
 import { errorText, RULES } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
+import { SignInFirst } from './SignInFirst';
 
 export function AccountPanel() {
   const session = useSession();
@@ -24,15 +25,9 @@ export function AccountPanel() {
   }
   if (session.status === 'out' || !session.user) {
     return (
-      <div className="w-full max-w-sm rounded-lg border border-white/5 bg-surface p-6 text-sm">
-        <p className="text-muted">This page is about your account, so it needs one.</p>
-        <Link
-          href="/login?next=%2Faccount"
-          className="mt-3 inline-block text-accent transition-colors hover:underline"
-        >
-          Sign in
-        </Link>
-      </div>
+      <SignInFirst next="/account" icon={UserRound} title="Not signed in">
+        This page is about your account, so it needs one.
+      </SignInFirst>
     );
   }
 

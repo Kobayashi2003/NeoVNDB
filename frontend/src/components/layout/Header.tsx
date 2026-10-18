@@ -24,7 +24,7 @@ export function Header({ name }: { name: string | null }) {
   const here = /^\/([vrcpsgi])\d*$/.exec(pathname)?.[1];
 
   return (
-    <header className="sticky top-0 z-40 h-(--header-h) shrink-0 border-b border-white/10 bg-background/80 backdrop-blur-md">
+    <header className="site-header sticky top-0 z-40 h-(--header-h) shrink-0 border-b border-white/10 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-full max-w-page items-center gap-3 px-4">
         <Link
           href="/"
