@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 import { clearRatings, ratedItems, ratingCounts, ratings, setRatings } from '@/lib/user';
 import { one, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
@@ -29,7 +30,11 @@ export function RatingsPanel({ page, params }: { page: number; params: Params })
     return <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
   }
   if (session.status === 'out') {
-    return <SignInFirst next={PATH}>Your ratings are yours, so they need you.</SignInFirst>;
+    return (
+      <SignInFirst next={PATH} icon={Star} title="Your ratings live here">
+        Rate what you have read, then sort and change those ratings together.
+      </SignInFirst>
+    );
   }
   return <Ratings page={page} params={params} />;
 }

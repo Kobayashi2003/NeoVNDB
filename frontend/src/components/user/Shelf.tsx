@@ -4,6 +4,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { ListChecks } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
 import { useCollections } from '@/hooks/useCollections';
 import { SignInFirst } from './SignInFirst';
@@ -28,7 +29,9 @@ export function Shelf({ children }: { children: React.ReactNode }) {
     return (
       <div className={ROW}>
         <div className={BODY}>
-          <SignInFirst next={path}>This is yours, so it needs you.</SignInFirst>
+          <SignInFirst next={path} icon={ListChecks} title="This list is kept on an account">
+            Sign in to open it.
+          </SignInFirst>
         </div>
       </div>
     );

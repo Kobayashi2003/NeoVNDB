@@ -19,6 +19,59 @@ let pending = false;
 let shown = false;
 let timers: ReturnType<typeof setTimeout>[] = [];
 const listeners = new Set<() => void>();
+let stopped: { img: HTMLImageElement; src: string }[] = [];
+
+/** Images still loading on the page being left are dropped. Over HTTP/1.1 a
+ *  browser keeps six connections to a host, and covers vndb has not given the
+ *  mirror yet take seconds each: six of them held every connection, and the
+ *  next page's request queued behind them (15s measured). Taking the src away,
+ *  rather than emptying it, ends the request without an error event, so the
+ *  card is not marked broken. The mirror finishes the fetch regardless. */
+function stopImages() {
+  for (const img of document.images) {
+    const src = img.getAttribute('src');
+    if (img.complete || !src) continue;
+    stopped.push({ img, src });
+    img.removeAttribute('src');
+  }
+}
+
+/** Puts back what is still on the page: a navigation that never came, or an
+ *  image the new page kept as it was. One React gave a new src is left be. */
+function restoreImages() {
+  for (const { img, src } of stopped)
+    if (img.isConnected && !img.hasAttribute('src')) img.setAttribute('src', src);
+  stopped = [];
+}
+
+/** Chrome now words the abort of a transition in a hidden tab as "…invalid
+ *  state. Document hidden", which React 19.3 does not recognise among the
+ *  aborts it ignores, so switching tabs mid-navigation raised a recoverable
+ *  error. Reworded to the form React knows; React already recovers either way. */
+const REWORDED = Symbol.for('neovndb.reworded');
+// Once, though this module is evaluated again on every hot reload.
+if (
+  typeof document !== 'undefined' &&
+  document.startViewTransition &&
+  !(REWORDED in document.startViewTransition)
+) {
+  const start = document.startViewTransition.bind(document);
+  document.startViewTransition = Object.assign(
+    (...args: Parameters<typeof start>) => {
+      const transition = start(...args);
+      const ready = transition.ready.catch((error: unknown) => {
+        throw error instanceof DOMException &&
+          error.name === 'InvalidStateError' &&
+          error.message.startsWith('Transition was aborted because of invalid state')
+          ? new DOMException('Transition was aborted because of invalid state', error.name)
+          : error;
+      });
+      Object.defineProperty(transition, 'ready', { value: ready });
+      return transition;
+    },
+    { [REWORDED]: true },
+  ) as typeof document.startViewTransition;
+}
 
 function announce() {
   document.documentElement.toggleAttribute('data-navigating', shown);
@@ -40,6 +93,7 @@ function startNavigation(href: string) {
     return;
   clear();
   pending = true;
+  stopImages();
   timers.push(
     setTimeout(() => {
       shown = pending;
@@ -51,6 +105,7 @@ function startNavigation(href: string) {
 
 function finish() {
   clear();
+  restoreImages();
   if (!pending && !shown) return;
   pending = shown = false;
   announce();

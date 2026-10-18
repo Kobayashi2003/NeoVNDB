@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, ListChecks, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LIST } from '@/lib/list';
 import { TYPES } from '@/components/layout/shelves';
@@ -30,7 +30,11 @@ export function CollectionsPanel() {
   const error = trouble ?? held.error;
 
   if (session.status === 'out') {
-    return <SignInFirst next="/u">Your lists are yours, so they need an account.</SignInFirst>;
+    return (
+      <SignInFirst next="/u" icon={ListChecks} title="Keep lists of your own">
+        Collect visual novels, characters and the rest into lists, and find them on any device.
+      </SignInFirst>
+    );
   }
   // One block until the lists are in, then every shelf at once. Shelves drawn
   // with a row each while waiting were pushed down by any shelf above that
