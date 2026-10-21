@@ -1,11 +1,24 @@
 import { expect, test } from '@playwright/test';
 
-test("a voice actor's page lists the characters they voiced", async ({ page }) => {
-  // Maeda Konomi has no other credits, so hers is the only tab, shown as a label.
+test("a voice actor's page opens on the works they voiced in", async ({ page }) => {
+  // Maeda Konomi has no other credits, so there is no Credited on tab.
   await page.goto('/s1491');
-  await expect(page.locator('main').getByText('Voiced characters')).toBeVisible();
+  const tabs = page.getByRole('tab');
+  await expect(tabs).toHaveText([/^Voiced in/, /^Voiced characters/]);
+  await expect(page.locator('[data-results] a[href^="/v"]').first()).toBeVisible();
+  await tabs.filter({ hasText: /^Voiced characters/ }).click();
   await expect(page.locator("[data-results] a[href='/c521']")).toBeVisible();
-  await expect(page.getByRole('tab', { name: /Credited on/ })).toHaveCount(0);
+});
+
+test("credits and voice work are both on a person's page", async ({ page }) => {
+  // Tomonaga Akane sang for a few works and voiced in hundreds: the voice
+  // work comes first, the credits after it.
+  await page.goto('/s83');
+  const tabs = page.getByRole('tab');
+  await expect(tabs).toHaveText([/^Voiced in\s*[\d,]+/, /^Voiced characters/, /^Credited on/]);
+  const works = Number((await tabs.first().textContent())!.replace(/\D/g, ''));
+  const credited = Number((await tabs.last().textContent())!.replace(/\D/g, ''));
+  expect(works).toBeGreaterThan(credited);
 });
 
 test("a producer's tabs leave out the empty and the redundant", async ({ page }) => {

@@ -118,6 +118,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'dtag', label: 'Tag (not inherited)', kind: 'scored', target: 'g', score: true },
     { key: 'release', label: 'Release', ...rel('r') },
     { key: 'developer', label: 'Developer', ...rel('p') },
+    { key: 'publisher', label: 'Publisher', ...rel('p') },
     { key: 'producer', label: 'Producer', ...rel('p') },
     { key: 'character', label: 'Character', ...rel('c') },
     { key: 'trait', label: 'Character trait', ...on('i') },
@@ -210,10 +211,17 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   s: [
     { key: 'search', label: 'Name', ...SEARCH },
-    { key: 'role', label: 'Role', kind: 'enum', choices: choices('STAFF_ROLE') },
+    {
+      key: 'role',
+      label: 'Role',
+      kind: 'enum',
+      // Voice work is not a credit role, but the staff filter takes it as one.
+      choices: [...choices('STAFF_ROLE'), { value: 'seiyuu', label: 'Voice actor' }],
+    },
     { key: 'lang', label: 'Language', ...LANG() },
     { key: 'gender', label: 'Gender', kind: 'enum', choices: STAFF_GENDER },
-    { key: 'vn', label: 'Visual novel', ...on('v') },
+    { key: 'vn', label: 'Credited on', ...on('v') },
+    { key: 'voiced', label: 'Voiced in', ...on('v') },
     { key: 'character', label: 'Voiced character', ...on('c') },
     LINK,
   ],

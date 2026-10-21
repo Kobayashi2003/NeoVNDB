@@ -1,6 +1,8 @@
-/** A person: the works they are credited on, and the characters they
- *  voiced, as two tabs (separate tables upstream). Aliases get their own card, since credits elsewhere show the
- *  alias used; the person's own name is marked. */
+/** A person: the works they are credited on, the works they voiced in, and
+ *  the characters they voiced, as tabs. Credits and voice work are separate
+ *  tables upstream, so a voice actor is credited on few works or none.
+ *  Aliases get their own card, since credits elsewhere show the alias used;
+ *  the person's own name is marked. */
 
 import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
@@ -18,10 +20,32 @@ import type { StaffDetail } from '@/lib/types';
 
 export async function StaffPage({ staff: s, params }: { staff: StaffDetail; params: Params }) {
   const path = `/${s.id}`;
-  const [credited, voiced] = await Promise.all([
+  const [credited, voicedIn, voiced] = await Promise.all([
     countOf('v', { staff: s.id }),
+    countOf('v', { seiyuu: s.id }),
     countOf('c', { seiyuu: s.id }),
   ]);
+  const credits = {
+    value: 'credited',
+    label: 'Credited on',
+    count: credited,
+    type: 'v',
+    filters: { staff: s.id },
+  };
+  const works = {
+    value: 'voiced-in',
+    label: 'Voiced in',
+    count: voicedIn,
+    type: 'v',
+    filters: { seiyuu: s.id },
+  };
+  const characters = {
+    value: 'voiced',
+    label: 'Voiced characters',
+    count: voiced,
+    type: 'c',
+    filters: { seiyuu: s.id },
+  };
 
   return (
     <CatalogPage
@@ -30,22 +54,9 @@ export async function StaffPage({ staff: s, params }: { staff: StaffDetail; para
       path={path}
       params={params}
       empty="No works are credited to this person."
-      tabs={[
-        {
-          value: 'credited',
-          label: 'Credited on',
-          count: credited,
-          type: 'v',
-          filters: { staff: s.id },
-        },
-        {
-          value: 'voiced',
-          label: 'Voiced characters',
-          count: voiced,
-          type: 'c',
-          filters: { seiyuu: s.id },
-        },
-      ]}
+      // The first tab is the one opened, so it is whichever kind of work the
+      // person has done more of: a voice actor's few song credits come second.
+      tabs={voicedIn > credited ? [works, characters, credits] : [credits, works, characters]}
       action={<DetailControls id={s.id} />}
       aside={
         <>

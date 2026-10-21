@@ -45,6 +45,10 @@ func TestNestedConditionsCompile(t *testing.T) {
 		{vndb.TypeVN, "tag=(search=school+category=cont)", "JOIN tags g ON g.id = t.tag"},
 		{vndb.TypeVN, "!dtag=(vn_count>=100)", "g.c_items >="},
 		{vndb.TypeCharacter, "trait=(search=glasses)", "JOIN traits i ON i.id = ct.tid"},
+		// Voice work is its own table, apart from the credits.
+		{vndb.TypeStaff, "role=seiyuu", "FROM vn_seiyuu vs"},
+		{vndb.TypeStaff, "voiced=v17", "FROM vn_seiyuu vs"},
+		{vndb.TypeStaff, "role=scenario", "FROM vn_staff vs"},
 	} {
 		sql, err := compile(cat, c.typ, c.expr)
 		if err != nil {
