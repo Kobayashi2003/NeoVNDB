@@ -6,6 +6,7 @@ import { Suspense, ViewTransition } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
 import { Shortcuts } from '@/components/layout/Shortcuts';
+import { ToTop } from '@/components/layout/ToTop';
 import { PrefsRendered } from '@/hooks/usePrefs';
 import { PREFS_COOKIE, readPrefs } from '@/lib/prefs';
 import { NAME_COOKIE } from '@/lib/user';
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
           </Suspense>
           <Header name={name} />
           <Shortcuts />
+          <ToTop />
           {/* Every navigation is a transition, so this crossfades one page into
               the next (globals.css, .page) while the header holds still. */}
           <ViewTransition default="page">{children}</ViewTransition>
