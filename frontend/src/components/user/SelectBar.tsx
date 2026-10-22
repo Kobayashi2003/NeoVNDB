@@ -84,7 +84,8 @@ export function SelectBar({
         // Asked in place, like deleting a list is. What goes is only a
         // mark, but it is still a thing the reader chose to keep.
         <>
-          <span className="px-1 text-xs text-muted">Remove?</span>
+          {/* The count, since some of them may be on other pages. */}
+          <span className="px-1 text-xs text-muted">Remove {chosen}?</span>
           <button
             type="button"
             onClick={() => {

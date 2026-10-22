@@ -133,15 +133,15 @@ export function ShelfPanel({
   const [held, setHeld] = useState<Held | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mine, setMine] = useState(0);
-  // Kept with the set and page they were made on, so moving to another set
-  // or page ends them without an effect to reset them.
+  // Kept with the set they were made on, so moving to another set ends them
+  // without an effect to reset them. Paging, ordering and searching keep
+  // them: a choice can be gathered across pages, as on a page of results.
   const [selecting, setSelecting] = useState<string | null>(null);
   const [choice, setChoice] = useState<{ where: string; ids: string[] }>({ where: '', ids: [] });
   const [busy, setBusy] = useState(false);
   const [trouble, setTrouble] = useState<string | null>(null);
 
-  const where = `${sourceKey}|${page}`;
-  const want = `${where}|${sort}|${reverse}|${search}|${reloads}|${mine}`;
+  const want = `${sourceKey}|${page}|${sort}|${reverse}|${search}|${reloads}|${mine}`;
 
   useEffect(() => {
     if (!type) return;
@@ -277,13 +277,13 @@ export function ShelfPanel({
   const shownType = type ?? 'v';
   const rows = held?.rows ?? [];
   const here = rows.map(r => r.id);
-  const chosen = choice.where === where ? choice.ids : [];
+  const chosen = choice.where === sourceKey ? choice.ids : [];
   const allOnPage = here.length > 0 && here.every(x => chosen.includes(x));
   const isSelecting = selecting === sourceKey;
   const sorts: Sort[] = [...own, ...(held?.tooBig ? [] : LIST[shownType].sorts)];
   // Highlight the order actually used, not the one in the address.
   const showing = held?.tooBig && !ownSort ? own[0].value : sort;
-  const choose = (ids: string[]) => setChoice({ where, ids });
+  const choose = (ids: string[]) => setChoice({ where: sourceKey, ids });
 
   async function act(change: () => Promise<unknown>) {
     setBusy(true);
@@ -433,7 +433,13 @@ export function ShelfPanel({
           allOnPage,
           busy,
           error: trouble,
-          onAll: () => choose(allOnPage ? [] : here),
+          // This page in or out; what was chosen on other pages stays.
+          onAll: () =>
+            choose(
+              allOnPage
+                ? chosen.filter(id => !here.includes(id))
+                : [...new Set([...chosen, ...here])],
+            ),
           act,
           onClose: () => {
             setSelecting(null);

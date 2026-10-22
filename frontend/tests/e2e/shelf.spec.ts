@@ -60,7 +60,10 @@ test('moving between lists redraws the list, not the column beside it', async ({
   const column = page.getByRole('navigation', { name: 'Your lists' });
   await column.evaluate(el => ((window as unknown as { column: Element }).column = el));
 
-  await column.getByRole('link', { name: /Second/ }).click();
+  // Nor redrawn to the eye: the list fades, the column stands as it is now.
+  await page.waitForLoadState('networkidle');
+  const { held } = await midway(page, () => column.getByRole('link', { name: /Second/ }).click());
+  expect(held.lists).toEqual({ old: 0, new: 1 });
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Second');
   await expect(page.locator("[data-results] a[href='/v11']")).toBeVisible();
   expect(
@@ -88,6 +91,47 @@ test('the page of lists and a list fade into each other without scaling', async 
   ));
   expect(held.page).toEqual(before);
   await expect(page).toHaveURL(/\/u$/);
+});
+
+test('a choice on a list is gathered across its pages', async ({ page, user }) => {
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Paged' })
+  ).json()) as { id: number };
+  // More than a page of 24.
+  await user.call('POST', `/collections/${list.id}/marks/add`, {
+    items: Array.from({ length: 30 }, (_, i) => `v${i + 1}`),
+  });
+
+  await page.goto(`/u/${list.id}`);
+  const cards = page.locator('[data-results] button[aria-pressed]');
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+  await cards.nth(0).click();
+  await cards.nth(1).click();
+  await expect(page.getByText('2 selected')).toBeVisible();
+
+  await page.locator('nav[aria-label="Pages"] a[aria-label="Next"]').click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(cards).toHaveCount(6);
+  await expect(page.getByText('2 selected')).toBeVisible();
+  // This page in, beside the two from the first; and out again, leaving them.
+  await page.getByRole('button', { name: 'Select this page' }).click();
+  await expect(page.getByText('8 selected')).toBeVisible();
+  await page.getByRole('button', { name: 'Deselect this page' }).click();
+  await expect(page.getByText('2 selected')).toBeVisible();
+  await cards.nth(0).click();
+
+  // Back on the first page, its two are still marked.
+  await page.locator('nav[aria-label="Pages"] a[aria-label="Previous"]').click();
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(page.locator('[data-results] button[aria-pressed="true"]')).toHaveCount(2);
+  await expect(page.getByText('3 selected')).toBeVisible();
+
+  // Asked with the count, since one of them is not on this page.
+  await page.getByTitle('Remove from this list').click();
+  await expect(page.getByText('Remove 3?')).toBeVisible();
+  await page.getByRole('button', { name: 'Yes, remove them' }).click();
+  await expect(page.locator('h1 + span')).toHaveText('27');
+  await expect(page.getByText('0 selected')).toBeVisible();
 });
 
 test('ratings are changed several at once on the ratings page', async ({ page, user }) => {

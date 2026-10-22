@@ -15,7 +15,7 @@ import { CollectionColumn } from './CollectionSwitcher';
  *  keeps focus rings from being clipped. */
 const ROW = 'flex w-full gap-6 lg:h-full';
 const COLUMN =
-  '-mx-1 hidden w-56 shrink-0 overflow-y-auto overscroll-contain px-1 py-6 [scrollbar-gutter:stable] lg:flex';
+  'shelf-lists -mx-1 hidden w-56 shrink-0 overflow-y-auto overscroll-contain px-1 py-6 [scrollbar-gutter:stable] lg:flex';
 const BODY =
   'flex min-w-0 flex-1 flex-col gap-4 lg:-ml-1 lg:overflow-y-auto lg:overscroll-contain lg:pb-12 lg:pl-1 lg:pr-3 lg:pt-6 lg:[scrollbar-gutter:stable]';
 
