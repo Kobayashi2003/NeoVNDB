@@ -57,7 +57,8 @@ export function RatingsBar({
 
       {confirming ? (
         <>
-          <span className="px-1 text-xs text-muted">Clear?</span>
+          {/* The count, since some of them may be on other pages. */}
+          <span className="px-1 text-xs text-muted">Clear {chosen}?</span>
           <button
             type="button"
             onClick={() => {

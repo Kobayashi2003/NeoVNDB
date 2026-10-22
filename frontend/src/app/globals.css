@@ -242,6 +242,28 @@ html[data-selecting] [data-scroll-top] {
 ::view-transition-group(site-header) {
   z-index: 1;
 }
+/* The column of lists (components/user/Shelf) belongs to the layout and is
+   the same on both sides of a move between lists, bar the row marked current:
+   drawn as it is now rather than faded out and in with the list beside it.
+   Arriving from /u or leaving for it, it is on one side only and goes with
+   the page. */
+.shelf-lists {
+  view-transition-name: shelf-lists;
+}
+::view-transition-group(shelf-lists),
+::view-transition-new(shelf-lists) {
+  animation: none;
+}
+::view-transition-old(shelf-lists) {
+  visibility: hidden;
+}
+::view-transition-old(shelf-lists):only-child {
+  visibility: visible;
+  animation: 100ms ease-out both page-out;
+}
+::view-transition-new(shelf-lists):only-child {
+  animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both page-in;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up-fade,

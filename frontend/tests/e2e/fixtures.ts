@@ -45,6 +45,9 @@ export const test = base.extend<{ user: User; admin: User }>({
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     await provide({ name, password, call });
+    // A page can still be asking (its lists, its preferences) when the test
+    // ends; a forwarded request cut short then is not a failure.
+    await context.unrouteAll({ behavior: 'ignoreErrors' });
   },
 
   /** `user`, made an administrator. The edge would ask the real user service

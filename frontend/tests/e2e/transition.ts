@@ -1,7 +1,8 @@
 import type { Page } from '@playwright/test';
 
 type Box = { left: number; top: number; width: number };
-type Held = { page: Box; header: number | null };
+/** How opaque each side of the column of lists is drawn, when it is there. */
+type Held = { page: Box; header: number | null; lists: { old: number; new: number } | null };
 type Watch = { held?: Held | null; watching?: boolean };
 
 /** Navigates with `go` and looks at the page change part way through the old
@@ -32,7 +33,11 @@ export async function midway(page: Page, go: () => Promise<unknown>) {
         const groups = runs
           .map(a => (a.effect as KeyframeEffect).pseudoElement!)
           .filter(p => p.startsWith('::view-transition-group('));
-        const style = at(groups.find(p => !/\((root|site-header)\)$/.test(p))!);
+        const style = at(groups.find(p => !/\((root|site-header|shelf-lists)\)$/.test(p))!);
+        const drawn = (name: string) => {
+          const s = at(name);
+          return s.visibility === 'hidden' ? 0 : Number(s.opacity);
+        };
         const m = new DOMMatrix(style.transform);
         w.held = {
           page: {
@@ -42,6 +47,13 @@ export async function midway(page: Page, go: () => Promise<unknown>) {
           },
           header: groups.includes('::view-transition-group(site-header)')
             ? Number(at('::view-transition-group(site-header)').zIndex)
+            : null,
+          // Found by its size, not its animations: it is drawn without any.
+          lists: at('::view-transition-group(shelf-lists)').width.endsWith('px')
+            ? {
+                old: drawn('::view-transition-old(shelf-lists)'),
+                new: drawn('::view-transition-new(shelf-lists)'),
+              }
             : null,
         };
         runs.forEach((a, i) => (a.currentTime = times[i]));
