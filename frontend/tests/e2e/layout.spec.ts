@@ -164,6 +164,19 @@ test('the selection bar never sits on the page links', async ({ page, user }) =>
     await page.getByRole('button', { name: 'Select', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Done selecting' })).toBeVisible();
     expect(await covered(page), `selecting at ${width}px`).toEqual([]);
+    // Where the end of the list is a screen or more down, the button back to
+    // the top is up too, above the bar. (Not at lg: the column is shorter.)
+    const button = page.getByRole('button', { name: 'Back to the top' });
+    if (width >= 1024) continue;
+    await expect(button).toBeVisible();
+    const toTop = (await button.boundingBox())!;
+    const bar = (await page
+      .getByRole('button', { name: 'Done selecting' })
+      .locator('xpath=ancestor::div[contains(@class, "rounded-2xl")][1]')
+      .boundingBox())!;
+    expect(toTop.y + toTop.height, `the button clears the bar at ${width}px`).toBeLessThanOrEqual(
+      bar.y,
+    );
   }
 });
 

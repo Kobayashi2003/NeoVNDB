@@ -131,6 +131,40 @@ test('a page left scrolled down fades where it was, under the header', async ({ 
   expect(held.header).toBeGreaterThan(0);
 });
 
+test('a button takes a page scrolled down back to the top', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const toTop = page.getByRole('button', { name: 'Back to the top' });
+
+  // A list scrolls the window.
+  await page.goto('/v', { waitUntil: 'networkidle' });
+  await expect(toTop).not.toBeVisible();
+  await page.mouse.move(700, 500);
+  await page.mouse.wheel(0, 1500);
+  await expect(toTop).toBeVisible();
+  await toTop.click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(toTop).not.toBeVisible();
+
+  // A detail page scrolls its own column.
+  await page.goto('/v17', { waitUntil: 'networkidle' });
+  const column = page.locator('[data-scroll-top]');
+  await page.mouse.move(900, 500);
+  await page.mouse.wheel(0, 2500);
+  await expect(toTop).toBeVisible();
+  await toTop.click();
+  await expect.poll(() => column.evaluate(c => c.scrollTop)).toBe(0);
+  await expect(page.locator('main h1')).toBeFocused();
+
+  // Leaving with the column scrolled down: it goes with the page, and nothing
+  // scrolls on the way to the next one, which is at its top.
+  await page.mouse.move(900, 500);
+  await page.mouse.wheel(0, 2500);
+  await expect(toTop).toBeVisible();
+  await page.locator('header a[href="/c"]').first().click();
+  await expect(page).toHaveURL(/\/c$/);
+  await expect(toTop).not.toBeVisible();
+});
+
 test('leaving a page drops the images still loading on it', async ({ page }) => {
   // Covers the mirror has not fetched yet, held open. Over HTTP/1.1 six of these
   // used to hold every connection, and the next page waited behind them.
