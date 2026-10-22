@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { isAbsolute, join, resolve } from 'node:path';
 
-/** NeoVNDB's slot in PORTS.md is 17030-17039; the tests take the top of it. */
+/** NeoVNDB's slot (project/README.md) is 17030-17039; the tests take the top of it. */
 export const USERS_PORT = 17035;
 export const DEPLOYED = { edge: 17036, api: 17037, web: 17038 };
 export const STATE = join(tmpdir(), 'neovndb-e2e.json');
