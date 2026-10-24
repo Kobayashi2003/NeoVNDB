@@ -1,3 +1,7 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+overrides:
+  # postcss (under next), tailwind and jsdom still resolve 1.2.1, which
+  # GHSA-68fv-2mgg-jv7q affects. Drop this once they ask for 1.2.2 themselves.
+  source-map-js: ^1.2.2
