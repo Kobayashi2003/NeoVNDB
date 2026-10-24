@@ -7,42 +7,8 @@
 'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-
-/** Below this a navigation is instant to the eye, and a bar would flicker. */
-const QUIET_MS = 120;
-/** A navigation that never finishes (an error page, a dropped request) must
- *  not leave the bar running forever. */
-const GIVE_UP_MS = 15_000;
-
-let pending = false;
-let shown = false;
-let timers: ReturnType<typeof setTimeout>[] = [];
-const listeners = new Set<() => void>();
-let stopped: { img: HTMLImageElement; src: string }[] = [];
-
-/** Images still loading on the page being left are dropped. Over HTTP/1.1 a
- *  browser keeps six connections to a host, and covers vndb has not given the
- *  mirror yet take seconds each: six of them held every connection, and the
- *  next page's request queued behind them (15s measured). Taking the src away,
- *  rather than emptying it, ends the request without an error event, so the
- *  card is not marked broken. The mirror finishes the fetch regardless. */
-function stopImages() {
-  for (const img of document.images) {
-    const src = img.getAttribute('src');
-    if (img.complete || !src) continue;
-    stopped.push({ img, src });
-    img.removeAttribute('src');
-  }
-}
-
-/** Puts back what is still on the page: a navigation that never came, or an
- *  image the new page kept as it was. One React gave a new src is left be. */
-function restoreImages() {
-  for (const { img, src } of stopped)
-    if (img.isConnected && !img.hasAttribute('src')) img.setAttribute('src', src);
-  stopped = [];
-}
+import { usePathname, useSearchParams } from 'next/navigation';
+import { finishNavigation, isNavigating, onNavigating, startNavigation } from '@/lib/navigating';
 
 /** Chrome now words the abort of a transition in a hidden tab as "…invalid
  *  state. Document hidden", which React 19.3 does not recognise among the
@@ -73,71 +39,11 @@ if (
   ) as typeof document.startViewTransition;
 }
 
-function announce() {
-  document.documentElement.toggleAttribute('data-navigating', shown);
-  for (const notify of listeners) notify();
-}
-
-function clear() {
-  for (const t of timers) clearTimeout(t);
-  timers = [];
-}
-
-/** Starts the sign for a navigation to href; nothing if it goes nowhere new. */
-function startNavigation(href: string) {
-  const to = new URL(href, location.href);
-  if (
-    to.origin !== location.origin ||
-    to.pathname + to.search === location.pathname + location.search
-  )
-    return;
-  clear();
-  pending = true;
-  stopImages();
-  timers.push(
-    setTimeout(() => {
-      shown = pending;
-      announce();
-    }, QUIET_MS),
-    setTimeout(finish, GIVE_UP_MS),
-  );
-}
-
-function finish() {
-  clear();
-  restoreImages();
-  if (!pending && !shown) return;
-  pending = shown = false;
-  announce();
-}
-
-/** router.push and replace, with the sign. */
-export function useNavigate() {
-  const router = useRouter();
-  return {
-    push(href: string) {
-      startNavigation(href);
-      router.push(href);
-    },
-    replace(href: string) {
-      startNavigation(href);
-      router.replace(href);
-    },
-  };
-}
-
 /** Clicks on links start the sign; a new address ends it. */
 export function Navigation() {
   const path = usePathname();
   const search = useSearchParams().toString();
-  const showing = useSyncExternalStore(
-    notify => {
-      listeners.add(notify);
-      return () => void listeners.delete(notify);
-    },
-    () => shown,
-    () => false,
-  );
+  const showing = useSyncExternalStore(onNavigating, isNavigating, () => false);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -156,7 +62,7 @@ export function Navigation() {
   }, []);
 
   useEffect(() => {
-    finish();
+    finishNavigation();
     for (const box of document.querySelectorAll<HTMLElement>('[data-scroll-top]'))
       box.scrollTop = 0;
   }, [path, search]);

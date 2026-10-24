@@ -9,7 +9,7 @@ import { Bookmark, ListChecks, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
 import { ActionBar } from '@/components/ui/Selection';
-import { NewList } from '@/components/user/NewList';
+import { NewList } from '@/components/ui/NewList';
 import { addMarks, collections, createCollection, errorText, type Collection } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';

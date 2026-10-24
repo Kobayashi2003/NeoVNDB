@@ -2,7 +2,7 @@
  *  traits, works, instances). Each section still counts what it hides. */
 'use client';
 
-import { BBCode } from '@/lib/bbcode';
+import { BBCode } from '@/components/ui/BBCode';
 import { byWork, characterSpoilerExtent } from '@/lib/characters';
 import { display } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { Collapsible } from '@/components/ui/Collapsible';
 import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
 import { InfoCard } from '@/components/ui/InfoCard';
 import { Section } from '@/components/ui/Section';
-import { DetailControls } from '@/components/ui/DetailControls';
+import { DetailControls } from '@/components/user/DetailControls';
 import { usePrefs } from '@/hooks/usePrefs';
 import { useSpoilerLevel } from '@/hooks/useSpoilerLevel';
 import { SpoilerScope } from '@/components/ui/Spoiler';

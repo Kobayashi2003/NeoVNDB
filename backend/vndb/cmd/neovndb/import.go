@@ -31,11 +31,7 @@ func runImport(ctx context.Context, args []string) error {
 		return err
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	store, err := db.Open(ctx, cfg)
+	cfg, store, err := open(ctx)
 	if err != nil {
 		return err
 	}

@@ -104,8 +104,6 @@ func (s *Server) Routes() http.Handler {
 	return mux
 }
 
-type ctxKey struct{}
-
 // signedIn wraps each private route rather than the whole mux, so a new route
 // is closed unless opened on purpose.
 func (s *Server) signedIn(next func(http.ResponseWriter, *http.Request, int32)) http.HandlerFunc {

@@ -5,7 +5,7 @@ import { router } from '../router';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { AuthForm } from '@/components/user/AuthForm';
 import { ViewMenu } from '@/components/layout/ViewMenu';
-import { SortMenu } from '@/components/list/SortMenu';
+import { SortMenu } from '@/components/results/SortMenu';
 import { LIST } from '@/lib/list';
 import { PREFS_COOKIE } from '@/lib/prefs';
 

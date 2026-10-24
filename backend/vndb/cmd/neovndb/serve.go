@@ -5,15 +5,14 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"log/slog"
 	"net"
-	"os"
+	"net/http"
 	"strconv"
 
 	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/api"
-	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
+	"github.com/kobayashi/neovndb/internal/listen"
 )
 
 func runServe(ctx context.Context, args []string) error {
@@ -23,17 +22,13 @@ func runServe(ctx context.Context, args []string) error {
 		return err
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	store, err := db.Open(ctx, cfg)
+	cfg, store, err := open(ctx)
 	if err != nil {
 		return err
 	}
 	defer store.Close()
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	log := newLog()
 	if g, err := store.Describe(ctx, db.SchemaLive); err == nil && g != nil {
 		log.Info("serving", "generation", g.Code)
 	} else {
@@ -69,7 +64,11 @@ func runServe(ctx context.Context, args []string) error {
 	}
 	defer srv.Close()
 
-	return api.Serve(ctx, cfg, srv.Routes(admin.NewMirror(ctx, store, cfg, log, update).Routes()), log)
+	return listen.Serve(ctx, &http.Server{
+		Addr:              cfg.Addr(),
+		Handler:           srv.Routes(admin.NewMirror(ctx, store, cfg, log, update).Routes()),
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+	}, cfg.ShutdownTimeout, log)
 }
 
 // splitAddr applies a -addr override onto the configured host and port. A bare

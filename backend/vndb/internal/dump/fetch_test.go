@@ -10,8 +10,7 @@ import (
 // The `latest` link has redirected two different ways over time. Both shapes
 // have to resolve to the same archive.
 func TestLatestResolvesBothRedirectShapes(t *testing.T) {
-	var srv *httptest.Server
-	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/dump/at-file.tar.zst":
 			http.Redirect(w, r, "/dump/vndb-db-2026-09-09.tar.zst", http.StatusTemporaryRedirect)

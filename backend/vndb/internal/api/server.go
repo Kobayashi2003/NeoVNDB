@@ -101,36 +101,5 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	return recovering(s.log, logging(s.log, mux))
 }
 
-// Serve runs until the context is cancelled, then drains in-flight requests.
-func Serve(ctx context.Context, cfg *config.Config, handler http.Handler, log *slog.Logger) error {
-	addr := cfg.Addr()
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           handler,
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-	}
-
-	errs := make(chan error, 1)
-	go func() {
-		log.Info("listening", "addr", addr)
-		errs <- srv.ListenAndServe()
-	}()
-
-	select {
-	case err := <-errs:
-		if err == http.ErrServerClosed {
-			return nil
-		}
-		return err
-	case <-ctx.Done():
-		shutdown, cancel := context.Background(), context.CancelFunc(func() {})
-		if cfg.ShutdownTimeout > 0 {
-			shutdown, cancel = context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
-		}
-		defer cancel()
-		return srv.Shutdown(shutdown)
-	}
-}
-
 // Close releases what the server owns; the store is the caller's.
 func (s *Server) Close() error { return s.cache.Close() }

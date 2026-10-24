@@ -28,7 +28,7 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 		"length_votes":   {Row: func(v gen.Vn) any { return v.CLengthnum }}, // vn.c_lengthnum
 
 		// CONV -- one vn column, re-expressed.
-		"length":      {Row: func(v gen.Vn) any { return zeroToNil(v.Length) }},             // vn.length; 0 is the dump's way of saying nobody estimated it
+		"length":      {Row: func(v gen.Vn) any { return query.ZeroToNil(v.Length) }},       // vn.length; 0 is the dump's way of saying nobody estimated it
 		"rating":      {Row: func(v gen.Vn) any { return tenths(v.CRating) }},               // vn.c_rating, tenths of a point -> 10..100
 		"average":     {Row: func(v gen.Vn) any { return tenths(v.CAverage) }},              // vn.c_average, likewise
 		"description": {Row: func(v gen.Vn) any { return query.EmptyToNil(v.Description) }}, // vn.description; '' -> null
@@ -125,11 +125,4 @@ func tenths(v *int16) *float64 {
 	}
 	f := float64(*v) / 10
 	return &f
-}
-
-func zeroToNil(v int16) *int16 {
-	if v == 0 {
-		return nil
-	}
-	return &v
 }

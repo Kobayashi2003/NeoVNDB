@@ -1,11 +1,12 @@
-// Command neovndb is the single binary for every backend role. Later roles
-// (import, serve) become subcommands here, so a deployment stays one artifact.
+// Command neovndb is the single binary for every role of the mirror, one
+// subcommand each, so a deployment stays one artifact.
 package main
 
 import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,7 +20,7 @@ import (
 const usage = `neovndb
 
   serve  [--addr host:port]              run the read-only HTTP API
-  images [--addr host:port]              run the image mirror (crawls hourly)
+  images [--addr host:port]              run the image mirror, crawling on a schedule
   crawl  [--limit n]                     fetch missing images now (0: all)
   import [--file p] [--promote] [--force] load an archive into vndb_next
   update [--force]                       import and go live if upstream is newer
@@ -79,16 +80,29 @@ func run() error {
 	}
 }
 
-func runDB(ctx context.Context, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("db: expected status, init, promote, rollback, drop or verify")
-	}
-
+// open loads the configuration and connects, for every subcommand but images.
+func open(ctx context.Context) (*config.Config, *db.Store, error) {
 	cfg, err := config.Load()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	store, err := db.Open(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg, store, nil
+}
+
+func newLog() *slog.Logger {
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+}
+
+func runDB(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("db: expected status, init, check, promote, rollback, drop or verify")
+	}
+
+	cfg, store, err := open(ctx)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,7 @@ import { Cover } from '@/components/ui/Cover';
 import { InfoCard, InfoRow, InlineList } from '@/components/ui/InfoCard';
 import { usePrefs } from '@/hooks/usePrefs';
 import type { SpoilerControl } from '@/hooks/useSpoilerLevel';
-import { SexLine } from './SexLine';
+import { SexLine } from '@/components/ui/SexLine';
 import type { CharacterDetail } from '@/lib/types';
 
 export function CharacterInfoPanel({

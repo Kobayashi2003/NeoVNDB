@@ -8,7 +8,8 @@ import { LIST } from '@/lib/list';
 import { items, marks, moveMarks, removeMarks } from '@/lib/user';
 import type { Params } from '@/lib/href';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
-import { ShelfPanel, type OwnSort, type ShelfSource } from './ShelfPanel';
+import type { OwnSort, ShelfSource } from '@/lib/shelf';
+import { ShelfPanel } from './ShelfPanel';
 import { SelectBar } from './SelectBar';
 import { CollectionPicker } from './CollectionSwitcher';
 

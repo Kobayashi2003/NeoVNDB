@@ -9,8 +9,8 @@ import { one, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
 import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
-import { ResultsPanel } from '@/components/list/ResultsPanel';
-import { Tabs, type Tab } from '@/components/list/Tabs';
+import { ResultsPanel } from '@/components/results/ResultsPanel';
+import { Tabs, type Tab } from '@/components/results/Tabs';
 
 export async function CatalogPage({
   title,

@@ -7,7 +7,7 @@ import { GraphPanel } from '@/components/graph/GraphPanel';
 import { ConditionBuilder } from '@/components/list/conditions/ConditionBuilder';
 import { SearchField } from '@/components/layout/SearchField';
 import { RatingStars } from '@/components/user/RatingStars';
-import { SexLine } from '@/components/character/SexLine';
+import { SexLine } from '@/components/ui/SexLine';
 import { readSex } from '@/lib/characters';
 
 /** Answers fetches by path, as the services would. */

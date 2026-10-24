@@ -2,7 +2,7 @@
  *  handles a typed id, so links from elsewhere get the same treatment. */
 'use client';
 
-import { useNavigate } from '@/components/layout/Navigation';
+import { useNavigate } from '@/hooks/useNavigate';
 import { SearchPill } from '@/components/ui/SearchPill';
 
 export function SearchField({

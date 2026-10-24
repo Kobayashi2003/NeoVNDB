@@ -13,7 +13,7 @@ import { shouldBlur } from '@/lib/content';
 import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { usePrefs } from '@/hooks/usePrefs';
-import { SexLine } from '@/components/character/SexLine';
+import { SexLine } from '@/components/ui/SexLine';
 import type { Character } from '@/lib/types';
 import { Name } from '@/components/ui/Name';
 

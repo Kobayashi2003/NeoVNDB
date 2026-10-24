@@ -52,6 +52,7 @@ describe('relation graph', () => {
       reach: 2,
       truncated: false,
       capped: false,
+      deepest: 2,
       nodes: ['v1', 'v2', 'v3', 'v4'].map(id => node(id)),
       edges: [],
     };
@@ -116,26 +117,17 @@ describe('edge geometry', () => {
 });
 
 describe('steps', () => {
-  const at = (depth: number, over: Partial<RelationGraph> = {}) =>
-    steps({ depth, max_depth: 0, reach: depth, truncated: true, capped: false, ...over });
-
-  it('offers a few steps while the graph goes on, one past the reader', () => {
-    expect(at(2)).toEqual({ useful: 3, shown: 2, offered: 5, deeper: true });
-    expect(at(7)).toMatchObject({ useful: 8, offered: 8 });
+  it('offers every step up to the deepest, and no more', () => {
+    // A graph that ends three steps out offers three, not a stock five.
+    expect(steps({ depth: 2, deepest: 3 })).toEqual({ deepest: 3, shown: 2, deeper: true });
+    expect(steps({ depth: 3, deepest: 3 })).toMatchObject({ deeper: false });
   });
 
-  it('stops where the graph ends, drawing a deeper ask as that end', () => {
-    // v5390: reach 5 at any depth from 5 up.
-    expect(at(11, { reach: 5, truncated: false })).toMatchObject({
-      useful: 5,
-      shown: 5,
-      offered: 5,
-    });
+  it('draws a deeper ask as the deepest step', () => {
+    expect(steps({ depth: 11, deepest: 5 })).toEqual({ deepest: 5, shown: 5, deeper: false });
   });
 
-  it('goes no further than the node ceiling, or the server, allows', () => {
-    expect(at(4, { capped: true })).toMatchObject({ useful: 4, shown: 4, offered: 4 });
-    expect(at(8, { max_depth: 8 })).toMatchObject({ useful: 8, offered: 8, deeper: false });
-    expect(at(2, { max_depth: 3 })).toMatchObject({ offered: 3 });
+  it('offers one step for a title with no relations', () => {
+    expect(steps({ depth: 2, deepest: 0 })).toEqual({ deepest: 1, shown: 1, deeper: false });
   });
 });

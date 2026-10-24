@@ -41,7 +41,7 @@ var filters = map[string]query.FilterFunc{
 	"minage":  query.IntColumn("r.minage", 1),
 	"voiced":  query.IntColumn("r.voiced", 1),
 
-	"released": releasedFilter,
+	"released": query.ReleasedColumn("r.released"),
 	"search":   query.SearchFilter("r", "r"),
 
 	"patch":      query.BoolFilter("r.patch", "NOT r.patch"),
@@ -96,31 +96,6 @@ var filters = map[string]query.FilterFunc{
 		Join: "producers p ON p.id = rp.pid"}.Filter(),
 	"supersedes": query.RelatedID(vndb.TypeRelease, `EXISTS (
 		SELECT 1 FROM releases_supersedes rs WHERE rs.id = r.id AND rs.rid = %s)`),
-}
-
-func releasedFilter(b *query.Builder, value string) error {
-	return b.AnyOf(value, func(b *query.Builder, v string) error {
-		op, rest := query.SplitComparison(v)
-		low, high, err := vndb.ParseReleasedRange(rest)
-		if err != nil {
-			return query.BadRequest("%v", err)
-		}
-		switch op {
-		case "=":
-			b.Where("r.released BETWEEN %s AND %s", low, high)
-		case "!=":
-			b.Where("r.released NOT BETWEEN %s AND %s", low, high)
-		case ">":
-			b.Where("r.released > %s", high)
-		case ">=":
-			b.Where("r.released >= %s", low)
-		case "<":
-			b.Where("r.released < %s", low)
-		case "<=":
-			b.Where("r.released <= %s", high)
-		}
-		return nil
-	})
 }
 
 var sorts = map[string]query.Sort{

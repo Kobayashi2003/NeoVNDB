@@ -8,11 +8,11 @@ import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { clearRatings, ratedItems, ratingCounts, ratings, setRatings } from '@/lib/user';
 import { one, withParams, type Params } from '@/lib/href';
-import { LIST } from '@/lib/list';
+import { LIST, TYPES } from '@/lib/list';
 import { cn } from '@/lib/utils';
-import { TYPES } from '@/components/layout/shelves';
 import { useSession } from '@/hooks/useSession';
-import { ShelfPanel, type OwnSort, type ShelfSource } from './ShelfPanel';
+import type { OwnSort, ShelfSource } from '@/lib/shelf';
+import { ShelfPanel } from './ShelfPanel';
 import { RatingsBar } from './RatingsBar';
 import { SignInFirst } from './SignInFirst';
 

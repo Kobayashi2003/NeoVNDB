@@ -9,7 +9,7 @@ import (
 )
 
 // A Store is a directory of images addressed as vndb does (kind, shard,
-// number). Used twice: the byte-exact mirror and the resized cache.
+// number), holding vndb's bytes exactly.
 type Store struct{ root string }
 
 func NewStore(root string) *Store { return &Store{root: root} }

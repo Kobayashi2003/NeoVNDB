@@ -4,7 +4,7 @@
 
 import { Fragment } from 'react';
 import Link from 'next/link';
-import { Spoiler } from '@/components/ui/Spoiler';
+import { Spoiler } from './Spoiler';
 
 /** [raw] and [code] come first: what they contain is not markup, so the
  *  scanner must consume them whole before anything inside can match. */
@@ -99,17 +99,4 @@ function render(text: string): React.ReactNode[] {
   }
   out.push(text.slice(last));
   return out;
-}
-
-/** The same text with its markup taken off, for somewhere a link cannot go.
- *
- *  A one-line preview inside a card that is itself a link cannot contain
- *  links, and a truncated `[url=...]` reads as a bug. Stripping is the honest
- *  answer there: the full text is one click away with its markup intact. */
-export function plain(text: string): string {
-  return text
-    .replace(/\[url=[^\]]+\]([\s\S]*?)\[\/url\]/gi, '$1')
-    .replace(/\[\/?(?:b|i|u|s|spoiler|quote|code|raw)\]/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }

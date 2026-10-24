@@ -3,7 +3,7 @@
  *  its images. */
 'use client';
 
-import { BBCode } from '@/lib/bbcode';
+import { BBCode } from '@/components/ui/BBCode';
 import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { display } from '@/lib/format';
@@ -11,7 +11,7 @@ import { Collapsible } from '@/components/ui/Collapsible';
 import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
 import { Icon } from '@/components/ui/Icon';
 import { InfoCard } from '@/components/ui/InfoCard';
-import { DetailControls } from '@/components/ui/DetailControls';
+import { DetailControls } from '@/components/user/DetailControls';
 import { Section } from '@/components/ui/Section';
 import { usePrefs } from '@/hooks/usePrefs';
 import { ReleaseDRM } from './ReleaseDRM';

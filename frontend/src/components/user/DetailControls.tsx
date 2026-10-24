@@ -2,8 +2,8 @@
  *  then rating, then saving. Both wait for the session, so the row reserves
  *  their height from the first paint to avoid a shift on narrow screens. */
 
-import { RatingStars } from '@/components/user/RatingStars';
-import { CollectionButton } from '@/components/user/CollectionButton';
+import { RatingStars } from './RatingStars';
+import { CollectionButton } from './CollectionButton';
 
 export function DetailControls({
   id,

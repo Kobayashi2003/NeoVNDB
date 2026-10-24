@@ -1,7 +1,7 @@
 /** A list page's search, applied on submit as the `search` filter. */
 'use client';
 
-import { useNavigate } from '@/components/layout/Navigation';
+import { useNavigate } from '@/hooks/useNavigate';
 import { withParams, type Params } from '@/lib/href';
 import { SearchPill } from '@/components/ui/SearchPill';
 

@@ -537,6 +537,32 @@ func (q *Queries) VNRelationGraph(ctx context.Context, arg VNRelationGraphParams
 	return items, nil
 }
 
+const vNRelationNeighbours = `-- name: VNRelationNeighbours :many
+SELECT DISTINCT vid FROM vn_relations WHERE id = ANY($1::int[])
+`
+
+// The titles one relation away from any of these: a walk one layer at a time,
+// for how far a component reaches without fetching its edges.
+func (q *Queries) VNRelationNeighbours(ctx context.Context, ids []int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, vNRelationNeighbours, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var vid int32
+		if err := rows.Scan(&vid); err != nil {
+			return nil, err
+		}
+		items = append(items, vid)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const vNRelations = `-- name: VNRelations :many
 SELECT id, vid, relation, official
   FROM vn_relations

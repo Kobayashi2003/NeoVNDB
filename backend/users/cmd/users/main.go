@@ -1,8 +1,9 @@
 // Command users serves accounts, sessions and lists, and backs up its database
 // on a schedule.
 //
-//	users          serve
-//	users backup   dump the database now
+//	users                        serve
+//	users backup                 dump the database now
+//	users admin <username> [off] make an account an administrator (off: undo)
 //
 // Separate binary and database from the mirror, whose schemas are rebuilt
 // every import; this service migrates rather than rebuilds.
@@ -93,8 +94,14 @@ func run(ctx context.Context) error {
 		}
 		return err
 	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
-		defer cancel()
+		// 0 waits for in-flight requests however long they take, as the
+		// mirror's processes do, rather than cutting them off at once.
+		shutdown := context.Background()
+		if cfg.ShutdownTimeout > 0 {
+			var cancel context.CancelFunc
+			shutdown, cancel = context.WithTimeout(shutdown, cfg.ShutdownTimeout)
+			defer cancel()
+		}
 		return srv.Shutdown(shutdown)
 	}
 }

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useNavigate } from '@/components/layout/Navigation';
+import { useNavigate } from '@/hooks/useNavigate';
 import { withParams, type Params } from '@/lib/href';
 import { cn } from '@/lib/utils';
 

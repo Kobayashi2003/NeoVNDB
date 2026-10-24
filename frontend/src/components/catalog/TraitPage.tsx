@@ -7,7 +7,7 @@ import type { Params } from '@/lib/href';
 import { countOf } from '@/lib/results';
 import { Collapsible } from '@/components/ui/Collapsible';
 import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
-import { DetailControls } from '@/components/ui/DetailControls';
+import { DetailControls } from '@/components/user/DetailControls';
 import { Description } from '@/components/ui/Description';
 import { Name } from '@/components/ui/Name';
 import { CatalogPage } from './CatalogPage';

@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Results } from '@/components/list/Results';
+import { Results } from '@/components/results/Results';
 import { Section } from '@/components/ui/Section';
 import { useSidewaysWheel } from '@/hooks/useSidewaysWheel';
 import type { VNRow } from '@/lib/types';

@@ -7,7 +7,7 @@
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronsRight, Minus, Plus } from 'lucide-react';
 import { ApiError, byId, relationGraph } from '@/lib/api';
 import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
@@ -90,7 +90,7 @@ function Steps({
   query: Record<string, string | string[] | undefined>;
   graph: Graph;
 }) {
-  const { useful, shown, offered, deeper } = steps(graph);
+  const { deepest, shown, deeper } = steps(graph);
   const count = `${graph.nodes.length} ${graph.nodes.length === 1 ? 'title' : 'titles'}`;
   const href = (d: number) =>
     withParams(`/${slug}/rg`, query, { depth: d === DEFAULT_DEPTH ? null : String(d) });
@@ -102,39 +102,47 @@ function Steps({
   // prop, and fragments from here once drew a missing-key warning there.
   return (
     <div className="flex flex-col gap-2">
-      {offered <= MAX_PILLS ? (
-        <nav aria-label="Steps out" className={bar}>
-          {Array.from({ length: offered }, (_, i) => i + 1).map(d => (
-            <Link
-              key={d}
-              href={href(d)}
-              aria-current={d === shown ? 'page' : undefined}
-              aria-label={label(d)}
-              className={cn(
-                'w-6 rounded-full py-0.5 text-center text-xs font-medium tabular-nums transition-colors',
-                d === shown
-                  ? 'bg-white/20 text-white'
-                  : 'text-muted hover:bg-white/10 hover:text-white',
-              )}
-            >
-              {d}
-            </Link>
-          ))}
-        </nav>
-      ) : (
-        // Too many steps for a row of numbers: one step either way instead.
-        <nav aria-label="Steps out" className={bar}>
-          <StepLink href={shown > 1 ? href(shown - 1) : null} label="One step fewer">
-            <Minus />
-          </StepLink>
-          <span aria-current="page" className="px-2 text-xs font-medium tabular-nums text-white">
-            {label(shown)}
-          </span>
-          <StepLink href={shown < useful ? href(shown + 1) : null} label="One step more">
-            <Plus />
-          </StepLink>
-        </nav>
-      )}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {deepest <= MAX_PILLS ? (
+          <nav aria-label="Steps out" className={bar}>
+            {Array.from({ length: deepest }, (_, i) => i + 1).map(d => (
+              <Link
+                key={d}
+                href={href(d)}
+                aria-current={d === shown ? 'page' : undefined}
+                aria-label={label(d)}
+                className={cn(
+                  'w-6 rounded-full py-0.5 text-center text-xs font-medium tabular-nums transition-colors',
+                  d === shown
+                    ? 'bg-white/20 text-white'
+                    : 'text-muted hover:bg-white/10 hover:text-white',
+                )}
+              >
+                {d}
+              </Link>
+            ))}
+          </nav>
+        ) : (
+          // Too many steps for a row of numbers: one step either way instead.
+          <nav aria-label="Steps out" className={bar}>
+            <StepLink href={shown > 1 ? href(shown - 1) : null} label="One step fewer">
+              <Minus />
+            </StepLink>
+            <span aria-current="page" className="px-2 text-xs font-medium tabular-nums text-white">
+              {label(shown)}
+            </span>
+            <StepLink href={deeper ? href(shown + 1) : null} label="One step more">
+              <Plus />
+            </StepLink>
+          </nav>
+        )}
+        {/* Straight to the end rather than a step at a time; still there at the
+          end, disabled, so the row does not shift under the pointer. */}
+        <StepLink href={deeper ? href(deepest) : null} label={`Deepest, ${label(deepest)}`} wide>
+          <ChevronsRight />
+          Deepest
+        </StepLink>
+      </div>
       <p className="text-[0.6875rem] leading-snug text-muted">
         {graph.capped
           ? `${count}, the most one graph shows; it stops here.`
@@ -151,13 +159,19 @@ function Steps({
 function StepLink({
   href,
   label,
+  wide = false,
   children,
 }: {
   href: string | null;
   label: string;
+  /** Text beside the icon, in a pill of its own. */
+  wide?: boolean;
   children: React.ReactNode;
 }) {
-  const style = 'flex h-6 w-6 items-center justify-center rounded-full [&>svg]:h-3.5 [&>svg]:w-3.5';
+  const style = cn(
+    'flex h-6 items-center justify-center rounded-full [&>svg]:h-3.5 [&>svg]:w-3.5',
+    wide ? 'gap-1 border border-white/10 pl-1.5 pr-2.5 text-xs font-medium' : 'w-6',
+  );
   if (!href) {
     return (
       <span aria-disabled aria-label={label} className={cn(style, 'text-muted/30')}>
@@ -192,6 +206,7 @@ function Back({ id }: { id: string }) {
 export async function generateMetadata({ params }: PageProps<'/[slug]/rg'>) {
   const { slug } = await params;
   if (!/^v\d+$/.test(slug)) return { title: 'NeoVNDB' };
-  const vn = await byId<{ title: string | null }>('vn', slug, 'title');
+  // The page's fields, so this and the page are one request.
+  const vn = await byId<{ title: string | null }>('vn', slug, 'title,alttitle');
   return { title: vn?.title ? `Relations: ${vn.title} - NeoVNDB` : 'NeoVNDB' };
 }

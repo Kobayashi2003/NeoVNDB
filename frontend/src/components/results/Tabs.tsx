@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { rowKeys } from '@/hooks/rowKeys';
+import { rowKeys } from '@/lib/rowKeys';
 import { withParams, type Params } from '@/lib/href';
 
 export interface Tab {

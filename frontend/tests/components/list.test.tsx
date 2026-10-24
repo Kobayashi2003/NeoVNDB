@@ -3,12 +3,12 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterBar } from '@/components/list/FilterBar';
-import { Pagination } from '@/components/list/Pagination';
-import { Results } from '@/components/list/Results';
+import { Pagination } from '@/components/results/Pagination';
+import { Results } from '@/components/results/Results';
 import { SearchBox } from '@/components/list/SearchBox';
-import { SortLinks } from '@/components/list/SortLinks';
-import { SortMenu } from '@/components/list/SortMenu';
-import { Tabs } from '@/components/list/Tabs';
+import { SortLinks } from '@/components/results/SortLinks';
+import { SortMenu } from '@/components/results/SortMenu';
+import { Tabs } from '@/components/results/Tabs';
 import { VNSimilar } from '@/components/vn/VNSimilar';
 import { FILTERS } from '@/lib/filters';
 import { LIST } from '@/lib/list';

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -139,60 +140,64 @@ type Config struct {
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
+	e := &env{}
 	c := &Config{
 		DatabaseURL: os.Getenv("NEOVNDB_DB_URL"),
-		Host:        envString("NEOVNDB_HOST", defaultHost),
-		Port:        envInt("NEOVNDB_PORT", defaultPort),
-		DumpDir:     envString("NEOVNDB_DUMP_DIR", defaultDumpDir),
-		DumpURL:     envString("NEOVNDB_DUMP_URL", defaultDumpURL),
-		DumpKeep:    envInt("NEOVNDB_DUMP_KEEP", defaultDumpKeep),
+		Host:        e.text("NEOVNDB_HOST", defaultHost),
+		Port:        e.int("NEOVNDB_PORT", defaultPort),
+		DumpDir:     e.text("NEOVNDB_DUMP_DIR", defaultDumpDir),
+		DumpURL:     e.text("NEOVNDB_DUMP_URL", defaultDumpURL),
+		DumpKeep:    e.int("NEOVNDB_DUMP_KEEP", defaultDumpKeep),
 
-		UpdateEvery:      envDuration("NEOVNDB_UPDATE_EVERY", defaultUpdateEvery),
-		UpdateFirstAfter: envDuration("NEOVNDB_UPDATE_FIRST_AFTER", defaultUpdateFirstAfter),
-		UpdateRetryAfter: envDuration("NEOVNDB_UPDATE_RETRY_AFTER", defaultUpdateRetryAfter),
+		UpdateEvery:      e.duration("NEOVNDB_UPDATE_EVERY", defaultUpdateEvery),
+		UpdateFirstAfter: e.duration("NEOVNDB_UPDATE_FIRST_AFTER", defaultUpdateFirstAfter),
+		UpdateRetryAfter: e.duration("NEOVNDB_UPDATE_RETRY_AFTER", defaultUpdateRetryAfter),
 
-		MaxConns:       int32(envInt("NEOVNDB_DB_MAX_CONNS", defaultMaxConns)),
-		MinConns:       int32(envInt("NEOVNDB_DB_MIN_CONNS", defaultMinConns)),
-		ConnLifetime:   envDuration("NEOVNDB_DB_CONN_LIFETIME", defaultConnLifetime),
-		ConnectTimeout: envDuration("NEOVNDB_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
+		MaxConns:       int32(e.int("NEOVNDB_DB_MAX_CONNS", defaultMaxConns)),
+		MinConns:       int32(e.int("NEOVNDB_DB_MIN_CONNS", defaultMinConns)),
+		ConnLifetime:   e.duration("NEOVNDB_DB_CONN_LIFETIME", defaultConnLifetime),
+		ConnectTimeout: e.duration("NEOVNDB_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
 
-		PageSize:       envInt("NEOVNDB_PAGE_SIZE", defaultPageSize),
-		MaxPageSize:    envInt("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
-		TransLang:      envString("NEOVNDB_TRANS_LANG", defaultTransLang),
-		MaxSearchTerms: envInt("NEOVNDB_MAX_SEARCH_TERMS", defaultMaxSearchTerms),
-		MaxFilterNodes: envInt("NEOVNDB_MAX_FILTER_NODES", defaultMaxFilterNodes),
-		MaxIDs:         envInt("NEOVNDB_MAX_IDS", defaultMaxIDs),
-		MaxFieldDepth:  envInt("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
-		MaxCost:        envInt("NEOVNDB_MAX_COST", defaultMaxCost),
+		PageSize:       e.int("NEOVNDB_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:    e.int("NEOVNDB_MAX_PAGE_SIZE", defaultMaxPageSize),
+		TransLang:      e.text("NEOVNDB_TRANS_LANG", defaultTransLang),
+		MaxSearchTerms: e.int("NEOVNDB_MAX_SEARCH_TERMS", defaultMaxSearchTerms),
+		MaxFilterNodes: e.int("NEOVNDB_MAX_FILTER_NODES", defaultMaxFilterNodes),
+		MaxIDs:         e.int("NEOVNDB_MAX_IDS", defaultMaxIDs),
+		MaxFieldDepth:  e.int("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
+		MaxCost:        e.int("NEOVNDB_MAX_COST", defaultMaxCost),
 
-		GraphDepth:    envInt("NEOVNDB_GRAPH_DEPTH", defaultGraphDepth),
-		MaxGraphDepth: envInt("NEOVNDB_MAX_GRAPH_DEPTH", defaultMaxGraphDepth),
-		MaxGraphNodes: envInt("NEOVNDB_MAX_GRAPH_NODES", defaultMaxGraphNodes),
+		GraphDepth:    e.int("NEOVNDB_GRAPH_DEPTH", defaultGraphDepth),
+		MaxGraphDepth: e.int("NEOVNDB_MAX_GRAPH_DEPTH", defaultMaxGraphDepth),
+		MaxGraphNodes: e.int("NEOVNDB_MAX_GRAPH_NODES", defaultMaxGraphNodes),
 
-		RequestTimeout:    envDuration("NEOVNDB_REQUEST_TIMEOUT", defaultRequestTimeout),
-		ReadHeaderTimeout: envDuration("NEOVNDB_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
-		ShutdownTimeout:   envDuration("NEOVNDB_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
+		RequestTimeout:    e.duration("NEOVNDB_REQUEST_TIMEOUT", defaultRequestTimeout),
+		ReadHeaderTimeout: e.duration("NEOVNDB_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
+		ShutdownTimeout:   e.duration("NEOVNDB_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
 
-		CacheBackend:  envString("NEOVNDB_CACHE", defaultCacheBackend),
-		CacheTTL:      envDuration("NEOVNDB_CACHE_TTL", defaultCacheTTL),
-		CacheEntries:  envInt("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
-		CacheMaxEntry: envInt("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
-		RedisURL:      envString("NEOVNDB_REDIS_URL", ""),
+		CacheBackend:  e.text("NEOVNDB_CACHE", defaultCacheBackend),
+		CacheTTL:      e.duration("NEOVNDB_CACHE_TTL", defaultCacheTTL),
+		CacheEntries:  e.int("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
+		CacheMaxEntry: e.int("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
+		RedisURL:      e.text("NEOVNDB_REDIS_URL", ""),
 
-		GuardMaxLoss: envFloat("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
+		GuardMaxLoss: e.float("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
 
-		ImageDir:             envString("NEOVNDB_IMAGE_DIR", defaultImageDir),
-		ImagePort:            envInt("NEOVNDB_IMAGE_PORT", defaultImagePort),
-		ImageMaxBytes:        int64(envInt("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
-		ImageFetchLimit:      envDuration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
-		ImageFetchParallel:   envInt("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
-		ImageCrawlEvery:      envDuration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
-		ImageCrawlFirstAfter: envDuration("NEOVNDB_IMAGE_CRAWL_FIRST_AFTER", defaultImageCrawlFirstAfter),
-		ImageCrawlPerRun:     envInt("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
-		ImageCrawlDelay:      envDuration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
+		ImageDir:             e.text("NEOVNDB_IMAGE_DIR", defaultImageDir),
+		ImagePort:            e.int("NEOVNDB_IMAGE_PORT", defaultImagePort),
+		ImageMaxBytes:        int64(e.int("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
+		ImageFetchLimit:      e.duration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
+		ImageFetchParallel:   e.int("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
+		ImageCrawlEvery:      e.duration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
+		ImageCrawlFirstAfter: e.duration("NEOVNDB_IMAGE_CRAWL_FIRST_AFTER", defaultImageCrawlFirstAfter),
+		ImageCrawlPerRun:     e.int("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
+		ImageCrawlDelay:      e.duration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
 	}
 	if c.DatabaseURL == "" {
-		return nil, fmt.Errorf("NEOVNDB_DB_URL is not set")
+		e.errs = append(e.errs, fmt.Errorf("NEOVNDB_DB_URL is not set"))
+	}
+	if err := errors.Join(e.errs...); err != nil {
+		return nil, err
 	}
 	return c, nil
 }
@@ -206,36 +211,38 @@ func (c *Config) ImageAddr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.ImagePort)
 }
 
-func envString(key, fallback string) string {
+// env reads settings, keeping every value it cannot read: a typo then stops
+// the process with its name, rather than quietly running on the default.
+type env struct{ errs []error }
+
+func (e *env) text(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
 	return fallback
 }
 
-func envInt(key string, fallback int) int {
-	if v := os.Getenv(key); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			return n
-		}
-	}
-	return fallback
+func (e *env) int(key string, fallback int) int {
+	return read(e, key, fallback, strconv.Atoi)
 }
 
-func envDuration(key string, fallback time.Duration) time.Duration {
-	if v := os.Getenv(key); v != "" {
-		if d, err := time.ParseDuration(v); err == nil {
-			return d
-		}
-	}
-	return fallback
+func (e *env) duration(key string, fallback time.Duration) time.Duration {
+	return read(e, key, fallback, time.ParseDuration)
 }
 
-func envFloat(key string, fallback float64) float64 {
-	if v := os.Getenv(key); v != "" {
-		if f, err := strconv.ParseFloat(v, 64); err == nil {
-			return f
-		}
+func (e *env) float(key string, fallback float64) float64 {
+	return read(e, key, fallback, func(v string) (float64, error) { return strconv.ParseFloat(v, 64) })
+}
+
+func read[T any](e *env, key string, fallback T, parse func(string) (T, error)) T {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
 	}
-	return fallback
+	got, err := parse(v)
+	if err != nil {
+		e.errs = append(e.errs, fmt.Errorf("%s=%q: %w", key, v, err))
+		return fallback
+	}
+	return got
 }

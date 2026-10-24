@@ -4,8 +4,7 @@
 import type { Metadata } from 'next';
 import { openapi, type FieldSchema, type OpenAPI, type Operation } from '@/lib/api';
 import { conditionOf, type Condition } from '@/lib/conditions';
-import { LIST } from '@/lib/list';
-import { TYPES } from '@/components/layout/shelves';
+import { LIST, TYPES } from '@/lib/list';
 
 export const metadata: Metadata = { title: 'API - NeoVNDB' };
 

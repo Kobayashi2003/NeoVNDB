@@ -3,7 +3,7 @@
  *  is why translations must keep the source's markup (the seed checks). */
 'use client';
 
-import { BBCode } from '@/lib/bbcode';
+import { BBCode } from '@/components/ui/BBCode';
 import { usePrefs } from '@/hooks/usePrefs';
 
 export function Description({ text, translation }: { text: string; translation?: string | null }) {

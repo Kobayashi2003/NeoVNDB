@@ -19,6 +19,9 @@ export interface ListSpec {
   defaultSort: string;
 }
 
+/** The seven types the dump carries, in the order every page lists them. */
+export const TYPES = ['v', 'c', 'r', 'p', 's', 'g', 'i'] as const;
+
 const BY_NAME: Sort = { value: 'name', label: 'Name' };
 const BY_TITLE: Sort = { value: 'title', label: 'Title' };
 

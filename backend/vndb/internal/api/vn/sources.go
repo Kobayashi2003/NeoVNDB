@@ -252,26 +252,16 @@ func loadAnime(ctx context.Context, r *Resolver, page []gen.Vn,
 		}
 		grouped[a.VnID] = append(grouped[a.VnID], map[string]any{
 			"id":       a.ID,
-			"type":     blankToNil(a.Type),
+			"type":     query.BlankToNil(a.Type),
 			"year":     a.Year,
 			"title":    title,
-			"original": blankToNil(a.TitleKanji),
+			"original": query.BlankToNil(a.TitleKanji),
 		})
 	}
 	for id, obj := range byID {
 		obj["anime"] = query.OrEmpty(grouped[id])
 	}
 	return nil
-}
-
-// blankToNil is EmptyToNil for a column that is already nullable: absent and
-// present-but-empty are the same thing to a reader, and only one of them
-// should reach one.
-func blankToNil(s *string) *string {
-	if s == nil || *s == "" {
-		return nil
-	}
-	return s
 }
 
 func loadStaff(ctx context.Context, r *Resolver, page []gen.Vn,

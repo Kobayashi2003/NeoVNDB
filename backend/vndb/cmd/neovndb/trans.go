@@ -9,9 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kobayashi/neovndb/internal/config"
-	"github.com/kobayashi/neovndb/internal/db"
-	"github.com/kobayashi/neovndb/internal/db/gen"
 	"github.com/kobayashi/neovndb/internal/trans"
 )
 
@@ -43,16 +40,8 @@ func runTrans(ctx context.Context, args []string) error {
 	}
 }
 
-func openStore(ctx context.Context) (*db.Store, error) {
-	cfg, err := config.Load()
-	if err != nil {
-		return nil, err
-	}
-	return db.Open(ctx, cfg)
-}
-
 func transStatus(ctx context.Context) error {
-	store, err := openStore(ctx)
+	_, store, err := open(ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +71,7 @@ func transSeed(ctx context.Context, path string) error {
 		return fmt.Errorf("reading %s: %w", path, err)
 	}
 
-	store, err := openStore(ctx)
+	_, store, err := open(ctx)
 	if err != nil {
 		return err
 	}
@@ -113,48 +102,8 @@ func transSeed(ctx context.Context, path string) error {
 			len(refused), len(seed.Passages), strings.Join(shown, "\n"))
 	}
 
-	tx, err := store.Pool().Begin(ctx)
+	terms, passages, err := store.Seed(ctx, &seed)
 	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx) //nolint:errcheck // a commit makes this a no-op
-	q := gen.New(tx)
-
-	terms := 0
-	for category, pairs := range seed.Terms {
-		for source, target := range pairs {
-			if trans.Key(source) == "" || target == "" {
-				continue
-			}
-			if err := q.UpsertTerm(ctx, gen.UpsertTermParams{
-				TargetLang: lang, SourceKey: trans.Key(source),
-				SourceText: source, TargetText: target, Category: &category,
-			}); err != nil {
-				return fmt.Errorf("term %q: %w", source, err)
-			}
-			terms++
-		}
-	}
-
-	passages := 0
-	for _, p := range seed.Passages {
-		if trans.Key(p.Source) == "" || p.Target == "" {
-			continue
-		}
-		entity := p.EntityType
-		if err := q.UpsertPassage(ctx, gen.UpsertPassageParams{
-			TargetLang: lang, SourceHash: trans.Hash(p.Source),
-			SourceText: p.Source, TargetText: p.Target, EntityType: &entity,
-		}); err != nil {
-			return fmt.Errorf("passage %.40q: %w", p.Source, err)
-		}
-		passages++
-	}
-
-	if err := q.BumpTransRevision(ctx); err != nil {
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	fmt.Printf("seeded %d terms and %d passages into %s\n", terms, passages, lang)
@@ -165,7 +114,7 @@ func transSeed(ctx context.Context, path string) error {
 // admin page -- to a corpus file, by default the repository's own copy. The
 // file is replaced whole, and only once the new one is written.
 func transExport(ctx context.Context, path string) error {
-	store, err := openStore(ctx)
+	_, store, err := open(ctx)
 	if err != nil {
 		return err
 	}

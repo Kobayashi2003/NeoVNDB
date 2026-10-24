@@ -5,14 +5,14 @@
 import Link from 'next/link';
 import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
-import { BBCode } from '@/lib/bbcode';
+import { BBCode } from '@/components/ui/BBCode';
 import type { Params } from '@/lib/href';
 import { countOf } from '@/lib/results';
 import { Collapsible } from '@/components/ui/Collapsible';
 import { Icon } from '@/components/ui/Icon';
 import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
 import { Name } from '@/components/ui/Name';
-import { DetailControls } from '@/components/ui/DetailControls';
+import { DetailControls } from '@/components/user/DetailControls';
 import { CatalogPage } from './CatalogPage';
 import type { ProducerDetail } from '@/lib/types';
 

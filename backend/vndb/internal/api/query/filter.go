@@ -138,6 +138,35 @@ func IntColumn(column string, scale int) FilterFunc {
 	}
 }
 
+// ReleasedColumn compares a YYYYMMDD date column, reading a whole year or
+// month as the range it covers, so browsing by date is a range scan.
+func ReleasedColumn(column string) FilterFunc {
+	return func(b *Builder, value string) error {
+		return b.AnyOf(value, func(b *Builder, v string) error {
+			op, rest := SplitComparison(v)
+			low, high, err := vndb.ParseReleasedRange(rest)
+			if err != nil {
+				return BadRequest("%v", err)
+			}
+			switch op {
+			case "=":
+				b.Where(column+" BETWEEN %s AND %s", low, high)
+			case "!=":
+				b.Where(column+" NOT BETWEEN %s AND %s", low, high)
+			case ">":
+				b.Where(column+" > %s", high)
+			case ">=":
+				b.Where(column+" >= %s", low)
+			case "<":
+				b.Where(column+" < %s", low)
+			case "<=":
+				b.Where(column+" <= %s", high)
+			}
+			return nil
+		})
+	}
+}
+
 func TextColumn(column string) FilterFunc {
 	return Match(func(b *Builder, v string) error {
 		b.Where(column+" = %s", v)

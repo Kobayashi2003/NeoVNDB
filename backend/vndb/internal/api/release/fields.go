@@ -31,7 +31,7 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Release]{
 
 		// CONV -- one releases column, re-expressed.
 		"released": {Row: func(r gen.Release) any { return vndb.FormatReleased(r.Released) }}, // releases.released, YYYYMMDD int -> string
-		"voiced":   {Row: func(r gen.Release) any { return zeroToNil(r.Voiced) }},             // releases.voiced; 0 -> null
+		"voiced":   {Row: func(r gen.Release) any { return query.ZeroToNil(r.Voiced) }},       // releases.voiced; 0 -> null
 		"notes":    {Row: func(r gen.Release) any { return query.EmptyToNil(r.Notes) }},       // releases.notes; '' -> null
 		"catalog":  {Row: func(r gen.Release) any { return query.EmptyToNil(r.Catalog) }},     // releases.catalog
 		// 0 is the dump's empty barcode, and the number is wider than a JSON
@@ -97,12 +97,12 @@ func fetch(ctx context.Context, r *Resolver, ids []int32) ([]gen.Release, error)
 func animation(row gen.Release) map[string]any {
 	return map[string]any{
 		"story": map[string]any{
-			"overall": zeroToNil(row.AniStory),
+			"overall": query.ZeroToNil(row.AniStory),
 			"sprites": vndb.DecodeAnimation(row.AniStorySp),
 			"cg":      vndb.DecodeAnimation(row.AniStoryCg),
 		},
 		"ero": map[string]any{
-			"overall": zeroToNil(row.AniEro),
+			"overall": query.ZeroToNil(row.AniEro),
 			"sprites": vndb.DecodeAnimation(row.AniEroSp),
 			"cg":      vndb.DecodeAnimation(row.AniEroCg),
 		},
@@ -129,11 +129,4 @@ func formatInt(v int64) string {
 		v /= 10
 	}
 	return string(buf[i:])
-}
-
-func zeroToNil(v int16) *int16 {
-	if v == 0 {
-		return nil
-	}
-	return &v
 }

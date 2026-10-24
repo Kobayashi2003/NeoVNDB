@@ -7,9 +7,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Library, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LIST } from '@/lib/list';
+import { LIST, TYPES } from '@/lib/list';
 import { MenuDivider, MenuPanel, menuItem } from '@/components/ui/Menu';
-import { SHORT, TYPES } from './shelves';
+import { SHORT } from './shelves';
 import { useMenu } from '@/hooks/useMenu';
 
 export function BrowseMenu({ here, className }: { here?: string; className?: string }) {

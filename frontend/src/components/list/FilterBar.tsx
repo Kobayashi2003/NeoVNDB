@@ -19,7 +19,7 @@ import { filtersOf, one, withParams, type Params } from '@/lib/href';
 import { useMenu } from '@/hooks/useMenu';
 import type { Choice, Filter } from '@/lib/filters';
 import { ConditionBuilder } from './conditions/ConditionBuilder';
-import { SortMenu, type SortState } from './SortMenu';
+import { SortMenu, type SortState } from '@/components/results/SortMenu';
 
 /** The values of one filter currently in the address. */
 function selected(params: Params, key: string): string[] {

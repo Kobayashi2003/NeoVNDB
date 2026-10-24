@@ -11,7 +11,7 @@ import type { Params } from '@/lib/href';
 import { describe, forgetRecent, queryOf, recent, remember } from '@/lib/searches';
 import { deleteSearch, errorText, saveSearch, savedSearches, type SavedSearch } from '@/lib/user';
 import { MenuDivider, MenuLabel, MenuPanel, menuAction, menuItem } from '@/components/ui/Menu';
-import { NewList } from '@/components/user/NewList';
+import { NewList } from '@/components/ui/NewList';
 import { useMenu } from '@/hooks/useMenu';
 import { useSession } from '@/hooks/useSession';
 

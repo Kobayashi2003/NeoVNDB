@@ -2,7 +2,7 @@
  *  reads downward, with every line routed at right angles around the cards.
  *  Plain data out -- positions, routes, label spots -- for the canvas to draw. */
 
-import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
+import ELK, { type ElkNode } from 'elkjs/lib/elk-api.js';
 import { VN_RELATION } from './enums';
 import {
   edgeKey,
@@ -42,7 +42,11 @@ export interface Laid {
   covers: boolean;
 }
 
-const elk = new ELK();
+/** In a worker: a few hundred titles held the page still for seconds while ELK
+ *  worked them out, and its 1.4 MB is parsed there as well. */
+const elk = new ELK({
+  workerFactory: () => new Worker(new URL('./elk.worker.ts', import.meta.url)),
+});
 
 const OPTIONS: Record<string, string> = {
   'elk.algorithm': 'layered',

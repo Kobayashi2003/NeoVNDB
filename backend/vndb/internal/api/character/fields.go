@@ -29,10 +29,10 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 		"description": {Row: func(c gen.Char) any { return query.EmptyToNil(c.Description) }},   // chars.description; '' -> null
 		"blood_type":  {Row: func(c gen.Char) any { return unknownToNil(c.Bloodt, "unknown") }}, // chars.bloodt; 'unknown' -> null
 		"cup":         {Row: func(c gen.Char) any { return query.EmptyToNil(c.CupSize) }},       // chars.cup_size
-		"height":      {Row: func(c gen.Char) any { return zeroToNil(c.Height) }},               // chars.height; 0 -> null
-		"bust":        {Row: func(c gen.Char) any { return zeroToNil(c.SBust) }},                // chars.s_bust
-		"waist":       {Row: func(c gen.Char) any { return zeroToNil(c.SWaist) }},               // chars.s_waist
-		"hips":        {Row: func(c gen.Char) any { return zeroToNil(c.SHip) }},                 // chars.s_hip
+		"height":      {Row: func(c gen.Char) any { return query.ZeroToNil(c.Height) }},         // chars.height; 0 -> null
+		"bust":        {Row: func(c gen.Char) any { return query.ZeroToNil(c.SBust) }},          // chars.s_bust
+		"waist":       {Row: func(c gen.Char) any { return query.ZeroToNil(c.SWaist) }},         // chars.s_waist
+		"hips":        {Row: func(c gen.Char) any { return query.ZeroToNil(c.SHip) }},           // chars.s_hip
 		"birthday":    {Row: func(c gen.Char) any { return birthday(c.Birthday) }},              // chars.birthday, mmdd in one smallint -> [month, day]
 		"instance_of": {Row: func(c gen.Char) any { return instanceOf(c.Main) }},                // chars.main, an integer id -> 'cNNN'
 		// Whether being an instance of that character is itself a spoiler.
@@ -42,10 +42,10 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 
 		// CONV -- sex is apparent, spoil_sex what they turn out to be; gender is a
 		// separate axis, spoiled the same way.
-		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},   // chars.sex; '' -> null
-		"spoil_sex":    {Row: func(c gen.Char) any { return blankToNil(c.SpoilSex) }},    // chars.spoil_sex; NULL and '' both -> null
-		"gender":       {Row: func(c gen.Char) any { return blankToNil(c.Gender) }},      // chars.gender
-		"spoil_gender": {Row: func(c gen.Char) any { return blankToNil(c.SpoilGender) }}, // chars.spoil_gender
+		"sex":          {Row: func(c gen.Char) any { return query.EmptyToNil(c.Sex) }},         // chars.sex; '' -> null
+		"spoil_sex":    {Row: func(c gen.Char) any { return query.BlankToNil(c.SpoilSex) }},    // chars.spoil_sex; NULL and '' both -> null
+		"gender":       {Row: func(c gen.Char) any { return query.BlankToNil(c.Gender) }},      // chars.gender
+		"spoil_gender": {Row: func(c gen.Char) any { return query.BlankToNil(c.SpoilGender) }}, // chars.spoil_gender
 
 		// JOIN1 + LIST -- chars_names, one read. name/original use the row in
 		// chars.c_lang, which is DERIV (chosen from the character's VNs; see
@@ -112,23 +112,6 @@ func instanceOf(v *int32) *string {
 	}
 	s := vndb.FormatID(vndb.TypeCharacter, *v)
 	return &s
-}
-
-func zeroToNil(v int16) *int16 {
-	if v == 0 {
-		return nil
-	}
-	return &v
-}
-
-// A nullable text column can still arrive as the empty string -- the dump has
-// both spellings of "not recorded" in the same column (spoil_sex has 9 empties
-// among its nulls). They mean the same thing and must read the same.
-func blankToNil(v *string) *string {
-	if v == nil || *v == "" {
-		return nil
-	}
-	return v
 }
 
 // A few enum-like columns spell "not recorded" as a word rather than as null.

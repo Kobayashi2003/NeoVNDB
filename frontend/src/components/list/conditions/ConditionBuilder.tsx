@@ -4,7 +4,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from '@/components/layout/Navigation';
+import { useNavigate } from '@/hooks/useNavigate';
 import { Code2, Wand2 } from 'lucide-react';
 import { ApiError, list } from '@/lib/api';
 import { TIDY_RULES } from '@/lib/conditions';

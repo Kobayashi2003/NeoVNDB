@@ -8,10 +8,10 @@ import (
 	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
-// Relation graphs are bounded: sequels, fandiscs and shared settings chain
-// into large components (Ever17's has ~1,900 nodes), so the walk stops at a
-// depth, as vndb's view does, and reports whether it cut anything.
-// GraphOpts bounds one walk; the ceilings come from configuration.
+// GraphOpts bounds one walk; the ceilings come from configuration. Relation
+// graphs need bounds: sequels, fandiscs and shared settings chain into large
+// components (Ever17's has ~1,900 nodes), so the walk stops at a depth, as
+// vndb's view does, and reports whether it cut anything.
 type GraphOpts struct {
 	Depth    int
 	MaxDepth int
@@ -27,10 +27,14 @@ type Graph struct {
 	Reach    int `json:"reach"`
 	// Truncated says the component continues past what was returned; Capped
 	// says the node ceiling stopped it, which more depth will not get past.
-	Truncated bool        `json:"truncated"`
-	Capped    bool        `json:"capped"`
-	Nodes     []GraphNode `json:"nodes"`
-	Edges     []GraphEdge `json:"edges"`
+	Truncated bool `json:"truncated"`
+	Capped    bool `json:"capped"`
+	// Deepest is the deepest depth that draws anything new, at any depth asked:
+	// where the component ends, or sooner where MaxDepth or the node ceiling
+	// stops it. A client offers the depths up to it and no further.
+	Deepest int         `json:"deepest"`
+	Nodes   []GraphNode `json:"nodes"`
+	Edges   []GraphEdge `json:"edges"`
 }
 
 type GraphNode struct {
@@ -79,9 +83,15 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 	}
 
 	w := walk(root, rows, depth, opt.MaxNodes)
+	deepest, err := deepestUseful(root, opt, func(ids []int32) ([]int32, error) {
+		return r.q.VNRelationNeighbours(ctx, ids)
+	})
+	if err != nil {
+		return nil, err
+	}
 	graph := &Graph{
 		Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth, MaxDepth: opt.MaxDepth,
-		Truncated: w.truncated, Capped: w.capped,
+		Truncated: w.truncated, Capped: w.capped, Deepest: deepest,
 	}
 	included, depthOf := w.included, w.depthOf
 
@@ -130,6 +140,38 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		graph.Nodes = append(graph.Nodes, node)
 	}
 	return graph, nil
+}
+
+// deepestUseful walks out from root one layer at a time, as titles rather than
+// edges, so even a component of thousands costs one query per layer. It stops
+// where the component ends, at MaxDepth, or once the titles so far fill the
+// node ceiling: a graph that deep is already capped, and deeper adds nothing.
+func deepestUseful(root int32, opt GraphOpts, next func([]int32) ([]int32, error)) (int, error) {
+	seen := map[int32]bool{root: true}
+	layer := []int32{root}
+	depth := 0
+	for {
+		if opt.MaxDepth > 0 && depth >= opt.MaxDepth || opt.MaxNodes > 0 && len(seen) >= opt.MaxNodes {
+			break
+		}
+		near, err := next(layer)
+		if err != nil {
+			return 0, err
+		}
+		layer = nil
+		for _, id := range near {
+			if !seen[id] {
+				seen[id] = true
+				layer = append(layer, id)
+			}
+		}
+		if len(layer) == 0 {
+			break
+		}
+		depth++
+	}
+	// A title with no relations still draws as a graph of one step.
+	return max(depth, 1), nil
 }
 
 // walked is what one depth of a graph keeps of the rows walked for it.

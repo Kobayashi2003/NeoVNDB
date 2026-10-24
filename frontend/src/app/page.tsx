@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { one, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { countOf, fetchResults } from '@/lib/results';
-import { ResultsPanel } from '@/components/list/ResultsPanel';
+import { ResultsPanel } from '@/components/results/ResultsPanel';
 import { DataAge } from '@/components/layout/DataAge';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { MonthPicker } from '@/components/home/MonthPicker';

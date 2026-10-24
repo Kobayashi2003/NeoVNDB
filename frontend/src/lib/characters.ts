@@ -3,7 +3,7 @@
 
 import { enumLabel } from './enums';
 import { allowedTraits } from './traits';
-import type { Appearance, Character, CharacterDetail } from './types';
+import type { Appearance, Character, CharacterDetail, Trait } from './types';
 
 export interface SexReading {
   /** Always the apparent code. */
@@ -81,6 +81,44 @@ export function forVN(characters: Character[], vnId: string): Character[] {
     ...c,
     seiyuu: c.seiyuu.filter(s => s.vn === vnId),
   }));
+}
+
+/** A trait as one character holds it: id, spoiler level and whether it is a
+ *  lie, as a tuple since a cast holds a thousand or more. The rest is the
+ *  trait's own, the same for every character, and goes once in a `TraitBook`. */
+export type HeldTrait = [id: string, spoiler: number, lie?: 1];
+export type TraitBook = Record<string, Omit<Trait, 'id' | 'spoiler' | 'lie'>>;
+export type Packed<C extends { traits: Trait[] }> = Omit<C, 'traits'> & { traits: HeldTrait[] };
+
+/** Takes each trait's name, group and translations out of the characters and
+ *  into one book, for handing a cast from the server to the browser: a cast
+ *  repeats them, and v11's 31 characters carried 212 KB of them, most of the
+ *  page's data. */
+export function packTraits<C extends { traits: Trait[] }>(
+  characters: C[],
+): { characters: Packed<C>[]; book: TraitBook } {
+  const book: TraitBook = {};
+  const packed = characters.map(c => ({
+    ...c,
+    traits: c.traits.map(({ id, spoiler, lie, ...own }): HeldTrait => {
+      book[id] ??= own;
+      return lie ? [id, spoiler, 1] : [id, spoiler];
+    }),
+  }));
+  return { characters: packed, book };
+}
+
+export function unpackTraits<C extends { traits: Trait[] }>(
+  characters: Packed<C>[],
+  book: TraitBook,
+): C[] {
+  return characters.map(
+    c =>
+      ({
+        ...c,
+        traits: c.traits.map(([id, spoiler, lie]) => ({ ...book[id], id, spoiler, lie: !!lie })),
+      }) as C,
+  );
 }
 
 /** One work as a character's page lists it. */

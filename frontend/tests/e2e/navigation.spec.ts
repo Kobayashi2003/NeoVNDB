@@ -91,6 +91,16 @@ test('the relation graph lists only the steps worth taking', async ({ page }) =>
   await expect(steps.getByRole('link')).toHaveCount(5);
   await expect(steps.locator('[aria-current=page]')).toHaveText('5');
   await expect(page.getByText(/nothing further out/)).toBeVisible();
+  await expect(page.getByLabel('Deepest, 5 steps out')).toHaveAttribute('aria-disabled');
+
+  // v84's ends three steps out: at the default two, three are offered, not a
+  // stock five, and Deepest goes straight to the third.
+  await page.goto('/v84/rg', { waitUntil: 'networkidle' });
+  await expect(steps.getByRole('link')).toHaveCount(3);
+  await expect(steps.locator('[aria-current=page]')).toHaveText('2');
+  await page.getByRole('link', { name: 'Deepest, 3 steps out' }).click();
+  await expect(page).toHaveURL(/depth=3/);
+  await expect(steps.locator('[aria-current=page]')).toHaveText('3');
 });
 
 test('the keys page through a list and move about a page', async ({ page }) => {

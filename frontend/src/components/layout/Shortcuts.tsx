@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { useNavigate } from './Navigation';
+import { useNavigate } from '@/hooks/useNavigate';
 
 /** Fired to open the list from elsewhere (the view menu). */
 export const SHOW_SHORTCUTS = 'neovndb:shortcuts';

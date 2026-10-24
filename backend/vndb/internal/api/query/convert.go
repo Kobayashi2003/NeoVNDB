@@ -41,6 +41,24 @@ func EmptyToNil(value string) *string {
 	return &value
 }
 
+// BlankToNil is EmptyToNil for a column that is already nullable: the dump has
+// both spellings of "not recorded" in one column (chars.spoil_sex has 9 empties
+// among its nulls), and they must read the same.
+func BlankToNil(value *string) *string {
+	if value == nil || *value == "" {
+		return nil
+	}
+	return value
+}
+
+// ZeroToNil reports a number the dump records as 0 for "nobody said" as null.
+func ZeroToNil(value int16) *int16 {
+	if value == 0 {
+		return nil
+	}
+	return &value
+}
+
 // ContentLevel rescales a stored average to the 0-2 range the API reports.
 // The dump leaves 200 there when nobody voted, which means unknown rather than
 // explicit, so an unvoted image reports null.

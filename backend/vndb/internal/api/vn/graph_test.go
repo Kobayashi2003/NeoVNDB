@@ -45,6 +45,37 @@ func TestWalkNodeCeiling(t *testing.T) {
 	}
 }
 
+func TestDeepestUseful(t *testing.T) {
+	// chain's relations, stored both ways as vn_relations stores them.
+	near := map[int32][]int32{1: {2, 3}, 2: {1, 4}, 3: {1}, 4: {2, 5}, 5: {4}}
+	next := func(ids []int32) ([]int32, error) {
+		var out []int32
+		for _, id := range ids {
+			out = append(out, near[id]...)
+		}
+		return out, nil
+	}
+	for _, c := range []struct {
+		name string
+		root int32
+		opt  GraphOpts
+		want int
+	}{
+		{"where the component ends", 1, GraphOpts{}, 3},
+		{"from the middle of it", 2, GraphOpts{}, 2},
+		{"at the depth ceiling", 1, GraphOpts{MaxDepth: 2}, 2},
+		// Within one step there are three titles, which fill a ceiling of 3.
+		{"at the node ceiling", 1, GraphOpts{MaxNodes: 3}, 1},
+		{"one past a step that leaves room", 1, GraphOpts{MaxNodes: 4}, 2},
+		{"a title alone", 9, GraphOpts{}, 1},
+	} {
+		got, err := deepestUseful(c.root, c.opt, next)
+		if err != nil || got != c.want {
+			t.Errorf("%s: %d, %v; want %d", c.name, got, err, c.want)
+		}
+	}
+}
+
 func TestGraphDepthCeiling(t *testing.T) {
 	// Refused before the database is asked anything, so no database is needed.
 	_, err := (&Resolver{}).RelationGraph(context.Background(), "v17", GraphOpts{Depth: 9, MaxDepth: 8})

@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { BBCode, plain } from '@/lib/bbcode';
+import { BBCode } from '@/components/ui/BBCode';
+import { plain } from '@/lib/bbcode';
 
 const html = (text: string) => renderToStaticMarkup(<BBCode text={text} />);
 

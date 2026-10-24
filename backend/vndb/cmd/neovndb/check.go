@@ -68,20 +68,23 @@ func counts(ctx context.Context, store *db.Store, schema string) (map[string]int
 	if err != nil {
 		return nil, err
 	}
+	complete := true
 	for _, table := range db.Derived {
-		if _, ok := recorded[table]; ok {
-			continue
+		if _, ok := recorded[table]; !ok {
+			complete = false
 		}
-		live, err := store.DerivedCounts(ctx, schema)
-		if err != nil {
-			return nil, err
+	}
+	if complete {
+		return recorded, nil
+	}
+	live, err := store.DerivedCounts(ctx, schema)
+	if err != nil {
+		return nil, err
+	}
+	for name, n := range live {
+		if _, ok := recorded[name]; !ok {
+			recorded[name] = n
 		}
-		for name, n := range live {
-			if _, ok := recorded[name]; !ok {
-				recorded[name] = n
-			}
-		}
-		break
 	}
 	return recorded, nil
 }

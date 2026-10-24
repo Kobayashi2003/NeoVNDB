@@ -7,8 +7,7 @@ import Link from 'next/link';
 import { ChevronDown, Library } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
-import { LIST } from '@/lib/list';
-import { TYPES } from '@/components/layout/shelves';
+import { LIST, TYPES } from '@/lib/list';
 import type { Collection } from '@/lib/user';
 import { useMenu } from '@/hooks/useMenu';
 

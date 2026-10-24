@@ -39,7 +39,7 @@ var filters = map[string]query.FilterFunc{
 	"lang":      query.ArrayColumn("vn.c_languages"),
 	"platform":  query.ArrayColumn("vn.c_platforms"),
 
-	"released": releasedFilter,
+	"released": query.ReleasedColumn("vn.c_released"),
 	"search":   query.SearchFilter("v", "vn"),
 
 	"has_description": query.BoolFilter("vn.description <> ''", "vn.description = ''"),
@@ -101,33 +101,6 @@ var filters = map[string]query.FilterFunc{
 			 WHERE rv.vid = vn.id AND rm.medium = %s)`, v)
 		return nil
 	}),
-}
-
-// releasedFilter reads a whole year or month as the range it covers, so
-// browsing by date is a range scan over the stored YYYYMMDD integer.
-func releasedFilter(b *query.Builder, value string) error {
-	return b.AnyOf(value, func(b *query.Builder, v string) error {
-		op, rest := query.SplitComparison(v)
-		low, high, err := vndb.ParseReleasedRange(rest)
-		if err != nil {
-			return query.BadRequest("%v", err)
-		}
-		switch op {
-		case "=":
-			b.Where("vn.c_released BETWEEN %s AND %s", low, high)
-		case "!=":
-			b.Where("vn.c_released NOT BETWEEN %s AND %s", low, high)
-		case ">":
-			b.Where("vn.c_released > %s", high)
-		case ">=":
-			b.Where("vn.c_released >= %s", low)
-		case "<":
-			b.Where("vn.c_released < %s", low)
-		case "<=":
-			b.Where("vn.c_released <= %s", high)
-		}
-		return nil
-	})
 }
 
 // Sortable expressions. searchrank ranks by the strength of the match, so it

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -107,40 +108,44 @@ type Config struct {
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
+	e := &env{}
 	c := &Config{
 		DatabaseURL:    os.Getenv("NEOVNDB_USERS_DB_URL"),
-		Host:           envString("NEOVNDB_USERS_HOST", defaultHost),
-		Port:           envInt("NEOVNDB_USERS_PORT", defaultPort),
-		MaxConns:       int32(envInt("NEOVNDB_USERS_DB_MAX_CONNS", defaultMaxConns)),
-		ConnectTimeout: envDuration("NEOVNDB_USERS_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
+		Host:           e.text("NEOVNDB_USERS_HOST", defaultHost),
+		Port:           e.int("NEOVNDB_USERS_PORT", defaultPort),
+		MaxConns:       int32(e.int("NEOVNDB_USERS_DB_MAX_CONNS", defaultMaxConns)),
+		ConnectTimeout: e.duration("NEOVNDB_USERS_DB_CONNECT_TIMEOUT", defaultConnectTimeout),
 
-		SessionLife:     envDuration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
-		PageSize:        envInt("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
-		MaxPageSize:     envInt("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
-		MaxItems:        envInt("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
-		MaxSearches:     envInt("NEOVNDB_USERS_MAX_SEARCHES", defaultMaxSearches),
-		SignInTries:     envInt("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
-		SignInWindow:    envDuration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
-		SignUpTries:     envInt("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),
-		SignUpWindow:    envDuration("NEOVNDB_USERS_SIGNUP_WINDOW", defaultSignUpWindow),
-		SweepEvery:      envDuration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
-		SweepFirstAfter: envDuration("NEOVNDB_USERS_SWEEP_FIRST_AFTER", defaultSweepFirstAfter),
-		BcryptCost:      envInt("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
+		SessionLife:     e.duration("NEOVNDB_USERS_SESSION_LIFE", defaultSessionLife),
+		PageSize:        e.int("NEOVNDB_USERS_PAGE_SIZE", defaultPageSize),
+		MaxPageSize:     e.int("NEOVNDB_USERS_MAX_PAGE_SIZE", defaultMaxPageSize),
+		MaxItems:        e.int("NEOVNDB_USERS_MAX_ITEMS", defaultMaxItems),
+		MaxSearches:     e.int("NEOVNDB_USERS_MAX_SEARCHES", defaultMaxSearches),
+		SignInTries:     e.int("NEOVNDB_USERS_SIGNIN_TRIES", defaultSignInTries),
+		SignInWindow:    e.duration("NEOVNDB_USERS_SIGNIN_WINDOW", defaultSignInWindow),
+		SignUpTries:     e.int("NEOVNDB_USERS_SIGNUP_TRIES", defaultSignUpTries),
+		SignUpWindow:    e.duration("NEOVNDB_USERS_SIGNUP_WINDOW", defaultSignUpWindow),
+		SweepEvery:      e.duration("NEOVNDB_USERS_SWEEP_EVERY", defaultSweepEvery),
+		SweepFirstAfter: e.duration("NEOVNDB_USERS_SWEEP_FIRST_AFTER", defaultSweepFirstAfter),
+		BcryptCost:      e.int("NEOVNDB_USERS_BCRYPT_COST", defaultBcryptCost),
 
-		SecureCookie: envBool("NEOVNDB_USERS_SECURE_COOKIE", false),
+		SecureCookie: e.bool("NEOVNDB_USERS_SECURE_COOKIE", false),
 
-		BackupDir:        envString("NEOVNDB_USERS_BACKUP_DIR", defaultBackupDir),
-		BackupEvery:      envDuration("NEOVNDB_USERS_BACKUP_EVERY", defaultBackupEvery),
-		BackupCheckEvery: envDuration("NEOVNDB_USERS_BACKUP_CHECK_EVERY", defaultBackupCheckEvery),
-		BackupFirstAfter: envDuration("NEOVNDB_USERS_BACKUP_FIRST_AFTER", defaultBackupFirstAfter),
-		BackupKeep:       envInt("NEOVNDB_USERS_BACKUP_KEEP", defaultBackupKeep),
-		PgDump:           envString("NEOVNDB_USERS_PG_DUMP", "pg_dump"),
+		BackupDir:        e.text("NEOVNDB_USERS_BACKUP_DIR", defaultBackupDir),
+		BackupEvery:      e.duration("NEOVNDB_USERS_BACKUP_EVERY", defaultBackupEvery),
+		BackupCheckEvery: e.duration("NEOVNDB_USERS_BACKUP_CHECK_EVERY", defaultBackupCheckEvery),
+		BackupFirstAfter: e.duration("NEOVNDB_USERS_BACKUP_FIRST_AFTER", defaultBackupFirstAfter),
+		BackupKeep:       e.int("NEOVNDB_USERS_BACKUP_KEEP", defaultBackupKeep),
+		PgDump:           e.text("NEOVNDB_USERS_PG_DUMP", "pg_dump"),
 
-		ReadHeaderTimeout: envDuration("NEOVNDB_USERS_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
-		ShutdownTimeout:   envDuration("NEOVNDB_USERS_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
+		ReadHeaderTimeout: e.duration("NEOVNDB_USERS_READ_HEADER_TIMEOUT", defaultReadHeaderTimeout),
+		ShutdownTimeout:   e.duration("NEOVNDB_USERS_SHUTDOWN_TIMEOUT", defaultShutdownTimeout),
 	}
 	if c.DatabaseURL == "" {
-		return nil, fmt.Errorf("NEOVNDB_USERS_DB_URL is not set")
+		e.errs = append(e.errs, fmt.Errorf("NEOVNDB_USERS_DB_URL is not set"))
+	}
+	if err := errors.Join(e.errs...); err != nil {
+		return nil, err
 	}
 	return c, nil
 }
@@ -149,36 +154,38 @@ func (c *Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-func envString(key, fallback string) string {
+// env reads settings, keeping every value it cannot read: a typo then stops
+// the service with its name, rather than quietly running on the default.
+type env struct{ errs []error }
+
+func (e *env) text(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
 	return fallback
 }
 
-func envInt(key string, fallback int) int {
-	if v := os.Getenv(key); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			return n
-		}
-	}
-	return fallback
+func (e *env) int(key string, fallback int) int {
+	return read(e, key, fallback, strconv.Atoi)
 }
 
-func envDuration(key string, fallback time.Duration) time.Duration {
-	if v := os.Getenv(key); v != "" {
-		if d, err := time.ParseDuration(v); err == nil {
-			return d
-		}
-	}
-	return fallback
+func (e *env) duration(key string, fallback time.Duration) time.Duration {
+	return read(e, key, fallback, time.ParseDuration)
 }
 
-func envBool(key string, fallback bool) bool {
-	if v := os.Getenv(key); v != "" {
-		if b, err := strconv.ParseBool(v); err == nil {
-			return b
-		}
+func (e *env) bool(key string, fallback bool) bool {
+	return read(e, key, fallback, strconv.ParseBool)
+}
+
+func read[T any](e *env, key string, fallback T, parse func(string) (T, error)) T {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
 	}
-	return fallback
+	got, err := parse(v)
+	if err != nil {
+		e.errs = append(e.errs, fmt.Errorf("%s=%q: %w", key, v, err))
+		return fallback
+	}
+	return got
 }

@@ -7,7 +7,7 @@ import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
 import { DataAge } from '@/components/layout/DataAge';
 import { FilterBar } from './FilterBar';
-import { ResultsPanel } from './ResultsPanel';
+import { ResultsPanel } from '@/components/results/ResultsPanel';
 import { SavedSearches } from './SavedSearches';
 import { SearchBox } from './SearchBox';
 

@@ -4,8 +4,10 @@ import {
   byWork,
   characterSpoilerExtent,
   forVN,
+  packTraits,
   readSex,
   spoilerExtent,
+  unpackTraits,
 } from '@/lib/characters';
 import { shouldBlur } from '@/lib/content';
 import { filtersOf, one, withParams } from '@/lib/href';
@@ -112,6 +114,22 @@ describe('characters', () => {
       ],
     });
     expect(forVN([c], 'v17')[0].seiyuu.map(s => s.id)).toEqual(['s1']);
+  });
+
+  it('sends a trait shared by a cast once, and gives it back whole', () => {
+    const dark = trait({ id: 'i128', name: 'Dark' });
+    const cast = [
+      character({ id: 'c1', traits: [dark, trait({ id: 'i2', name: 'Tall', lie: true })] }),
+      character({ id: 'c2', traits: [{ ...dark, spoiler: 2 }] }),
+    ];
+    const { characters, book } = packTraits(cast);
+    expect(Object.keys(book)).toEqual(['i128', 'i2']);
+    expect(characters[0].traits).toEqual([
+      ['i128', 0],
+      ['i2', 0, 1],
+    ]);
+    expect(characters[1].traits).toEqual([['i128', 2]]);
+    expect(unpackTraits(characters, book)).toEqual(cast);
   });
 
   it('lists each work once, with the weightiest role and the mildest spoiler', () => {

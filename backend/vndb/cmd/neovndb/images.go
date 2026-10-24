@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/img"
+	"github.com/kobayashi/neovndb/internal/listen"
 )
 
 // runImages serves the image mirror. Serving opens no database: an image
@@ -36,9 +35,8 @@ func runImages(ctx context.Context, args []string) error {
 		cfg.Host, cfg.ImagePort = splitAddr(*addr, cfg.Host, cfg.ImagePort)
 	}
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	log.Info("mirroring images",
-		"store", cfg.ImageDir)
+	log := newLog()
+	log.Info("mirroring images", "store", cfg.ImageDir)
 
 	mirror := img.NewServer(cfg, log)
 	crawler := mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay)
@@ -54,29 +52,11 @@ func runImages(ctx context.Context, args []string) error {
 	// Only the edge's administrator check lets anyone reach this.
 	routes.Handle("/admin/", admin.NewImages(ctx, cfg, crawl).Routes())
 
-	srv := &http.Server{
+	return listen.Serve(ctx, &http.Server{
 		Addr:              cfg.ImageAddr(),
 		Handler:           routes,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-	}
-
-	done := make(chan error, 1)
-	go func() {
-		log.Info("listening", "addr", srv.Addr)
-		done <- srv.ListenAndServe()
-	}()
-
-	select {
-	case err := <-done:
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
-		return err
-	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
-		defer cancel()
-		return srv.Shutdown(shutdown)
-	}
+	}, cfg.ShutdownTimeout, log)
 }
 
 // crawlOnce opens the database for the length of one run.
@@ -115,7 +95,7 @@ func runCrawl(ctx context.Context, args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	log := newLog()
 	_, err = crawlOnce(ctx, cfg, img.NewServer(cfg, log).Crawler(*limit, cfg.ImageCrawlDelay), log)
 	return err
 }

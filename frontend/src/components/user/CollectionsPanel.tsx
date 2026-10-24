@@ -6,8 +6,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Check, ListChecks, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LIST } from '@/lib/list';
-import { TYPES } from '@/components/layout/shelves';
+import { LIST, TYPES } from '@/lib/list';
 import {
   createCollection,
   deleteCollection,

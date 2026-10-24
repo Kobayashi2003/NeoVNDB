@@ -106,6 +106,52 @@ func (s *Store) SetTranslation(ctx context.Context, category, source, target str
 	return tx.Commit(ctx)
 }
 
+// Seed stores a corpus's translations into this database's target language
+// and bumps the revision, all in one transaction; entries with nothing to
+// translate or no translation are skipped. The caller checks the markup.
+func (s *Store) Seed(ctx context.Context, c *trans.Corpus) (terms, passages int, err error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // a commit makes this a no-op
+	q := gen.New(tx)
+	lang := s.transLang
+
+	for category, pairs := range c.Terms {
+		for source, target := range pairs {
+			if trans.Key(source) == "" || target == "" {
+				continue
+			}
+			if err := q.UpsertTerm(ctx, gen.UpsertTermParams{
+				TargetLang: lang, SourceKey: trans.Key(source),
+				SourceText: source, TargetText: target, Category: &category,
+			}); err != nil {
+				return 0, 0, fmt.Errorf("term %q: %w", source, err)
+			}
+			terms++
+		}
+	}
+	for _, p := range c.Passages {
+		if trans.Key(p.Source) == "" || p.Target == "" {
+			continue
+		}
+		entity := p.EntityType
+		if err := q.UpsertPassage(ctx, gen.UpsertPassageParams{
+			TargetLang: lang, SourceHash: trans.Hash(p.Source),
+			SourceText: p.Source, TargetText: p.Target, EntityType: &entity,
+		}); err != nil {
+			return 0, 0, fmt.Errorf("passage %.40q: %w", p.Source, err)
+		}
+		passages++
+	}
+
+	if err := q.BumpTransRevision(ctx); err != nil {
+		return 0, 0, err
+	}
+	return terms, passages, tx.Commit(ctx)
+}
+
 // Corpus is everything translated, in the corpus file's form.
 func (s *Store) Corpus(ctx context.Context) (*trans.Corpus, error) {
 	c := &trans.Corpus{SourceLang: "en", TargetLang: s.transLang, Comment: trans.CorpusComment,

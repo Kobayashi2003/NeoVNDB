@@ -72,6 +72,11 @@ SELECT r.id, r.vid, r.relation, r.official, w.depth
   JOIN vn_relations r ON r.id = w.id
  ORDER BY w.depth, r.id, r.vid;
 
+-- name: VNRelationNeighbours :many
+-- The titles one relation away from any of these: a walk one layer at a time,
+-- for how far a component reaches without fetching its edges.
+SELECT DISTINCT vid FROM vn_relations WHERE id = ANY(@ids::int[]);
+
 -- name: VNGraphNodes :many
 -- The nodes a graph draws: title in the entity's own language, the fields the
 -- layout orders by, and what a card shows -- status, rating and cover.

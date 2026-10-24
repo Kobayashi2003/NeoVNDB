@@ -26,7 +26,7 @@ const DEVSTATUS_CLASS: Record<number, string> = {
   2: 'bg-red-500/20 text-red-400',
 };
 
-export function VNInfoPanel({ vn }: { vn: VN }) {
+export function VNInfoPanel({ vn }: { vn: Omit<VN, 'characters'> }) {
   const { original, sexual, violence } = usePrefs();
   const blur = !!vn.image && shouldBlur(vn.image.sexual, vn.image.violence, sexual, violence);
   const published = publishers(vn.releases);

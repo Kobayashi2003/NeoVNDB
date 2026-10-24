@@ -37,30 +37,20 @@ export interface RelationGraph {
   truncated: boolean;
   /** It was the node ceiling that stopped it, which more depth will not pass. */
   capped: boolean;
+  /** The deepest step that draws anything new, whatever depth was asked:
+   *  where the graph ends, or where the server's ceilings stop it first. */
+  deepest: number;
   nodes: GraphNode[];
   edges: GraphEdge[];
 }
 
-/** Which steps out a graph's page offers. `useful` is the deepest that draws
- *  anything new: where the graph ends, one past the reader's while it goes on,
- *  and no further once the node ceiling hit. `shown` is the step drawn, since a
- *  depth past the end draws the same graph as the end. `offered` is how many
- *  to list: while the graph goes on, a few at once rather than one by one.
- *  `deeper` says the server would walk further at all. */
-export function steps(
-  graph: Pick<RelationGraph, 'depth' | 'max_depth' | 'reach' | 'truncated' | 'capped'>,
-) {
-  const { depth } = graph;
-  const ceiling = graph.max_depth || Infinity;
-  const useful = graph.capped
-    ? depth
-    : graph.truncated
-      ? Math.min(ceiling, depth + 1)
-      : Math.max(1, graph.reach);
-  const shown = Math.min(depth, useful);
-  const offered =
-    graph.truncated && !graph.capped ? Math.min(ceiling, Math.max(5, useful)) : useful;
-  return { useful, shown, offered, deeper: depth < ceiling };
+/** Which steps out a graph's page offers: every one up to `deepest`, and
+ *  `shown` is the one drawn, since a depth past that draws the same graph.
+ *  `deeper` says asking for more would draw more. */
+export function steps(graph: Pick<RelationGraph, 'depth' | 'deepest'>) {
+  const deepest = Math.max(1, graph.deepest);
+  const shown = Math.min(graph.depth, deepest);
+  return { deepest, shown, deeper: shown < deepest };
 }
 
 /** vndb stores both halves of each relation; the backward half (inverse ->

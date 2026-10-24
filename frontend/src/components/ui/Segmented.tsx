@@ -3,7 +3,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { rowKeys } from '@/hooks/rowKeys';
+import { rowKeys } from '@/lib/rowKeys';
 
 export interface Option<T extends string> {
   value: T;

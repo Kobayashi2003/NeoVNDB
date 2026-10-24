@@ -111,33 +111,27 @@ export default async function Page({ params, searchParams }: PageProps<'/[slug]'
   }
 }
 
+/** The page's own fields, so this asks exactly what the page does: Next then
+ *  makes the two one request rather than reading the entity twice. */
+const PAGE: Record<string, { type: string; fields: string }> = {
+  v: { type: 'vn', fields: VN_PAGE },
+  c: { type: 'character', fields: CHARACTER_PAGE },
+  r: { type: 'release', fields: RELEASE_PAGE },
+  p: { type: 'producer', fields: PRODUCER_PAGE },
+  s: { type: 'staff', fields: STAFF_PAGE },
+  g: { type: 'tag', fields: TAG_PAGE },
+  i: { type: 'trait', fields: TRAIT_PAGE },
+};
+
 export async function generateMetadata({ params }: PageProps<'/[slug]'>) {
   const { slug } = await params;
 
   if (TYPE.test(slug)) return { title: `${LIST[slug].label} - NeoVNDB` };
 
-  switch (typeOf(slug)) {
-    case 'v': {
-      const vn = await byId<{ title: string | null }>('vn', slug, 'title');
-      return { title: vn?.title ? `${vn.title} - NeoVNDB` : 'NeoVNDB' };
-    }
-    case 'c': {
-      const c = await byId<{ name: string | null }>('character', slug, 'name');
-      return { title: c?.name ? `${c.name} - NeoVNDB` : 'NeoVNDB' };
-    }
-    case 'r': {
-      const r = await byId<{ title: string | null }>('release', slug, 'title');
-      return { title: r?.title ? `${r.title} - NeoVNDB` : 'NeoVNDB' };
-    }
-    case 'p':
-    case 's':
-    case 'g':
-    case 'i': {
-      const type = { p: 'producer', s: 'staff', g: 'tag', i: 'trait' }[slug[0]]!;
-      const e = await byId<{ name: string | null }>(type, slug, 'name');
-      return { title: e?.name ? `${e.name} - NeoVNDB` : 'NeoVNDB' };
-    }
-    default:
-      return { title: 'NeoVNDB' };
-  }
+  const letter = typeOf(slug);
+  if (!letter) return { title: 'NeoVNDB' };
+  const { type, fields } = PAGE[letter];
+  const e = await byId<{ title?: string | null; name?: string | null }>(type, slug, fields);
+  const name = e?.title ?? e?.name;
+  return { title: name ? `${name} - NeoVNDB` : 'NeoVNDB' };
 }

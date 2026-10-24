@@ -5,6 +5,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -89,4 +90,4 @@ func (s *Store) Rehearse(ctx context.Context, fn func(pgx.Tx, *gen.Queries) erro
 }
 
 // IsNotFound saves callers from importing pgx to tell absent from broken.
-func IsNotFound(err error) bool { return err == pgx.ErrNoRows }
+func IsNotFound(err error) bool { return errors.Is(err, pgx.ErrNoRows) }

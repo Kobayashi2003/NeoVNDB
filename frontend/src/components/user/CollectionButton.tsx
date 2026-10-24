@@ -18,7 +18,7 @@ import {
 } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
-import { NewList } from './NewList';
+import { NewList } from '@/components/ui/NewList';
 
 export function CollectionButton({ id }: { id: string }) {
   const session = useSession();
