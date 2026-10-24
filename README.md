@@ -355,7 +355,8 @@ anyway.
 ```
 backend/vndb/
 cmd/neovndb/          single binary, one subcommand per role
-internal/config/      environment settings
+internal/config/      environment settings; a value it cannot read stops the process
+internal/listen/      listen until stopped, then drain; the API and the image mirror
 internal/cache/       response cache: memory LRU or Redis
 internal/dump/        fetch and stream the tar
 internal/importer/    COPY the dump into a fresh generation
@@ -375,7 +376,7 @@ internal/db/
   status.go
   verify.go
 internal/api/
-  server.go           routes and graceful shutdown
+  server.go           the resolvers and the routes
   handlers.go         the handlers (query, relation graph, meta, health) and the JSON envelope
   middleware.go       panic recovery and request logging
   cache.go            picking a backend, and the live generation's code
