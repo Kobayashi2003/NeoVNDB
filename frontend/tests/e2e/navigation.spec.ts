@@ -103,6 +103,26 @@ test('the relation graph lists only the steps worth taking', async ({ page }) =>
   await expect(steps.locator('[aria-current=page]')).toHaveText('3');
 });
 
+test('the graph keeps every card mounted, and steps out without a warning', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', m => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/v66374/rg', { waitUntil: 'networkidle' });
+  const cards = page.locator('.react-flow__node');
+  const all = await cards.count();
+  // Culled, cards off screen were dropped, and a new layout that moved one
+  // off for a moment loaded its cover again.
+  for (let i = 0; i < 4; i++) await page.getByLabel('Zoom in').click();
+  await page.getByLabel('Show this title').click();
+  // Past its 400ms move: a count read during it would pass either way.
+  await page.waitForTimeout(600);
+  await expect(cards).toHaveCount(all);
+
+  await page.getByRole('link', { name: '3 steps out', exact: true }).click();
+  await expect(page).toHaveURL(/depth=3/);
+  await page.waitForLoadState('networkidle');
+  expect(errors).toEqual([]);
+});
+
 test('the keys page through a list and move about a page', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   // The keys are the page's once it is live.

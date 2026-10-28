@@ -98,8 +98,6 @@ function Steps({
 
   const bar = 'flex w-fit items-center gap-0.5 rounded-full border border-white/10 p-0.5';
 
-  // One element rather than fragments: this is handed to the client panel as a
-  // prop, and fragments from here once drew a missing-key warning there.
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-1.5">

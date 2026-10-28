@@ -164,6 +164,10 @@ html[data-selecting] [data-scroll-top] {
   opacity: 0.4;
   font-size: 0.625rem;
 }
+/* The graph, not its panels, until the first layout is framed (RelationGraph). */
+.react-flow.graph-unframed .react-flow__viewport {
+  opacity: 0;
+}
 
 /* `backwards`, not `both`: a retained transform would make this element the
    containing block for fixed overlays inside it. */

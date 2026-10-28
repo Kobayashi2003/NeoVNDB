@@ -86,7 +86,9 @@ export function GraphPanel({
       data-graph-card
       className="pointer-events-auto w-72 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md"
     >
-      {heading}
+      {/* An only child: placed among siblings, an element from the server page
+          is key-checked after a client navigation and warned about. */}
+      <div>{heading}</div>
       <div className="flex items-center gap-1 border-t border-white/5 p-1.5">
         <button
           onClick={() => setOpen(!open)}

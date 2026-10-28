@@ -5,7 +5,7 @@
 'use client';
 
 import '@xyflow/react/dist/base.css';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -17,10 +17,13 @@ import {
   type CoordinateExtent,
   type FitViewOptions,
   type NodeMouseHandler,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { VN_RELATION } from '@/lib/enums';
 import { display } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { still } from '@/lib/viewTransitions';
 import { usePrefs } from '@/hooks/usePrefs';
 import {
   directOnly,
@@ -111,12 +114,18 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
     return () => window.clearTimeout(timer);
   }, [pulse]);
 
+  // The first layout is framed at once and shown only then (animated, it slid
+  // in from the canvas origin); later ones animate from the current view.
+  const framedOnce = useRef(false);
+  const [framed, setFramed] = useState(false);
   useEffect(() => {
     if (!laid) return;
-    const frame = requestAnimationFrame(() => {
-      void flow.fitView({ padding: fitPadding(), maxZoom: 1, duration: 250 });
+    const raf = requestAnimationFrame(() => {
+      const first = !framedOnce.current;
+      framedOnce.current = true;
+      void frame(flow, first ? 0 : 250).then(() => first && setFramed(true));
     });
-    return () => cancelAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
   }, [laid, flow]);
 
   // What is picked out, among what is drawn; a filter that removed it all
@@ -314,7 +323,9 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
   const status = note ?? (lit && focus ? describe(focus, laid, titleOf) : null);
 
   return (
-    <div className="relative h-full w-full">
+    // Still across a change of depth: the new graph arrives by its own
+    // re-layout rather than a page fade.
+    <div style={still(`graph/${graph.root}/rg`)} className="relative h-full w-full">
       <PickLine.Provider value={pickLine}>
         <ReactFlow
           nodes={nodes}
@@ -326,14 +337,16 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={false}
-          onlyRenderVisibleElements
+          // Every card stays mounted: culling (onlyRenderVisibleElements)
+          // unmounted cards that a new layout moved off screen for a moment, so
+          // their covers loaded again; the opening frame shows them all anyway.
           translateExtent={extent}
           minZoom={0.1}
           maxZoom={2}
           colorMode="dark"
           attributionPosition="bottom-left"
           aria-label={`${graph.nodes.length} related visual novels`}
-          className={choosing ? 'cursor-crosshair' : undefined}
+          className={cn(choosing && 'cursor-crosshair', !framed && 'graph-unframed')}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -356,7 +369,7 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
               choosing={choosing}
               onPath={togglePath}
               onLocate={locate}
-              onFit={() => void flow.fitView({ padding: fitPadding(), duration: 300 })}
+              onFit={() => void frame(flow, 300)}
               onZoomIn={() => void flow.zoomIn({ duration: 200 })}
               onZoomOut={() => void flow.zoomOut({ duration: 200 })}
             />
@@ -395,6 +408,11 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
       )}
     </div>
   );
+}
+
+/** The whole graph in view, at most life size: the opening frame and Fit agree. */
+function frame(flow: Pick<ReactFlowInstance, 'fitView'>, duration: number) {
+  return flow.fitView({ padding: fitPadding(), maxZoom: 1, duration });
 }
 
 /** Room for the floating card when fitting the graph to the view: beside it
