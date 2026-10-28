@@ -101,24 +101,23 @@ export function Results({
   // Inside a Collecting that is selecting, cards become checkboxes.
   const around =
     wrap ??
-    (selection
-      ? (card: Card) => (
-          <Selectable
-            on={selection.chosen.includes(card.id)}
-            grid={card.grid}
-            onToggle={() => selection.toggle(card.id)}
-          >
-            {card.node}
-          </Selectable>
-        )
-      : undefined);
+    ((card: Card) => (
+      <Selectable
+        active={!!selection}
+        on={!!selection?.chosen.includes(card.id)}
+        grid={card.grid}
+        onToggle={() => selection?.toggle(card.id)}
+      >
+        {card.node}
+      </Selectable>
+    ));
 
   return (
     <div className={strip && built.cards[0]?.grid ? STRIP : built.layout}>
       {built.cards.map(card => (
         // A fragment rather than a wrapper element: the card has to stay a
         // direct child of the grid or the layout is not a grid any more.
-        <Fragment key={card.id}>{around ? around(card) : card.node}</Fragment>
+        <Fragment key={card.id}>{around(card)}</Fragment>
       ))}
     </div>
   );

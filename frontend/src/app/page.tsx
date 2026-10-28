@@ -11,6 +11,7 @@ import { DataAge } from '@/components/layout/DataAge';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { MonthPicker } from '@/components/home/MonthPicker';
 import { monthName } from '@/lib/months';
+import { still } from '@/lib/viewTransitions';
 
 const TYPES = ['v', 'c', 'r', 'p', 's', 'g', 'i'] as const;
 
@@ -42,7 +43,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
 
   return (
     <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-6 px-4 py-8 pb-12">
-      <div>
+      <div style={still('home-intro')}>
         <h1 className="text-2xl font-bold sm:text-3xl">NeoVNDB</h1>
         <p className="mt-1 text-sm text-muted">
           A local mirror of vndb&apos;s public dump, and a way to read it.
@@ -79,8 +80,8 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
               </div>
               <div className="flex flex-wrap items-center gap-1">
                 <ControlLabel>Originally</ControlLabel>
-                <Origin path="/" params={params} on={japanese} value={null} label="Japanese" />
-                <Origin path="/" params={params} on={!japanese} value="all" label="Any language" />
+                <Origin params={params} on={japanese} value={null} label="Japanese" />
+                <Origin params={params} on={!japanese} value="all" label="Any language" />
               </div>
             </>
           }
@@ -99,13 +100,11 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
 }
 
 function Origin({
-  path,
   params,
   on,
   value,
   label,
 }: {
-  path: string;
   params: Params;
   on: boolean;
   value: string | null;
@@ -113,7 +112,7 @@ function Origin({
 }) {
   return (
     <Link
-      href={withParams(path, params, { olang: value, page: null })}
+      href={withParams('/', params, { olang: value, page: null })}
       aria-current={on ? 'page' : undefined}
       className={
         on

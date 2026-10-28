@@ -11,6 +11,8 @@ import { withParams, type Params } from '@/lib/href';
 import { useMenu } from '@/hooks/useMenu';
 import { monthName, monthNames, stepMonth } from '@/lib/months';
 
+const WIDEST = monthNames().reduce((a, b) => (b.length > a.length ? b : a));
+
 function href(path: string, params: Params, year: number, month: number): string {
   // A different month is a different set of results, so whatever page the
   // reader was on no longer means anything.
@@ -58,8 +60,15 @@ export function MonthPicker({
         aria-expanded={open}
         className="flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold transition-colors hover:bg-white/10"
       >
-        <span className="tabular-nums">
-          {monthName(month)} {year}
+        {/* As wide as the widest month whichever is shown, so the arrows and
+            the controls after it do not move from month to month. */}
+        <span className="grid text-center tabular-nums [&>*]:col-start-1 [&>*]:row-start-1">
+          <span aria-hidden className="invisible">
+            {WIDEST} {year}
+          </span>
+          <span>
+            {monthName(month)} {year}
+          </span>
         </span>
         <ChevronDown
           className={cn(

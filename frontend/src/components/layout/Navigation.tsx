@@ -10,35 +10,6 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { finishNavigation, isNavigating, onNavigating, startNavigation } from '@/lib/navigating';
 
-/** Chrome now words the abort of a transition in a hidden tab as "…invalid
- *  state. Document hidden", which React 19.3 does not recognise among the
- *  aborts it ignores, so switching tabs mid-navigation raised a recoverable
- *  error. Reworded to the form React knows; React already recovers either way. */
-const REWORDED = Symbol.for('neovndb.reworded');
-// Once, though this module is evaluated again on every hot reload.
-if (
-  typeof document !== 'undefined' &&
-  document.startViewTransition &&
-  !(REWORDED in document.startViewTransition)
-) {
-  const start = document.startViewTransition.bind(document);
-  document.startViewTransition = Object.assign(
-    (...args: Parameters<typeof start>) => {
-      const transition = start(...args);
-      const ready = transition.ready.catch((error: unknown) => {
-        throw error instanceof DOMException &&
-          error.name === 'InvalidStateError' &&
-          error.message.startsWith('Transition was aborted because of invalid state')
-          ? new DOMException('Transition was aborted because of invalid state', error.name)
-          : error;
-      });
-      Object.defineProperty(transition, 'ready', { value: ready });
-      return transition;
-    },
-    { [REWORDED]: true },
-  ) as typeof document.startViewTransition;
-}
-
 /** Clicks on links start the sign; a new address ends it. */
 export function Navigation() {
   const path = usePathname();

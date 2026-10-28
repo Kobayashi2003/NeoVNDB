@@ -33,7 +33,9 @@ export async function midway(page: Page, go: () => Promise<unknown>) {
         const groups = runs
           .map(a => (a.effect as KeyframeEffect).pseudoElement!)
           .filter(p => p.startsWith('::view-transition-group('));
-        const style = at(groups.find(p => !/\((root|site-header|shelf-lists)\)$/.test(p))!);
+        const style = at(
+          groups.find(p => !/\((root|site-header|shelf-lists|still-[\w-]+)\)$/.test(p))!,
+        );
         const drawn = (name: string) => {
           const s = at(name);
           return s.visibility === 'hidden' ? 0 : Number(s.opacity);

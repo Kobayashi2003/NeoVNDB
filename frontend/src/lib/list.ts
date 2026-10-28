@@ -9,6 +9,20 @@ export interface Sort {
   descending?: boolean;
 }
 
+/** Which way a sort reads when the address does not say: its interesting end
+ *  first, and the best match first for a search. */
+export function readsDown(sorts: Sort[], value: string): boolean {
+  return value === 'searchrank' || (sorts.find(s => s.value === value)?.descending ?? false);
+}
+
+/** The `reverse=` for a sort read in this direction. Its own way is left out
+ *  of the address; the other has to be spelled, `false` included -- a link
+ *  that dropped `reverse` to turn a descending sort upwards led back to the
+ *  same descending page. */
+export function reverseParam(sorts: Sort[], value: string, reverse: boolean): string | null {
+  return reverse === readsDown(sorts, value) ? null : String(reverse);
+}
+
 export interface ListSpec {
   /** The API endpoint, which is the type's own name. */
   type: string;

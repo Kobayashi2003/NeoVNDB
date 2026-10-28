@@ -23,7 +23,15 @@ export function SpoilerScope({
   return <Level.Provider value={level}>{children}</Level.Provider>;
 }
 
-export function Spoiler({ children }: { children: React.ReactNode }) {
+/** `covered` is what the blur is drawn over, when that has to differ from
+ *  children: the hidden spoiler is a button, and a link cannot sit inside one. */
+export function Spoiler({
+  children,
+  covered = children,
+}: {
+  children: React.ReactNode;
+  covered?: React.ReactNode;
+}) {
   const level = useContext(Level);
   // The level it was opened at: a change of level is a new decision.
   const [openedAt, setOpenedAt] = useState<SpoilerLevel | -1 | null>(null);
@@ -38,7 +46,7 @@ export function Spoiler({ children }: { children: React.ReactNode }) {
       aria-label="Show spoiler"
       className="select-none rounded border border-yellow-500/25 bg-yellow-500/5 px-1 text-left text-yellow-100/70 blur-[4px] transition-[filter] hover:blur-[3px]"
     >
-      {children}
+      {covered}
     </button>
   );
 }

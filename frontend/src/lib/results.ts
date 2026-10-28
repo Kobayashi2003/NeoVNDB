@@ -3,7 +3,7 @@
 
 import { ApiError, list } from '@/lib/api';
 import { one, type Params } from '@/lib/href';
-import { LIST, PAGE_SIZE } from '@/lib/list';
+import { LIST, PAGE_SIZE, readsDown } from '@/lib/list';
 
 export interface Results {
   rows: unknown[];
@@ -30,10 +30,7 @@ export async function fetchResults(
 
   // Each sort has its own default direction.
   const chosen = one(params, 'reverse');
-  const reverse =
-    chosen !== undefined
-      ? chosen === 'true'
-      : sort === 'searchrank' || (spec.sorts.find(s => s.value === sort)?.descending ?? false);
+  const reverse = chosen !== undefined ? chosen === 'true' : readsDown(spec.sorts, sort);
 
   try {
     const answer = await list<unknown>(spec.type, {

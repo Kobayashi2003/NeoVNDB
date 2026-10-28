@@ -8,13 +8,20 @@ import { Check, CheckSquare, Square, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** A card with a checkbox; clicks select rather than navigate. Tiles put
- *  the box over the picture, rows indent to make room for it. */
+ *  the box over the picture, rows indent to make room for it.
+ *
+ *  Rendered around the card whether or not anything is being selected, and
+ *  out of the layout (`contents`) when not: wrapping the card only once
+ *  selecting starts changed the tree above it, so React rebuilt every card
+ *  and each cover loaded and faded in again. */
 export function Selectable({
+  active = true,
   on,
   grid,
   onToggle,
   children,
 }: {
+  active?: boolean;
   on: boolean;
   grid: boolean;
   onToggle: () => void;
@@ -23,30 +30,36 @@ export function Selectable({
   return (
     <div
       className={cn(
-        'relative rounded-lg transition-shadow',
-        !grid && 'pl-9',
-        on && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
+        active ? 'relative rounded-lg transition-shadow' : 'contents',
+        active && !grid && 'pl-9',
+        active && on && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
       )}
     >
-      <div className="pointer-events-none">{children}</div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={on}
-        className="absolute inset-0 cursor-pointer rounded-lg"
-      >
-        <span
-          className={cn(
-            'absolute flex h-5 w-5 items-center justify-center rounded border transition-colors',
-            grid ? 'left-2 top-2' : 'left-2 top-1/2 -translate-y-1/2',
-            on ? 'border-accent bg-accent' : 'border-white/40 bg-background/70',
-          )}
-        >
-          {on && <Check className="h-3.5 w-3.5 text-background" strokeWidth={4} aria-hidden />}
-        </span>
-        <span className="sr-only">{on ? 'Deselect' : 'Select'}</span>
-      </button>
+      <div className={active ? 'pointer-events-none' : 'contents'}>{children}</div>
+      {active && <SelectBox on={on} grid={grid} onToggle={onToggle} />}
     </div>
+  );
+}
+
+function SelectBox({ on, grid, onToggle }: { on: boolean; grid: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      className="absolute inset-0 cursor-pointer rounded-lg"
+    >
+      <span
+        className={cn(
+          'absolute flex h-5 w-5 items-center justify-center rounded border transition-colors',
+          grid ? 'left-2 top-2' : 'left-2 top-1/2 -translate-y-1/2',
+          on ? 'border-accent bg-accent' : 'border-white/40 bg-background/70',
+        )}
+      >
+        {on && <Check className="h-3.5 w-3.5 text-background" strokeWidth={4} aria-hidden />}
+      </span>
+      <span className="sr-only">{on ? 'Deselect' : 'Select'}</span>
+    </button>
   );
 }
 

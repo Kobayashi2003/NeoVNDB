@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ListChecks } from 'lucide-react';
-import { LIST, PAGE_SIZE, type Sort } from '@/lib/list';
+import { LIST, PAGE_SIZE, readsDown, type Sort } from '@/lib/list';
 import { one, withParams, type Params } from '@/lib/href';
 import { readShelf, type OwnSort, type ShelfPage, type ShelfSource } from '@/lib/shelf';
 import { errorText } from '@/lib/user';
@@ -69,8 +69,10 @@ export function ShelfPanel({
   const ownSort = own.find(s => s.value === sort);
   // Each sort has its own default direction.
   const asked = one(params, 'reverse');
-  const sorting = ownSort ?? (type ? LIST[type].sorts.find(s => s.value === sort) : undefined);
-  const reverse = asked !== undefined ? asked === 'true' : (sorting?.descending ?? false);
+  const reverse =
+    asked !== undefined
+      ? asked === 'true'
+      : readsDown([...own, ...(type ? LIST[type].sorts : [])], sort);
 
   const [held, setHeld] = useState<Held | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -227,16 +229,15 @@ export function ShelfPanel({
               ) : (
                 card.node
               );
-              return choice.selecting ? (
+              return (
                 <Selectable
+                  active={choice.selecting}
                   on={choice.chosen.includes(card.id)}
                   grid={card.grid}
                   onToggle={() => choice.toggle(card.id)}
                 >
                   {node}
                 </Selectable>
-              ) : (
-                node
               );
             }}
           />

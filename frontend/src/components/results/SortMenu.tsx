@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { withParams, type Params } from '@/lib/href';
-import type { Sort } from '@/lib/list';
+import { reverseParam, type Sort } from '@/lib/list';
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from '@/components/ui/Menu';
 import { useMenu } from '@/hooks/useMenu';
 
@@ -24,7 +24,15 @@ export function SortMenu({
   active,
   reverse,
   align = 'start',
-}: SortState & { path: string; params: Params; align?: 'start' | 'end' }) {
+  labelled = false,
+}: SortState & {
+  path: string;
+  params: Params;
+  align?: 'start' | 'end';
+  /** A "Sort" label stands before it, as before the other rows of controls:
+   *  drawn as their chosen pill is, without a label of its own. */
+  labelled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const { box, panel } = useMenu(open, setOpen);
   const current = sorts.find(s => s.value === active);
@@ -36,9 +44,14 @@ export function SortMenu({
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/15"
+        className={cn(
+          'inline-flex items-center gap-1 rounded-full text-xs font-medium text-white transition-colors',
+          labelled
+            ? 'bg-white/20 px-2.5 py-1 hover:bg-white/25'
+            : 'bg-white/10 px-3 py-1.5 hover:bg-white/15',
+        )}
       >
-        <span className="text-muted">Sort:</span>
+        {!labelled && <span className="text-muted">Sort:</span>}
         {current?.label ?? 'Relevance'}
         {reverse ? (
           <ArrowDown className="icon-text size-3 text-muted" aria-label="descending" />
@@ -59,14 +72,8 @@ export function SortMenu({
               key={sort.value}
               href={withParams(path, params, {
                 sort: sort.value,
-                reverse:
-                  sort.value === active
-                    ? reverse
-                      ? 'true'
-                      : null
-                    : sort.descending
-                      ? 'true'
-                      : null,
+                // The current sort keeps its direction; another starts its own way.
+                reverse: sort.value === active ? reverseParam(sorts, active, reverse) : null,
                 page: null,
               })}
               onClick={close}
@@ -86,7 +93,7 @@ export function SortMenu({
               key={o.label}
               href={withParams(path, params, {
                 sort: active,
-                reverse: o.down ? 'true' : null,
+                reverse: reverseParam(sorts, active, o.down),
                 page: null,
               })}
               onClick={close}

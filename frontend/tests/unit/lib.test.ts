@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { publishers } from '@/lib/vn';
 import { errorText, UserError } from '@/lib/user';
 import { FILTERS } from '@/lib/filters';
-import { LIST } from '@/lib/list';
+import { LIST, readsDown, reverseParam } from '@/lib/list';
 import type { Character, CharacterDetail, Release, Trait } from '@/lib/types';
 
 function trait(over: Partial<Trait>): Trait {
@@ -299,5 +299,23 @@ describe('user', () => {
   it("shows the service's own words, or a generic line", () => {
     expect(errorText(new UserError(409, 'Taken.'))).toBe('Taken.');
     expect(errorText(new Error('boom'))).toBe('Something went wrong.');
+  });
+});
+
+describe('sort direction', () => {
+  const sorts = LIST.v.sorts;
+
+  it('reads each sort its own way unless the address says otherwise', () => {
+    expect(readsDown(sorts, 'title')).toBe(false);
+    expect(readsDown(sorts, 'rating')).toBe(true);
+    // Not offered as a sort, but a search is ordered best match first.
+    expect(readsDown(sorts, 'searchrank')).toBe(true);
+  });
+
+  it('spells out only the way that is not the default, false included', () => {
+    expect(reverseParam(sorts, 'rating', true)).toBeNull();
+    expect(reverseParam(sorts, 'rating', false)).toBe('false');
+    expect(reverseParam(sorts, 'title', true)).toBe('true');
+    expect(reverseParam(sorts, 'searchrank', false)).toBe('false');
   });
 });

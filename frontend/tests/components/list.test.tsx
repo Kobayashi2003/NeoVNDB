@@ -87,16 +87,37 @@ describe('sorting', () => {
       />,
     );
     const links = hrefs(container as HTMLElement);
-    expect(links).toContain('/v?sort=rating');
+    // Rating reads downwards on its own, so upwards has to be spelled out: a
+    // link without reverse= would lead back to this same page.
+    expect(links).toContain('/v?sort=rating&reverse=false');
     expect(links).toContain('/v?sort=title');
   });
 
+  it('flips back to a sort read its own way without saying so', () => {
+    const { container } = render(
+      <SortLinks
+        path="/v"
+        params={{ sort: 'rating', reverse: 'false' }}
+        sorts={sorts}
+        active="rating"
+        reverse={false}
+        menu={false}
+      />,
+    );
+    expect(hrefs(container as HTMLElement)).toContain('/v?sort=rating');
+  });
+
   it('offers the same as a menu', async () => {
-    render(<SortMenu path="/v" params={{}} sorts={sorts} active="title" reverse={false} />);
+    render(<SortMenu path="/v" params={{}} sorts={sorts} active="rating" reverse />);
     await userEvent.click(screen.getByRole('button', { name: /sort/i }));
-    expect(screen.getByRole('link', { name: /rating/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /title/i })).toHaveAttribute('href', '/v?sort=title');
+    expect(screen.getByRole('link', { name: 'Ascending' })).toHaveAttribute(
       'href',
-      '/v?sort=rating&reverse=true',
+      '/v?sort=rating&reverse=false',
+    );
+    expect(screen.getByRole('link', { name: 'Descending' })).toHaveAttribute(
+      'href',
+      '/v?sort=rating',
     );
   });
 });

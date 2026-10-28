@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { withParams, type Params } from '@/lib/href';
-import type { Sort } from '@/lib/list';
+import { reverseParam, type Sort } from '@/lib/list';
 import { SortMenu } from './SortMenu';
 
 export function SortLinks({
@@ -28,8 +28,16 @@ export function SortLinks({
   return (
     <>
       {menu && (
-        <div className="sm:hidden">
-          <SortMenu path={path} params={params} sorts={sorts} active={active} reverse={reverse} />
+        <div className="flex items-center gap-1 sm:hidden">
+          <ControlLabel>Sort</ControlLabel>
+          <SortMenu
+            path={path}
+            params={params}
+            sorts={sorts}
+            active={active}
+            reverse={reverse}
+            labelled
+          />
         </div>
       )}
       <div className="hidden flex-wrap items-center gap-1 sm:flex">
@@ -38,8 +46,8 @@ export function SortLinks({
           const here = sort.value === active;
           // Changing the page's contents invalidates which page you were on.
           const next = here
-            ? { sort: sort.value, reverse: reverse ? null : 'true', page: null }
-            : { sort: sort.value, reverse: sort.descending ? 'true' : null, page: null };
+            ? { sort: sort.value, reverse: reverseParam(sorts, sort.value, !reverse), page: null }
+            : { sort: sort.value, reverse: null, page: null };
 
           return (
             <Link

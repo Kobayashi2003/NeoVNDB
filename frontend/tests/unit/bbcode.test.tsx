@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { BBCode } from '@/components/ui/BBCode';
+import { SpoilerScope } from '@/components/ui/Spoiler';
 import { plain } from '@/lib/bbcode';
 
 const html = (text: string) => renderToStaticMarkup(<BBCode text={text} />);
@@ -45,6 +46,30 @@ describe('BBCode', () => {
       expect(html(`[url=${href}]x[/url]`)).not.toContain('href=');
     }
     expect(html('[url=/v17]x[/url]')).toContain('href="/v17"');
+  });
+
+  // c3659's description, which showed its [url] as written.
+  const touko =
+    'a [spoiler]out with [url=https://vndb.org/c3658]Taichi[/url] in [b]v17[/b][/spoiler]';
+
+  it('renders the markup inside a spoiler once it is shown', () => {
+    const shown = renderToStaticMarkup(
+      <SpoilerScope level={2}>
+        <BBCode text={touko} />
+      </SpoilerScope>,
+    );
+    expect(shown).toContain('<a href="https://vndb.org/c3658"');
+    expect(shown).toContain('href="/v17"');
+    expect(shown).not.toContain('[url');
+  });
+
+  it('keeps a hidden spoiler free of links, which a button cannot hold', () => {
+    const hidden = html(touko);
+    expect(hidden).toContain('<button');
+    expect(hidden).toContain('Taichi');
+    expect(hidden).toContain('<span class="font-semibold">v17</span>');
+    expect(hidden).not.toContain('href');
+    expect(hidden).not.toContain('[url');
   });
 });
 

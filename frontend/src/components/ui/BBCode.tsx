@@ -41,8 +41,9 @@ export function BBCode({ text }: { text: string }) {
   );
 }
 
-/** Nested markup renders inline, inside its parent's element. */
-function render(text: string): React.ReactNode[] {
+/** Nested markup renders inline, inside its parent's element. Unlinked, a link
+ *  is only its label: for a spoiler still hidden, which is a button. */
+function render(text: string, linked = true): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let last = 0;
 
@@ -63,13 +64,17 @@ function render(text: string): React.ReactNode[] {
     } else if (quote !== undefined) {
       out.push(
         <blockquote key={key} className="my-2 border-l-2 border-accent/40 pl-3 text-muted">
-          {render(quote)}
+          {render(quote, linked)}
         </blockquote>,
       );
     } else if (spoiler !== undefined) {
-      out.push(<Spoiler key={key}>{spoiler}</Spoiler>);
-    } else if (href !== undefined && !LINKABLE.test(href)) {
-      out.push(<Fragment key={key}>{render(label)}</Fragment>);
+      out.push(
+        <Spoiler key={key} covered={render(spoiler, false)}>
+          {render(spoiler, linked)}
+        </Spoiler>,
+      );
+    } else if (href !== undefined && (!linked || !LINKABLE.test(href))) {
+      out.push(<Fragment key={key}>{render(label, linked)}</Fragment>);
     } else if (href !== undefined) {
       out.push(
         <a
@@ -84,10 +89,10 @@ function render(text: string): React.ReactNode[] {
     } else if (tag !== undefined) {
       out.push(
         <span key={key} className={EMPHASIS[tag.toLowerCase()]}>
-          {render(emphasised)}
+          {render(emphasised, linked)}
         </span>,
       );
-    } else if (id !== undefined && id[0] !== id[0].toLowerCase()) {
+    } else if (id !== undefined && (!linked || id[0] !== id[0].toLowerCase())) {
       out.push(id);
     } else if (id !== undefined) {
       out.push(
