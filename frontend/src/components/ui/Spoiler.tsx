@@ -23,8 +23,8 @@ export function SpoilerScope({
   return <Level.Provider value={level}>{children}</Level.Provider>;
 }
 
-/** `covered` is what the blur is drawn over, when that has to differ from
- *  children: the hidden spoiler is a button, and a link cannot sit inside one. */
+/** `covered` is what the blur shows, if not children: a hidden spoiler is a
+ *  button, which cannot hold links. */
 export function Spoiler({
   children,
   covered = children,

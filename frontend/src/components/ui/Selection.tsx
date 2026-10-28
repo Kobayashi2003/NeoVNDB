@@ -10,10 +10,8 @@ import { cn } from '@/lib/utils';
 /** A card with a checkbox; clicks select rather than navigate. Tiles put
  *  the box over the picture, rows indent to make room for it.
  *
- *  Rendered around the card whether or not anything is being selected, and
- *  out of the layout (`contents`) when not: wrapping the card only once
- *  selecting starts changed the tree above it, so React rebuilt every card
- *  and each cover loaded and faded in again. */
+ *  Always rendered, as `contents` when inactive: wrapping only while selecting
+ *  would remount every card and reload its cover. */
 export function Selectable({
   active = true,
   on,

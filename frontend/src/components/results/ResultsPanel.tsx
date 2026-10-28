@@ -37,17 +37,14 @@ export function ResultsPanel({
   return (
     <Collecting type={type}>
       <div className="flex flex-col gap-4">
-        {/* One row where it fits; where it does not, the groups stack one to
-            a line rather than wrapping a few at a time. Measured on the row
-            itself: the page's own controls decide how wide it has to be.
-            Select keeps the top right, or with the page's own controls a line
-            of its own under them, at the right. */}
+        {/* One row if it fits, else one group per line (sized by the row
+            itself). Select sits top right, or below the page's own controls. */}
         <div
-          style={still(`controls-${type}${path}`)}
+          // By page, not type: a catalog page's tabs change the type.
+          style={still(`controls${path}`)}
           className={cn(
-            // Its own transition layer and the container query each make it a
-            // stacking context, so its menus would open under the results
-            // after it unless it sits above them.
+            // A stacking context (transition layer, container query): raised
+            // so its menus open over the results.
             'relative z-10 @container',
             // A phone shows the row only for Select, when signed in.
             !sortMenu && !controls && !action && 'hidden has-[[data-select]]:block sm:block',

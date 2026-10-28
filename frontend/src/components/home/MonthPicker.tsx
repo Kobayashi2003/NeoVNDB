@@ -60,8 +60,7 @@ export function MonthPicker({
         aria-expanded={open}
         className="flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold transition-colors hover:bg-white/10"
       >
-        {/* As wide as the widest month whichever is shown, so the arrows and
-            the controls after it do not move from month to month. */}
+        {/* Sized to the widest month, so nothing after it shifts. */}
         <span className="grid text-center tabular-nums [&>*]:col-start-1 [&>*]:row-start-1">
           <span aria-hidden className="invisible">
             {WIDEST} {year}

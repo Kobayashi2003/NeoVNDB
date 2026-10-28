@@ -41,8 +41,8 @@ export function BBCode({ text }: { text: string }) {
   );
 }
 
-/** Nested markup renders inline, inside its parent's element. Unlinked, a link
- *  is only its label: for a spoiler still hidden, which is a button. */
+/** Nested markup renders inline, inside its parent's element. `linked` false
+ *  renders links as their label, for a hidden spoiler (a button). */
 function render(text: string, linked = true): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let last = 0;

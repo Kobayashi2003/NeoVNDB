@@ -8,6 +8,7 @@ import { asExpression } from '@/lib/conditions';
 import { one, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
+import { still } from '@/lib/viewTransitions';
 import { DetailHeader, DetailShell } from '@/components/ui/DetailShell';
 import { ResultsPanel } from '@/components/results/ResultsPanel';
 import { Tabs, type Tab } from '@/components/results/Tabs';
@@ -41,11 +42,19 @@ export async function CatalogPage({
   const data = await fetchResults(active.type, params, active.filters);
 
   return (
+    // Heading, record and tabs stay still across tabs and pages; the heading is
+    // raised so its action's menu opens over the results.
     <DetailShell
-      header={<DetailHeader title={title} subtitle={subtitle} action={action} />}
-      aside={<>{aside}</>}
+      header={
+        <div style={still(`head${path}`)} className="relative z-20">
+          <DetailHeader title={title} subtitle={subtitle} action={action} />
+        </div>
+      }
+      // Drawn twice by DetailShell, one always hidden; hidden elements are not
+      // captured, so the name stays unique.
+      aside={<div style={still(`aside${path}`)}>{aside}</div>}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <div style={still(`tabs${path}`)} className="flex flex-wrap items-center gap-2">
         <Tabs path={path} params={params} tabs={shown} active={active.value} />
         {/* The same list on the type's own page, as a condition that more can
             be added to. Pulled out by its padding: with no fill until hovered,

@@ -29,8 +29,7 @@ export function SortMenu({
   path: string;
   params: Params;
   align?: 'start' | 'end';
-  /** A "Sort" label stands before it, as before the other rows of controls:
-   *  drawn as their chosen pill is, without a label of its own. */
+  /** After a separate "Sort" label: no label of its own, styled as a chosen pill. */
   labelled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -72,7 +71,6 @@ export function SortMenu({
               key={sort.value}
               href={withParams(path, params, {
                 sort: sort.value,
-                // The current sort keeps its direction; another starts its own way.
                 reverse: sort.value === active ? reverseParam(sorts, active, reverse) : null,
                 page: null,
               })}

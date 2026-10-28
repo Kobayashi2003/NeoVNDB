@@ -87,8 +87,7 @@ describe('sorting', () => {
       />,
     );
     const links = hrefs(container as HTMLElement);
-    // Rating reads downwards on its own, so upwards has to be spelled out: a
-    // link without reverse= would lead back to this same page.
+    // Rating defaults to descending, so ascending is spelled out.
     expect(links).toContain('/v?sort=rating&reverse=false');
     expect(links).toContain('/v?sort=title');
   });

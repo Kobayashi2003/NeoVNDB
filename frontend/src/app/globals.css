@@ -242,13 +242,9 @@ html[data-selecting] [data-scroll-top] {
 ::view-transition-group(site-header) {
   z-index: 1;
 }
-/* What is the same on both sides of a move, bar what the move changed (the
-   current row, sort or month): drawn as it is now rather than faded out and in
-   with the content beside it. The column of lists (components/user/Shelf)
-   between lists; a page's heading and the controls over its results
-   (lib/viewTransitions `still`) between pages of one listing. On one side
-   only -- arriving from another page, leaving for one -- it goes with the
-   page. */
+/* Still layers: on both sides of a move they are drawn as they are now
+   instead of fading with the page (the shelf's list column; lib/viewTransitions
+   `still`). On one side only, they fade with it. */
 .shelf-lists {
   view-transition-name: shelf-lists;
   view-transition-class: still;

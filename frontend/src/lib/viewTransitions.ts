@@ -3,11 +3,9 @@
 
 import type { CSSProperties } from 'react';
 
-/** For something that is the same on both sides of a move within one page --
- *  a page's heading, the controls over its results -- so a new page of results
- *  or a new order does not fade it out and in with the rest (globals.css,
- *  `.still`). The name has to be unique on the page; leaving for another page,
- *  where nothing carries it, it fades with the page as before. */
+/** Keeps an element out of the page fade when a move stays on its page
+ *  (globals.css `.still`). Name it part + path (`head/v`): unique on the page,
+ *  the same either side of the move. */
 export function still(name: string): CSSProperties {
   return {
     viewTransitionName: `still-${name.replace(/[^a-zA-Z0-9-]/g, '-')}`,
@@ -35,14 +33,10 @@ function reword(error: unknown): unknown {
   return error;
 }
 
-/** Chrome now words the abort of a transition in a hidden tab as "…invalid
- *  state. Document hidden", which React 19.3 does not recognise among the
- *  aborts it ignores, so switching tabs mid-navigation raised a recoverable
- *  error. Reworded to the form React knows; React already recovers either way.
- *
- *  Installed from instrumentation-client.ts, which runs before the app does:
- *  installed from a component, a transition started before that component's
- *  module loaded would still carry Chrome's wording. */
+/** Chrome words a hidden-tab abort "…invalid state. Document hidden", which
+ *  React 19.3 does not ignore and reports as a recoverable error; this rewords
+ *  it to the form React knows. Installed from instrumentation-client.ts, so it
+ *  is in place before any transition. */
 export function rewordHiddenAborts(doc: Document) {
   // Once, though this module is evaluated again on every hot reload.
   if (!doc.startViewTransition || REWORDED in doc.startViewTransition) return;

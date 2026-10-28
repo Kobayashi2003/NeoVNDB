@@ -5,6 +5,7 @@ import { FILTERS } from '@/lib/filters';
 import { filtersOf, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
+import { still } from '@/lib/viewTransitions';
 import { DataAge } from '@/components/layout/DataAge';
 import { FilterBar } from './FilterBar';
 import { ResultsPanel } from '@/components/results/ResultsPanel';
@@ -19,28 +20,32 @@ export async function ListPage({ type, params }: { type: string; params: Params 
 
   return (
     <main className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 py-4 pb-12">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-xl font-bold sm:text-2xl">
-          {LIST[type].label}
-          {!data.failure && (
-            <span className="ml-2 text-sm font-normal tabular-nums text-muted">
-              {data.count.toLocaleString()}
-            </span>
-          )}
-        </h1>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <SearchBox path={path} params={params} initial={search} />
-          <SavedSearches type={type} params={params} />
+      {/* Still across pages of results; raised so the filter menus and the
+          condition builder open over what follows. */}
+      <div style={still(`head${path}`)} className="relative z-20 flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="text-xl font-bold sm:text-2xl">
+            {LIST[type].label}
+            {!data.failure && (
+              <span className="ml-2 text-sm font-normal tabular-nums text-muted">
+                {data.count.toLocaleString()}
+              </span>
+            )}
+          </h1>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <SearchBox path={path} params={params} initial={search} />
+            <SavedSearches type={type} params={params} />
+          </div>
         </div>
-      </div>
 
-      <FilterBar
-        type={type}
-        path={path}
-        params={params}
-        filters={FILTERS[type] ?? []}
-        sort={{ sorts: LIST[type].sorts, active: data.sort, reverse: data.reverse }}
-      />
+        <FilterBar
+          type={type}
+          path={path}
+          params={params}
+          filters={FILTERS[type] ?? []}
+          sort={{ sorts: LIST[type].sorts, active: data.sort, reverse: data.reverse }}
+        />
+      </div>
 
       <ResultsPanel
         type={type}

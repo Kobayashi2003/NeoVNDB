@@ -15,10 +15,8 @@ export function readsDown(sorts: Sort[], value: string): boolean {
   return value === 'searchrank' || (sorts.find(s => s.value === value)?.descending ?? false);
 }
 
-/** The `reverse=` for a sort read in this direction. Its own way is left out
- *  of the address; the other has to be spelled, `false` included -- a link
- *  that dropped `reverse` to turn a descending sort upwards led back to the
- *  same descending page. */
+/** The `reverse=` for this direction: left out for the sort's own way, spelled
+ *  out otherwise, `false` included (left out, it would read as the default). */
 export function reverseParam(sorts: Sort[], value: string, reverse: boolean): string | null {
   return reverse === readsDown(sorts, value) ? null : String(reverse);
 }
