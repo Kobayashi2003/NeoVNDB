@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AgeRating } from '@/components/ui/AgeRating';
+import { ChoiceMenu } from '@/components/ui/ChoiceMenu';
 import { Icon } from '@/components/ui/Icon';
 import { Name } from '@/components/ui/Name';
 import { Section } from '@/components/ui/Section';
@@ -198,6 +199,30 @@ describe('small pieces', () => {
     expect(screen.getByRole('radio', { name: 'A' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(screen.getByRole('radio', { name: 'B' }));
     expect(change).toHaveBeenCalledWith('b');
+  });
+
+  it('chooses one from a menu, under its group, and closes', async () => {
+    const change = vi.fn();
+    render(
+      <ChoiceMenu
+        label="Titles"
+        value="all"
+        onChange={change}
+        choices={[
+          { value: 'all', label: 'Every list' },
+          { value: 'list:1', label: 'Played', count: 309, group: 'Lists' },
+        ]}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Titles: Every list' }));
+    expect(screen.getByText('Lists')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Every list' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await userEvent.click(screen.getByRole('button', { name: /^Played/ }));
+    expect(change).toHaveBeenCalledWith('list:1');
+    expect(screen.queryByText('Lists')).not.toBeInTheDocument();
   });
 
   it('switches tabs', async () => {

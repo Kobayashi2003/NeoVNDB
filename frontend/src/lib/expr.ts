@@ -28,7 +28,7 @@ export type Node = Leaf | Group;
 
 let lastKey = 0;
 /** React keys only; never serialised. */
-export const nextKey = () => ++lastKey;
+const nextKey = () => ++lastKey;
 
 export function group(and = true, items: Node[] = [], not = false): Group {
   return { kind: 'group', key: nextKey(), and, not, items };

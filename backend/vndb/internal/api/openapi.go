@@ -57,6 +57,24 @@ func (s *Server) openapi(w http.ResponseWriter, r *http.Request) {
 		},
 		"responses": ok("Counts by value"),
 	}}
+	paths["/stats/vn"] = map[string]any{"get": map[string]any{
+		"summary": "What the visual novels a query matches have in common: top developers, " +
+			"publishers, people per role and tags per category",
+		"parameters": []any{
+			queryParam("id", "The titles to count, comma-separated; any /vn filter also narrows the set"),
+			queryParam("top", "How many of each to return (10)"),
+		},
+		"responses": ok("Counts by producer, person and tag"),
+	}}
+	paths["/recommend/vn"] = map[string]any{"get": map[string]any{
+		"summary": "Visual novels alike to the given ones, by their tags",
+		"parameters": []any{
+			queryParam("from", "Titles to start from, each with an optional weight from -5 to 5: from=v17:2,v11"),
+			queryParam("exclude", "Titles never to suggest, comma-separated"),
+			queryParam("limit", "How many to return"),
+		},
+		"responses": ok("Titles, each with its score and the titles it came from"),
+	}}
 	paths["/meta/fields/{type}"] = map[string]any{"get": map[string]any{
 		"summary":    "The fields one type offers, with how they nest",
 		"parameters": []any{pathParam("type", "One of the types")},

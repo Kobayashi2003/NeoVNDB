@@ -10,7 +10,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Chevron } from './Pill';
 
 export function Collapsible({
   maxHeight = 220,
@@ -38,10 +38,7 @@ export function Collapsible({
       onClick={() => setOpen(!open)}
       className="relative flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent coarse:py-1"
     >
-      <ChevronDown
-        className={`icon-text h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
-        aria-hidden
-      />
+      <Chevron open={open} className="size-3.5" />
       {open ? 'Show less' : 'Show more'}
     </button>
   );

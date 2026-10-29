@@ -5,18 +5,12 @@
 'use client';
 
 import { useState, useSyncExternalStore } from 'react';
-import {
-  ChevronDown,
-  LocateFixed,
-  Maximize,
-  Route,
-  SlidersHorizontal,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react';
+import { LocateFixed, Maximize, Route, SlidersHorizontal, ZoomIn, ZoomOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VN_RELATION } from '@/lib/enums';
 import { ControlLabel } from '@/components/ui/ControlLabel';
+import { Chevron } from '@/components/ui/Pill';
+import { floating } from '@/components/ui/Surface';
 import { relationStyle } from './style';
 
 export interface Switches {
@@ -84,7 +78,7 @@ export function GraphPanel({
   return (
     <div
       data-graph-card
-      className="pointer-events-auto w-72 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md"
+      className={floating('pointer-events-auto w-72 max-w-[calc(100vw-1.5rem)] overflow-hidden')}
     >
       {/* An only child: placed among siblings, an element from the server page
           is key-checked after a client navigation and warned about. */}
@@ -97,13 +91,7 @@ export function GraphPanel({
         >
           <SlidersHorizontal className="h-3.5 w-3.5 text-muted" aria-hidden />
           View
-          <ChevronDown
-            className={cn(
-              'ml-auto h-3.5 w-3.5 text-muted transition-transform',
-              open && 'rotate-180',
-            )}
-            aria-hidden
-          />
+          <Chevron open={open} className="ml-auto size-3.5 text-muted" />
         </button>
         <Tool label="Show this title" onClick={onLocate}>
           <LocateFixed />

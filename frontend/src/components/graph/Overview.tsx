@@ -10,6 +10,7 @@ import { useMemo, useRef, type PointerEvent } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
 import { cn } from '@/lib/utils';
 import type { Laid } from '@/lib/graphLayout';
+import { floating } from '@/components/ui/Surface';
 import { relationStyle } from './style';
 
 const MAX_W = 240;
@@ -118,9 +119,11 @@ export function Overview({
       viewBox={`0 0 ${boxW} ${boxH}`}
       aria-label="Overview; click or drag to move the view"
       aria-hidden={allOnScreen}
-      className={cn(
-        'block cursor-grab touch-none rounded-xl border border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md transition-opacity duration-300 active:cursor-grabbing',
-        allOnScreen && 'pointer-events-none opacity-0',
+      className={floating(
+        cn(
+          'block cursor-grab touch-none transition-opacity duration-300 active:cursor-grabbing',
+          allOnScreen && 'pointer-events-none opacity-0',
+        ),
       )}
       onPointerDown={e => {
         e.stopPropagation();

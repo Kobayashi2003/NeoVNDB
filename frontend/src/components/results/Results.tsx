@@ -27,11 +27,12 @@ import {
   type VNRow,
 } from '@/lib/types';
 import { Selectable } from '@/components/ui/Selection';
+import { surface } from '@/components/ui/Surface';
 import { useSelection } from './Collecting';
 
 const GRID =
   'grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7';
-const LIST = 'rounded-lg border border-white/5 bg-surface';
+const LIST = surface();
 /** The grid's tiles in one sideways row, each about a grid column wide. The
  *  scroll box clips, so it is padded out by the room a tile's hover growth and
  *  border need, and pulled back by as much to stay in line. */

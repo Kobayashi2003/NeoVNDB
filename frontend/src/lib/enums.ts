@@ -293,7 +293,7 @@ type EnumGroup = keyof typeof ENUMS;
 
 // Return a dictionary as a plain object keyed by string / number, suitable for
 // direct subscript lookups in JSX (`MAP[value]`).
-export function enumMap<G extends EnumGroup>(group: G): Record<string | number, string> {
+function enumMap<G extends EnumGroup>(group: G): Record<string | number, string> {
   return ENUMS[group] as Record<string | number, string>;
 }
 

@@ -11,6 +11,9 @@
   --elevated-hover: rgba(42, 42, 47, 0.95);
   /* Opaque, for menus: see-through ones are hard to read. */
   --overlay: #232327;
+  /* The surface as it reads over the page, opaque: for a heading pinned
+     inside a scrolling surface, which rows must not show through. */
+  --surface-solid: #18181c;
 
   /* Fixed, not measured, so detail columns don't jump on first paint. */
   --header-h: 3.25rem;
@@ -24,6 +27,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
   --color-elevated: var(--elevated);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);

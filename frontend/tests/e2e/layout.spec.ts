@@ -147,7 +147,8 @@ test('a reader’s own pages fit at every width', async ({ page, user }) => {
   await user.call('PUT', '/ratings/v17', { rating: 4 });
   await walk(page, 'lists-signed-in', '/u');
   await walk(page, 'list', `/u/${list.id}`);
-  await walk(page, 'ratings', '/u/ratings');
+  await walk(page, 'dashboard', '/u/ratings');
+  await walk(page, 'ratings', '/u/ratings?view=ratings');
   await walk(page, 'account', '/account');
 });
 
@@ -257,7 +258,7 @@ test('a reader’s list holds still while it loads on a slow line', async ({ pag
   await page.goto('/u');
   await page.waitForLoadState('networkidle');
   await user.call('PUT', '/ratings/v17', { rating: 4 });
-  for (const path of ['/u', `/u/${list.id}`, '/u/ratings', '/account']) {
+  for (const path of ['/u', `/u/${list.id}`, '/u/ratings', '/u/ratings?view=ratings', '/account']) {
     const { total, moved } = await shift(page, path);
     expect(total, `${path}: ${moved.join(' / ')}`).toBeLessThan(0.02);
   }

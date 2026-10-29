@@ -4,11 +4,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { withParams, type Params } from '@/lib/href';
 import { reverseParam, type Sort } from '@/lib/list';
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from '@/components/ui/Menu';
+import { Chevron, pill } from '@/components/ui/Pill';
 import { useMenu } from '@/hooks/useMenu';
 
 export interface SortState {
@@ -43,12 +43,7 @@ export function SortMenu({
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-full text-xs font-medium text-white transition-colors',
-          labelled
-            ? 'bg-white/20 px-2.5 py-1 hover:bg-white/25'
-            : 'bg-white/10 px-3 py-1.5 hover:bg-white/15',
-        )}
+        className={labelled ? pill({ tone: 'on', size: 'sm' }) : pill()}
       >
         {!labelled && <span className="text-muted">Sort:</span>}
         {current?.label ?? 'Relevance'}
@@ -57,10 +52,7 @@ export function SortMenu({
         ) : (
           <ArrowUp className="icon-text size-3 text-muted" aria-label="ascending" />
         )}
-        <ChevronDown
-          className={cn('icon-text size-3 transition-transform', open && 'rotate-180')}
-          aria-hidden
-        />
+        <Chevron open={open} />
       </button>
 
       {open && (

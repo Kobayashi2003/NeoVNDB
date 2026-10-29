@@ -13,6 +13,7 @@ import {
 } from '@/lib/admin';
 import { errorText } from '@/lib/user';
 import { Segmented } from '@/components/ui/Segmented';
+import { surface } from '@/components/ui/Surface';
 import { Button, FIELD, Trouble } from './parts';
 
 export function TranslationsTab() {
@@ -131,7 +132,7 @@ export function TranslationsTab() {
 function Row({ category, item }: { category: Category; item: Translatable }) {
   const letter = category === 'tag' ? 'g' : 'i';
   return (
-    <article className="flex flex-col gap-3 rounded-lg border border-white/5 bg-surface p-4">
+    <article className={surface('flex flex-col gap-3 p-4')}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <a
           href={`/${letter}${item.id}`}

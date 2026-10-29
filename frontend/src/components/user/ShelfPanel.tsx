@@ -18,6 +18,7 @@ import { SortLinks } from '@/components/results/SortLinks';
 import { Selectable } from '@/components/ui/Selection';
 import { useNavigate } from '@/hooks/useNavigate';
 import { useShelfChoice, type Choosing } from '@/hooks/useShelfChoice';
+import { Placeholder, surface } from '@/components/ui/Surface';
 import { Mine, Missing, SearchInList } from './ShelfParts';
 
 interface Held extends ShelfPage {
@@ -114,7 +115,7 @@ export function ShelfPanel({
 
   if (error && !held) {
     return (
-      <div className="w-full max-w-sm rounded-lg border border-white/5 bg-surface p-6 text-sm">
+      <div className={surface('w-full max-w-sm p-6 text-sm')}>
         <p role="alert" className="text-red-400">
           {error}
         </p>
@@ -204,11 +205,7 @@ export function ShelfPanel({
       {held === null ? (
         // Keyed apart from the results, so they arrive as a new element rather
         // than as this one moved and grown, which counts as a layout shift.
-        <div
-          key="waiting"
-          className="h-64 w-full animate-pulse rounded-lg bg-white/5"
-          aria-hidden
-        />
+        <Placeholder key="waiting" className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted">
           {search ? (

@@ -19,6 +19,7 @@ import { LIST, TYPES } from '@/lib/list';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/useSession';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
+import { Placeholder } from '@/components/ui/Surface';
 import { ShelfPanel } from './ShelfPanel';
 import { RatingsBar } from './RatingsBar';
 import { SignInFirst } from './SignInFirst';
@@ -36,7 +37,7 @@ const owned = (r: Rated): Owned => ({ id: r.id, rating: r.rating, at: r.rated_at
 export function RatingsPanel({ page, params }: { page: number; params: Params }) {
   const session = useSession();
   if (session.status === 'unknown') {
-    return <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
+    return <Placeholder className="h-64 w-full" />;
   }
   if (session.status === 'out') {
     return (

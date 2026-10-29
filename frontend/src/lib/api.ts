@@ -93,6 +93,60 @@ export async function facet(
   return answer.counts;
 }
 
+export interface Tally {
+  id: string;
+  name: string;
+  original: string | null;
+  count: number;
+}
+
+export interface TagTally {
+  id: string;
+  name: string;
+  translation: string | null;
+  count: number;
+  /** How strongly, on average: vndb's 0-3. */
+  rating: number;
+}
+
+/** What a set of visual novels has in common (`/stats/vn`). */
+export interface VNStats {
+  count: number;
+  developers: Tally[];
+  publishers: Tally[];
+  /** By credited role: scenario, chardesign, art, music, songs, director, ... */
+  staff: Record<string, Tally[]>;
+  /** By tag category: cont, ero, tech. */
+  tags: Record<string, TagTally[]>;
+}
+
+/** Counts over these titles (at most the API's id ceiling), `top` of each. */
+export async function vnStats(ids: string[], top: number): Promise<VNStats> {
+  return get<VNStats>('/stats/vn', { id: ids.join(','), top: String(top) });
+}
+
+export interface Pick {
+  id: string;
+  score: number;
+  /** The titles it came from, most telling first. */
+  because: string[];
+}
+
+/** Titles alike to `from` (each with a weight; below zero pushes away), none
+ *  of `exclude`. */
+export async function recommend(
+  from: { id: string; weight: number }[],
+  exclude: string[],
+  limit: number,
+): Promise<Pick[]> {
+  const answer = await get<{ results: Pick[] }>('/recommend/vn', {
+    from: from.map(f => `${f.id}:${f.weight}`).join(','),
+    exclude: exclude.join(','),
+    limit: String(limit),
+  });
+  return answer.results;
+}
+
 export interface LinkSite {
   site: string;
   label: string;

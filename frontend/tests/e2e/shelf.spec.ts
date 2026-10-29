@@ -175,7 +175,7 @@ test('ratings are changed several at once on the ratings page', async ({ page, u
   await user.call('PUT', '/ratings/v17', { rating: 3 });
   await user.call('PUT', '/ratings/v11', { rating: 4 });
 
-  await page.goto('/u/ratings');
+  await page.goto('/u/ratings?view=ratings');
   await expect(page.locator("[data-results] a[href^='/v']")).toHaveCount(2);
 
   await page.getByRole('button', { name: 'Select', exact: true }).click();

@@ -6,6 +6,7 @@ import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { Icon } from '@/components/ui/Icon';
 import type { ReleaseTitle } from '@/lib/types';
+import { surface } from '@/components/ui/Surface';
 
 export function ReleaseTitles({ titles, olang }: { titles: ReleaseTitle[]; olang: string }) {
   // The release's own language leads; the rest follow as they arrive, which is
@@ -15,7 +16,7 @@ export function ReleaseTitles({ titles, olang }: { titles: ReleaseTitle[]; olang
   const bare = order.filter(t => !t.title && !t.latin);
 
   return (
-    <dl className="rounded-lg border border-white/5 bg-surface">
+    <dl className={surface()}>
       {named.map(t => (
         <div
           key={t.lang}

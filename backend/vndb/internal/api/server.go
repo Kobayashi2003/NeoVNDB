@@ -97,6 +97,9 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	// route instead of being a filter on the unified endpoint.
 	mux.HandleFunc("GET /vn/{id}/relations", s.relationGraph)
 	mux.HandleFunc("GET /facets/{type}/{filter}", s.facet)
+	// Aggregates over a set of visual novels, for the reader's dashboard.
+	mux.HandleFunc("GET /stats/vn", s.vnStats)
+	mux.HandleFunc("GET /recommend/vn", s.recommend)
 	mux.HandleFunc("GET /{type}", s.query)
 	return recovering(s.log, logging(s.log, mux))
 }

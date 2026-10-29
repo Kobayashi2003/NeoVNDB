@@ -16,6 +16,7 @@ import { AgeRating } from '@/components/ui/AgeRating';
 import { Icon } from '@/components/ui/Icon';
 import { Name } from '@/components/ui/Name';
 import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
+import { surface } from '@/components/ui/Surface';
 import { usePrefs } from '@/hooks/usePrefs';
 import type {
   CharacterRow,
@@ -50,7 +51,11 @@ function Tile({
 
   return (
     <Link href={href} className="group block h-full">
-      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/5 bg-surface transition-transform duration-200 hover:scale-[1.02] hover:border-white/20">
+      <div
+        className={surface(
+          'flex h-full flex-col overflow-hidden transition-transform duration-200 hover:scale-[1.02] hover:border-white/20',
+        )}
+      >
         <div className={cn('relative w-full shrink-0 overflow-hidden bg-elevated', ratio)}>
           {image ? (
             <ImageWithFallback

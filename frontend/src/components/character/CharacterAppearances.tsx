@@ -13,6 +13,7 @@ import { SpoilerReveals } from '@/components/ui/SpoilerReveals';
 import type { SpoilerControl } from '@/hooks/useSpoilerLevel';
 import type { Seiyuu } from '@/lib/types';
 import { Name } from '@/components/ui/Name';
+import { surface } from '@/components/ui/Surface';
 
 type Order = 'role' | 'date';
 
@@ -59,7 +60,7 @@ export function CharacterAppearances({
         className="self-start"
       />
 
-      <div className="rounded-lg border border-white/5 bg-surface">
+      <div className={surface()}>
         {sorted.map(a => (
           <div
             key={a.id}

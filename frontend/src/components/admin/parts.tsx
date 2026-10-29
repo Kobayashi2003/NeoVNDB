@@ -3,6 +3,7 @@
 
 import { cn } from '@/lib/utils';
 import type { Job } from '@/lib/admin';
+import { surface } from '@/components/ui/Surface';
 
 export const FIELD =
   'rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30';
@@ -19,12 +20,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        'flex min-w-0 flex-col gap-3 rounded-lg border border-white/5 bg-surface p-4',
-        className,
-      )}
-    >
+    <section className={surface(cn('flex min-w-0 flex-col gap-3 p-4', className))}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{title}</h2>
         {aside}

@@ -11,6 +11,7 @@ import {
   type Account,
 } from '@/lib/admin';
 import { errorText } from '@/lib/user';
+import { Placeholder, surface } from '@/components/ui/Surface';
 import { Button, Trouble, when } from './parts';
 
 export function UsersTab({ self }: { self: number }) {
@@ -49,17 +50,13 @@ export function UsersTab({ self }: { self: number }) {
   }
 
   if (!list) {
-    return error ? (
-      <Trouble text={error} />
-    ) : (
-      <div className="h-40 animate-pulse rounded-lg bg-white/5" aria-hidden />
-    );
+    return error ? <Trouble text={error} /> : <Placeholder className="h-40" />;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <Trouble text={error} />
-      <div className="overflow-x-auto rounded-lg border border-white/5 bg-surface">
+      <div className={surface('overflow-x-auto')}>
         <table className="w-full min-w-[44rem] text-left text-xs">
           <thead className="text-muted">
             <tr>

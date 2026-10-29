@@ -8,6 +8,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
 import { SignInFirst } from '@/components/user/SignInFirst';
 import { TabBar } from '@/components/ui/TabBar';
+import { Placeholder, surface } from '@/components/ui/Surface';
 import { MirrorTab } from './MirrorTab';
 import { TranslationsTab } from './TranslationsTab';
 import { UsersTab } from './UsersTab';
@@ -23,7 +24,7 @@ export function AdminPanel() {
   const [tab, setTab] = useState('mirror');
 
   if (session.status === 'unknown') {
-    return <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
+    return <Placeholder className="h-64 w-full" />;
   }
   if (session.status === 'out' || !session.user) {
     return (
@@ -55,9 +56,5 @@ export function AdminPanel() {
 }
 
 function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="w-full max-w-md rounded-lg border border-white/5 bg-surface p-6 text-sm text-muted">
-      {children}
-    </div>
-  );
+  return <div className={surface('w-full max-w-md p-6 text-sm text-muted')}>{children}</div>;
 }

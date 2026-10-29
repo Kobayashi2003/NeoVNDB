@@ -4,9 +4,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Library } from 'lucide-react';
+import { Library } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
+import { Chevron, pill } from '@/components/ui/Pill';
 import { LIST, TYPES } from '@/lib/list';
 import type { Collection } from '@/lib/user';
 import { useMenu } from '@/hooks/useMenu';
@@ -80,14 +81,11 @@ export function CollectionPicker({
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className="flex max-w-full items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/20"
+        className={pill({ tone: open ? 'on' : 'filled', className: 'max-w-full gap-1.5' })}
       >
         <Library className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="truncate">{here?.name ?? 'Your lists'}</span>
-        <ChevronDown
-          className={cn('icon-text h-3 w-3 shrink-0 transition-transform', open && 'rotate-180')}
-          aria-hidden
-        />
+        <Chevron open={open} />
       </button>
 
       {open && (

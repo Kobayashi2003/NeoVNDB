@@ -2,12 +2,13 @@
  *  (about this release's use of it). */
 
 import type { Drm } from '@/lib/types';
+import { surface } from '@/components/ui/Surface';
 
 export function ReleaseDRM({ drm }: { drm: Drm[] }) {
   return (
     <div className="flex flex-col gap-2">
       {drm.map(d => (
-        <div key={d.id} className="rounded-lg border border-white/5 bg-surface px-3 py-2">
+        <div key={d.id} className={surface('px-3 py-2')}>
           <p className="text-sm font-medium">{d.name}</p>
           {d.description && <p className="mt-0.5 text-xs text-muted">{d.description}</p>}
           {d.notes && <p className="mt-1 text-xs text-white/80">{d.notes}</p>}

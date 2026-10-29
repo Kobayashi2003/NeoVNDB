@@ -8,12 +8,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  ChevronDown,
   KeyRound,
+  LayoutDashboard,
   ListChecks,
   LogOut,
   MonitorSmartphone,
-  Star,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +20,7 @@ import { UserError } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
+import { Chevron } from '@/components/ui/Pill';
 
 /** The signed-in button's shape, which the placeholder copies. */
 const NAME_BUTTON = 'flex max-w-36 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium';
@@ -37,7 +37,7 @@ export function UserMenu({ name }: { name: string | null }) {
           aria-hidden
         >
           <span className="truncate">{name}</span>
-          <ChevronDown className="icon-text h-3 w-3 shrink-0" />
+          <Chevron open={false} />
         </span>
       );
     }
@@ -102,10 +102,7 @@ function SignedIn() {
         className={cn(NAME_BUTTON, 'bg-white/10 transition-colors hover:bg-white/20')}
       >
         <span className="truncate">{session.user?.username}</span>
-        <ChevronDown
-          className={cn('icon-text h-3 w-3 shrink-0 transition-transform', open && 'rotate-180')}
-          aria-hidden
-        />
+        <Chevron open={open} />
       </button>
 
       {open && (
@@ -122,8 +119,8 @@ function SignedIn() {
             Your lists
           </Link>
           <Link href="/u/ratings" onClick={() => setOpen(false)} className={menuItem()}>
-            <Star className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-            Your ratings
+            <LayoutDashboard className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            Dashboard
           </Link>
           <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
             <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />

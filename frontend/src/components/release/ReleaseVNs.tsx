@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { enumLabel } from '@/lib/enums';
 import type { ReleasedVN } from '@/lib/types';
 import { Name } from '@/components/ui/Name';
+import { surface } from '@/components/ui/Surface';
 
 /** Complete reads as the plain case; the other two are qualifications. */
 const RTYPE_CLASS: Record<string, string> = {
@@ -17,7 +18,7 @@ const RTYPE_CLASS: Record<string, string> = {
 
 export function ReleaseVNs({ vns }: { vns: ReleasedVN[] }) {
   return (
-    <div className="rounded-lg border border-white/5 bg-surface">
+    <div className={surface()}>
       {vns.map(v => (
         <div
           key={v.id}

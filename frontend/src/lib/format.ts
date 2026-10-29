@@ -38,13 +38,6 @@ export function compactCount(n: number): string {
   return COMPACT.format(n);
 }
 
-/** vndb writes the age rating as a heart plus the minimum age, where the heart
- *  says whether there are erotic scenes rather than repeating the age. */
-export function ageRating(minage: number | null): string {
-  if (minage === null) return '—';
-  return minage === 0 ? 'All ages' : `${minage}+`;
-}
-
 /** "1 DVD", "2 CDs" -- what a release row shows for its medium. */
 export function medium(m: { medium: string; qty: number }): string {
   const label = enumLabel('MEDIUM', m.medium);

@@ -9,12 +9,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, ListFilter, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronRight, ListFilter, SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { facet } from '@/lib/api';
 import { LIST } from '@/lib/list';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { MenuLabel, MenuMark, MenuPanel, menuAction, menuItem } from '@/components/ui/Menu';
+import { Chevron, pill } from '@/components/ui/Pill';
 import { filtersOf, one, withParams, type Params } from '@/lib/href';
 import { useMenu } from '@/hooks/useMenu';
 import type { Choice, Filter } from '@/lib/filters';
@@ -104,20 +105,12 @@ export function FilterBar({
           type="button"
           onClick={() => setPanel(p => !p)}
           aria-expanded={panel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-            count > 0 || panel
-              ? 'bg-white/20 text-white'
-              : 'bg-white/10 text-white hover:bg-white/15',
-          )}
+          className={pill({ tone: count > 0 || panel ? 'on' : 'filled', className: 'gap-1.5' })}
         >
           <SlidersHorizontal className="icon-text size-3" aria-hidden />
           Filters
           {count > 0 && <span className="tabular-nums text-muted">· {count}</span>}
-          <ChevronDown
-            className={cn('icon-text size-3 transition-transform', panel && 'rotate-180')}
-            aria-hidden
-          />
+          <Chevron open={panel} />
         </button>
         {sort && <SortMenu path={path} params={params} {...sort} align="end" />}
       </div>
@@ -187,17 +180,11 @@ export function FilterBar({
           type="button"
           onClick={() => setBuilding(b => !b)}
           aria-expanded={building}
-          className={cn(
-            'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors',
-            expression ? 'bg-white/20 text-white' : 'text-muted hover:bg-white/10 hover:text-white',
-          )}
+          className={pill({ tone: expression ? 'on' : 'quiet', size: 'sm' })}
         >
           <ListFilter className="icon-text h-3 w-3" aria-hidden />
           Conditions
-          <ChevronDown
-            className={cn('icon-text h-3 w-3 transition-transform', building && 'rotate-180')}
-            aria-hidden
-          />
+          <Chevron open={building} />
         </button>
 
         {chips}
@@ -320,12 +307,7 @@ function FilterMenu({
           type="button"
           onClick={() => setOpen(o => !o)}
           aria-expanded={open}
-          className={cn(
-            'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors',
-            chosen.length > 0
-              ? 'bg-white/20 text-white'
-              : 'text-muted hover:bg-white/10 hover:text-white',
-          )}
+          className={pill({ tone: chosen.length > 0 ? 'on' : 'quiet', size: 'sm' })}
         >
           {filter.label}
           {chosen.length === 1 && !filter.multiple && (
@@ -334,10 +316,7 @@ function FilterMenu({
           {filter.multiple && chosen.length > 0 && (
             <span className="tabular-nums text-muted">{chosen.length}</span>
           )}
-          <ChevronDown
-            className={cn('icon-text h-3 w-3 transition-transform', open && 'rotate-180')}
-            aria-hidden
-          />
+          <Chevron open={open} />
         </button>
       )}
 

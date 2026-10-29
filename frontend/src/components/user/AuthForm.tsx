@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { errorText, RULES } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
+import { surface } from '@/components/ui/Surface';
 
 /** These two, which are no place to arrive already signed in. */
 const AUTH = new Set(['/login', '/register']);
@@ -52,10 +53,7 @@ export function AuthForm({ mode, next }: { mode: 'login' | 'register'; next?: st
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-white/5 bg-surface p-6"
-    >
+    <form onSubmit={submit} className={surface('flex w-full max-w-sm flex-col gap-4 p-6')}>
       <div>
         <h1 className="text-lg font-bold">{registering ? 'Create an account' : 'Sign in'}</h1>
         <p className="mt-1 text-xs text-muted">

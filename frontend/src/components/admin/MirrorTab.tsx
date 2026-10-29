@@ -16,6 +16,7 @@ import {
   type MirrorStatus,
 } from '@/lib/admin';
 import { errorText } from '@/lib/user';
+import { Placeholder } from '@/components/ui/Surface';
 import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
 
 /** While something runs the page follows it; otherwise it reads once. */
@@ -77,7 +78,7 @@ export function MirrorTab() {
   }
 
   if (!mirror || !images || !saved) {
-    return <div className="h-64 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />;
+    return <Placeholder className="h-64 w-full" />;
   }
 
   const m = mirror.value;

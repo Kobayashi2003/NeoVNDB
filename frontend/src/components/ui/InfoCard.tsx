@@ -1,6 +1,7 @@
 /** The card surface every sidebar panel sits on, and the rows that go in it. */
 
 import { cn } from '@/lib/utils';
+import { surface } from './Surface';
 
 /** `padding="rows"` suits a stack of InfoRows, which carry their own vertical
  *  padding; `"block"` suits free-form content. */
@@ -14,13 +15,7 @@ export function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        'rounded-lg border border-white/5 bg-surface',
-        padding === 'rows' ? 'px-3 py-1' : 'px-3 py-2',
-        className,
-      )}
-    >
+    <div className={surface(cn(padding === 'rows' ? 'px-3 py-1' : 'px-3 py-2', className))}>
       {children}
     </div>
   );

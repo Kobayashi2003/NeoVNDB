@@ -17,6 +17,7 @@ import {
 } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
+import { Placeholder } from '@/components/ui/Surface';
 import { SignInFirst } from './SignInFirst';
 
 export function CollectionsPanel() {
@@ -42,9 +43,7 @@ export function CollectionsPanel() {
   if (session.status === 'unknown' || (lists === null && !held.error)) {
     // Keyed apart from the panel, so the panel is a new element rather than
     // this one grown: one that grows and moves counts as a shift.
-    return (
-      <div key="waiting" className="h-40 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
-    );
+    return <Placeholder key="waiting" className="h-40 w-full" />;
   }
 
   const changed = () => void refreshCollections();

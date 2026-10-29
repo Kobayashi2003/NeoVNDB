@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { UserRound } from 'lucide-react';
 import { errorText, RULES } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
+import { Placeholder, surface } from '@/components/ui/Surface';
 import { SignInFirst } from './SignInFirst';
 
 export function AccountPanel() {
@@ -15,13 +16,7 @@ export function AccountPanel() {
   if (session.status === 'unknown') {
     // Keyed apart from the panel, so the panel is a new element rather than
     // this one moved and grown (a layout shift).
-    return (
-      <div
-        key="waiting"
-        className="h-40 w-full max-w-sm animate-pulse rounded-lg bg-white/5"
-        aria-hidden
-      />
-    );
+    return <Placeholder key="waiting" className="h-40 w-full max-w-sm" />;
   }
   if (session.status === 'out' || !session.user) {
     return (
@@ -35,7 +30,7 @@ export function AccountPanel() {
 
   return (
     <div key="account" className="flex w-full max-w-sm flex-col gap-4">
-      <div className="rounded-lg border border-white/5 bg-surface p-6">
+      <div className={surface('p-6')}>
         <h1 className="text-lg font-bold">{user.username}</h1>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
           <dt className="text-muted">Email</dt>
@@ -87,10 +82,7 @@ function PasswordForm() {
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="flex flex-col gap-4 rounded-lg border border-white/5 bg-surface p-6"
-    >
+    <form onSubmit={submit} className={surface('flex flex-col gap-4 p-6')}>
       <div>
         <h2 className="text-sm font-semibold">Change password</h2>
         {/* Said here because it is surprising the first time and deliberate:

@@ -12,6 +12,7 @@ import { display } from '@/lib/format';
 import { Icon } from '@/components/ui/Icon';
 import { usePrefs } from '@/hooks/usePrefs';
 import type { Edition, StaffCredit } from '@/lib/types';
+import { surface } from '@/components/ui/Surface';
 
 /** The work's credits, then each edition's in dump order. A credit whose
  *  edition is missing from the list is kept under its number, not dropped. */
@@ -78,7 +79,7 @@ function Credits({ credits, className }: { credits: StaffCredit[]; className?: s
   const { original } = usePrefs();
 
   return (
-    <dl className={cn('rounded-lg border border-white/5 bg-surface px-3 py-1', className)}>
+    <dl className={surface(cn('px-3 py-1', className))}>
       {byRole(credits).map(([role, list]) => (
         <div
           key={role}

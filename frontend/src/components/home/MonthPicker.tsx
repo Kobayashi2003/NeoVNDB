@@ -4,9 +4,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuPanel } from '@/components/ui/Menu';
+import { Chevron } from '@/components/ui/Pill';
 import { withParams, type Params } from '@/lib/href';
 import { useMenu } from '@/hooks/useMenu';
 import { monthName, monthNames, stepMonth } from '@/lib/months';
@@ -69,13 +70,7 @@ export function MonthPicker({
             {monthName(month)} {year}
           </span>
         </span>
-        <ChevronDown
-          className={cn(
-            'icon-text h-3 w-3 shrink-0 text-muted transition-transform',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
+        <Chevron open={open} className="text-muted" />
       </button>
 
       <Link

@@ -6,7 +6,6 @@ import { useState } from 'react';
 import {
   BookOpen,
   Building2,
-  ChevronDown,
   Disc3,
   type LucideIcon,
   PenLine,
@@ -19,6 +18,7 @@ import { conditionOf, CONDITIONS, nestable, relatedType } from '@/lib/conditions
 import { group, type Group, leaf } from '@/lib/expr';
 import { cn } from '@/lib/utils';
 import { menuItem, MenuLabel, MenuMark } from '@/components/ui/Menu';
+import { Chevron } from '@/components/ui/Pill';
 import { Popover, useBuilder } from './context';
 import { RemoveItem, SearchBox } from './parts';
 
@@ -49,10 +49,7 @@ export function ModeMenu({ node, onRemove }: { node: Group; onRemove?: () => voi
           )}
         >
           {mode.label}
-          <ChevronDown
-            className={cn('icon-text size-3 transition-transform', open && 'rotate-180')}
-            aria-hidden
-          />
+          <Chevron open={open} />
         </button>
       )}
     >

@@ -7,9 +7,10 @@ import { useState } from 'react';
 import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { ChevronRight } from 'lucide-react';
-import { Icon } from '@/components/ui/Icon';
-import { ReleaseRow } from './ReleaseRow';
 import type { Release } from '@/lib/types';
+import { Icon } from '@/components/ui/Icon';
+import { surface } from '@/components/ui/Surface';
+import { ReleaseRow } from './ReleaseRow';
 
 const UNKNOWN = '__none__';
 
@@ -53,7 +54,7 @@ export function VNReleases({ releases, olang }: { releases: Release[]; olang: st
         const list = groups.get(lang)!;
         const isOpen = open.has(lang);
         return (
-          <div key={lang} className="overflow-hidden rounded-lg border border-white/5 bg-surface">
+          <div key={lang} className={surface('overflow-hidden')}>
             <button
               onClick={() => toggle(lang)}
               className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-white/5"

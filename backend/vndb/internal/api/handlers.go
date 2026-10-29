@@ -87,6 +87,93 @@ func (s *Server) facet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// vnStats counts what the visual novels a request matches have in common:
+// developers, publishers, people per role and tags, ?top= of each (10).
+func (s *Server) vnStats(w http.ResponseWriter, r *http.Request) {
+	resolver, ok := s.resolvers[vndb.TypeVN].(*vn.Resolver)
+	if !ok {
+		fail(w, http.StatusNotImplemented, "vn is not served yet")
+		return
+	}
+	req, err := query.Parse(s.cat, resolver.Registry(), s.limits, r)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	top, ok := s.count(w, req.Filters, "top", 10)
+	if !ok {
+		return
+	}
+
+	ctx, cancel := s.withTimeout(r.Context())
+	defer cancel()
+
+	key := cache.Key(s.gen.current(ctx), "stats", strconv.Itoa(top), req.Canonical(vndb.TypeVN))
+	s.cached(ctx, w, key, "vn stats", func() (any, error) {
+		return resolver.Stats(ctx, req, top)
+	})
+}
+
+// recommend suggests visual novels alike to ?from= (titles, each with an
+// optional weight) and not in ?exclude=, ?limit= of them (24).
+func (s *Server) recommend(w http.ResponseWriter, r *http.Request) {
+	resolver, ok := s.resolvers[vndb.TypeVN].(*vn.Resolver)
+	if !ok {
+		fail(w, http.StatusNotImplemented, "vn is not served yet")
+		return
+	}
+	q := r.URL.Query()
+	from, err := vn.ParseLiked(q.Get("from"), s.limits.MaxIDs)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	exclude := []int32{}
+	if raw := q.Get("exclude"); raw != "" {
+		if exclude, err = vndb.ParseIDs(vndb.TypeVN, raw, s.limits.MaxIDs); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	limit, ok := s.count(w, map[string]string{"limit": q.Get("limit")}, "limit", s.limits.PageSize)
+	if !ok {
+		return
+	}
+
+	ctx, cancel := s.withTimeout(r.Context())
+	defer cancel()
+
+	key := cache.Key(s.gen.current(ctx), "recommend", q.Get("from"), q.Get("exclude"), strconv.Itoa(limit))
+	s.cached(ctx, w, key, "recommend", func() (any, error) {
+		picks, err := resolver.Recommend(ctx, from, exclude, limit)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"results": picks}, nil
+	})
+}
+
+// count takes a positive whole number out of params (removing it, so a list
+// request does not read it as a filter), or fallback when absent; above the
+// page size ceiling is refused. False means the reply is already sent.
+func (s *Server) count(w http.ResponseWriter, params map[string]string, name string, fallback int) (int, bool) {
+	raw, given := params[name]
+	delete(params, name)
+	if !given || raw == "" {
+		return fallback, true
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 1 {
+		fail(w, http.StatusBadRequest, name+" must be a positive number")
+		return 0, false
+	}
+	if max := s.limits.MaxPageSize; max > 0 && n > max {
+		fail(w, http.StatusBadRequest, fmt.Sprintf("%s may not exceed %d", name, max))
+		return 0, false
+	}
+	return n, true
+}
+
 func (s *Server) relationGraph(w http.ResponseWriter, r *http.Request) {
 	resolver, ok := s.resolvers[vndb.TypeVN].(*vn.Resolver)
 	if !ok {

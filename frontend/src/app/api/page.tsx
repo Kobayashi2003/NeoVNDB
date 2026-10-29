@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { openapi, type FieldSchema, type OpenAPI, type Operation } from '@/lib/api';
 import { conditionOf, type Condition } from '@/lib/conditions';
 import { LIST, TYPES } from '@/lib/list';
+import { surface } from '@/components/ui/Surface';
 
 export const metadata: Metadata = { title: 'API - NeoVNDB' };
 
@@ -45,7 +46,7 @@ export default async function ApiPage() {
         </p>
       </header>
 
-      <section className="rounded-lg border border-white/5 bg-surface p-4">
+      <section className={surface('p-4')}>
         <h2 className="mb-2 text-sm font-semibold">Filters and conditions</h2>
         <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-white/80">
           {doc.info.description}
@@ -68,7 +69,7 @@ export default async function ApiPage() {
         );
       })}
 
-      <section className="rounded-lg border border-white/5 bg-surface p-4">
+      <section className={surface('p-4')}>
         <h2 className="mb-2 text-sm font-semibold">Other endpoints</h2>
         <ul className="flex flex-col gap-1.5 text-xs">
           {Object.entries(doc.paths)
@@ -104,7 +105,7 @@ function TypeSection({
   const sorts = params.find(p => p.name === 'sort')?.schema?.enum ?? [];
 
   return (
-    <details className="rounded-lg border border-white/5 bg-surface">
+    <details className={surface()}>
       <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3">
         <span className="text-sm font-semibold">{LIST[letter].label}</span>
         <code className={CODE}>
