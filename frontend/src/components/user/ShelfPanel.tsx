@@ -11,13 +11,14 @@ import { LIST, PAGE_SIZE, readsDown, type Sort } from '@/lib/list';
 import { one, withParams, type Params } from '@/lib/href';
 import { readShelf, type OwnSort, type ShelfPage, type ShelfSource } from '@/lib/shelf';
 import { errorText } from '@/lib/user';
+import { still } from '@/lib/viewTransitions';
 import { Results } from '@/components/results/Results';
 import { Pagination } from '@/components/results/Pagination';
 import { SortLinks } from '@/components/results/SortLinks';
 import { Selectable } from '@/components/ui/Selection';
 import { useNavigate } from '@/hooks/useNavigate';
 import { useShelfChoice, type Choosing } from '@/hooks/useShelfChoice';
-import { Missing, Rated, SearchInList } from './ShelfParts';
+import { Mine, Missing, SearchInList } from './ShelfParts';
 
 interface Held extends ShelfPage {
   /** The request this answers; while it differs from the one wanted, the
@@ -129,41 +130,56 @@ export function ShelfPanel({
   const sorts: Sort[] = [...own, ...(held?.tooBig ? [] : LIST[shownType].sorts)];
   // Highlight the order actually used, not the one in the address.
   const showing = held?.tooBig && !ownSort ? own[0].value : sort;
+  // Ordered by when items were saved or rated, the cards say when.
+  const dated = (id: string) => {
+    const at = ownSort?.dated ? held?.dates.get(id) : undefined;
+    return at && ownSort ? { at, label: ownSort.label } : undefined;
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
-          {held && (
-            <span className="shrink-0 text-sm tabular-nums text-muted">
-              {held.count.toLocaleString()}
-            </span>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {aside}
-          {rows.length > 0 && !choice.selecting && (
-            <button
-              type="button"
-              onClick={choice.start}
-              className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <ListChecks className="icon-text h-3.5 w-3.5" aria-hidden />
-              Select
-            </button>
-          )}
-        </div>
-      </div>
-
-      {tabs}
-
-      {(held === null || held.count > 0 || search) && (
+      {/* Still across pages, orders and searches of one list; raised so the
+          sort menu opens over the results. */}
+      <div style={still(`head${path}`)} className="relative z-20 flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <SortLinks path={path} params={params} sorts={sorts} active={showing} reverse={reverse} />
-          <SearchInList path={path} params={params} initial={search} noun={noun} />
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
+            {held && (
+              <span className="shrink-0 text-sm tabular-nums text-muted">
+                {held.count.toLocaleString()}
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {aside}
+            {rows.length > 0 && !choice.selecting && (
+              <button
+                type="button"
+                onClick={choice.start}
+                className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <ListChecks className="icon-text h-3.5 w-3.5" aria-hidden />
+                Select
+              </button>
+            )}
+          </div>
         </div>
-      )}
+
+        {tabs}
+
+        {(held === null || held.count > 0 || search) && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SortLinks
+              path={path}
+              params={params}
+              sorts={sorts}
+              active={showing}
+              reverse={reverse}
+            />
+            <SearchInList path={path} params={params} initial={search} noun={noun} />
+          </div>
+        )}
+      </div>
 
       {held?.missing ? (
         <Missing
@@ -220,26 +236,19 @@ export function ShelfPanel({
           <Results
             type={shownType}
             rows={rows}
-            wrap={card => {
-              const r = held.ratings.get(card.id);
-              const node = r ? (
-                <Rated rating={r} grid={card.grid}>
+            sort={showing}
+            wrap={card => (
+              <Selectable
+                active={choice.selecting}
+                on={choice.chosen.includes(card.id)}
+                grid={card.grid}
+                onToggle={() => choice.toggle(card.id)}
+              >
+                <Mine rating={held.ratings.get(card.id)} date={dated(card.id)} grid={card.grid}>
                   {card.node}
-                </Rated>
-              ) : (
-                card.node
-              );
-              return (
-                <Selectable
-                  active={choice.selecting}
-                  on={choice.chosen.includes(card.id)}
-                  grid={card.grid}
-                  onToggle={() => choice.toggle(card.id)}
-                >
-                  {node}
-                </Selectable>
-              );
-            }}
+                </Mine>
+              </Selectable>
+            )}
           />
           <Pagination
             path={path}

@@ -323,6 +323,9 @@ export interface VNRow {
   released: string;
   rating: number | null;
   votecount: number;
+  /** vndb's length class, and the minutes players timed it at. */
+  length: number | null;
+  length_minutes: number | null;
   languages: string[];
   platforms: string[];
   devstatus: number;
@@ -334,6 +337,16 @@ export interface CharacterRow {
   name: string;
   original: string | null;
   sex: string | null;
+  age: number | null;
+  height: number | null;
+  /** A row per release the character is in, as the API gives them. */
+  vns: {
+    id: string;
+    title: string | null;
+    alttitle: string | null;
+    role: string;
+    spoiler: number;
+  }[];
   image: Image | null;
 }
 
@@ -344,6 +357,8 @@ export interface ReleaseRow {
   released: string;
   minage: number | null;
   platforms: string[];
+  /** One per language the release is in; `mtl` is a machine translation. */
+  titles: { lang: string; mtl: boolean }[];
   official: boolean;
   patch: boolean;
   freeware: boolean;

@@ -22,12 +22,16 @@ import type { OwnOrder } from './user';
  *  the service calls it. */
 export interface OwnSort extends Sort {
   by: string;
+  /** Orders by `Owned.at`, which the cards then show. */
+  dated?: boolean;
 }
 
-/** A saved id and the reader's rating of it, if any. */
+/** A saved id, the reader's rating of it if any, and when it was saved (a
+ *  list) or rated (the ratings). */
 export interface Owned {
   id: string;
   rating: number | null;
+  at: string;
 }
 
 /** Where the ids come from. Both take an order of the service's own. */
@@ -41,6 +45,8 @@ export interface ShelfPage {
   rows: { id: string }[];
   count: number;
   ratings: Map<string, number>;
+  /** `Owned.at` by id. */
+  dates: Map<string, string>;
   /** Saved ids the read API no longer has, which its orders leave out. */
   missing: number;
   /** Too long for one read API request, so only the service's orders work. */
@@ -79,8 +85,11 @@ export async function readShelf({
     const byId = new Map(answer.results.map(r => [r.id, r]));
     return owned.map(o => byId.get(o.id) ?? goneRow(o.id));
   };
-  const rated = (owned: Owned[]) =>
-    new Map(owned.filter(o => o.rating !== null).map(o => [o.id, o.rating!]));
+  // What only the reader knows about the ids, for the cards.
+  const known = (owned: Owned[]) => ({
+    ratings: new Map(owned.filter(o => o.rating !== null).map(o => [o.id, o.rating!])),
+    dates: new Map(owned.map(o => [o.id, o.at])),
+  });
   const ownDefault: OwnOrder = { sort: own[0].by, ascending: false };
   const order: OwnOrder = ownSort ? { sort: ownSort.by, ascending: !reverse } : ownDefault;
 
@@ -89,7 +98,7 @@ export async function readShelf({
     return {
       rows: await hydrate(got.rows),
       count: got.count,
-      ratings: rated(got.rows),
+      ...known(got.rows),
       missing: 0,
       tooBig: false,
     };
@@ -102,13 +111,13 @@ export async function readShelf({
     return {
       rows: await hydrate(got.rows),
       count: got.count,
-      ratings: rated(got.rows),
+      ...known(got.rows),
       missing: 0,
       tooBig: true,
     };
   }
   if (whole.items.length === 0) {
-    return { rows: [], count: 0, ratings: new Map(), missing: 0, tooBig: false };
+    return { rows: [], count: 0, ...known([]), missing: 0, tooBig: false };
   }
   const ids = whole.items.map(o => o.id).join(',');
 
@@ -124,7 +133,7 @@ export async function readShelf({
     return {
       rows: await hydrate(shown),
       count: kept.length,
-      ratings: rated(kept),
+      ...known(kept),
       missing: 0,
       tooBig: false,
     };
@@ -144,7 +153,7 @@ export async function readShelf({
   return {
     rows: answer.results,
     count: answer.count,
-    ratings: rated(whole.items),
+    ...known(whole.items),
     missing,
     tooBig: false,
   };

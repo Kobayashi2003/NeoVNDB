@@ -28,6 +28,8 @@ function vn(n: number): VNRow {
     released: '2002-08-29',
     rating: 845,
     votecount: 10,
+    length: null,
+    length_minutes: null,
     languages: ['ja'],
     platforms: ['win'],
     devstatus: 0,
@@ -224,6 +226,38 @@ describe('Results', () => {
     );
     expect(container.firstElementChild).not.toHaveClass('grid-flow-col');
     expect(screen.getByText('KID')).toBeInTheDocument();
+  });
+
+  it('shows on each card the value it is sorted by', () => {
+    const timed = { ...vn(1), votecount: 8808, length: 4, length_minutes: 1987 };
+    const { rerender } = render(<Results type="v" rows={[timed]} sort="rating" />);
+    expect(screen.getByTitle('8,808 votes')).toHaveTextContent('8.8K');
+    rerender(<Results type="v" rows={[timed]} sort="length_minutes" />);
+    expect(screen.getByTitle('Length')).toHaveTextContent('33h');
+    expect(screen.queryByTitle('8,808 votes')).toBeNull();
+
+    const cast = {
+      id: 'c1',
+      name: 'Touko',
+      original: null,
+      sex: 'f',
+      age: 17,
+      height: 158,
+      image: null,
+      vns: [
+        { id: 'v2', title: 'Secret', alttitle: null, role: 'main', spoiler: 2 },
+        { id: 'v66', title: 'CROSS†CHANNEL', alttitle: null, role: 'primary', spoiler: 0 },
+      ],
+    };
+    rerender(<Results type="c" rows={[cast]} sort="age" />);
+    expect(screen.getByText('Age 17')).toBeInTheDocument();
+    // The weightiest role among works where appearing is no spoiler.
+    expect(screen.getByText('CROSS†CHANNEL')).toBeInTheDocument();
+    expect(screen.queryByText('Secret')).toBeNull();
+    rerender(<Results type="c" rows={[cast]} sort="height" />);
+    expect(screen.getByText('158 cm')).toBeInTheDocument();
+    rerender(<Results type="c" rows={[cast]} sort="name" />);
+    expect(screen.queryByText(/Age|cm$/)).toBeNull();
   });
 });
 

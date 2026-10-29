@@ -8,6 +8,7 @@ import { list } from '@/lib/api';
 import { relatedSearch } from '@/lib/conditions';
 import { LIST, TYPES } from '@/lib/list';
 import { one } from '@/lib/href';
+import { still } from '@/lib/viewTransitions';
 import { Results } from '@/components/results/Results';
 import { Collecting, SelectToggle } from '@/components/results/Collecting';
 import { SearchField } from '@/components/layout/SearchField';
@@ -52,7 +53,8 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
 
   return (
     <main className="mx-auto flex w-full max-w-page flex-col px-4 py-6 pb-12">
-      <div className="mb-6 flex flex-col gap-3">
+      {/* Still across searches; raised so the field's menu opens over the results. */}
+      <div style={still('head/q')} className="relative z-20 mb-6 flex flex-col gap-3">
         <h1 className="text-xl font-bold sm:text-2xl">Search</h1>
         <SearchField initial={term} className="w-full max-w-xl" autoFocus={!term} />
       </div>

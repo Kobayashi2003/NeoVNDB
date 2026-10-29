@@ -41,9 +41,12 @@ const STRIP =
 /** How each type is laid out. Pictures are looked for by eye and go in a
  *  grid; the rest are looked for by name, and a grid of identical text boxes
  *  is harder to scan than rows. */
-const SHAPES: Record<string, { ratio?: string; card: (row: never) => React.ReactNode }> = {
-  v: { ratio: COVER, card: (r: VNRow) => <VNCard row={r} /> },
-  c: { ratio: PORTRAIT, card: (r: CharacterRow) => <CharacterCard row={r} /> },
+const SHAPES: Record<
+  string,
+  { ratio?: string; card: (row: never, sort?: string) => React.ReactNode }
+> = {
+  v: { ratio: COVER, card: (r: VNRow, sort) => <VNCard row={r} sort={sort} /> },
+  c: { ratio: PORTRAIT, card: (r: CharacterRow, sort) => <CharacterCard row={r} sort={sort} /> },
   r: { card: (r: ReleaseRow) => <ReleaseCard row={r} /> },
   p: { card: (r: ProducerRow) => <ProducerCard row={r} /> },
   s: { card: (r: StaffRow) => <StaffCard row={r} /> },
@@ -51,7 +54,11 @@ const SHAPES: Record<string, { ratio?: string; card: (row: never) => React.React
   i: { card: (r: TraitRow) => <TraitCard row={r} /> },
 };
 
-function build(type: string, rows: unknown[]): { layout: string; cards: Card[] } | null {
+function build(
+  type: string,
+  rows: unknown[],
+  sort?: string,
+): { layout: string; cards: Card[] } | null {
   const shape = SHAPES[type];
   if (!shape) return null;
   const grid = shape.ratio !== undefined;
@@ -60,7 +67,7 @@ function build(type: string, rows: unknown[]): { layout: string; cards: Card[] }
     cards: (rows as { id: string }[]).map(r => ({
       id: r.id,
       grid,
-      node: isGone(r) ? <GoneCard id={r.id} ratio={shape.ratio} /> : shape.card(r as never),
+      node: isGone(r) ? <GoneCard id={r.id} ratio={shape.ratio} /> : shape.card(r as never, sort),
     })),
   };
 }
@@ -79,6 +86,7 @@ export function Results({
   rows,
   wrap,
   strip = false,
+  sort,
 }: {
   type: string;
   rows: unknown[];
@@ -86,8 +94,10 @@ export function Results({
   wrap?: (card: Card) => React.ReactNode;
   /** One row that scrolls sideways instead of a grid that grows downward. */
   strip?: boolean;
+  /** The order shown, so a card can show the value it is ordered by. */
+  sort?: string;
 }) {
-  const built = build(type, rows);
+  const built = build(type, rows, sort);
   const selection = useSelection();
   const ids = built?.cards.map(c => c.id).join(',') ?? '';
   const showing = selection?.showing;

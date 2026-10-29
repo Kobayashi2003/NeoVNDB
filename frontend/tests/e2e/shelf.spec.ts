@@ -17,6 +17,16 @@ test("a list orders by the reader's rating and shows it on the cards", async ({ 
   await expect(cards.nth(1)).toHaveAttribute('href', '/v17');
   await expect(cards.nth(2)).toHaveAttribute('href', '/v2');
   await expect(page.getByTitle('Your rating: 5')).toBeVisible();
+
+  // Ordered by when they were added, the cards say when; by rating, they do not.
+  await page.goto(`/u/${list.id}?sort=added`);
+  await expect(cards).toHaveCount(3);
+  // The service's own time zone decides the day, so any date will do.
+  const added = page.getByTitle(/^Added: \d{4}-\d{2}-\d{2}$/);
+  await expect(added).toHaveCount(3);
+  await page.goto(`/u/${list.id}?sort=mine`);
+  await expect(cards).toHaveCount(3);
+  await expect(added).toHaveCount(0);
 });
 
 test('a list ordered by a vndb field pages through it, not the whole list on every page', async ({
@@ -42,6 +52,33 @@ test('a list ordered by a vndb field pages through it, not the whole list on eve
   expect(second.length).toBeGreaterThan(0);
   expect(second.length).toBeLessThanOrEqual(6);
   expect(second.filter(id => first.includes(id))).toEqual([]);
+});
+
+test('paging a list holds its heading and controls still', async ({ page, user }) => {
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Paged' })
+  ).json()) as { id: number };
+  await user.call('POST', `/collections/${list.id}/marks/add`, {
+    items: Array.from({ length: 30 }, (_, i) => `v${i + 1}`),
+  });
+  await page.goto(`/u/${list.id}`);
+  await expect(page.locator("[data-results] a[href^='/v']").first()).toBeVisible();
+  // The element drawn as its own still layer, kept on the window to compare.
+  const sameHead = (name: string) =>
+    page.evaluate(name => {
+      const w = window as { head?: Element };
+      const now = [...document.querySelectorAll('main *')].find(
+        e => getComputedStyle(e).viewTransitionName === name,
+      );
+      const same = !!now && (w.head ?? now) === now;
+      w.head = now;
+      return same;
+    }, name);
+  expect(await sameHead(`still-head-u-${list.id}`)).toBe(true);
+
+  await page.getByRole('navigation', { name: 'Pages' }).getByRole('link', { name: '2' }).click();
+  await expect(page).toHaveURL(/page=2/);
+  expect(await sameHead(`still-head-u-${list.id}`)).toBe(true);
 });
 
 test('moving between lists redraws the list, not the column beside it', async ({ page, user }) => {

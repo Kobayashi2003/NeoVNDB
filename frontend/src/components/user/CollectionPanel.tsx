@@ -5,19 +5,21 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { LIST } from '@/lib/list';
-import { items, marks, moveMarks, removeMarks } from '@/lib/user';
+import { items, marks, moveMarks, removeMarks, type Mark } from '@/lib/user';
 import type { Params } from '@/lib/href';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
-import type { OwnSort, ShelfSource } from '@/lib/shelf';
+import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
 import { ShelfPanel } from './ShelfPanel';
 import { SelectBar } from './SelectBar';
 import { CollectionPicker } from './CollectionSwitcher';
 
 /** The orders only the user service knows. */
 const OWN: OwnSort[] = [
-  { value: 'added', by: 'added', label: 'Added', descending: true },
+  { value: 'added', by: 'added', label: 'Added', descending: true, dated: true },
   { value: 'mine', by: 'rating', label: 'My rating', descending: true },
 ];
+
+const owned = (m: Mark): Owned => ({ id: m.id, rating: m.rating, at: m.marked_at });
 
 export function CollectionPanel({
   id,
@@ -34,8 +36,8 @@ export function CollectionPanel({
   const source = useMemo<ShelfSource>(
     () => ({
       page: (order, p, limit) =>
-        marks(id, order, p, limit).then(r => ({ rows: r.results, count: r.count })),
-      all: order => items(id, order),
+        marks(id, order, p, limit).then(r => ({ rows: r.results.map(owned), count: r.count })),
+      all: order => items(id, order).then(r => ({ items: r.items.map(owned), count: r.count })),
     }),
     [id],
   );

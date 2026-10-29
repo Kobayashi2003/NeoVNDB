@@ -17,6 +17,8 @@ function vn(n: number): VNRow {
     released: '2002-08-29',
     rating: 845,
     votecount: 10,
+    length: null,
+    length_minutes: null,
     languages: ['ja'],
     platforms: ['win'],
     devstatus: 0,

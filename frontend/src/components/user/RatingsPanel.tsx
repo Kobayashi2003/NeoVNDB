@@ -6,12 +6,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
-import { clearRatings, ratedItems, ratingCounts, ratings, setRatings } from '@/lib/user';
+import {
+  clearRatings,
+  ratedItems,
+  ratingCounts,
+  ratings,
+  setRatings,
+  type Rated,
+} from '@/lib/user';
 import { one, withParams, type Params } from '@/lib/href';
 import { LIST, TYPES } from '@/lib/list';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/useSession';
-import type { OwnSort, ShelfSource } from '@/lib/shelf';
+import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
 import { ShelfPanel } from './ShelfPanel';
 import { RatingsBar } from './RatingsBar';
 import { SignInFirst } from './SignInFirst';
@@ -21,8 +28,10 @@ const PATH = '/u/ratings';
 /** The orders only the user service knows. */
 const OWN: OwnSort[] = [
   { value: 'mine', by: 'rating', label: 'My rating', descending: true },
-  { value: 'rated', by: 'rated', label: 'Rated on', descending: true },
+  { value: 'rated', by: 'rated', label: 'Rated on', descending: true, dated: true },
 ];
+
+const owned = (r: Rated): Owned => ({ id: r.id, rating: r.rating, at: r.rated_at });
 
 export function RatingsPanel({ page, params }: { page: number; params: Params }) {
   const session = useSession();
@@ -61,8 +70,9 @@ function Ratings({ page, params }: { page: number; params: Params }) {
   const source = useMemo<ShelfSource>(
     () => ({
       page: (order, p, limit) =>
-        ratings(type, order, p, limit).then(r => ({ rows: r.results, count: r.count })),
-      all: order => ratedItems(type, order),
+        ratings(type, order, p, limit).then(r => ({ rows: r.results.map(owned), count: r.count })),
+      all: order =>
+        ratedItems(type, order).then(r => ({ items: r.items.map(owned), count: r.count })),
     }),
     [type],
   );

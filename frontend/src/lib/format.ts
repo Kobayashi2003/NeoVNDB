@@ -24,6 +24,20 @@ export function length(code: number | null, minutes: number | null, votes: numbe
   return label ? `${label} (${clock} from ${from})` : `${clock} from ${from}`;
 }
 
+/** A length as a card has room for: hours from players' timings, else vndb's
+ *  length class. */
+export function shortLength(code: number | null, minutes: number | null): string {
+  if (minutes) return minutes < 60 ? `${minutes}m` : `${Math.round(minutes / 60)}h`;
+  return code === null ? '—' : enumLabel('LENGTH', code);
+}
+
+const COMPACT = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+/** A count as a card has room for: 8.8K. */
+export function compactCount(n: number): string {
+  return COMPACT.format(n);
+}
+
 /** vndb writes the age rating as a heart plus the minimum age, where the heart
  *  says whether there are erotic scenes rather than repeating the age. */
 export function ageRating(minage: number | null): string {

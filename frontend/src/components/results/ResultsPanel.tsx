@@ -90,7 +90,7 @@ export function ResultsPanel({
           <p className="py-12 text-center text-sm text-muted">{empty}</p>
         ) : (
           <div data-results className="flex flex-col gap-4">
-            <Results type={type} rows={data.rows} />
+            <Results type={type} rows={data.rows} sort={data.sort} />
             <Pagination
               path={path}
               params={params}

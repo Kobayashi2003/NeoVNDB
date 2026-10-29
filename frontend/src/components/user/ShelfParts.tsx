@@ -9,28 +9,49 @@ import { ControlLabel } from '@/components/ui/ControlLabel';
 import { SearchPill } from '@/components/ui/SearchPill';
 import { useNavigate } from '@/hooks/useNavigate';
 
-/** The reader's rating, on the card it is of. */
-export function Rated({
+const CHIP =
+  'flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums';
+
+/** What only the reader knows of an item, on its card: their rating, and the
+ *  day they saved or rated it when that is the order. Over the picture on a
+ *  tile; before the name on a row, which makes room for it. Always rendered,
+ *  so a change of order does not remount the card. */
+export function Mine({
   rating,
+  date,
   grid,
   children,
 }: {
-  rating: number;
+  rating?: number;
+  /** An ISO timestamp, and what it is the date of ("Added"). */
+  date?: { at: string; label: string };
   grid: boolean;
   children: React.ReactNode;
 }) {
+  const room = date ? (rating === undefined ? 'pl-24' : 'pl-32') : rating !== undefined && 'pl-9';
   return (
-    <div className={cn('relative', grid ? 'h-full' : 'pl-9')}>
+    <div className={cn('relative', grid ? 'h-full' : room)}>
       {children}
       <span
-        title={`Your rating: ${rating}`}
         className={cn(
-          'pointer-events-none absolute flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums text-amber-300',
-          grid ? 'right-2 top-2' : 'left-1.5 top-1/2 -translate-y-1/2',
+          'pointer-events-none absolute flex gap-1',
+          grid ? 'right-2 top-2 flex-col items-end' : 'left-1.5 top-1/2 -translate-y-1/2',
         )}
       >
-        <Star className="h-3 w-3 fill-current" aria-hidden />
-        {rating}
+        {rating !== undefined && (
+          <span title={`Your rating: ${rating}`} className={cn(CHIP, 'text-amber-300')}>
+            <Star className="h-3 w-3 fill-current" aria-hidden />
+            {rating}
+          </span>
+        )}
+        {date && (
+          <span
+            title={`${date.label}: ${date.at.slice(0, 10)}`}
+            className={cn(CHIP, 'text-white/90')}
+          >
+            {date.at.slice(0, 10)}
+          </span>
+        )}
       </span>
     </div>
   );

@@ -152,6 +152,16 @@ export function byWork(appearances: Appearance[]): WorkAppearance[] {
   }));
 }
 
+/** The work a character's card names: their weightiest role, among works where
+ *  appearing is no spoiler. */
+export function mainWork<V extends { role: string; spoiler: number }>(vns: V[]): V | null {
+  let best: V | null = null;
+  for (const v of vns) {
+    if (v.spoiler === 0 && (!best || roleRank(v.role) < roleRank(best.role))) best = v;
+  }
+  return best;
+}
+
 /** Where a role sits in ROLE_ORDER; unknown ones after all of them. */
 export function roleRank(role: string): number {
   const at = ROLE_ORDER.indexOf(role);

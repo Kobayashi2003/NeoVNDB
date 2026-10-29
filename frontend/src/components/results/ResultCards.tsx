@@ -3,13 +3,15 @@
 'use client';
 
 import Link from 'next/link';
+import { Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mainWork } from '@/lib/characters';
 import { thumbnailURL } from '@/lib/images';
 import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { plain } from '@/lib/bbcode';
 import { shouldBlur } from '@/lib/content';
-import { display, releaseDate, score } from '@/lib/format';
+import { compactCount, display, releaseDate, score, shortLength } from '@/lib/format';
 import { AgeRating } from '@/components/ui/AgeRating';
 import { Icon } from '@/components/ui/Icon';
 import { Name } from '@/components/ui/Name';
@@ -121,15 +123,34 @@ export function GoneCard({ id, ratio }: { id: string; ratio?: string }) {
 
 /* ─── Per type ────────────────────────────────────────────────────────────── */
 
-export function VNCard({ row }: { row: VNRow }) {
+/** The order a card is shown in, so it can show the value it is ordered by. */
+type Sorted = { sort?: string };
+
+/** Date and rating always; then the length when that is the order, else the
+ *  votes, which say how much the rating is worth. */
+export function VNCard({ row, sort }: { row: VNRow } & Sorted) {
   const { original } = usePrefs();
   return (
     <Tile href={`/${row.id}`} image={row.image} alt={row.title ?? ''} ratio={COVER}>
       <p className="truncate text-xs font-semibold">{display(row.title, row.alttitle, original)}</p>
-      <p className="flex items-center gap-1.5 text-xs text-muted">
+      <p className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs text-muted">
         <span className="tabular-nums">{releaseDate(row.released)}</span>
         {row.rating !== null && (
           <span className="text-accent tabular-nums">{score(row.rating)}</span>
+        )}
+        {sort === 'length_minutes' ? (
+          <span className="inline-flex items-center gap-0.5 tabular-nums" title="Length">
+            <Clock className="icon-text size-3" aria-hidden />
+            {shortLength(row.length, row.length_minutes)}
+          </span>
+        ) : (
+          <span
+            className="inline-flex items-center gap-0.5 tabular-nums"
+            title={`${row.votecount.toLocaleString()} votes`}
+          >
+            <Users className="icon-text size-3" aria-hidden />
+            {compactCount(row.votecount)}
+          </span>
         )}
       </p>
       <p className="flex flex-wrap items-center gap-1">
@@ -144,18 +165,33 @@ export function VNCard({ row }: { row: VNRow }) {
   );
 }
 
-export function CharacterCard({ row }: { row: CharacterRow }) {
+/** Name, sex, and the work they are from; the age or height beside the sex
+ *  when that is the order. */
+export function CharacterCard({ row, sort }: { row: CharacterRow } & Sorted) {
   const { original } = usePrefs();
+  const work = mainWork(row.vns);
+  const measure =
+    sort === 'age' ? `Age ${row.age ?? '?'}` : sort === 'height' ? `${row.height ?? '?'} cm` : null;
   return (
     <Tile href={`/${row.id}`} image={row.image} alt={row.name} ratio={PORTRAIT}>
       <p className="truncate text-xs font-semibold">{display(row.name, row.original, original)}</p>
-      {row.sex && (
-        <p className="flex items-center gap-1.5 text-xs text-muted">
-          <Icon
-            cls={iconOf('CHARACTER_SEX', row.sex)}
-            title={enumLabel('CHARACTER_SEX', row.sex)}
-          />
-          {enumLabel('CHARACTER_SEX', row.sex)}
+      {(row.sex || measure) && (
+        <p className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs text-muted">
+          {row.sex && (
+            <>
+              <Icon
+                cls={iconOf('CHARACTER_SEX', row.sex)}
+                title={enumLabel('CHARACTER_SEX', row.sex)}
+              />
+              {enumLabel('CHARACTER_SEX', row.sex)}
+            </>
+          )}
+          {measure && <span className="tabular-nums text-white/80">{measure}</span>}
+        </p>
+      )}
+      {work && (
+        <p className="truncate text-xs text-muted">
+          {display(work.title, work.alttitle, original)}
         </p>
       )}
     </Tile>
@@ -167,9 +203,23 @@ export function CharacterCard({ row }: { row: CharacterRow }) {
  *  columns would leave the title a few letters, so they go under it. */
 export function ReleaseCard({ row }: { row: ReleaseRow }) {
   const date = <span className="tabular-nums">{releaseDate(row.released)}</span>;
-  const platforms = row.platforms
-    .slice(0, 5)
-    .map(p => <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />);
+  // Title and date are both on the row whatever the order, so the languages
+  // come along: what a reader most asks of a release beyond those.
+  const icons = [
+    ...row.titles
+      .slice(0, 4)
+      .map(t => (
+        <Icon
+          key={`l-${t.lang}`}
+          cls={iconOf('LANGUAGE', t.lang)}
+          title={enumLabel('LANGUAGE', t.lang) + (t.mtl ? ' (machine translation)' : '')}
+          className={t.mtl ? 'opacity-40' : undefined}
+        />
+      )),
+    ...row.platforms
+      .slice(0, 5)
+      .map(p => <Icon key={p} cls={iconOf('PLATFORM', p)} title={enumLabel('PLATFORM', p)} />),
+  ];
 
   return (
     <Row href={`/${row.id}`}>
@@ -187,12 +237,10 @@ export function ReleaseCard({ row }: { row: ReleaseRow }) {
         <span className="mt-0.5 flex items-center gap-2 text-xs text-muted sm:hidden">
           {date}
           <AgeRating minage={row.minage} />
-          <span className="inline-flex items-center gap-1">{platforms}</span>
+          <span className="inline-flex items-center gap-1">{icons}</span>
         </span>
       </span>
-      <span className="hidden shrink-0 items-center gap-1 self-center sm:inline-flex">
-        {platforms}
-      </span>
+      <span className="hidden shrink-0 items-center gap-1 self-center sm:inline-flex">{icons}</span>
     </Row>
   );
 }
