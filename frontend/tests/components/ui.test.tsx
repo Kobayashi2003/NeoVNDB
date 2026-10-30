@@ -407,12 +407,19 @@ describe('holding still while a page loads', () => {
       );
       const body = container.querySelector<HTMLElement>('.overflow-hidden')!;
       expect(body.style.maxHeight).toBe('220px');
-      // Over the fade, inside the clamped height: nothing below it moves.
+      // In the fade, inside the clamped height: nothing below it moves. The
+      // text fades itself, so the fade matches any card it is on.
       const more = screen.getByRole('button', { name: /show more/i });
       expect(more.parentElement).toHaveClass('absolute');
+      expect(more).toHaveAttribute('aria-expanded', 'false');
+      expect(body.className).toMatch(/mask-image/);
       await userEvent.click(more);
       expect(body.style.maxHeight).toBe('');
-      expect(screen.getByRole('button', { name: /show less/i })).toBeInTheDocument();
+      expect(body.className).not.toMatch(/mask-image/);
+      expect(screen.getByRole('button', { name: /show less/i })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
     } finally {
       Object.defineProperty(Element.prototype, 'scrollHeight', was);
     }
