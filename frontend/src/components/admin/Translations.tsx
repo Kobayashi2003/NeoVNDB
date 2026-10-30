@@ -1,5 +1,6 @@
 /** Tag and trait names and descriptions, beside what they are called in the
- *  target language. Edits are live at once; exporting keeps them in the repo. */
+ *  target language. Edits are live at once; exporting keeps them in the repo.
+ *  The admin page's last group. */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -14,10 +15,46 @@ import {
 import { errorText } from '@/lib/user';
 import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
-import { surface } from '@/components/ui/Surface';
+import { Placeholder, PlaceholderLines, surface } from '@/components/ui/Surface';
 import { Button, FIELD, Trouble } from './parts';
 
-export function TranslationsTab() {
+/** The count line and a few entries, each a name, its field and its
+ *  description beside the field for it. */
+function EntriesWaiting() {
+  return (
+    <>
+      <Placeholder className="h-3 w-3/5 rounded" />
+      <div className="flex flex-col gap-3">
+        {[0, 1, 2].map(i => (
+          <div key={i} className={surface('flex flex-col gap-3 p-4')} aria-hidden>
+            <Placeholder className="h-4 w-48 rounded" />
+            <Placeholder className="h-9" />
+            <div className="grid gap-3 lg:grid-cols-2">
+              <PlaceholderLines lines={4} className="rounded-lg bg-background/40 p-3" />
+              <Placeholder className="h-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** Before the session answers: the controls' row held too. */
+export function TranslationsWaiting() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3" aria-hidden>
+        <Placeholder className="h-7 w-40 rounded-full" />
+        <Placeholder className="h-3 w-28 rounded" />
+        <Placeholder className="h-7 w-56 rounded-full" />
+      </div>
+      <EntriesWaiting />
+    </div>
+  );
+}
+
+export function Translations() {
   const [category, setCategory] = useState<Category>('tag');
   const [missing, setMissing] = useState(true);
   const [query, setQuery] = useState('');
@@ -104,6 +141,7 @@ export function TranslationsTab() {
         </p>
       )}
       <Trouble text={error} />
+      {!held && !error && <EntriesWaiting />}
 
       {held && held.results.length === 0 && <p className="text-sm text-muted">Nothing here.</p>}
       <div className="flex flex-col gap-3">
@@ -152,7 +190,8 @@ function Row({ category, item }: { category: Category; item: Translatable }) {
       <Field category={category} id={item.id} field="name" saved={item.name_to} />
       {item.description && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <p className="whitespace-pre-wrap rounded-lg bg-background/40 p-3 text-xs leading-relaxed text-white/80">
+          {/* anywhere: a description's [url=…] has no space to break at. */}
+          <p className="min-w-0 whitespace-pre-wrap rounded-lg bg-background/40 p-3 text-xs leading-relaxed text-white/80 [overflow-wrap:anywhere]">
             {item.description}
           </p>
           <Field category={category} id={item.id} field="description" saved={item.description_to} />

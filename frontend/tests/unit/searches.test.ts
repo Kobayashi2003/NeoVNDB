@@ -49,8 +49,9 @@ describe('preferences from an account', () => {
   it('take what another device wrote, field by field', () => {
     expect(prefsFrom(null)).toBe(DEFAULTS);
     expect(prefsFrom('spoiler')).toBe(DEFAULTS);
-    // A newer device's field is ignored, an unknown value falls back.
-    expect(prefsFrom({ spoiler: 2, theme: 'light', layout: 'list' })).toEqual({
+    // A newer device's field is ignored, and so is one this version dropped
+    // (the characters' layout); an unknown value falls back.
+    expect(prefsFrom({ spoiler: 2, theme: 'light', layout: 'slider', sexual: 'nsfw' })).toEqual({
       ...DEFAULTS,
       spoiler: 2,
     });

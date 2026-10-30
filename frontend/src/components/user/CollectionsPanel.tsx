@@ -17,7 +17,6 @@ import {
 } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
-import { Placeholder } from '@/components/ui/Surface';
 import { SignInFirst } from './SignInFirst';
 
 export function CollectionsPanel() {
@@ -36,14 +35,14 @@ export function CollectionsPanel() {
       </SignInFirst>
     );
   }
-  // One block until the lists are in, then every shelf at once. Shelves drawn
-  // with a row each while waiting were pushed down by any shelf above that
-  // turned out to hold two lists (a CLS of 0.11 on a slow line); content that
-  // replaces a placeholder moves nothing.
+  // Every shelf at once when the lists are in. Real shelves drawn with a row
+  // each while waiting were pushed down by any shelf above that turned out to
+  // hold two lists (a CLS of 0.11 on a slow line); content that replaces a
+  // placeholder moves nothing.
   if (session.status === 'unknown' || (lists === null && !held.error)) {
     // Keyed apart from the panel, so the panel is a new element rather than
     // this one grown: one that grows and moves counts as a shift.
-    return <Placeholder key="waiting" className="h-40 w-full" />;
+    return <ShelvesWaiting key="waiting" />;
   }
 
   const changed = () => void refreshCollections();
@@ -65,6 +64,32 @@ export function CollectionsPanel() {
           onChange={changed}
           onAdd={changed}
         />
+      ))}
+    </div>
+  );
+}
+
+/** Built from the same parts as a real row, so it has exactly its height. */
+function RowWaiting() {
+  return (
+    <div className="skeleton flex items-center rounded-lg bg-white/5 px-3 py-1.5" aria-hidden>
+      <span className="p-1">
+        <span className="block h-3.5 w-3.5" />
+      </span>
+    </div>
+  );
+}
+
+/** Every shelf under its name, a row held in each. One element, replaced
+ *  whole when the lists come, so a shelf holding two lists moves nothing. */
+function ShelvesWaiting() {
+  return (
+    <div className="flex w-full flex-col gap-6" aria-hidden>
+      {TYPES.map(type => (
+        <div key={type} className="flex flex-col gap-2">
+          <p className="text-sm font-semibold text-muted">{LIST[type].label}</p>
+          <RowWaiting />
+        </div>
       ))}
     </div>
   );
@@ -135,16 +160,7 @@ function Shelf({
       )}
 
       {lists === null ? (
-        // Built from the same parts as a real row, so the placeholder has exactly
-        // its height and nothing shifts when the rows arrive.
-        <div
-          className="flex animate-pulse items-center rounded-lg bg-white/5 px-3 py-1.5"
-          aria-hidden
-        >
-          <span className="p-1">
-            <span className="block h-3.5 w-3.5" />
-          </span>
-        </div>
+        <RowWaiting />
       ) : lists.length === 0 ? (
         <p className="text-xs text-muted">No lists yet.</p>
       ) : (

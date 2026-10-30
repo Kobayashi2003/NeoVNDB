@@ -9,7 +9,8 @@ import { VNTags } from '@/components/vn/VNTags';
 import { CharacterTraits } from '@/components/character/CharacterTraits';
 import { ReleaseRow } from '@/components/vn/ReleaseRow';
 import { usePrefs } from '@/hooks/usePrefs';
-import type { Release, Tag, Trait } from '@/lib/types';
+import { VNCharacters } from '@/components/vn/VNCharacters';
+import type { Character, Release, Tag, Trait } from '@/lib/types';
 
 function tag(id: string, over: Partial<Tag> = {}): Tag {
   return {
@@ -52,6 +53,37 @@ function release(id: string, over: Partial<Release> = {}): Release {
   } as unknown as Release;
 }
 
+function character(id: string, over: Partial<Character> = {}): Character {
+  return {
+    id,
+    name: `Character ${id}`,
+    original: null,
+    role: 'primary',
+    spoiler: 0,
+    sex: 'f',
+    spoil_sex: null,
+    gender: null,
+    spoil_gender: null,
+    age: null,
+    birthday: null,
+    blood_type: null,
+    height: null,
+    weight: null,
+    bust: null,
+    waist: null,
+    hips: null,
+    cup: null,
+    description: null,
+    instance_of: null,
+    instance_of_spoiler: 0,
+    aliases: [],
+    image: null,
+    traits: [],
+    seiyuu: [],
+    ...over,
+  };
+}
+
 /** Sets a preference from inside the tree, as the header menu would. */
 function Prefs({ explicit }: { explicit: boolean }) {
   const { set, sexual } = usePrefs();
@@ -59,6 +91,30 @@ function Prefs({ explicit }: { explicit: boolean }) {
   if (sexual !== want) queueMicrotask(() => set({ sexual: want }));
   return null;
 }
+
+describe('VNCharacters', () => {
+  const cast = [
+    character('c1', { role: 'main', sex: 'm' }),
+    character('c2'),
+    character('c3', { spoiler: 2 }),
+  ];
+
+  it('is a grid of tiles, each a way to the character, with no other layout to pick', () => {
+    render(<VNCharacters characters={cast} />);
+    expect(screen.getByRole('link', { name: /Character c1/ })).toHaveAttribute('href', '/c1');
+    expect(screen.getByRole('link', { name: /Character c2/ })).toHaveAttribute('href', '/c2');
+    // The full list is the heading's; the section has no layout switch.
+    expect(screen.queryByRole('button', { name: /grid|at a time/i })).not.toBeInTheDocument();
+  });
+
+  it('narrows by role, and keeps a spoiler apart until it is asked for', async () => {
+    render(<VNCharacters characters={cast} />);
+    expect(screen.queryByRole('link', { name: /Character c3/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: /Protagonist/ }));
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: /Character c1/ })).toBeInTheDocument();
+  });
+});
 
 describe('VNTags', () => {
   it('orders by score, hides spoilers behind a reveal and sexual tags behind the content level', async () => {

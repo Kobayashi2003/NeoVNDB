@@ -11,9 +11,8 @@ import { display } from '@/lib/format';
 import { LIST } from '@/lib/list';
 import { usePrefs } from '@/hooks/usePrefs';
 import type { Holdings } from '@/hooks/useHoldings';
-import { Results } from '@/components/results/Results';
+import { Results, ResultsWaiting } from '@/components/results/Results';
 import type { VNRow } from '@/lib/types';
-import { Placeholder } from '@/components/ui/Surface';
 import { Block, Plot } from './Block';
 
 const COUNT = 12;
@@ -85,7 +84,7 @@ export function Recommendations({
           </p>
         </Plot>
       ) : !got ? (
-        <Placeholder className="h-64" />
+        <ResultsWaiting type="v" count={COUNT} />
       ) : got.rows.length === 0 ? (
         <Plot className="flex h-64 items-center justify-center">
           <p className="text-center text-xs text-muted">

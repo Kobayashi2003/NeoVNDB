@@ -1,5 +1,5 @@
-/** One character in full: portrait, physical details, aliases, description.
- *  Used by the slider and the expanded view. Spoiler traits can be revealed per
+/** One character in full: portrait, physical details, aliases, description,
+ *  for the expanded characters view. Spoiler traits can be revealed per
  *  card, never below the section's level, and only until that level changes:
  *  the section's control is the reader's last word. */
 'use client';
@@ -44,15 +44,9 @@ function Stats({ items }: { items: [string, React.ReactNode][] }) {
 export function VNCharacterCard({
   character,
   spoilerLevel,
-  clamp,
-  onExpand,
 }: {
   character: Character;
   spoilerLevel: SpoilerLevel;
-  /** Cap the height and close it with a fade -- the slider's preview form. */
-  clamp?: boolean;
-  /** Invoked from the fade, to open this character in the expanded view. */
-  onExpand?: () => void;
 }) {
   const { original, explicit, sexual, violence } = usePrefs();
   // What this card revealed, and at which section level: a new section level
@@ -77,18 +71,14 @@ export function VNCharacterCard({
   return (
     <div
       className={cn(
-        'relative gap-4 rounded-lg border bg-surface p-3',
+        // Stacked on a phone, where a portrait beside the text leaves no
+        // room to read.
+        'flex flex-col items-center gap-4 rounded-lg border bg-surface p-3 sm:flex-row sm:items-stretch',
         character.spoiler === 2
           ? 'border-orange-500/50'
           : character.spoiler === 1
             ? 'border-yellow-500/40'
             : 'border-white/5',
-        // The clamped preview keeps the portrait beside the text at every
-        // width, because it is already height-limited; the full card stacks
-        // them on a phone, where a side-by-side portrait leaves no room to read.
-        clamp
-          ? 'flex max-h-80 overflow-hidden'
-          : 'flex flex-col items-center sm:flex-row sm:items-stretch',
       )}
     >
       {character.image && (
@@ -225,19 +215,6 @@ export function VNCharacterCard({
           </div>
         )}
       </div>
-
-      {/* The fade says there is more below the cut, and is the way to it. */}
-      {clamp && onExpand && (
-        <button
-          type="button"
-          onClick={onExpand}
-          className="group/fade absolute inset-x-0 bottom-0 flex items-end justify-center bg-linear-to-t from-black/95 via-black/70 to-transparent pb-2.5 pt-20"
-        >
-          <span className="text-xs font-medium text-white/70 transition-colors group-hover/fade:text-accent">
-            Show full details &rsaquo;
-          </span>
-        </button>
-      )}
     </div>
   );
 }

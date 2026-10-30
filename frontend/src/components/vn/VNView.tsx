@@ -28,9 +28,7 @@ export type PackedVN = Omit<VN, 'characters'> & { characters: Packed<Character>[
 export function VNView({ vn, book }: { vn: PackedVN; book: TraitBook }) {
   const { original } = usePrefs();
   const characters = useMemo(() => unpackTraits(vn.characters, book), [vn, book]);
-  // null when the expanded characters view is closed; otherwise the character
-  // to open it on, which is itself null when opened from the heading.
-  const [expanded, setExpanded] = useState<{ focus: string | null } | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <DetailShell
@@ -52,11 +50,7 @@ export function VNView({ vn, book }: { vn: PackedVN; book: TraitBook }) {
       }
     >
       {expanded ? (
-        <VNCharactersPanel
-          characters={characters}
-          focusId={expanded.focus}
-          onClose={() => setExpanded(null)}
-        />
+        <VNCharactersPanel characters={characters} onClose={() => setExpanded(false)} />
       ) : (
         <>
           {vn.description && (
@@ -79,9 +73,9 @@ export function VNView({ vn, book }: { vn: PackedVN; book: TraitBook }) {
             <Section
               title="Characters"
               count={vn.characters.length}
-              onTitleClick={() => setExpanded({ focus: null })}
+              onTitleClick={() => setExpanded(true)}
             >
-              <VNCharacters characters={characters} onExpand={focus => setExpanded({ focus })} />
+              <VNCharacters characters={characters} />
             </Section>
           )}
 

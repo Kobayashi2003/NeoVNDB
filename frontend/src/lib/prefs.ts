@@ -5,8 +5,6 @@
 
 import type { SexualLevel, SpoilerLevel, ViolenceLevel } from './content';
 
-export type CharacterLayout = 'grid' | 'slider';
-
 export interface Prefs {
   /** Original script for names; translated text for tags and traits. */
   original: boolean;
@@ -14,7 +12,6 @@ export interface Prefs {
   violence: ViolenceLevel;
   /** Starting level for every section. */
   spoiler: SpoilerLevel;
-  layout: CharacterLayout;
   /** The relation graph: cards with covers, titles in release-year layers, and
    *  the overview map. */
   graphCovers: boolean;
@@ -27,7 +24,6 @@ export const DEFAULTS: Prefs = {
   sexual: 'safe',
   violence: 'tame',
   spoiler: 0,
-  layout: 'grid',
   graphCovers: true,
   graphYears: false,
   graphOverview: true,
@@ -64,7 +60,6 @@ export function prefsFrom(value: unknown): Prefs {
     spoiler: ([0, 1, 2] as const).includes(saved.spoiler as 0 | 1 | 2)
       ? (saved.spoiler as SpoilerLevel)
       : DEFAULTS.spoiler,
-    layout: pick(saved.layout, ['grid', 'slider'], DEFAULTS.layout),
     graphCovers: typeof saved.graphCovers === 'boolean' ? saved.graphCovers : DEFAULTS.graphCovers,
     graphYears: typeof saved.graphYears === 'boolean' ? saved.graphYears : DEFAULTS.graphYears,
     graphOverview:

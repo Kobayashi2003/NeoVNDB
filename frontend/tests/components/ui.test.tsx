@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AgeRating } from '@/components/ui/AgeRating';
@@ -15,6 +15,7 @@ import { Selectable } from '@/components/ui/Selection';
 import { SearchX, TriangleAlert } from 'lucide-react';
 import { Notice } from '@/components/ui/Notice';
 import { Rolling } from '@/components/ui/Rolling';
+import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Trouble } from '@/components/ui/Trouble';
 import { usePrefs } from '@/hooks/usePrefs';
 import { Collapsible } from '@/components/ui/Collapsible';
@@ -329,22 +330,52 @@ describe('small pieces', () => {
   });
 });
 
+describe('placeholders', () => {
+  it('stand in for text unseen by a screen reader, the last line short', () => {
+    const { container } = render(<PlaceholderLines lines={3} />);
+    const lines = [...container.firstElementChild!.children];
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    expect(lines).toHaveLength(3);
+    // The skeleton animation (globals.css) holds them back a beat, so a quick
+    // answer never flashes one.
+    expect(lines.every(l => l.classList.contains('skeleton'))).toBe(true);
+    expect(lines[2]).toHaveClass('w-2/5');
+    expect(lines[0]).toHaveClass('w-full');
+  });
+
+  it('take a size of their own', () => {
+    const { container } = render(
+      <Placeholder className="h-7 rounded-full" style={{ width: 40 }} />,
+    );
+    expect(container.firstElementChild).toHaveClass('skeleton', 'h-7', 'rounded-full');
+    expect(container.firstElementChild).not.toHaveClass('rounded-lg');
+    expect((container.firstElementChild as HTMLElement).style.width).toBe('40px');
+  });
+});
+
 describe('Rolling', () => {
   const plain = (n: number) => String(Math.round(n));
 
-  it('shows its value on first paint, then counts its way to the next', async () => {
-    const { container, rerender } = render(<Rolling value={10} format={plain} />);
-    expect(container.textContent).toBe('10');
-    const seen: number[] = [];
-    const watch = new MutationObserver(() => seen.push(Number(container.textContent)));
-    watch.observe(container, { subtree: true, characterData: true, childList: true });
-    rerender(<Rolling value={110} format={plain} />);
-    // jsdom's frames come slower than a browser's.
-    await waitFor(() => expect(container.textContent).toBe('110'), { timeout: 5000 });
-    watch.disconnect();
-    // Through the numbers between, never past the end.
-    expect(seen.some(n => n > 10 && n < 110)).toBe(true);
-    expect(Math.max(...seen)).toBe(110);
+  it('shows its value on first paint, then counts its way to the next', () => {
+    // The frames on a clock of the test's own: jsdom's real ones slow to a
+    // crawl while every test file runs at once.
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+    try {
+      const { container, rerender } = render(<Rolling value={10} format={plain} />);
+      expect(container.textContent).toBe('10');
+      rerender(<Rolling value={110} format={plain} />);
+      const seen: number[] = [];
+      for (let t = 0; t < 30; t++) {
+        act(() => vi.advanceTimersByTime(20));
+        seen.push(Number(container.textContent));
+      }
+      // Through the numbers between, never past the end.
+      expect(seen.some(n => n > 10 && n < 110)).toBe(true);
+      expect(Math.max(...seen)).toBe(110);
+      expect(container.textContent).toBe('110');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('goes straight to the value when motion is reduced', () => {

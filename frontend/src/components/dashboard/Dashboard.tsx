@@ -72,7 +72,7 @@ const PAIR =
 
 export function Dashboard() {
   const session = useSession();
-  if (session.status === 'unknown') return <Placeholder className="h-96" />;
+  if (session.status === 'unknown') return <BoardWaiting />;
   if (session.status === 'out') {
     return (
       <SignInFirst next="/u/dashboard" icon={LayoutDashboard} title="Your dashboard lives here">
@@ -125,7 +125,7 @@ function Board() {
       </Notice>
     );
   }
-  if (!held) return <Placeholder className="h-96" />;
+  if (!held) return <BoardWaiting />;
   if (held.lists.every(l => l.marks.length === 0) && held.rated.length === 0) {
     return (
       <Notice
@@ -322,6 +322,41 @@ function Board() {
       </div>
 
       <Recommendations scope={picked.slice(0, MAX_IDS)} held={held} details={details} />
+    </div>
+  );
+}
+
+/** The board before the reader's lists are in: the picks' row with its
+ *  labels, the figures' card, the first charts and the titles beside them. */
+function BoardWaiting() {
+  const block = (
+    <div className="flex flex-col gap-3">
+      <Placeholder className="h-4 w-28 rounded" />
+      {/* A column chart's height: count line, columns, labels. */}
+      <Placeholder className="h-56" />
+    </div>
+  );
+  return (
+    <div className="flex flex-col gap-8" aria-hidden>
+      <div className="flex min-h-9 flex-wrap items-center gap-x-4 gap-y-1">
+        {['Titles', 'Over', 'By'].map(label => (
+          <div key={label} className="flex items-center gap-1">
+            <ControlLabel>{label}</ControlLabel>
+            <Placeholder className="h-7 w-24 rounded-full" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-8">
+          <Placeholder className="h-[8.5rem]" />
+          {block}
+          <div className={PAIR}>
+            {block}
+            {block}
+          </div>
+        </div>
+        <Placeholder className="hidden h-[36rem] xl:block" />
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /** The services' state and the scheduled work behind them, with a button for
- *  each piece of that work. */
+ *  each piece of that work. The admin page's first group. */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,7 +16,7 @@ import {
   type MirrorStatus,
 } from '@/lib/admin';
 import { errorText } from '@/lib/user';
-import { Placeholder } from '@/components/ui/Surface';
+import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
 
 /** While something runs the page follows it; otherwise it reads once. */
@@ -33,7 +33,28 @@ async function read<T>(get: () => Promise<T>): Promise<Read<T>> {
   }
 }
 
-export function MirrorTab() {
+/** The cards with their titles, what they report still to come. */
+export function MirrorWaiting() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card title="Generations">
+        <PlaceholderLines lines={5} />
+      </Card>
+      <Card title="Update">
+        <PlaceholderLines lines={4} />
+      </Card>
+      <Card title="Images">
+        <Placeholder className="h-2 rounded-full" />
+        <PlaceholderLines lines={4} />
+      </Card>
+      <Card title="User database backups">
+        <PlaceholderLines lines={3} />
+      </Card>
+    </div>
+  );
+}
+
+export function Mirror() {
   const [mirror, setMirror] = useState<Read<MirrorStatus> | null>(null);
   const [images, setImages] = useState<Read<ImageStatus> | null>(null);
   const [saved, setSaved] = useState<Read<Backups> | null>(null);
@@ -77,9 +98,7 @@ export function MirrorTab() {
     refresh();
   }
 
-  if (!mirror || !images || !saved) {
-    return <Placeholder className="h-64 w-full" />;
-  }
+  if (!mirror || !images || !saved) return <MirrorWaiting />;
 
   const m = mirror.value;
   const live = m?.generations.find(g => g.schema === 'vndb');

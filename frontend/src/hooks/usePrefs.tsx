@@ -6,7 +6,7 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import { DEFAULTS, PREFS_COOKIE, PREFS_STORAGE, readPrefs, type Prefs } from '@/lib/prefs';
 
-export type { CharacterLayout, Prefs } from '@/lib/prefs';
+export type { Prefs } from '@/lib/prefs';
 
 export interface PrefsControl extends Prefs {
   set: (change: Partial<Prefs>) => void;

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterBar } from '@/components/list/FilterBar';
 import { Pagination } from '@/components/results/Pagination';
-import { Results } from '@/components/results/Results';
+import { Results, ResultsWaiting } from '@/components/results/Results';
 import { SearchBox } from '@/components/list/SearchBox';
 import { SortLinks } from '@/components/results/SortLinks';
 import { SortMenu } from '@/components/results/SortMenu';
@@ -258,6 +258,25 @@ describe('Results', () => {
     expect(screen.getByText('158 cm')).toBeInTheDocument();
     rerender(<Results type="c" rows={[cast]} sort="name" />);
     expect(screen.queryByText(/Age|cm$/)).toBeNull();
+  });
+});
+
+describe('ResultsWaiting', () => {
+  it('holds tiles with a picture for the types that have one, rows for the rest', () => {
+    const { container, rerender } = render(<ResultsWaiting type="v" count={4} />);
+    const grid = container.firstElementChild!;
+    expect(grid).toHaveClass('grid');
+    expect(grid.children).toHaveLength(4);
+    // A cover's shape, so the real tile takes exactly its place.
+    expect(grid.querySelector('.aspect-\\[2\\/3\\]')).not.toBeNull();
+    expect(grid).toHaveAttribute('aria-hidden', 'true');
+
+    rerender(<ResultsWaiting type="c" count={2} />);
+    expect(container.querySelector('.aspect-\\[17\\/20\\]')).not.toBeNull();
+
+    rerender(<ResultsWaiting type="r" count={3} />);
+    expect(container.firstElementChild).not.toHaveClass('grid');
+    expect(container.firstElementChild!.children).toHaveLength(3);
   });
 });
 

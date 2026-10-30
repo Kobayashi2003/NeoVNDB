@@ -21,7 +21,7 @@ import { UserError } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
-import { Chevron, CONTROL_H } from '@/components/ui/Pill';
+import { Chevron, CONTROL_H, pill } from '@/components/ui/Pill';
 
 /** The signed-in button's shape, which the placeholder copies. */
 const NAME_BUTTON = `flex ${CONTROL_H} max-w-36 items-center gap-1 rounded-full px-3 text-xs font-medium`;
@@ -34,7 +34,7 @@ export function UserMenu({ name }: { name: string | null }) {
       // The signed-in button's own shape, with the name drawn but unseen.
       return (
         <span
-          className={cn(NAME_BUTTON, 'shrink-0 animate-pulse bg-white/5 text-transparent')}
+          className={cn(NAME_BUTTON, 'skeleton shrink-0 bg-white/5 text-transparent')}
           aria-hidden
         >
           <span className="truncate">{name}</span>
@@ -42,7 +42,13 @@ export function UserMenu({ name }: { name: string | null }) {
         </span>
       );
     }
-    return <span className="h-6 w-16 shrink-0 animate-pulse rounded-full bg-white/5" aria-hidden />;
+    // The sign-in link's size.
+    return (
+      <span
+        className={cn(CONTROL_H, 'skeleton w-16 shrink-0 rounded-full bg-white/5')}
+        aria-hidden
+      />
+    );
   }
   if (session.status === 'out') return <SignInLink />;
   return <SignedIn />;
@@ -62,7 +68,7 @@ function SignInLink() {
         e.preventDefault();
         router.push(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
       }}
-      className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/20"
+      className={pill({ className: 'w-16 shrink-0 justify-center' })}
     >
       Sign in
     </Link>

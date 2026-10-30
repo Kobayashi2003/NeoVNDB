@@ -85,7 +85,7 @@ function show() {
 function section(name: string) {
   const heading = screen
     .getAllByRole('heading', { name })
-    .find(h => !h.closest('section')!.hasAttribute('data-stat-group'))!;
+    .find(h => !h.closest('section')!.hasAttribute('data-group'))!;
   return within(heading.closest('section')!);
 }
 

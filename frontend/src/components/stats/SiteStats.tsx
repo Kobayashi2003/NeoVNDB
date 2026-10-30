@@ -28,6 +28,7 @@ import { Columns, type Column } from '@/components/dashboard/Columns';
 import { Ranking, type Ranked } from '@/components/dashboard/Ranking';
 import { ChoiceMenu } from '@/components/ui/ChoiceMenu';
 import { ControlLabel } from '@/components/ui/ControlLabel';
+import { Group, GROUP } from '@/components/ui/Group';
 import { SectionNav } from '@/components/ui/SectionNav';
 import { Segmented } from '@/components/ui/Segmented';
 import { surface } from '@/components/ui/Surface';
@@ -68,9 +69,6 @@ const KIND_OF_RELEASE: Record<string, string> = {
  *  reader dashboard's PAIR). */
 const PAIR =
   'grid gap-x-6 gap-y-8 lg:grid-cols-2 [&>section]:flex [&>section]:flex-col [&>section>:last-child]:flex-1 [&>section>:first-child]:min-h-7';
-
-/** The groups the pill row jumps between. */
-const GROUP = 'section[data-stat-group]';
 
 export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
   const { original } = usePrefs();
@@ -433,32 +431,6 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
         </Group>
       </div>
     </>
-  );
-}
-
-/** A group of sections, listed in the pill row and jumped to from it. */
-function Group({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      id={title.toLowerCase().replace(/[^a-z]+/g, '-')}
-      data-stat-group
-      data-section={title}
-      className="flex scroll-mt-[calc(var(--header-h)+4rem)] flex-col gap-8"
-    >
-      <div className="-mb-2 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-        <h2 className="text-xl font-bold">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
   );
 }
 

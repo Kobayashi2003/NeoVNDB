@@ -27,7 +27,8 @@ import {
   type VNRow,
 } from '@/lib/types';
 import { Selectable } from '@/components/ui/Selection';
-import { surface } from '@/components/ui/Surface';
+import { cn } from '@/lib/utils';
+import { Placeholder, surface } from '@/components/ui/Surface';
 import { useSelection } from './Collecting';
 
 const GRID =
@@ -80,6 +81,40 @@ interface Card {
    *  around a card has to go somewhere different in the two: a tile has a
    *  picture to sit on top of, a row has its own leading icon already. */
   grid: boolean;
+}
+
+/** Results still to come, laid out as they will be: tiles with a picture for
+ *  the types that have one, rows for the rest. */
+export function ResultsWaiting({ type, count = 12 }: { type: string; count?: number }) {
+  const ratio = SHAPES[type]?.ratio;
+  if (!ratio) {
+    return (
+      <div className={LIST} aria-hidden>
+        {Array.from({ length: count }, (_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 border-b border-white/5 px-3 py-3 last:border-0"
+          >
+            <Placeholder className="h-3 w-1/3 rounded" />
+            <Placeholder className="ml-auto h-3 w-16 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className={GRID} aria-hidden>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className={surface('flex flex-col overflow-hidden')}>
+          <Placeholder className={cn('w-full rounded-none', ratio)} />
+          <div className="flex min-h-14 flex-col gap-1.5 p-2">
+            <Placeholder className="h-3 w-4/5 rounded" />
+            <Placeholder className="h-3 w-1/2 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function Results({

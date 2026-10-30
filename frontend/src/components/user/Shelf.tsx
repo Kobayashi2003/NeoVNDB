@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ListChecks } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
 import { useCollections } from '@/hooks/useCollections';
-import { Placeholder } from '@/components/ui/Surface';
+import { ShelfWaiting } from './ShelfPanel';
 import { SignInFirst } from './SignInFirst';
 import { CollectionColumn } from './CollectionSwitcher';
 
@@ -47,7 +47,11 @@ export function Shelf({ children }: { children: React.ReactNode }) {
         <div className="hidden w-[13.5rem] shrink-0 lg:block" aria-hidden />
       )}
       <div data-scroll-top className={BODY}>
-        {session.status === 'in' ? children : <Placeholder className="h-64 w-full" />}
+        {session.status === 'in' ? (
+          children
+        ) : (
+          <ShelfWaiting type={lists?.find(l => l.id === current)?.type ?? 'v'} />
+        )}
       </div>
     </div>
   );

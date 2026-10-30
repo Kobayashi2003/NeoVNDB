@@ -35,11 +35,11 @@ describe('preferences on the account', () => {
     // Taking them on is not a change to send back.
     expect(save).not.toHaveBeenCalled();
 
-    act(() => result.current.set({ layout: 'slider' }));
+    act(() => result.current.set({ graphYears: true }));
     act(() => result.current.set({ spoiler: 1 }));
     await settle();
     expect(save).toHaveBeenCalledTimes(2);
-    expect(save.mock.calls.at(-1)?.[0]).toMatchObject({ layout: 'slider', spoiler: 1 });
+    expect(save.mock.calls.at(-1)?.[0]).toMatchObject({ graphYears: true, spoiler: 1 });
   });
 
   it('are given this device’s when the account has none', async () => {

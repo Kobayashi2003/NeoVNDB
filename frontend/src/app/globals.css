@@ -200,6 +200,29 @@ html[data-selecting] [data-scroll-top] {
   animation: menu-in 140ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
+/* Something still loading (ui/Surface's Placeholder). It comes in after a
+   beat, so an answer that is quick never flashes one, then breathes. */
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.skeleton {
+  animation: skeleton-in 200ms ease-out 150ms backwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation:
+      skeleton-in 200ms ease-out 150ms backwards,
+      skeleton-pulse 1.8s ease-in-out 350ms infinite;
+  }
+}
+
 /* A panel that swaps what it shows (year to month, chart to table, one role
    to another) settles in rather than cutting; keyed by the view, so it plays
    on a swap and not on every change of data. */

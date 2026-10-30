@@ -19,7 +19,7 @@ test('a reader who is not an administrator is turned away', async ({ page, user 
   expect((await user.call('GET', '/admin/users')).status).toBe(403);
 });
 
-test('an administrator sees the mirror, the translations and the accounts', async ({
+test('an administrator sees the mirror, the accounts and the translations on one page', async ({
   page,
   admin,
 }) => {
@@ -34,8 +34,19 @@ test('an administrator sees the mirror, the translations and the accounts', asyn
     await expect(page.getByRole('heading', { name: card })).toBeVisible();
   }
 
+  // The groups are listed in a row that jumps to each.
+  const nav = page.getByRole('navigation', { name: 'Sections' });
+  await expect(nav.getByRole('link')).toHaveText(['Mirror', 'Accounts', 'Translations']);
+
+  // Accounts: this one, marked as the reader's own.
+  await nav.getByRole('link', { name: 'Accounts' }).click();
+  await expect(page.getByRole('heading', { name: 'Accounts', level: 2 })).toBeInViewport();
+  const row = page.getByRole('row', { name: new RegExp(admin.name) });
+  await expect(row.getByText('you')).toBeVisible();
+
   // Translations: tags with their names, filtered to what is missing.
-  await page.getByRole('tab', { name: 'Translations' }).click();
+  await nav.getByRole('link', { name: 'Translations' }).click();
+  await expect(page.getByRole('heading', { name: 'Translations', level: 2 })).toBeInViewport();
   await expect(page.getByText(/\d[\d,]* tags: /)).toBeVisible();
   await page.getByLabel('Untranslated only').uncheck();
   await expect(page.getByLabel('Name translation').first()).toBeVisible();
@@ -45,9 +56,4 @@ test('an administrator sees the mirror, the translations and the accounts', asyn
     data: { category: 'trait', id: 1162, field: 'description', target: 'リンクを落とした訳' },
   });
   expect(refused.status()).toBe(400);
-
-  // Accounts: this one, marked as the reader's own.
-  await page.getByRole('tab', { name: 'Users' }).click();
-  const row = page.getByRole('row', { name: new RegExp(admin.name) });
-  await expect(row.getByText('you')).toBeVisible();
 });

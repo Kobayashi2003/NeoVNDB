@@ -21,8 +21,9 @@ export function Card({
 }) {
   return (
     <section className={surface(cn('flex min-w-0 flex-col gap-3 p-4', className))}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{title}</h2>
+      {/* As tall as the button beside the title, which comes with the data. */}
+      <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">{title}</h3>
         {aside}
       </div>
       {children}

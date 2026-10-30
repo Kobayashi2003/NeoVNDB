@@ -15,14 +15,14 @@ test('anyone can read the whole database counted, from the header', async ({ pag
 
   // The rankings are links to what they rank, and a heading is its name
   // alone, not the controls beside it.
-  const developers = page.locator('section:not([data-stat-group])', {
+  const developers = page.locator('section:not([data-group])', {
     has: page.getByRole('heading', { name: 'Developers', exact: true }),
   });
   await expect(developers.getByRole('link').first()).toHaveAttribute('href', /^\/p\d+$/);
 
   // One choice of sex follows every character chart: female heights differ
   // from everyone's.
-  const height = page.locator('section:not([data-stat-group])', {
+  const height = page.locator('section:not([data-group])', {
     has: page.getByRole('heading', { name: 'Height', exact: true }),
   });
   const note = height.getByText(/^Median \d+ cm/);

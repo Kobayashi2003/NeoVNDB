@@ -1,7 +1,7 @@
 /** Keys for the things done most: searching, paging, moving between sections.
  *  `?` lists them. None of them fires while typing, while a dialog (the image
  *  viewer) is open, or when a control under the focus has already used the key
- *  -- tabs and the character slider take the arrows for themselves.
+ *  -- tabs and sideways rows take the arrows for themselves.
  *
  *  Each acts by finding the control on the page that does the same thing and
  *  using it, so a key does exactly what its click does, and a page without that

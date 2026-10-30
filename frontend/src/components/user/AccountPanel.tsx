@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { UserRound } from 'lucide-react';
 import { errorText, RULES } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
-import { Placeholder, surface } from '@/components/ui/Surface';
+import { Placeholder, PlaceholderLines, surface } from '@/components/ui/Surface';
 import { SignInFirst } from './SignInFirst';
 
 export function AccountPanel() {
@@ -16,7 +16,21 @@ export function AccountPanel() {
   if (session.status === 'unknown') {
     // Keyed apart from the panel, so the panel is a new element rather than
     // this one moved and grown (a layout shift).
-    return <Placeholder key="waiting" className="h-40 w-full max-w-sm" />;
+    return (
+      <div key="waiting" className="flex w-full max-w-sm flex-col gap-4" aria-hidden>
+        <div className={surface('flex flex-col gap-3 p-6')}>
+          <Placeholder className="h-6 w-32" />
+          <PlaceholderLines lines={2} className="w-3/4" />
+        </div>
+        {/* The password form: its title, two fields and the button. */}
+        <div className={surface('flex flex-col gap-4 p-6')}>
+          <PlaceholderLines lines={2} />
+          <Placeholder className="h-14" />
+          <Placeholder className="h-14" />
+          <Placeholder className="h-9 rounded-full" />
+        </div>
+      </div>
+    );
   }
   if (session.status === 'out' || !session.user) {
     return (

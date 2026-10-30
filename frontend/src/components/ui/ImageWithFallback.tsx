@@ -93,7 +93,7 @@ export function ImageWithFallback({
         className={cn(className, pending && 'opacity-0')}
       />
       {pending && (
-        <span className="absolute inset-0 animate-pulse rounded-[inherit] bg-white/5" aria-hidden />
+        <span className="skeleton absolute inset-0 rounded-[inherit] bg-white/5" aria-hidden />
       )}
     </span>
   );

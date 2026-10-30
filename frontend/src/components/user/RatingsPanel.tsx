@@ -19,8 +19,7 @@ import { LIST, TYPES } from '@/lib/list';
 import { useSession } from '@/hooks/useSession';
 import { pill } from '@/components/ui/Pill';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
-import { Placeholder } from '@/components/ui/Surface';
-import { ShelfPanel } from './ShelfPanel';
+import { ShelfPanel, ShelfWaiting } from './ShelfPanel';
 import { RatingsBar } from './RatingsBar';
 import { SignInFirst } from './SignInFirst';
 
@@ -36,9 +35,7 @@ const owned = (r: Rated): Owned => ({ id: r.id, rating: r.rating, at: r.rated_at
 
 export function RatingsPanel({ page, params }: { page: number; params: Params }) {
   const session = useSession();
-  if (session.status === 'unknown') {
-    return <Placeholder className="h-64 w-full" />;
-  }
+  if (session.status === 'unknown') return <ShelfWaiting type={one(params, 'type') ?? 'v'} />;
   if (session.status === 'out') {
     return (
       <SignInFirst next={PATH} icon={Star} title="Your ratings live here">

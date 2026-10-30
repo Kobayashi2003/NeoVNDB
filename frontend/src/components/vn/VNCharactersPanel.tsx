@@ -1,5 +1,5 @@
 /** Expanded characters view: dense cards grouped by role, filling the main
- *  column. Opened from a slide card, it scrolls to that character. */
+ *  column. Opened from the section's heading. */
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -15,12 +15,9 @@ import type { Character } from '@/lib/types';
 
 export function VNCharactersPanel({
   characters,
-  focusId,
   onClose,
 }: {
   characters: Character[];
-  /** Scroll this character's card into view on open. */
-  focusId: string | null;
   onClose: () => void;
 }) {
   const { explicit } = usePrefs();
@@ -36,9 +33,8 @@ export function VNCharactersPanel({
   // section either way.
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (focusId) document.getElementById(`char-${focusId}`)?.scrollIntoView({ block: 'start' });
-    else root.current?.scrollIntoView({ block: 'start' });
-  }, [focusId]);
+    root.current?.scrollIntoView({ block: 'start' });
+  }, []);
 
   return (
     <SpoilerScope level={spoiler.level}>

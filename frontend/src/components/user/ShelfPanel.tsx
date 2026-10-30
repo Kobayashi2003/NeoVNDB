@@ -12,7 +12,7 @@ import { one, withParams, type Params } from '@/lib/href';
 import { readShelf, type OwnSort, type ShelfPage, type ShelfSource } from '@/lib/shelf';
 import { errorText } from '@/lib/user';
 import { still } from '@/lib/viewTransitions';
-import { Results } from '@/components/results/Results';
+import { Results, ResultsWaiting } from '@/components/results/Results';
 import { Pagination } from '@/components/results/Pagination';
 import { SortLinks } from '@/components/results/SortLinks';
 import { Selectable } from '@/components/ui/Selection';
@@ -21,6 +21,18 @@ import { useShelfChoice, type Choosing } from '@/hooks/useShelfChoice';
 import { Notice, noticeAction } from '@/components/ui/Notice';
 import { Placeholder } from '@/components/ui/Surface';
 import { Mine, Missing, SearchInList } from './ShelfParts';
+
+/** The whole panel before the session is known: its title, its order row and
+ *  a page of results, all still to come. */
+export function ShelfWaiting({ type }: { type: string }) {
+  return (
+    <div className="flex flex-col gap-4" aria-hidden>
+      <Placeholder className="h-8 w-48" />
+      <Placeholder className="h-7 w-72 max-w-full rounded-full" />
+      <ResultsWaiting type={type} />
+    </div>
+  );
+}
 
 interface Held extends ShelfPage {
   /** The request this answers; while it differs from the one wanted, the
@@ -210,7 +222,7 @@ export function ShelfPanel({
       {held === null ? (
         // Keyed apart from the results, so they arrive as a new element rather
         // than as this one moved and grown, which counts as a layout shift.
-        <Placeholder key="waiting" className="h-64 w-full" />
+        <ResultsWaiting key="waiting" type={shownType} />
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted">
           {search ? (

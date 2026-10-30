@@ -5,6 +5,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Placeholder } from '@/components/ui/Surface';
 import { Grow } from './Grow';
 
 /** A part of a whole as a percentage, never a misleading 0% for a few. */
@@ -45,8 +46,8 @@ export function Ranking({
       <ol className="flex flex-col" aria-hidden>
         {Array.from({ length: PLACEHOLDERS }, (_, i) => (
           <li key={i} className="flex flex-col gap-1 py-1">
-            <span className="h-4 w-1/3 animate-pulse rounded bg-white/5" />
-            <span className="h-1 rounded-full bg-white/5" />
+            <Placeholder className="h-4 w-1/3 rounded" />
+            <Placeholder className="h-1 rounded-full" />
           </li>
         ))}
       </ol>
