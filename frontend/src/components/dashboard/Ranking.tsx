@@ -111,7 +111,10 @@ export function Ranking({
                 {inner}
               </Link>
             ) : (
-              <span className={row}>{inner}</span>
+              // Lit to match a choice made elsewhere, said as well as shown.
+              <span aria-current={on || undefined} className={row}>
+                {inner}
+              </span>
             )}
           </li>
         );

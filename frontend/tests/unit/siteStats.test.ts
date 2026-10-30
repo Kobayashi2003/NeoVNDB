@@ -85,5 +85,33 @@ describe('site stats', () => {
     ]);
     expect(median(counts)).toBe(158);
     expect(median([])).toBeNull();
+    expect(median([{ key: '160', count: 0 }])).toBeNull();
+  });
+
+  it('takes the middle by counts, whatever order the keys come in', () => {
+    // Half of the four sit at 150 or below: that is the middle.
+    expect(
+      median([
+        { key: '170', count: 2 },
+        { key: '150', count: 1 },
+        { key: '140', count: 1 },
+      ]),
+    ).toBe(150);
+  });
+
+  it('keys a step by its floor, and makes nothing of nothing', () => {
+    expect(stepped([{ key: '9', count: 1 }], 5)).toEqual([{ key: '5', count: 1 }]);
+    expect(stepped([], 5)).toEqual([]);
+    expect(filled([], 3, 1)).toEqual([]);
+  });
+
+  it('runs months across a year without a gap or an extra', () => {
+    expect(months([{ key: '2019-12', count: 1 }]).map(c => c.key)).toEqual(['2019-12']);
+    expect(
+      months([
+        { key: '2020-01', count: 1 },
+        { key: '2019-11', count: 1 },
+      ]).map(c => c.key),
+    ).toEqual(['2019-11', '2019-12', '2020-01']);
   });
 });

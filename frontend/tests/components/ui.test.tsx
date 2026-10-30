@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AgeRating } from '@/components/ui/AgeRating';
@@ -12,7 +12,9 @@ import { Segmented } from '@/components/ui/Segmented';
 import { Spoiler, SpoilerScope } from '@/components/ui/Spoiler';
 import { TabBar } from '@/components/ui/TabBar';
 import { Selectable } from '@/components/ui/Selection';
-import { SearchX } from 'lucide-react';
+import { SearchX, TriangleAlert } from 'lucide-react';
+import { Notice } from '@/components/ui/Notice';
+import { Rolling } from '@/components/ui/Rolling';
 import { Trouble } from '@/components/ui/Trouble';
 import { usePrefs } from '@/hooks/usePrefs';
 import { Collapsible } from '@/components/ui/Collapsible';
@@ -40,6 +42,16 @@ describe('Section', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: /characters/i }));
     expect(open).toHaveBeenCalledOnce();
+  });
+
+  it('is named by its title alone, not by the controls beside it', () => {
+    render(
+      <Section title="Rating" action={<button type="button">Show as a table</button>}>
+        body
+      </Section>,
+    );
+    expect(screen.getByRole('heading', { level: 2 })).toHaveAccessibleName('Rating');
+    expect(screen.getByRole('button', { name: 'Show as a table' }).closest('h2')).toBeNull();
   });
 });
 
@@ -117,6 +129,20 @@ describe('SectionNav', () => {
       container.querySelector('[data-scroll-top]')!.append(extra);
     });
     expect(screen.getByRole('link', { name: 'Similar' })).toHaveAttribute('href', '#similar');
+  });
+
+  it('lists only the groups it is given, not every section inside them', () => {
+    render(
+      <div data-scroll-top>
+        <SectionNav of="section[data-group]" />
+        {['Overview', 'Staff'].map(g => (
+          <section key={g} id={g.toLowerCase()} data-group data-section={g}>
+            <Section title={`${g} chart`}>body</Section>
+          </section>
+        ))}
+      </div>,
+    );
+    expect(links().map(a => a.textContent)).toEqual(['Overview', 'Staff']);
   });
 });
 
@@ -261,6 +287,76 @@ describe('small pieces', () => {
       </Trouble>,
     );
     expect(screen.getByRole('link', { name: 'Front page' })).toHaveAttribute('href', '/');
+    // The notice is the whole page, so it carries the page's heading.
+    expect(screen.getByRole('heading', { level: 1, name: 'Nothing here' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('puts the action to try first ahead of the way home when something failed', () => {
+    render(
+      <Trouble
+        icon={TriangleAlert}
+        title="That did not work"
+        tone="trouble"
+        action={<button type="button">Try again</button>}
+      >
+        Broken.
+      </Trouble>,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('That did not work');
+    const ways = [...screen.getByRole('alert').querySelectorAll('a, button')];
+    expect(ways.map(w => w.textContent)).toEqual([
+      'Try again',
+      'Front page',
+      'Browse visual novels',
+    ]);
+    expect(screen.getByRole('link', { name: 'Front page' })).not.toHaveClass('bg-accent');
+  });
+
+  it('shows a notice inside a page under the page’s own heading', () => {
+    render(
+      <Notice
+        icon={SearchX}
+        title="No such list"
+        actions={<button type="button">Show all lists</button>}
+      >
+        Gone.
+      </Notice>,
+    );
+    expect(screen.getByRole('heading', { level: 2, name: 'No such list' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show all lists' })).toBeInTheDocument();
+  });
+});
+
+describe('Rolling', () => {
+  const plain = (n: number) => String(Math.round(n));
+
+  it('shows its value on first paint, then counts its way to the next', async () => {
+    const { container, rerender } = render(<Rolling value={10} format={plain} />);
+    expect(container.textContent).toBe('10');
+    const seen: number[] = [];
+    const watch = new MutationObserver(() => seen.push(Number(container.textContent)));
+    watch.observe(container, { subtree: true, characterData: true, childList: true });
+    rerender(<Rolling value={110} format={plain} />);
+    // jsdom's frames come slower than a browser's.
+    await waitFor(() => expect(container.textContent).toBe('110'), { timeout: 5000 });
+    watch.disconnect();
+    // Through the numbers between, never past the end.
+    expect(seen.some(n => n > 10 && n < 110)).toBe(true);
+    expect(Math.max(...seen)).toBe(110);
+  });
+
+  it('goes straight to the value when motion is reduced', () => {
+    const was = window.matchMedia;
+    window.matchMedia = (query: string) => ({ ...was(query), matches: true });
+    try {
+      const { container, rerender } = render(<Rolling value={1} format={plain} />);
+      rerender(<Rolling value={500} format={plain} />);
+      expect(container.textContent).toBe('500');
+    } finally {
+      window.matchMedia = was;
+    }
   });
 });
 
