@@ -57,11 +57,16 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Only what floats is frosted. Cards in the flow lie on the fixed wash, so
+   every scroll re-blurred all of them, a real cost on a page of many (the
+   dashboard); over a smooth wash the blur showed nothing anyway. */
 .bg-surface,
+.bg-elevated {
+  transition: background-color 200ms ease;
+}
 .bg-elevated {
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
-  transition: background-color 200ms ease;
 }
 .bg-surface:hover {
   background-color: var(--surface-hover);
@@ -193,6 +198,21 @@ html[data-selecting] [data-scroll-top] {
 }
 .animate-menu-in {
   animation: menu-in 140ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* A panel that swaps what it shows (year to month, chart to table, one role
+   to another) settles in rather than cutting; keyed by the view, so it plays
+   on a swap and not on every change of data. */
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .animate-swap-in {
+    animation: swap-in 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
 }
 
 /* Results about to be replaced: during a navigation (components/layout/

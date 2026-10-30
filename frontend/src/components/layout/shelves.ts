@@ -14,3 +14,6 @@ export const SHORT: Record<string, string> = {
   g: 'Tags',
   i: 'Traits',
 };
+
+/** After the shelves, the one page about all of them. */
+export const STATS = { href: '/stats', label: 'Stats', full: 'Statistics' } as const;

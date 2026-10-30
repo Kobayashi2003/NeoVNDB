@@ -87,11 +87,17 @@ export function TitleList({
           />
         }
       >
-        <div ref={box} className={surface('min-h-0 flex-1 overflow-y-auto overscroll-contain')}>
+        {/* Relative, so the covers' positioned layers are clipped by this box;
+            without it they hung below it and stretched the page by every
+            page of rows loaded. */}
+        <div
+          ref={box}
+          className={surface('relative min-h-0 flex-1 overflow-y-auto overscroll-contain')}
+        >
           {shown.length === 0 ? (
             <p className="px-3 py-6 text-center text-xs text-muted">No titles match.</p>
           ) : (
-            <ol>
+            <ol key={order} className="animate-swap-in">
               {shown.map((e, i) => {
                 const month = e.at.slice(0, 7);
                 const heads =

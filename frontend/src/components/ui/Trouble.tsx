@@ -4,32 +4,45 @@
  *  are the same component: a heading, a sentence a reader can act on, and a
  *  way out that is never the back button. */
 import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
+import { Notice, noticeAction } from './Notice';
 
 export function Trouble({
+  icon,
   title,
+  tone,
   children,
   action,
 }: {
+  icon: LucideIcon;
   title: string;
+  tone?: 'plain' | 'trouble';
   children: React.ReactNode;
   /** Offered before the links home, where there is something to try. */
   action?: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto flex w-full max-w-page flex-col px-4 py-16">
-      <div className="w-full max-w-lg rounded-xl border border-white/10 bg-surface p-6">
-        <h1 className="text-lg font-semibold">{title}</h1>
-        <p className="mt-2 text-sm text-muted">{children}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          {action}
-          <Link href="/" className="text-accent transition-colors hover:underline coarse:py-1">
-            Front page
-          </Link>
-          <Link href="/v" className="text-muted transition-colors hover:text-white">
-            Browse visual novels
-          </Link>
-        </div>
-      </div>
+    <main className="mx-auto flex w-full max-w-page flex-col px-4">
+      <Notice
+        icon={icon}
+        title={title}
+        tone={tone}
+        page
+        className="min-h-[70dvh]"
+        actions={
+          <>
+            {action}
+            <Link href="/" className={noticeAction(!action)}>
+              Front page
+            </Link>
+            <Link href="/v" className={noticeAction()}>
+              Browse visual novels
+            </Link>
+          </>
+        }
+      >
+        {children}
+      </Notice>
     </main>
   );
 }

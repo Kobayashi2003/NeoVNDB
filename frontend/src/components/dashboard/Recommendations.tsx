@@ -79,11 +79,15 @@ export function Recommendations({
   return (
     <Block title="You might like">
       {failed ? (
-        <p className="text-xs text-red-400">Recommendations could not be worked out.</p>
+        <Plot className="flex h-64 items-center justify-center">
+          <p role="alert" className="text-center text-xs text-red-400">
+            Recommendations could not be worked out.
+          </p>
+        </Plot>
       ) : !got ? (
         <Placeholder className="h-64" />
       ) : got.rows.length === 0 ? (
-        <Plot>
+        <Plot className="flex h-64 items-center justify-center">
           <p className="text-center text-xs text-muted">
             Nothing alike that you do not have already.
           </p>

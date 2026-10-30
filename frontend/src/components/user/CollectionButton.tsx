@@ -101,7 +101,7 @@ export function CollectionButton({ id }: { id: string }) {
         onClick={() => (open ? setOpen(false) : reveal())}
         aria-expanded={open}
         className={cn(
-          'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+          'flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors',
           saved
             ? 'bg-accent text-background hover:bg-accent-hover'
             : 'bg-white/10 hover:bg-white/20',

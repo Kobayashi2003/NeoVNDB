@@ -32,7 +32,7 @@ export function fromLists(
       if (!seen || m.marked_at < seen) first.set(m.id, m.marked_at);
     }
   }
-  return [...first].map(([id, at]) => ({ id, at, rating: ratings.get(id) ?? null }));
+  return [...first].map(([id, at]) => ({ id, at: local(at), rating: ratings.get(id) ?? null }));
 }
 
 export type Range = 'all' | '12m' | `${number}`;
@@ -41,10 +41,13 @@ export type Grain = 'year' | 'month' | 'day';
 /** The dates a range covers, as YYYY-MM-DD bounds; `from` is null for all of
  *  time. Ranges end today. */
 export function bounds(range: Range, today: Date): { from: string | null; to: string } {
-  const to = day(today);
+  // The reader's own calendar day, as the dates of entries are: by UTC, from
+  // midnight until the offset caught up, what was added today fell after
+  // `to` and went uncounted.
+  const to = localDay(today);
   if (range === 'all') return { from: null, to };
   if (range === '12m') {
-    const from = new Date(today);
+    const from = new Date(`${to}T00:00:00Z`);
     from.setUTCFullYear(from.getUTCFullYear() - 1);
     from.setUTCDate(from.getUTCDate() + 1);
     return { from: day(from), to };
@@ -236,4 +239,18 @@ export function tally<T extends string | number>(values: T[]): { value: T; count
 
 function day(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+const two = (n: number) => String(n).padStart(2, '0');
+
+function localDay(d: Date): string {
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+}
+
+/** A timestamp as the reader's clock reads it, whatever offset the service
+ *  wrote it in, so its first ten characters are the reader's day. */
+export function local(at: string): string {
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return at;
+  return `${localDay(d)}T${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
 }

@@ -66,6 +66,11 @@ func (s *Server) openapi(w http.ResponseWriter, r *http.Request) {
 		},
 		"responses": ok("Counts by producer, person and tag"),
 	}}
+	paths["/stats"] = map[string]any{"get": map[string]any{
+		"summary": "The whole database counted: totals, entries added per month, how titles, " +
+			"releases, characters and staff spread, and the leaders of each kind. Counted once per dump",
+		"responses": ok("Counts, keyed by what they count"),
+	}}
 	paths["/recommend/vn"] = map[string]any{"get": map[string]any{
 		"summary": "Visual novels alike to the given ones, by their tags",
 		"parameters": []any{

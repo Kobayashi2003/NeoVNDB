@@ -61,7 +61,7 @@ export async function CatalogPage({
             its text is its edge, and that lines up with the list below. */}
         <Link
           href={`/${active.type}?f=${encodeURIComponent(asExpression(active.filters))}`}
-          className="-mr-3 ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+          className="-mr-3 ml-auto inline-flex items-center gap-1 h-7 rounded-full px-3 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
         >
           <ListFilter className="icon-text size-3" aria-hidden />
           Refine in {LIST[active.type].label}

@@ -1,16 +1,16 @@
-/** The seven shelves as one menu, below the width where they fit in a row
- *  (a sideways-scrolling strip hid the last ones). The button names the
- *  current shelf. */
+/** The seven shelves and the statistics as one menu, below the width where
+ *  they fit in a row (a sideways-scrolling strip hid the last ones). The
+ *  button names the current one. */
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Library, Search } from 'lucide-react';
+import { ChartColumn, Library, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LIST, TYPES } from '@/lib/list';
 import { MenuDivider, MenuPanel, menuItem } from '@/components/ui/Menu';
 import { Chevron, pill } from '@/components/ui/Pill';
-import { SHORT } from './shelves';
+import { SHORT, STATS } from './shelves';
 import { useMenu } from '@/hooks/useMenu';
 
 export function BrowseMenu({ here, className }: { here?: string; className?: string }) {
@@ -31,13 +31,12 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
         aria-label="Browse"
         className={pill({
           tone: here ? 'on' : 'quiet',
-          size: 'sm',
           className: 'max-w-full',
         })}
       >
         <Library className="icon-text h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="hidden truncate @min-[6.5rem]:inline">
-          {here ? SHORT[here] : 'Browse'}
+          {here === 'stats' ? STATS.label : here ? SHORT[here] : 'Browse'}
         </span>
         <Chevron open={open} />
       </button>
@@ -68,6 +67,16 @@ export function BrowseMenu({ here, className }: { here?: string; className?: str
               </Link>
             );
           })}
+          <MenuDivider />
+          <Link
+            href={STATS.href}
+            onClick={() => setOpen(false)}
+            aria-current={here === 'stats' ? 'page' : undefined}
+            className={menuItem({ current: here === 'stats' })}
+          >
+            <ChartColumn className="icon-text size-3.5 shrink-0 text-muted" aria-hidden />
+            {STATS.full}
+          </Link>
         </MenuPanel>
       )}
     </div>

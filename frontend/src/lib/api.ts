@@ -125,6 +125,84 @@ export async function vnStats(ids: string[], top: number): Promise<VNStats> {
   return get<VNStats>('/stats/vn', { id: ids.join(','), top: String(top) });
 }
 
+/** One value of a field across the database, and how many entries hold it. */
+export interface Counted {
+  key: string;
+  count: number;
+}
+
+/** Counts per character sex: f, m, b (both), n (sexless), u (not given). */
+export type BySex = Record<string, Counted[]>;
+
+/** A title, producer, person, tag or trait, and what it is counted against. */
+export interface Leader {
+  id: string;
+  name: string;
+  original: string | null;
+  translation?: string;
+  count: number;
+}
+
+/** The whole database counted (`/stats`, backend db.SiteStats). */
+export interface SiteStats {
+  totals: Counted[];
+  /** Entries created on vndb per month (YYYY-MM), by type letter. */
+  added: Record<string, Counted[]>;
+  vn_years: Counted[];
+  vn_languages: Counted[];
+  vn_platforms: Counted[];
+  vn_lengths: Counted[];
+  vn_status: Counted[];
+  /** By half point, keyed ×10: 65 is 6.5 to 6.99. */
+  vn_ratings: Counted[];
+  /** `count` is the rating ×100. */
+  vn_top_rated: Leader[];
+  vn_most_voted: Leader[];
+  release_years: Counted[];
+  release_platforms: Counted[];
+  release_languages: Counted[];
+  release_ages: Counted[];
+  release_voiced: Counted[];
+  release_kinds: Counted[];
+  release_engines: Counted[];
+  developers: Leader[];
+  publishers: Leader[];
+  producer_types: Counted[];
+  producer_languages: Counted[];
+  char_sex: Counted[];
+  char_gender: Counted[];
+  char_roles: BySex;
+  char_ages: BySex;
+  /** Centimetres. */
+  char_heights: BySex;
+  char_bust: BySex;
+  char_cups: BySex;
+  char_blood: BySex;
+  char_birth_months: BySex;
+  staff_gender: Counted[];
+  staff_languages: Counted[];
+  staff_roles: Counted[];
+  staff_top: Record<string, Leader[]>;
+  seiyuu: Leader[];
+  tag_categories: Counted[];
+  tags: Record<string, Leader[]>;
+  trait_groups: Leader[];
+  /** Keyed by the group's id, as in trait_groups. */
+  traits: Record<string, Leader[]>;
+}
+
+export interface CountedSite {
+  /** The generation it was counted on: the dump's code, then the translations'. */
+  generation: string;
+  counted_at: string;
+  stats: SiteStats;
+}
+
+/** Counted once per dump, ahead of the first ask. */
+export async function siteStats(): Promise<CountedSite> {
+  return get<CountedSite>('/stats', {});
+}
+
 export interface Pick {
   id: string;
   score: number;

@@ -12,6 +12,7 @@ import {
   type TranslatablePage,
 } from '@/lib/admin';
 import { errorText } from '@/lib/user';
+import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
 import { surface } from '@/components/ui/Surface';
 import { Button, FIELD, Trouble } from './parts';
@@ -83,7 +84,7 @@ export function TranslationsTab() {
             onChange={e => setQuery(e.target.value)}
             placeholder="Name, group or translation"
             aria-label="Search translations"
-            className={`${FIELD} w-56 py-1.5 text-xs`}
+            className={cn(FIELD, 'h-7 w-56 rounded-full py-0 text-xs')}
           />
         </form>
         <a

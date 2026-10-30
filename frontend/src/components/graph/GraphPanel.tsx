@@ -115,7 +115,7 @@ export function GraphPanel({
               aria-pressed={choosing}
               title="Pick two titles to see every way they connect"
               className={cn(
-                'ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                'ml-auto flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors',
                 choosing
                   ? 'bg-sky-500/20 text-sky-300'
                   : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white',

@@ -287,7 +287,7 @@ export const CHARACTER_ROLE_TEXT: Record<string, string> = {
 
 /* ─── Per-group type aliases ───────────────────────────────────────────────── */
 // The group key, used by the enum accessors below to constrain their argument.
-type EnumGroup = keyof typeof ENUMS;
+export type EnumGroup = keyof typeof ENUMS;
 
 /* ─── Accessors ────────────────────────────────────────────────────────────── */
 

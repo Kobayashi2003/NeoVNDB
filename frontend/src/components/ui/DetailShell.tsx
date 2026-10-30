@@ -46,7 +46,8 @@ export function DetailShell({
       >
         <div className="mb-6">{header}</div>
         <div className="mb-6 flex flex-col gap-3 lg:hidden">{aside}</div>
-        <SectionNav />
+        {/* From lg the column scrolls itself, under no header. */}
+        <SectionNav className="lg:top-2" />
         <div className="flex flex-col gap-8">{children}</div>
         {/* Whether the section row shows depends on the whole column
             (globals.css), and on a slow line the browser would draw a long

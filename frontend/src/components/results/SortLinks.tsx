@@ -4,8 +4,8 @@
 
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { ControlLabel } from '@/components/ui/ControlLabel';
+import { pill } from '@/components/ui/Pill';
 import { withParams, type Params } from '@/lib/href';
 import { reverseParam, type Sort } from '@/lib/list';
 import { SortMenu } from './SortMenu';
@@ -53,10 +53,7 @@ export function SortLinks({
             <Link
               key={sort.value}
               href={withParams(path, params, next)}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-                here ? 'bg-white/20 text-white' : 'text-muted hover:bg-white/10 hover:text-white',
-              )}
+              className={pill({ tone: here ? 'on' : 'quiet', className: 'px-2.5' })}
             >
               {sort.label}
               {here &&

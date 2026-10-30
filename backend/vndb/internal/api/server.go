@@ -31,6 +31,9 @@ type Server struct {
 
 	cache cache.Cache
 	gen   *generations
+	site  *siteStats
+	// The process's context, for work that outlives a request.
+	base context.Context
 }
 
 func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, error) {
@@ -45,7 +48,7 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 		return nil, err
 	}
 
-	return &Server{
+	s := &Server{
 		store: store, log: log, cfg: cfg,
 		limits: query.Limits{
 			PageSize:       cfg.PageSize,
@@ -59,7 +62,11 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 		cat: cat, resolvers: resolvers,
 		cache: responses,
 		gen:   &generations{store: store},
-	}, nil
+		site:  &siteStats{},
+		base:  ctx,
+	}
+	go s.keepSiteStats(ctx)
+	return s, nil
 }
 
 // newCatalog builds every type first and registers them second; see
@@ -99,6 +106,8 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	mux.HandleFunc("GET /facets/{type}/{filter}", s.facet)
 	// Aggregates over a set of visual novels, for the reader's dashboard.
 	mux.HandleFunc("GET /stats/vn", s.vnStats)
+	// The whole mirror counted, for the public statistics page.
+	mux.HandleFunc("GET /stats", s.siteStatsHandler)
 	mux.HandleFunc("GET /recommend/vn", s.recommend)
 	mux.HandleFunc("GET /{type}", s.query)
 	return recovering(s.log, logging(s.log, mux))

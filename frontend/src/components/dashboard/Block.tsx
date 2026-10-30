@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { ChartColumn, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { iconButton } from '@/components/ui/Pill';
 import { Section } from '@/components/ui/Section';
 import { surface } from '@/components/ui/Surface';
 
@@ -36,7 +37,7 @@ export function Block({
       aria-pressed={asTable}
       title={asTable ? 'Show as a chart' : 'Show as a table'}
       aria-label={asTable ? 'Show as a chart' : 'Show as a table'}
-      className="rounded-full p-1.5 text-muted transition-colors hover:bg-white/10 hover:text-white"
+      className={iconButton()}
     >
       {asTable ? (
         <ChartColumn className="size-3.5" aria-hidden />
@@ -58,34 +59,84 @@ export function Block({
         )
       }
     >
-      {asTable && table ? <Table {...table} /> : children}
+      {asTable && table ? (
+        <Swap view="table">
+          <Table {...table} />
+        </Swap>
+      ) : (
+        // Its content still stretches when the section is stretched to its pair.
+        <Swap view="chart" className="flex flex-col [&>*]:flex-1">
+          {children}
+        </Swap>
+      )}
     </Section>
   );
 }
 
-/** The surface a chart sits on, so charts read as one family. */
-export function Plot({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={surface(cn('p-4', className))}>{children}</div>;
+/** Its children settle in whenever `view` changes, rather than cutting. */
+export function Swap({
+  view,
+  className,
+  children,
+}: {
+  view: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div key={view} className={cn('animate-swap-in', className)}>
+      {children}
+    </div>
+  );
 }
+
+/** The surface a chart sits on, so charts read as one family. `view` names
+ *  what it is showing, where that can be swapped. */
+export function Plot({
+  view,
+  className,
+  children,
+}: {
+  view?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={surface(cn('p-4', className))}>
+      {view === undefined ? (
+        children
+      ) : (
+        <Swap view={view} className="h-full">
+          {children}
+        </Swap>
+      )}
+    </div>
+  );
+}
+
+/** A cell's sides: the box's own inset, on the outer cells. */
+const CELL = 'px-2 first:pl-4 last:pr-4';
 
 function Table({ head, rows }: TableView) {
   return (
-    <div className={surface('max-h-96 overflow-auto px-4 py-2')}>
+    // The padding is the cells', not the box's, so the pinned heading's band
+    // runs edge to edge rather than ending flush with its text.
+    <div className={surface('max-h-96 overflow-auto pb-1.5')}>
       <table className="w-full text-xs">
-        <thead className="sticky top-0 bg-surface-solid text-left text-muted">
+        <thead className="sticky top-0 bg-surface-solid text-left text-muted shadow-[0_1px_0_rgb(255_255_255/0.1)]">
           <tr>
             {head.map((h, i) => (
-              <th key={h} className={cn('py-1.5 font-medium', i > 0 && 'text-right')}>
+              <th key={h} className={cn(CELL, 'pb-2 pt-2.5 font-medium', i > 0 && 'text-right')}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map(row => (
-            <tr key={String(row[0])} className="border-t border-white/5">
+          {rows.map((row, r) => (
+            <tr key={String(row[0])} className={cn(r > 0 && 'border-t border-white/5')}>
               {row.map((cell, i) => (
-                <td key={i} className={cn('py-1.5', i > 0 && 'text-right tabular-nums')}>
+                <td key={i} className={cn(CELL, 'py-1.5', i > 0 && 'text-right tabular-nums')}>
                   {cell}
                 </td>
               ))}

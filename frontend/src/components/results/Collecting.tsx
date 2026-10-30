@@ -108,7 +108,7 @@ export function SelectToggle() {
       aria-pressed={s.selecting}
       title={s.selecting ? 'Done selecting' : 'Select results to save them to a list'}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors',
+        'inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors',
         s.selecting ? 'bg-accent text-background' : 'text-muted hover:bg-white/10 hover:text-white',
       )}
     >
@@ -195,7 +195,7 @@ function SaveBar({
           onClick={() => (picking ? setPicking(false) : reveal())}
           disabled={chosen.length === 0 || busy}
           aria-expanded={picking}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
+          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
         >
           {busy ? (
             <Loader2 className="icon-text h-4 w-4 shrink-0 animate-spin" aria-hidden />

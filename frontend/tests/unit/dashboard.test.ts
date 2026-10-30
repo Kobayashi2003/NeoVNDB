@@ -8,6 +8,7 @@ import {
   fromLists,
   grains,
   inRange,
+  local,
   narrow,
   tally,
   weight,
@@ -29,11 +30,23 @@ describe('dashboard', () => {
       ],
       new Map([['v2', 4]]),
     );
+    // On the reader's clock, whatever offset the service wrote.
     expect(entries).toEqual([
-      { id: 'v1', at: '2024-07-07T00:00:00+08:00', rating: null },
-      { id: 'v2', at: '2025-01-01T00:00:00+08:00', rating: 4 },
+      { id: 'v1', at: local('2024-07-07T00:00:00+08:00'), rating: null },
+      { id: 'v2', at: local('2025-01-01T00:00:00+08:00'), rating: 4 },
     ]);
+    expect(entries[0].at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
     expect(years(entries)).toEqual([2025, 2024]);
+  });
+
+  it('counts what was added just now, whatever the hour', () => {
+    // Shortly after the reader's midnight, when the UTC day is still the last.
+    const now = new Date(2026, 9, 30, 0, 30);
+    const added = new Date(2026, 9, 30, 0, 10).toISOString();
+    const entries = fromLists([[{ id: 'v1', marked_at: added }]], new Map());
+    expect(inRange(entries, 'all', now)).toHaveLength(1);
+    expect(inRange(entries, '12m', now)).toHaveLength(1);
+    expect(bounds('all', now).to).toBe('2026-10-30');
   });
 
   it('bounds a range, ending today', () => {

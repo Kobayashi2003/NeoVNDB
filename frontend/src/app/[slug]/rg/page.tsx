@@ -7,11 +7,12 @@
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ChevronsRight, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronsRight, Minus, Plus, TriangleAlert } from 'lucide-react';
 import { ApiError, byId, relationGraph } from '@/lib/api';
 import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
 import { Name } from '@/components/ui/Name';
+import { Notice, noticeAction } from '@/components/ui/Notice';
 import { RelationGraph } from '@/components/graph/RelationGraph';
 import { steps, type RelationGraph as Graph } from '@/lib/graph';
 
@@ -41,11 +42,21 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
     // A graph the API refused to draw is not a missing page; say which it is.
     const why = e instanceof ApiError && e.status === 400 ? e.message : 'Something went wrong.';
     return (
-      <main className="mx-auto w-full max-w-page px-4 py-8">
-        <Back id={slug} />
-        <p role="alert" className="mt-4 text-sm text-red-400">
+      <main className="mx-auto w-full max-w-page px-4">
+        <Notice
+          icon={TriangleAlert}
+          title="The graph could not be drawn"
+          tone="trouble"
+          page
+          className="min-h-[70dvh]"
+          actions={
+            <Link href={`/${slug}`} className={noticeAction(true)}>
+              Back to the novel
+            </Link>
+          }
+        >
           {why}
-        </p>
+        </Notice>
       </main>
     );
   }
@@ -96,7 +107,8 @@ function Steps({
     withParams(`/${slug}/rg`, query, { depth: d === DEFAULT_DEPTH ? null : String(d) });
   const label = (d: number) => `${d} ${d === 1 ? 'step' : 'steps'} out`;
 
-  const bar = 'flex w-fit items-center gap-0.5 rounded-full border border-white/10 p-0.5';
+  // As tall as Deepest beside it, the steps filling it inside the border.
+  const bar = 'flex h-7 w-fit items-stretch gap-0.5 rounded-full border border-white/10 p-0.5';
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,7 +122,7 @@ function Steps({
                 aria-current={d === shown ? 'page' : undefined}
                 aria-label={label(d)}
                 className={cn(
-                  'w-6 rounded-full py-0.5 text-center text-xs font-medium tabular-nums transition-colors',
+                  'flex w-6 items-center justify-center rounded-full text-xs font-medium tabular-nums transition-colors',
                   d === shown
                     ? 'bg-white/20 text-white'
                     : 'text-muted hover:bg-white/10 hover:text-white',
@@ -126,7 +138,10 @@ function Steps({
             <StepLink href={shown > 1 ? href(shown - 1) : null} label="One step fewer">
               <Minus />
             </StepLink>
-            <span aria-current="page" className="px-2 text-xs font-medium tabular-nums text-white">
+            <span
+              aria-current="page"
+              className="flex items-center px-2 text-xs font-medium tabular-nums text-white"
+            >
               {label(shown)}
             </span>
             <StepLink href={deeper ? href(shown + 1) : null} label="One step more">
@@ -167,8 +182,8 @@ function StepLink({
   children: React.ReactNode;
 }) {
   const style = cn(
-    'flex h-6 items-center justify-center rounded-full [&>svg]:h-3.5 [&>svg]:w-3.5',
-    wide ? 'gap-1 border border-white/10 pl-1.5 pr-2.5 text-xs font-medium' : 'w-6',
+    'flex items-center justify-center rounded-full [&>svg]:h-3.5 [&>svg]:w-3.5',
+    wide ? 'h-7 gap-1 border border-white/10 pl-1.5 pr-2.5 text-xs font-medium' : 'w-6',
   );
   if (!href) {
     return (

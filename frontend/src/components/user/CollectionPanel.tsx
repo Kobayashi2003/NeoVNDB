@@ -4,11 +4,13 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { SearchX, TriangleAlert } from 'lucide-react';
 import { LIST } from '@/lib/list';
 import { items, marks, moveMarks, removeMarks, type Mark } from '@/lib/user';
 import type { Params } from '@/lib/href';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
+import { Notice, noticeAction } from '@/components/ui/Notice';
 import { ShelfPanel } from './ShelfPanel';
 import { SelectBar } from './SelectBar';
 import { CollectionPicker } from './CollectionSwitcher';
@@ -43,7 +45,23 @@ export function CollectionPanel({
   );
 
   if (lists && !list) {
-    return <p className="text-sm text-red-400">{error ?? 'No such list.'}</p>;
+    return error ? (
+      <Notice icon={TriangleAlert} title="Your lists could not be loaded" tone="trouble">
+        {error}
+      </Notice>
+    ) : (
+      <Notice
+        icon={SearchX}
+        title="No such list"
+        actions={
+          <Link href="/u" className={noticeAction(true)}>
+            All lists
+          </Link>
+        }
+      >
+        It may have been deleted, or belong to another account.
+      </Notice>
+    );
   }
 
   return (

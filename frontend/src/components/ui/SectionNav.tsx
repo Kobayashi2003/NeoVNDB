@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidewaysWheel } from '@/hooks/useSidewaysWheel';
+import { pill } from './Pill';
 
 interface Mark {
   id: string;
@@ -27,7 +28,15 @@ interface Mark {
  *  being read: the heading has just come into view under it. */
 const READING_SLACK = 48;
 
-export function SectionNav() {
+export function SectionNav({
+  of = 'section[data-section]',
+  className,
+}: {
+  /** The sections to list, each named by its `data-section`: every one by
+   *  default, or a few large groups of them where the page has many. */
+  of?: string;
+  className?: string;
+} = {}) {
   const spot = useRef<HTMLDivElement>(null);
   const nav = useRef<HTMLElement>(null);
   const [marks, setMarks] = useState<Mark[]>([]);
@@ -43,7 +52,7 @@ export function SectionNav() {
     const box = spot.current?.closest<HTMLElement>('[data-scroll-top]');
     if (!box) return;
 
-    const sections = () => [...box.querySelectorAll<HTMLElement>('section[data-section]')];
+    const sections = () => [...box.querySelectorAll<HTMLElement>(of)];
     const atEnd = () => {
       const own = box.scrollHeight > box.clientHeight;
       return own
@@ -91,7 +100,7 @@ export function SectionNav() {
       box.removeEventListener('scroll', read);
       window.removeEventListener('scroll', read);
     };
-  }, []);
+  }, [of]);
 
   // The lit pill kept in view in a row that scrolls sideways. By the row's own
   // scrollLeft: scrollIntoView would also move the page, cutting short the
@@ -115,11 +124,14 @@ export function SectionNav() {
         data-section-nav
         // Pulled left by the card's padding and border, so in place the first
         // pill lines up with the headings below.
-        className="sticky top-[calc(var(--header-h)+0.5rem)] z-20 -ml-[5px] mb-5 w-fit max-w-[calc(100%+5px)] lg:top-2"
+        className={cn(
+          'sticky top-[calc(var(--header-h)+0.5rem)] z-20 -ml-[3px] mb-5 w-fit max-w-[calc(100%+3px)]',
+          className,
+        )}
       >
         <ul
           className={cn(
-            'flex min-h-[34px] gap-1 overflow-x-auto rounded-full border p-1 transition-[background-color,border-color,box-shadow] duration-200 [scrollbar-width:none]',
+            'flex min-h-[34px] gap-1 overflow-x-auto rounded-full border p-0.5 transition-[background-color,border-color,box-shadow] duration-200 [scrollbar-width:none]',
             stuck
               ? 'border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md'
               : 'border-transparent',
@@ -135,15 +147,13 @@ export function SectionNav() {
                   document.getElementById(m.id)?.scrollIntoView({ behavior: 'smooth' });
                   setCurrent(m.id);
                 }}
-                className={cn(
-                  'block rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                  m.id === current
-                    ? 'bg-white/20 text-white'
-                    : 'text-muted hover:bg-white/10 hover:text-white',
-                )}
+                className={pill({
+                  tone: m.id === current ? 'on' : 'quiet',
+                  className: 'gap-1.5',
+                })}
               >
                 {m.title}
-                {m.count && <span className="ml-1.5 tabular-nums text-muted">{m.count}</span>}
+                {m.count && <span className="tabular-nums text-muted">{m.count}</span>}
               </a>
             </li>
           ))}

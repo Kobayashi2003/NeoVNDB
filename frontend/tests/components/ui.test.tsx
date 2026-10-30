@@ -12,6 +12,7 @@ import { Segmented } from '@/components/ui/Segmented';
 import { Spoiler, SpoilerScope } from '@/components/ui/Spoiler';
 import { TabBar } from '@/components/ui/TabBar';
 import { Selectable } from '@/components/ui/Selection';
+import { SearchX } from 'lucide-react';
 import { Trouble } from '@/components/ui/Trouble';
 import { usePrefs } from '@/hooks/usePrefs';
 import { Collapsible } from '@/components/ui/Collapsible';
@@ -254,7 +255,11 @@ describe('small pieces', () => {
   });
 
   it('offers a way out of a page with nothing to show', () => {
-    render(<Trouble title="Nothing here">Gone.</Trouble>);
+    render(
+      <Trouble icon={SearchX} title="Nothing here">
+        Gone.
+      </Trouble>,
+    );
     expect(screen.getByRole('link', { name: 'Front page' })).toHaveAttribute('href', '/');
   });
 });

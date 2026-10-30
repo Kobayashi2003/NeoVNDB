@@ -1,8 +1,8 @@
 /** A row of mutually exclusive filters, each carrying how many it would show. */
 'use client';
 
-import { cn } from '@/lib/utils';
 import { rowKeys } from '@/lib/rowKeys';
+import { pill } from './Pill';
 
 export interface Tab {
   value: string;
@@ -27,15 +27,10 @@ export function TabBar({
           role="tab"
           aria-selected={active === tab.value}
           onClick={() => onChange(tab.value)}
-          className={cn(
-            'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-            active === tab.value
-              ? 'bg-white/20 text-white'
-              : 'text-muted hover:bg-white/10 hover:text-white',
-          )}
+          className={pill({ tone: active === tab.value ? 'on' : 'quiet', className: 'gap-1.5' })}
         >
           {tab.label}
-          {tab.count !== undefined && <span className="ml-1.5 text-muted">{tab.count}</span>}
+          {tab.count !== undefined && <span className="text-muted">{tab.count}</span>}
         </button>
       ))}
     </div>

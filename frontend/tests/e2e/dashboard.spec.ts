@@ -8,7 +8,7 @@ test('the dashboard counts what the reader holds and suggests more', async ({ pa
   await user.call('PUT', '/ratings/v17', { rating: 5 });
   await user.call('PUT', '/ratings/v11', { rating: 2 });
 
-  await page.goto('/u/ratings');
+  await page.goto('/u/dashboard');
   const tile = (label: string) => page.locator('dl > div', { hasText: label }).locator('dd');
   await expect(tile('Titles')).toHaveText('3');
   await expect(tile('Rated')).toHaveText(/^2/);

@@ -67,7 +67,7 @@ export function RatingsBar({
             }}
             disabled={busy}
             aria-label="Yes, clear their ratings"
-            className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+            className="flex size-7 items-center justify-center rounded-full text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -90,7 +90,7 @@ export function RatingsBar({
           onClick={() => setConfirming(true)}
           disabled={chosen === 0 || busy}
           title="Clear their ratings"
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
         >
           <StarOff className="icon-text h-4 w-4 shrink-0" aria-hidden />
           <span className="hidden sm:inline">Clear</span>

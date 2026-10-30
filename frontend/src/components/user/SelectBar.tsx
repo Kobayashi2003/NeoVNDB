@@ -52,7 +52,7 @@ export function SelectBar({
           disabled={chosen === 0 || busy || lists.length === 0}
           aria-expanded={picking}
           title={lists.length === 0 ? 'No other list of this kind' : 'Move to another list'}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
+          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs transition-colors hover:bg-white/10 disabled:opacity-40"
         >
           <FolderInput className="icon-text h-4 w-4 shrink-0" aria-hidden />
           <span className="hidden sm:inline">Move</span>
@@ -94,7 +94,7 @@ export function SelectBar({
             }}
             disabled={busy}
             aria-label="Yes, remove them"
-            className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+            className="flex size-7 items-center justify-center rounded-full text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -117,7 +117,7 @@ export function SelectBar({
           onClick={() => setConfirming(true)}
           disabled={chosen === 0 || busy}
           title="Remove from this list"
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
+          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-red-400 transition-colors hover:bg-red-500/15 disabled:opacity-40"
         >
           <Trash2 className="icon-text h-4 w-4 shrink-0" aria-hidden />
           <span className="hidden sm:inline">Remove</span>

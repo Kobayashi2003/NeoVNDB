@@ -81,7 +81,7 @@ export function SavedSearches({ type, params }: { type: string; params: Params }
         aria-label="Saved searches"
         title="Saved searches"
         className={cn(
-          'inline-flex h-full items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+          'inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors',
           open ? 'bg-white/20 text-white' : 'bg-white/10 text-white hover:bg-white/15',
         )}
       >

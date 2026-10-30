@@ -43,7 +43,7 @@ export function SortMenu({
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={labelled ? pill({ tone: 'on', size: 'sm' }) : pill()}
+        className={labelled ? pill({ tone: 'on' }) : pill()}
       >
         {!labelled && <span className="text-muted">Sort:</span>}
         {current?.label ?? 'Relevance'}

@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Grow } from './Grow';
 
 export interface Column {
   key: string;
@@ -51,6 +52,12 @@ export function Columns({
   const every = Math.max(1, Math.ceil(data.length / LABELS));
   const shown = hover !== null ? data[hover] : data.find(d => d.key === picked);
   const counted = data.length <= COUNTED;
+  const pickedAt = data.findIndex(d => d.key === picked);
+  // Counted from the right, so the latest column is always named; a picked
+  // column is named too, and its neighbours give way rather than overprint it.
+  const labelled = (i: number) =>
+    i === pickedAt ||
+    ((data.length - 1 - i) % every === 0 && (pickedAt < 0 || Math.abs(i - pickedAt) >= every));
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -77,8 +84,12 @@ export function Columns({
         )}
         onPointerLeave={() => setHover(null)}
       >
+        {/* Keyed by place, not by key: from year to month, or one range to
+            another, each column grows or shrinks from where it stood. */}
         {data.map((d, i) => {
           const on = d.key === picked;
+          // Nothing to narrow to; it still answers the pointer, so its zero reads out.
+          const empty = d.value === 0 && !on;
           const props = {
             'aria-label': `${d.title}: ${d.value} ${unit}`,
             onPointerEnter: () => setHover(i),
@@ -87,7 +98,7 @@ export function Columns({
             // The whole slot answers, not only the painted column.
             className: cn(
               'group flex h-full min-w-0 flex-1 flex-col items-center justify-end rounded-t outline-none',
-              onPick ? 'cursor-pointer' : 'cursor-default',
+              onPick && !empty ? 'cursor-pointer' : 'cursor-default',
             ),
           };
           const bar = (
@@ -103,29 +114,31 @@ export function Columns({
                   {d.value.toLocaleString()}
                 </span>
               )}
-              <span
+              <Grow
+                along="height"
+                size={d.value ? `${Math.max(2, (d.value / max) * 100)}%` : 0}
                 className={cn(
-                  'block w-full max-w-6 shrink-0 rounded-t motion-safe:transition-[height,opacity,background-color] motion-safe:duration-300',
+                  'w-full max-w-6 shrink-0 rounded-t motion-safe:transition-[height,opacity,background-color]',
                   'group-focus-visible:ring-2 group-focus-visible:ring-white/60',
                   picked === undefined || on ? 'bg-accent' : 'bg-accent/30',
                   hover !== null && hover !== i && !on && 'opacity-60',
                 )}
-                style={{ height: d.value ? `${Math.max(2, (d.value / max) * 100)}%` : 0 }}
               />
             </>
           );
           return onPick ? (
             <button
-              key={d.key}
+              key={i}
               type="button"
               aria-pressed={on}
-              onClick={() => onPick(on ? undefined : d.key)}
+              aria-disabled={empty || undefined}
+              onClick={() => !empty && onPick(on ? undefined : d.key)}
               {...props}
             >
               {bar}
             </button>
           ) : (
-            <div key={d.key} tabIndex={0} {...props}>
+            <div key={i} tabIndex={0} {...props}>
               {bar}
             </div>
           );
@@ -134,14 +147,13 @@ export function Columns({
       <div className="flex h-4 gap-0.5 text-[0.625rem] leading-4 text-muted" aria-hidden>
         {data.map((d, i) => (
           <span
-            key={d.key}
+            key={i}
             className={cn(
               'min-w-0 flex-1 overflow-visible whitespace-nowrap text-center',
               d.key === picked && 'text-white',
             )}
           >
-            {/* Counted from the right, so the latest column is always named. */}
-            {(data.length - 1 - i) % every === 0 || d.key === picked ? d.label : ''}
+            {labelled(i) ? d.label : ''}
           </span>
         ))}
       </div>

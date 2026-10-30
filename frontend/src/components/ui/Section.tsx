@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /** A main-column heading. The short accent tick anchors it and lifts it off
  *  the body without the weight of a full divider. */
@@ -45,21 +46,25 @@ export function Section({
       data-count={count?.toLocaleString()}
       className="scroll-mt-[calc(var(--header-h)+4rem)] lg:scroll-mt-16"
     >
-      <h2 className="mb-3 flex items-center gap-2.5">
-        <span className="h-4 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
-        {onTitleClick ? (
-          <button
-            type="button"
-            onClick={onTitleClick}
-            className="group flex cursor-pointer items-center gap-2.5 coarse:py-1"
-          >
-            {heading}
-          </button>
-        ) : (
-          heading
-        )}
-        {action && <span className="ml-auto">{action}</span>}
-      </h2>
+      {/* The controls beside the heading are not part of its name, so they
+          sit next to the h2 rather than in it. */}
+      <div className={cn('mb-3 flex items-center gap-2.5', action && 'min-h-7')}>
+        <h2 className="flex min-w-0 items-center gap-2.5">
+          <span className="h-4 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
+          {onTitleClick ? (
+            <button
+              type="button"
+              onClick={onTitleClick}
+              className="group flex cursor-pointer items-center gap-2.5 coarse:py-1"
+            >
+              {heading}
+            </button>
+          ) : (
+            heading
+          )}
+        </h2>
+        {action && <div className="ml-auto">{action}</div>}
+      </div>
       {children}
     </section>
   );

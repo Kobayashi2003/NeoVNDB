@@ -16,8 +16,8 @@ import {
 } from '@/lib/user';
 import { one, withParams, type Params } from '@/lib/href';
 import { LIST, TYPES } from '@/lib/list';
-import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/useSession';
+import { pill } from '@/components/ui/Pill';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
 import { Placeholder } from '@/components/ui/Surface';
 import { ShelfPanel } from './ShelfPanel';
@@ -103,17 +103,10 @@ function Ratings({ page, params }: { page: number; params: Params }) {
                 q: null,
               })}
               aria-current={t === type ? 'page' : undefined}
-              className={cn(
-                'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-                t === type
-                  ? 'bg-white/20 text-white'
-                  : 'text-muted hover:bg-white/10 hover:text-white',
-              )}
+              className={pill({ tone: t === type ? 'on' : 'quiet', className: 'gap-1.5 px-2.5' })}
             >
               {LIST[t].label}
-              {counts?.[t] ? (
-                <span className="ml-1.5 tabular-nums text-muted">{counts[t]}</span>
-              ) : null}
+              {counts?.[t] ? <span className="tabular-nums text-muted">{counts[t]}</span> : null}
             </Link>
           ))}
         </nav>

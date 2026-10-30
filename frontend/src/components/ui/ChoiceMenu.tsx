@@ -46,7 +46,7 @@ export function ChoiceMenu<T extends string>({
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         aria-label={`${label}: ${current?.label ?? ''}`}
-        className={pill({ tone: open ? 'on' : 'filled', size: 'sm', className: 'max-w-full' })}
+        className={pill({ tone: open ? 'on' : 'filled', className: 'max-w-full' })}
       >
         {prefix && <span className="text-muted">{prefix}</span>}
         <span className="truncate">{current?.label}</span>

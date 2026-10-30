@@ -9,6 +9,7 @@ import { countOf, fetchResults } from '@/lib/results';
 import { ResultsPanel } from '@/components/results/ResultsPanel';
 import { DataAge } from '@/components/layout/DataAge';
 import { ControlLabel } from '@/components/ui/ControlLabel';
+import { pill } from '@/components/ui/Pill';
 import { MonthPicker } from '@/components/home/MonthPicker';
 import { monthName } from '@/lib/months';
 import { still } from '@/lib/viewTransitions';
@@ -114,11 +115,7 @@ function Origin({
     <Link
       href={withParams('/', params, { olang: value, page: null })}
       aria-current={on ? 'page' : undefined}
-      className={
-        on
-          ? 'rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white'
-          : 'rounded-full px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-white'
-      }
+      className={pill({ tone: on ? 'on' : 'quiet', className: 'px-2.5' })}
     >
       {label}
     </Link>

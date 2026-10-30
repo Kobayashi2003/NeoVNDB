@@ -7,7 +7,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutDashboard, X } from 'lucide-react';
+import Link from 'next/link';
+import { LayoutDashboard, TriangleAlert, X } from 'lucide-react';
 import { list, vnStats, type VNStats } from '@/lib/api';
 import { LIST } from '@/lib/list';
 import {
@@ -18,6 +19,7 @@ import {
   fromLists,
   grains,
   inRange,
+  local,
   narrow,
   tally,
   years,
@@ -38,7 +40,8 @@ import { SignInFirst } from '@/components/user/SignInFirst';
 import { ChoiceMenu, type MenuChoice } from '@/components/ui/ChoiceMenu';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { Segmented } from '@/components/ui/Segmented';
-import { floating, Placeholder, surface } from '@/components/ui/Surface';
+import { Notice, noticeAction } from '@/components/ui/Notice';
+import { Placeholder } from '@/components/ui/Surface';
 import { Block, Plot } from './Block';
 import { Columns } from './Columns';
 import { Calendar } from './Calendar';
@@ -65,14 +68,14 @@ const GRAIN: Record<Grain, string> = { year: 'Year', month: 'Month', day: 'Day' 
 /** Two sections side by side from lg up, their surfaces stretched to the
  *  taller so the pair ends on one line. */
 const PAIR =
-  'grid gap-x-6 gap-y-8 lg:grid-cols-2 [&>section]:flex [&>section]:flex-col [&>section>:last-child]:flex-1 [&>section>h2]:min-h-7';
+  'grid gap-x-6 gap-y-8 lg:grid-cols-2 [&>section]:flex [&>section]:flex-col [&>section>:last-child]:flex-1 [&>section>:first-child]:min-h-7';
 
 export function Dashboard() {
   const session = useSession();
   if (session.status === 'unknown') return <Placeholder className="h-96" />;
   if (session.status === 'out') {
     return (
-      <SignInFirst next="/u/ratings" icon={LayoutDashboard} title="Your dashboard lives here">
+      <SignInFirst next="/u/dashboard" icon={LayoutDashboard} title="Your dashboard lives here">
         What you have added and rated, counted up, and what to read next.
       </SignInFirst>
     );
@@ -89,13 +92,16 @@ function Board() {
   const [chosen, setChosen] = useState<Grain | null>(null);
   const [picks, setPicks] = useState<Picks>({});
   const today = useMemo(() => new Date(), []);
-  const [bar, barHeight] = useHeight();
+  const [bar, setBar] = useElement();
+  const [spot, setSpot] = useElement();
+  const barHeight = useHeight(bar);
+  const stuck = useStuck(spot, bar);
 
   const ratings = useMemo(() => new Map(held?.rated.map(r => [r.id, r.rating]) ?? []), [held]);
   const entries = useMemo<Entry[]>(() => {
     if (!held) return [];
     if (source === 'rated')
-      return held.rated.map(r => ({ id: r.id, at: r.rated_at, rating: r.rating }));
+      return held.rated.map(r => ({ id: r.id, at: local(r.rated_at), rating: r.rating }));
     const lists =
       source === 'all' ? held.lists : held.lists.filter(l => `list:${l.list.id}` === source);
     return fromLists(
@@ -112,13 +118,27 @@ function Board() {
   const ids = useMemo(() => picked.slice(0, MAX_IDS).map(e => e.id), [picked]);
   const { stats, stale } = useStats(ids);
 
-  if (error) return <p className="text-sm text-red-400">{error}</p>;
+  if (error) {
+    return (
+      <Notice icon={TriangleAlert} title="The dashboard could not be loaded" tone="trouble">
+        {error}
+      </Notice>
+    );
+  }
   if (!held) return <Placeholder className="h-96" />;
   if (held.lists.every(l => l.marks.length === 0) && held.rated.length === 0) {
     return (
-      <p className={surface('p-6 text-sm text-muted')}>
-        Nothing to count yet. Add visual novels to a list or rate them, and this fills in.
-      </p>
+      <Notice
+        icon={LayoutDashboard}
+        title="Nothing to count yet"
+        actions={
+          <Link href="/v" className={noticeAction(true)}>
+            Browse visual novels
+          </Link>
+        }
+      >
+        Add visual novels to a list or rate them, and this fills in.
+      </Notice>
     );
   }
 
@@ -157,12 +177,20 @@ function Board() {
       style={{ '--bar-h': `${barHeight}px` } as React.CSSProperties}
     >
       {/* Pinned from sm up, so the picks stay in sight while their effect is
-          read further down; on a phone it would take a fifth of the screen. */}
+          read further down; on a phone it would take a fifth of the screen. In
+          place it is a bare row, like a detail page's sections; once it sticks
+          it floats on a card. */}
+      <div ref={setSpot} aria-hidden className="-mb-8" />
       <div
-        ref={bar}
-        className={floating('z-30 flex flex-col gap-2 px-3 py-2 sm:sticky sm:top-(--header-h)')}
+        ref={setBar}
+        className={cn(
+          'z-30 -mx-3 flex w-fit max-w-[calc(100%+1.5rem)] flex-col gap-1.5 rounded-[1.25rem] border px-3 py-1 transition-[background-color,border-color,box-shadow] duration-200 sm:sticky sm:top-[calc(var(--header-h)+0.5rem)]',
+          stuck
+            ? 'border-white/10 bg-surface/90 shadow-lg shadow-black/30 backdrop-blur-md'
+            : 'border-transparent',
+        )}
       >
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="flex min-h-7 flex-wrap items-center gap-x-4 gap-y-1">
           <div className="flex min-w-0 items-center gap-1">
             <ControlLabel>Titles</ControlLabel>
             <ChoiceMenu
@@ -229,7 +257,9 @@ function Board() {
                 grain === 'day' ? days(dates) : buckets(dates, grain).map(b => [b.key, b.count]),
             }}
           >
-            <Plot>
+            {/* Year and month are the same columns, moving; days are another
+                chart, so that change settles in instead. */}
+            <Plot view={grain === 'day' ? 'calendar' : 'columns'}>
               {grain === 'day' ? (
                 <Calendar
                   weeks={calendar(dates, bounds(range, today).to)}
@@ -287,7 +317,7 @@ function Board() {
           scope={picked}
           details={details}
           came={came}
-          className="max-h-[36rem] xl:sticky xl:top-[calc(var(--header-h)+var(--bar-h)+1rem)] xl:max-h-[calc(100dvh-var(--header-h)-var(--bar-h)-2rem)]"
+          className="max-h-[36rem] xl:sticky xl:top-[calc(var(--header-h)+var(--bar-h)+1.5rem)] xl:max-h-[calc(100dvh-var(--header-h)-var(--bar-h)-2.5rem)]"
         />
       </div>
 
@@ -296,18 +326,36 @@ function Board() {
   );
 }
 
-/** A ref and the height of what it is put on, kept current as that changes. */
-function useHeight(): [React.RefObject<HTMLDivElement | null>, number] {
-  const ref = useRef<HTMLDivElement>(null);
+/** A callback ref, as state: the element mounts only once the data is in, after
+ *  an effect keyed on a plain ref would have run and found nothing. */
+function useElement() {
+  return useState<HTMLDivElement | null>(null);
+}
+
+/** The height of `el`, kept current as that changes. */
+function useHeight(el: HTMLElement | null): number {
   const [height, setHeight] = useState(0);
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
     const seen = new ResizeObserver(() => setHeight(el.offsetHeight));
     seen.observe(el);
     return () => seen.disconnect();
-  }, []);
-  return [ref, height];
+  }, [el]);
+  return height;
+}
+
+/** Whether `pinned` has left `spot`, its place in the flow, held by `sticky`. */
+function useStuck(spot: HTMLElement | null, pinned: HTMLElement | null): boolean {
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    if (!spot || !pinned) return;
+    const read = () =>
+      setStuck(spot.getBoundingClientRect().top < pinned.getBoundingClientRect().top - 1);
+    read();
+    window.addEventListener('scroll', read, { passive: true });
+    return () => window.removeEventListener('scroll', read);
+  }, [spot, pinned]);
+  return stuck;
 }
 
 /** Titles fetched for the ids in scope, a chunk at a time, kept across changes

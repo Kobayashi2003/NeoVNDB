@@ -180,7 +180,7 @@ export function FilterBar({
           type="button"
           onClick={() => setBuilding(b => !b)}
           aria-expanded={building}
-          className={pill({ tone: expression ? 'on' : 'quiet', size: 'sm' })}
+          className={pill({ tone: expression ? 'on' : 'quiet' })}
         >
           <ListFilter className="icon-text h-3 w-3" aria-hidden />
           Conditions
@@ -307,7 +307,7 @@ function FilterMenu({
           type="button"
           onClick={() => setOpen(o => !o)}
           aria-expanded={open}
-          className={pill({ tone: chosen.length > 0 ? 'on' : 'quiet', size: 'sm' })}
+          className={pill({ tone: chosen.length > 0 ? 'on' : 'quiet' })}
         >
           {filter.label}
           {chosen.length === 1 && !filter.multiple && (

@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ListChecks } from 'lucide-react';
+import { ListChecks, TriangleAlert } from 'lucide-react';
 import { LIST, PAGE_SIZE, readsDown, type Sort } from '@/lib/list';
 import { one, withParams, type Params } from '@/lib/href';
 import { readShelf, type OwnSort, type ShelfPage, type ShelfSource } from '@/lib/shelf';
@@ -18,7 +18,8 @@ import { SortLinks } from '@/components/results/SortLinks';
 import { Selectable } from '@/components/ui/Selection';
 import { useNavigate } from '@/hooks/useNavigate';
 import { useShelfChoice, type Choosing } from '@/hooks/useShelfChoice';
-import { Placeholder, surface } from '@/components/ui/Surface';
+import { Notice, noticeAction } from '@/components/ui/Notice';
+import { Placeholder } from '@/components/ui/Surface';
 import { Mine, Missing, SearchInList } from './ShelfParts';
 
 interface Held extends ShelfPage {
@@ -115,14 +116,18 @@ export function ShelfPanel({
 
   if (error && !held) {
     return (
-      <div className={surface('w-full max-w-sm p-6 text-sm')}>
-        <p role="alert" className="text-red-400">
-          {error}
-        </p>
-        <Link href="/u" className="mt-3 inline-block text-accent hover:underline">
-          All lists
-        </Link>
-      </div>
+      <Notice
+        icon={TriangleAlert}
+        title="This could not be loaded"
+        tone="trouble"
+        actions={
+          <Link href="/u" className={noticeAction()}>
+            All lists
+          </Link>
+        }
+      >
+        {error}
+      </Notice>
     );
   }
 
@@ -157,7 +162,7 @@ export function ShelfPanel({
               <button
                 type="button"
                 onClick={choice.start}
-                className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
+                className="flex h-7 items-center gap-1 rounded-full px-2 text-xs text-muted transition-colors hover:bg-white/10 hover:text-white"
               >
                 <ListChecks className="icon-text h-3.5 w-3.5" aria-hidden />
                 Select

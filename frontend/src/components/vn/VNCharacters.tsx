@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { enumLabel } from '@/lib/enums';
 import { ROLE_ORDER, spoilerExtent } from '@/lib/characters';
 import { useSpoilerLevel } from '@/hooks/useSpoilerLevel';
+import { iconButton } from '@/components/ui/Pill';
 import { TabBar, type Tab } from '@/components/ui/TabBar';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { VNCharacterTile } from './VNCharacterTile';
@@ -111,7 +112,7 @@ function LayoutToggle({
         type="button"
         onClick={() => onChange(next)}
         aria-label={next === 'slider' ? 'Switch to one at a time' : 'Switch to a grid'}
-        className="rounded-full p-1.5 text-muted transition-colors hover:bg-white/10 hover:text-white"
+        className={iconButton()}
       >
         <Glyph className="h-4 w-4" aria-hidden />
       </button>

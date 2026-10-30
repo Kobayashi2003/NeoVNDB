@@ -13,7 +13,7 @@ test("the services' admin routes are closed to anyone not signed in", async ({ r
 
 test('a reader who is not an administrator is turned away', async ({ page, user }) => {
   await page.goto('/admin');
-  await expect(page.getByText('Administrators only.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Administrators only' })).toBeVisible();
   // What the edge asks before letting anyone through to the other services.
   expect((await user.call('GET', '/auth/admin')).status).toBe(403);
   expect((await user.call('GET', '/admin/users')).status).toBe(403);

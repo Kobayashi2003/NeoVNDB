@@ -3,6 +3,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { TriangleAlert } from 'lucide-react';
+import { noticeAction } from '@/components/ui/Notice';
 import { Trouble } from '@/components/ui/Trouble';
 
 export default function Error({
@@ -20,13 +22,11 @@ export default function Error({
 
   return (
     <Trouble
+      icon={TriangleAlert}
       title="That did not work"
+      tone="trouble"
       action={
-        <button
-          type="button"
-          onClick={reset}
-          className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/20"
-        >
+        <button type="button" onClick={reset} className={noticeAction(true)}>
           Try again
         </button>
       }

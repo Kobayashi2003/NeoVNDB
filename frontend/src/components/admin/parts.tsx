@@ -47,7 +47,7 @@ export function Button({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50',
+        'inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition-colors disabled:opacity-50',
         danger ? 'bg-red-500/15 text-red-300 hover:bg-red-500/25' : 'bg-white/10 hover:bg-white/20',
       )}
     >

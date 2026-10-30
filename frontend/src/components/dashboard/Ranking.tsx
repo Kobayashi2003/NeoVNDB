@@ -5,6 +5,14 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Grow } from './Grow';
+
+/** A part of a whole as a percentage, never a misleading 0% for a few. */
+export function share(n: number, of: number): string {
+  if (!of || !n) return '—';
+  const p = (n / of) * 100;
+  return p < 1 ? '<1%' : `${Math.round(p)}%`;
+}
 
 /** Rows held for a ranking still being counted: the read API's default top. */
 const PLACEHOLDERS = 10;
@@ -20,11 +28,17 @@ export function Ranking({
   rows,
   picked,
   onPick,
+  of,
+  format = n => n.toLocaleString(),
 }: {
   /** Undefined while still being counted. */
   rows: Ranked[] | undefined;
   picked?: string;
   onPick?: (id: string | undefined) => void;
+  /** The whole the counts are parts of: each row then says its share. */
+  of?: number;
+  /** How a count is printed, where it is not a plain number (a rating). */
+  format?: (count: number) => string;
 }) {
   if (!rows)
     return (
@@ -46,7 +60,9 @@ export function Ranking({
     'group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded py-1 text-left text-xs outline-none focus-visible:ring-2 focus-visible:ring-white/60';
   return (
     <ol className="flex flex-col">
-      {rows.map(r => {
+      {/* Keyed by place: on another role or category, each bar moves from
+          the length it had. */}
+      {rows.map((r, i) => {
         const on = r.id === picked;
         const inner = (
           <>
@@ -58,20 +74,29 @@ export function Ranking({
             >
               {r.label}
             </span>
-            <span className="tabular-nums text-muted">{r.count.toLocaleString()}</span>
+            <span className="tabular-nums text-muted">
+              {format(r.count)}
+              {of ? (
+                // A column of its own width, so the shares line up.
+                <span className="ml-2 inline-block w-8 text-right text-[0.6875rem] text-muted/70">
+                  {share(r.count, of)}
+                </span>
+              ) : null}
+            </span>
             <span className="col-span-2 h-1 overflow-hidden rounded-full bg-white/5">
-              <span
+              <Grow
+                along="width"
+                size={`${(r.count / max) * 100}%`}
                 className={cn(
-                  'block h-full rounded-full motion-safe:transition-[width] motion-safe:duration-300',
+                  'h-full rounded-full motion-safe:transition-[width]',
                   picked === undefined || on ? 'bg-accent' : 'bg-accent/30',
                 )}
-                style={{ width: `${(r.count / max) * 100}%` }}
               />
             </span>
           </>
         );
         return (
-          <li key={r.id}>
+          <li key={i}>
             {onPick ? (
               <button
                 type="button"

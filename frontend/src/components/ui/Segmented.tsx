@@ -4,6 +4,7 @@
 
 import { cn } from '@/lib/utils';
 import { rowKeys } from '@/lib/rowKeys';
+import { CONTROL_H } from './Pill';
 
 export interface Option<T extends string> {
   value: T;
@@ -34,7 +35,8 @@ export function Segmented<T extends string>({
       aria-label={label}
       onKeyDown={rowKeys({ choose: true })}
       className={cn(
-        'flex items-center overflow-hidden rounded-full border border-white/10',
+        'flex shrink-0 items-stretch overflow-hidden rounded-full border border-white/10',
+        CONTROL_H,
         className,
       )}
     >
@@ -45,7 +47,7 @@ export function Segmented<T extends string>({
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            'flex-1 whitespace-nowrap px-2.5 py-1.5 text-center text-xs font-medium transition-colors',
+            'flex flex-1 items-center justify-center whitespace-nowrap px-2.5 text-xs font-medium transition-colors',
             value === option.value
               ? (option.activeClass ?? 'bg-white/20 text-white')
               : 'text-muted hover:bg-white/10 hover:text-white',
