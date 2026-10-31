@@ -1,102 +1,134 @@
 # NeoVNDB
 
-A local mirror of the VNDB database with a read-only API on top.
+A local mirror of the [VNDB](https://vndb.org) database, a read-only API over
+it, and a site to browse it, with accounts and lists of its own.
 
-The database is a copy of the dump's own structure, not a redesign: same table
-and column names, plus the derived tables and columns vndb maintains but does
-not export. Everything is rebuilt from a weekly archive, so nothing in it is
-authored here and nothing has to survive an import.
+The mirror is rebuilt from vndb's public dump, so nothing in it is authored
+here. Readers' accounts, lists and ratings live in a separate service with its
+own database, the one thing here that cannot be rebuilt from upstream.
 
-The mirror's scope is vndb data only. Readers' accounts and lists live beside
-it in `backend/users`, with a database of their own; audio is not here yet.
+| | |
+| --- | --- |
+| ![Front page: this month's releases](docs/screenshots/home.jpg) | ![A visual novel's page](docs/screenshots/vn.jpg) |
+| ![The visual novel list, sorted by rating](docs/screenshots/list.jpg) | ![Statistics for the whole database](docs/screenshots/stats.jpg) |
 
-## How data gets in
+![The relation graph](docs/screenshots/graph.jpg)
+
+The screenshots use the default content setting, *safe*: covers voted
+suggestive or explicit are blurred until a reader chooses otherwise.
+
+## What it does
+
+- **Mirror.** Downloads vndb's dump, imports it into a fresh schema, derives
+  what vndb computes but does not export (tag scores, closures, the search
+  index), checks it against the live one, and swaps it in atomically. The
+  previous generation is kept for a rollback. Updates run on a schedule.
+- **Read API.** One query endpoint for all seven types (visual novels,
+  releases, characters, producers, staff, tags, traits): field selection,
+  a filter expression language with nesting (`release=(lang=en+freeware=true)`),
+  sorting, search and paging. Also the relation graph, facet counts,
+  similar titles, recommendations and whole-database statistics. It
+  describes itself as OpenAPI 3.1 (`/vndbserve/meta/openapi`, rendered at `/api`).
+- **Image mirror.** Keeps vndb's images byte for byte, fetched on first
+  request and crawled ahead of readers; stored ones are served straight off
+  disk.
+- **Site.** Lists with a condition builder, detail pages, the relation graph,
+  a global search, statistics, and for signed-in readers lists, ratings,
+  saved searches, a dashboard and preferences that follow the account. Tag and
+  trait names have a translation, with the original one switch away.
+- **Admin page.** Generations, updates, rollback, the image crawl, user
+  backups, translations and accounts, for administrators only.
+
+## How it fits together
 
 ```
-dl.vndb.org archive
-      |  COPY, ids converted to int
-      v
-  vndb_next          built from internal/db/ddl, one generation
-      |  derived step: tag scores, closures, search index, c_* columns
-      v
-  ALTER SCHEMA       vndb -> vndb_prev, vndb_next -> vndb   (one transaction)
-      v
-  vndb               what the API reads; always this name
+                        browser
+                           |
+                    edge (Caddy) :17030        the only address
+     /vndbserve   /imgserve   /userserve   everything else
+         |            |            |              |
+   read API :17031  images :17032  users :17033  Next :17034
+         |            |            |
+      PostgreSQL   data/images  PostgreSQL
+      (mirror)                  (accounts)
 ```
 
-Renames are transactional in Postgres, so going live is atomic and the
-application never has to discover which generation it is talking to.
-`vndb_prev` is kept for one cycle so a bad import can be rolled back in
-seconds.
+Every service binds `127.0.0.1`; only the edge faces the outside. Each prefix
+forwards an allowlist of routes, and `/admin` routes only after the user
+service confirms the caller is an administrator, so the read API and the image
+mirror contain no authorisation code.
 
-## Repository
+```
+dl.vndb.org archive --COPY--> vndb_next --derive--> ALTER SCHEMA rename --> vndb
+                                                     (vndb -> vndb_prev)
+```
+
+Responses are cached under the live generation's code, so a promote retires
+the whole previous cache at once.
 
 ```
 backend/vndb/    the mirror: read API, image mirror, importer, data layer
-backend/users/   accounts, sessions and the lists a reader keeps
-edge/            the Caddy config: the one address everything is reached at
-frontend/        the web client
-docs/            design and structure notes
-data/            archives and mirrored images, reproducible and not in git
+backend/users/   accounts, sessions, lists, ratings, saved searches
+edge/            the Caddy config
+frontend/        the site (Next.js)
+docs/            design and structure notes (Chinese)
+data/            archives, images and backups; reproducible, not in git
 ```
 
-Two Go modules, not one. `backend/vndb` is a pure function of a dump and never
-migrates -- it rebuilds. `backend/users` holds the one thing here that cannot
-be rebuilt from upstream, so it migrates and keeps its own database; separate
-modules are what stops the second from reaching into the first.
+## Setup
 
-## The edge
-
-Nothing is reached on its own port. Four processes run -- the read API on
-:17031, the image mirror on :17032, the user service on :17033 and Next on :17034
--- and Caddy is the only one anything talks to:
+Requires Go 1.27+, Node 24, pnpm, PostgreSQL 15+, Caddy 2, and `sqlc` to
+regenerate the query layer. Each part reads the `.env` beside it; its
+`.env.sample` lists every setting with the value a deployment wants.
 
 ```sh
-cd edge && caddy run              # http://127.0.0.1:17030
+cd backend/vndb
+cp .env.sample .env               # set NEOVNDB_DB_URL
+createdb neovndb
+go run ./cmd/neovndb db init 20260819
+go run ./cmd/neovndb update       # fetch and import the latest dump, then go live
+go run ./cmd/neovndb trans seed   # load the translation corpus
+
+cd ../users
+cp .env.sample .env               # set NEOVNDB_USERS_DB_URL
+createdb neovndb_users            # the schema is applied on start
+
+cd ../../frontend
+pnpm install
 ```
 
-A local checkout goes through it too, so there is one set of addresses rather
-than one that works here and another that works when served. `/vndbserve/*`,
-`/imgserve/*` and `/userserve/*` reach the three services; everything else is
-the site.
+The local `.env` files turn every ceiling off (0 means none); the samples hold
+the numbers a deployment wants.
 
-Each prefix exposes an allowlist of the routes the frontend uses and refuses
-the rest without forwarding them, which is why `backend/vndb` contains no
-notion of who may call it: its whole surface stays reachable on :17031, and
-which part of it the world can reach is a question the edge answers. Images
-that are already on disk are served by the file server and never reach the
-mirror process at all. Nothing is resized: the mirror keeps vndb's files byte
-for byte, and thumbnails are vndb's own (`cv.t` for covers wider than 256px,
-`st` for screenshots).
+## Running
 
-The read API and the image mirror each have `/admin` routes, which the edge
-forwards only after asking the user service's `/auth/admin` whether the caller
-is an administrator (`forward_auth`); the user service guards its own. The
-site's `/admin` page uses them: the generations, the update and image crawl
-with a button each, rollback, user-database backups, translating tag and trait
-names and descriptions, and the accounts. Edits to translations are live at
-once but only in the database: export the corpus (on the page, or `neovndb
-trans export`) and commit `internal/trans/init.json` to keep them.
+```powershell
+.\start.ps1 -Build           # build the Go services and the frontend, start all five, open the site
+.\start.ps1 -BuildBackend    # build only the Go services
+.\start.ps1 -BuildFrontend   # build only the frontend
+.\start.ps1                  # start with the existing build
+.\start.ps1 -Prod            # serve the production build instead of the dev server
+.\start.ps1 -NoImages        # request no cover or screenshot (boxes keep their size)
+.\start.ps1 -NoBrowser       # do not open the browser
+.\start.ps1 -Force           # take ports that are already in use
+.\start.ps1 -Stop            # stop a run left behind (or .\stop.ps1)
+```
 
-The read API describes itself: `/vndbserve/meta/openapi` is an OpenAPI 3.1
-document built from the same tables that answer requests, so every type, field,
-filter and sort it lists is one a request can use. The site's `/api` page (linked
-from the footer of list pages) renders it for people.
+Ctrl+C stops everything. The dev server reads the source directly, so a
+frontend change needs no build unless it runs with `-Prod`. The script reads
+the services' ports and image directory from their `.env` files and hands them
+to the edge, waits until each service answers, and logs each to
+`<name>.out.log` / `<name>.err.log` in its own directory. Nothing starts
+PostgreSQL.
 
-`frontend/` asks for `/vndbserve/...` from the browser and
-`NEOVNDB_API_BASE` (default `http://127.0.0.1:17030/vndbserve`) from the
-server, so a deployment points that one variable at its own edge.
+Open the site at <http://127.0.0.1:17030>, never on Next's own port: only the
+edge serves the API prefixes. Another device on the network can use this
+machine's LAN address; `NEOVNDB_DEV_ORIGINS` adds any other name it is
+reached by.
 
-Another device on the network (a phone) opens the site at this machine's LAN
-address, `http://192.168.x.y:17030`. The Next dev server only serves its
-scripts to hosts it was told about -- refused, a page shows its text but no
-images and cannot sign in -- so `next.config.ts` lets in this machine's own
-addresses, and `NEOVNDB_DEV_ORIGINS` adds any other name it is reached by.
+### The edge
 
-Caddy has no `.env`; it takes its settings from the environment, each with a
-default that suits a local checkout. `start.ps1` sets all of them from the
-services' own `.env` files, so a port or image directory changed there moves
-the edge with it:
+Caddy has no `.env`; `start.ps1` sets its environment.
 
 | Variable | Default | What it is |
 | --- | --- | --- |
@@ -105,333 +137,82 @@ the edge with it:
 | `IMGSERVE_UPSTREAM` | `127.0.0.1:17032` | the image mirror |
 | `USERSERVE_UPSTREAM` | `127.0.0.1:17033` | the user service |
 | `NEXT_UPSTREAM` | `127.0.0.1:17034` | the site |
-| `NEOVNDB_IMAGE_DIR` | `../data/images` | stored images, served straight off disk |
-
-## Running it
-
-```powershell
-.\start.ps1 -Build     # builds, starts all five, opens the site; Ctrl+C stops them again
-.\start.ps1            # the same with the existing build
-.\start.ps1 -Prod      # a production build of the frontend (built with -Build) instead of the dev server
-.\start.ps1 -NoBrowser # do not open the site in the browser
-.\start.ps1 -NoImages  # draw the site without fetching a single cover
-.\start.ps1 -Stop      # stop a run that was left behind (or .\stop.ps1)
-.\start.ps1 -Force     # take the ports from whatever already holds them
-```
-
-`-NoImages` is for working on the site away from the machine holding the image
-mirror: no cover or screenshot is requested at all, and each one's box is still
-drawn at the size it would have taken, so the layout being worked on is the
-real one. The interface's own sprite icons -- flags, platforms -- are local and
-still appear.
-
-It refuses to start on a port that is already in use rather than guessing, waits
-until each service actually answers, and prints the tail of a log for any that
-does not. The three services' ports and the image directory come from their
-`.env` files, not from the script, and are handed on to the edge; a real
-environment variable of the same name outranks the file, as it does in the
-services. Next and the edge keep 17034 and 17030 unless `NEOVNDB_WEB_PORT` or
-`NEOVNDB_EDGE_PORT` moves them, and server-rendered pages are pointed at
-whichever edge the script started. Each process logs to `<name>.out.log` and
-`<name>.err.log` in its own directory.
-
-By hand it is five processes, each from its own directory, each reading the
-`.env` beside it -- which is also why the script sets a working directory per
-process rather than running them all from the root:
-
-```sh
-cd backend/vndb  && go run ./cmd/neovndb serve     # :17031  the read API
-cd backend/vndb  && go run ./cmd/neovndb images    # :17032  the image mirror
-cd backend/users && go run ./cmd/users             # :17033  accounts and lists
-cd frontend      && pnpm dev                       # :17034  the site
-cd edge          && caddy run                      # :17030  the only address
-```
-
-Then open <http://127.0.0.1:17030>.
-
-`caddy run` must start from `edge/`, because the image roots in the snippet are
-written relative to it. Open the site on :17030, never :17034: nothing but the
-edge serves `/imgserve` and `/userserve`, and the dev server only accepts its
-hot-reload connection from the edge's origin because `next.config.ts` names it
--- without that no page hydrates, which looks like images that never appear
-and a header that never learns who is signed in. `pnpm dev` is the one to
-use while editing; `pnpm build && pnpm start` serves a production build,
-which is what the numbers in the CLS notes were measured against -- and which
-will not pick up a source change until it is rebuilt.
-
-Nothing here starts PostgreSQL. The read API also expects a promoted
-generation: without one it starts and says so, and every query fails until
-`db promote` has run.
-
-## Setup
-
-Requires Go 1.27+, Node 24, pnpm, PostgreSQL 15+, Caddy 2 for the edge, and
-`sqlc` to regenerate the query layer. Each part reads the `.env` beside it;
-every `.env.sample` lists every setting that part reads, with the value a
-deployment wants. `.env` files are not in git.
-
-```sh
-cd backend/vndb
-cp .env.sample .env          # adjust NEOVNDB_DB_URL
-createdb neovndb
-go run ./cmd/neovndb db init 20260819
-go run ./cmd/neovndb db verify
-go run ./cmd/neovndb update  # fetch and import the latest archive, then go live
-go run ./cmd/neovndb trans seed   # the translation corpus kept in internal/trans/init.json
-
-cd ../users
-cp .env.sample .env          # adjust NEOVNDB_USERS_DB_URL
-createdb neovndb_users       # the schema is applied when the service starts
-
-cd ../../frontend
-pnpm install                 # .env.sample documents its two settings; the defaults suit a checkout
-```
-
-For local work the `.env` files turn the limits off (0 means no ceiling) and
-lower the bcrypt cost; `.env.sample` holds the numbers a deployment wants.
+| `NEOVNDB_IMAGE_DIR` | `../data/images` | stored images, served off disk |
 
 ## Deploying
 
-What changes between a checkout and a served site, in order:
-
-1. **Ceilings.** Start each service's `.env` from its `.env.sample` and keep
-   the sample's numbers: page size, filter conditions, search words, ids per
-   lookup, field depth, response cost, graph depth and titles, list sizes,
-   sign-in and sign-up attempts. A checkout runs with them lifted; every one
-   of them has a test showing it is enforced.
-2. **Cookies.** `NEOVNDB_USERS_SECURE_COOKIE=true` once the site is served
-   over https; the session cookie then also carries the `__Host-` prefix.
-   Keep `NEOVNDB_USERS_BCRYPT_COST=12`.
-3. **Paths.** Set `NEOVNDB_IMAGE_DIR` absolute: the image mirror and the edge
-   both read it, from different working directories. The dump, image and
-   backup directories want room: about 0.4 GB of archives (two kept), the
-   image store, which grows as the crawl fills it, and the user backups.
-4. **The site.** `pnpm build`, then serve it with `next start` (`.\start.ps1
-   -Prod -Build` does both). Point `NEOVNDB_API_BASE` at the edge as the server
-   reaches it. `NEOVNDB_DEV_ORIGINS` only matters to the dev server.
-5. **The edge.** Either run `edge/Caddyfile` behind whatever terminates TLS,
-   or import `edge/Caddyfile.snippet` into the site block of a shared edge:
-   it is written for that (prefixed matcher names, no catch-all of its own).
-   Only the edge faces the outside; every service binds 127.0.0.1.
-6. **Accounts.** The first administrator can only be made on the machine:
+1. Start each `.env` from its `.env.sample` and keep the sample's ceilings.
+2. Set `NEOVNDB_USERS_SECURE_COOKIE=true` behind https, and keep
+   `NEOVNDB_USERS_BCRYPT_COST=12`.
+3. Make `NEOVNDB_IMAGE_DIR` absolute: the image mirror and the edge read it
+   from different directories.
+4. `.\start.ps1 -Prod -Build`, or `pnpm build` and `next start`; point
+   `NEOVNDB_API_BASE` at the edge as the server reaches it.
+5. Run `edge/Caddyfile` behind whatever terminates TLS, or import
+   `edge/Caddyfile.snippet` into a shared edge's site block.
+6. Make the first administrator on the machine:
    `go run ./cmd/users admin <name>` in `backend/users`.
-7. **Check it.** `pnpm test:e2e:deployed` in `frontend/` (with
-   `NEOVNDB_USERS_TEST_DB_URL` set) runs every end-to-end test against a
-   second site configured as a deployment is -- the samples' ceilings, a
-   production build, an edge of its own -- beside the running one, so what
-   the ceilings do to the pages shows before anyone meets it.
-
-`start.ps1` runs all five processes either way; a service manager can run the
-five commands under "Running it" directly, each from its own directory.
+7. `pnpm test:e2e:deployed` in `frontend/` runs every end-to-end test against
+   a copy configured this way (the samples' ceilings, a production build, its
+   own edge) beside the running site.
 
 ## Commands
 
-`backend/vndb`, one binary with a subcommand per role (`go run ./cmd/neovndb
-<command>`, or `bin/neovndb.exe` once `start.ps1 -Build` has built it):
+`backend/vndb` (`go run ./cmd/neovndb <command>`, or `bin/neovndb.exe`):
 
 | Command | What it does |
 | --- | --- |
-| `serve [--addr host:port]` | Run the read API; it also updates the mirror on a schedule |
-| `images [--addr host:port]` | Run the image mirror; it also crawls ahead of readers on a schedule |
-| `crawl [--limit n]` | Fetch images the database knows of and the disk lacks, now (`--limit 0`: all of them) |
-| `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
+| `serve` | Run the read API; it also updates the mirror on a schedule |
+| `images` | Run the image mirror; it also crawls ahead of readers |
+| `crawl [--limit n]` | Fetch missing images now (`0`: all of them) |
 | `update [--force]` | Import and go live if upstream is newer |
-| `db status` | Generations, whether the live one matches current DDL, row counts |
-| `db init <code>` | Build an empty `vndb_next` from the embedded DDL |
-| `db check` | Compare `vndb_next` with the live generation and report what objects |
-| `db promote [--force]` | Run `db check`, then swap `vndb_next` into place; refuses an unfinished import |
-| `db rollback` | Swap `vndb_prev` back |
-| `db drop <schema>` | Drop one generation; refuses the live one |
-| `db verify` | Write and read through the generated queries, then roll back |
-| `trans status` | What the translation corpus holds, and the language it is in |
-| `trans seed [file]` | Load a corpus, by default `internal/trans/init.json`; refuses the whole file if any row loses its markup |
-| `trans export [file]` | Write the database's corpus, admin-page edits included, to a file, by default `internal/trans/init.json` |
+| `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
+| `db status \| init <code> \| check \| promote \| rollback \| drop <schema> \| verify` | Inspect and manage generations |
+| `trans status \| seed [file] \| export [file]` | The translation corpus, kept in `internal/trans/init.json` |
 
-`backend/users` (`go run ./cmd/users`):
+`backend/users` (`go run ./cmd/users`): no argument runs the service;
+`backup` dumps the user database now; `admin <name> [off]` grants or revokes
+administrator.
 
-| Command | What it does |
-| --- | --- |
-| *(none)* | Run the user service; it also backs its database up on a schedule |
-| `backup` | Dump the user database now, into `NEOVNDB_USERS_BACKUP_DIR` |
-| `admin <username> [off]` | Make an account an administrator, or stop it being one; the first one can only come from here |
+`frontend` (`pnpm <script>`): `dev`, `build`, `start`, `lint`, `format`,
+`format:check`, `typecheck`, `typecheck:tests`, `test`, `test:watch`,
+`test:e2e`, `test:e2e:deployed`.
 
-`frontend` (`pnpm <script>`):
+### Scheduled jobs
 
-| Script | What it does |
-| --- | --- |
-| `dev` | The dev server; reach it through the edge |
-| `build` / `start` | A production build, and serving it |
-| `lint` | ESLint |
-| `test` / `test:watch` | The unit and component tests in `tests/`, once or on every change |
-| `test:e2e` | The end-to-end tests in `tests/e2e/`, against the running site |
-| `test:e2e:deployed` | The same, against a deployment-configured copy it starts beside it |
-| `typecheck:tests` | Type-check the tests, which the app's own `tsc` leaves out |
+Each job lives in the service it belongs to; nothing is registered with the
+system scheduler. Each waits `*_FIRST_AFTER`, then runs every `*_EVERY`
+(`0` turns it off), and never overlaps itself.
+
+| Job | Runs in | Every (default) |
+| --- | --- | --- |
+| Update the mirror | `serve` | `NEOVNDB_UPDATE_EVERY` (24h), retry after `NEOVNDB_UPDATE_RETRY_AFTER` (1h) |
+| Crawl images | `images` | `NEOVNDB_IMAGE_CRAWL_EVERY` (1h), `NEOVNDB_IMAGE_CRAWL_PER_RUN` (200) at a time |
+| Expire sessions | user service | `NEOVNDB_USERS_SWEEP_EVERY` (1h) |
+| Back up the user database | user service | when the newest is older than `NEOVNDB_USERS_BACKUP_EVERY` (a week) |
+
+A new generation goes live only if it passes the guards: no table lost more
+than `NEOVNDB_GUARD_MAX_LOSS` of its rows, none was skipped, no derived table
+came back empty. Backups are `pg_dump` custom-format files; restore with
+`pg_restore --clean --if-exists -d <database url> <file>`.
 
 ## Tests
 
 ```sh
 cd backend/vndb  && go test ./...
 cd backend/users && go test ./...
-cd frontend      && pnpm test
-cd frontend      && pnpm test:e2e   # needs the site up (start.ps1)
+cd frontend      && pnpm test        # unit and component tests
+cd frontend      && pnpm test:e2e    # end to end, against the running site
 ```
 
-Only the end-to-end tests need a running service; they drive Chromium
-through the edge (`E2E_BASE_URL`, default `http://127.0.0.1:17030`). The user service's storage tests need a
-database and skip without one: point `NEOVNDB_USERS_TEST_DB_URL` at a database
-whose name ends in `_test` (`createdb neovndb_users_test`). Every run empties
-it, which is why any other name is refused. The same variable lets the
-end-to-end tests start a throwaway user service of their own on :17035 and
-exercise signed-in pages; without it those tests skip. The tests read it from
-the environment, not from a `.env`. Frontend tests live in `frontend/tests/`,
-never in `src/`.
+The user service's storage tests, and the end-to-end tests that sign in, need
+`NEOVNDB_USERS_TEST_DB_URL` pointing at a database whose name ends in `_test`;
+each run empties it. Without it they skip. `layout.spec.ts` checks every main
+page at five widths for sideways overflow and measures layout shift on a
+throttled line.
 
-`layout.spec.ts` opens every main page, signed-in ones included, at 320, 390,
-768, 1024 and 1440px and fails on anything spilling sideways or on a link or
-button left under something fixed to the window once scrolled to the end,
-then measures layout shift on a throttled line. `E2E_SHOTS=<folder>` keeps a screenshot of
-each, for a look by eye. `pnpm test:e2e:deployed` runs the whole suite against
-a deployment-configured copy of the site on :17036-17038 (see "Deploying").
+## Docs
 
-## Scheduled work
-
-Every scheduled job lives in the service it belongs to, so starting the stack
-is all it takes; nothing is registered with the system's scheduler. Each job
-waits `*_FIRST_AFTER`, runs, then runs every `*_EVERY`; `0` for `*_EVERY` turns
-it off, and a run never overlaps the previous one.
-
-| Job | Runs in | Settings (default) |
-| --- | --- | --- |
-| Updating the mirror (`neovndb update`) | `serve` | `NEOVNDB_UPDATE_EVERY` (24h), `NEOVNDB_UPDATE_FIRST_AFTER` (10m), `NEOVNDB_UPDATE_RETRY_AFTER` (1h) |
-| Mirroring images ahead of readers | `images` | `NEOVNDB_IMAGE_CRAWL_EVERY` (1h), `NEOVNDB_IMAGE_CRAWL_FIRST_AFTER` (1m), `NEOVNDB_IMAGE_CRAWL_PER_RUN` (200), `NEOVNDB_IMAGE_CRAWL_DELAY` (2s) |
-| Expiring sessions | user service | `NEOVNDB_USERS_SWEEP_EVERY` (1h), `NEOVNDB_USERS_SWEEP_FIRST_AFTER` (1h) |
-| Backing up the user database | user service | `NEOVNDB_USERS_BACKUP_EVERY` (a week), `NEOVNDB_USERS_BACKUP_CHECK_EVERY` (1h), `NEOVNDB_USERS_BACKUP_FIRST_AFTER` (0s), `NEOVNDB_USERS_BACKUP_KEEP` |
-
-- **Updating** is a no-op when upstream has nothing newer, so checking daily
-  costs one small request. When dl.vndb.org cannot be reached or a download
-  fails, the next try comes `RETRY_AFTER` later rather than a day later; a
-  failed import or a refusal to go live waits the full interval, since it
-  would fail the same way again. Imports take a Postgres advisory lock, so a
-  scheduled update and a hand-run `import`/`update` never run at once: the
-  second one stops with "another run holds the lock". Upstream publishes
-  most days, so once a generation goes live all but the newest
-  `NEOVNDB_DUMP_KEEP` archives (2: the live and previous generations') are
-  deleted from `NEOVNDB_DUMP_DIR`.
-- **Images**: each run fetches up to `PER_RUN` images, and their upstream
-  thumbnails, that the database knows of and the disk does not hold, newest
-  first and `DELAY` apart. The dump's `images` table is the list, so nothing is
-  probed.
-- **Backups** are due when the newest copy is older than `BACKUP_EVERY`, so a
-  service that restarts often still backs up on time. They are `pg_dump`
-  custom-format files; restore with
-  `pg_restore --clean --if-exists -d <database url> <file>`.
-
-## Updating
-
-```sh
-cd backend/vndb && go run ./cmd/neovndb update   # no-op if upstream is already live
-```
-
-Run it while the read API is up: going live is one transaction, and responses
-are cached under the generation, so readers move to the new data at once.
-
-One command for the scheduled run and for a run by hand -- an update path that
-only ever runs unattended is one nobody can reproduce when it fails. It stops
-if upstream has nothing newer, and refuses to go backwards if upstream
-republishes an older archive.
-
-Before a generation goes live it is compared with the one it replaces. An
-import can succeed in every mechanical sense and still be wrong: a truncated
-archive parses, and a derive step whose joins match nothing writes no rows and
-reports no error. A mirror of a dump has no invariant of its own to violate --
-what it has is a predecessor. Three checks ship: a table that lost more than
-`NEOVNDB_GUARD_MAX_LOSS` of its rows, a table that was not imported at all, and
-a derived table that came back empty. They are an interface, so a deployment
-that knows a table is expected to shrink adds or drops one. `-force` promotes
-anyway.
-
-## Layout
-
-```
-backend/vndb/
-cmd/neovndb/          single binary, one subcommand per role
-internal/config/      environment settings; a value it cannot read stops the process
-internal/listen/      listen until stopped, then drain; the API and the image mirror
-internal/cache/       response cache: memory LRU or Redis
-internal/dump/        fetch and stream the tar
-internal/importer/    COPY the dump into a fresh generation
-internal/vndb/        the dump's own encodings: ids, dates, extlinks, animation
-internal/trans/       translations of tag and trait text; init.json is the
-                      corpus itself, the only copy, loaded by `trans seed`
-internal/db/
-  guard/              what makes a fresh generation unfit to go live
-  ddl/01_mirror.sql   the 42 dump tables we import
-  ddl/02_derived.sql  what vndb computes but does not export
-  ddl/03_indexes.sql  every access path the API takes
-  derive/*.sql        the derived step, run after COPY
-  sql/*.sql           sqlc source
-  gen/                sqlc output, generated
-  db.go               pool and transaction helpers
-  generation.go       create, promote, roll back, drop
-  status.go
-  verify.go
-internal/api/
-  server.go           the resolvers and the routes
-  handlers.go         the handlers (query, relation graph, meta, health) and the JSON envelope
-  middleware.go       panic recovery and request logging
-  cache.go            picking a backend, and the live generation's code
-  query/              shared machinery: field tables, request parsing,
-                      filter builder, paging, the type catalog
-  vn/ release/ character/ producer/ staff/ tag/ trait/
-                      one package per type, all seven the same four files:
-                        resolver.go  Resolver, Registry, Objects, Resolve
-                        fields.go    the field table
-                        filters.go   filters, sorts, page spec
-                        sources.go   the batched loaders
-                      vn adds graph.go for the relation graph.
-```
-
-## Decisions worth knowing before reading the schema
-
-- **ids are `integer`**, formatted as `v17` at the API edge. The dump's text
-  ids sort lexically, which would put v10 before v9.
-- **`images` and `entry_meta` are split** into `(kind, num)` and
-  `(entity_type, id)`: their ids are polymorphic and an integer cannot carry
-  the prefix. Every other id column has a fixed type, so it is a plain integer.
-- **Enum-like columns are `text`**, not PG enums, so a new upstream platform
-  cannot break an import. Labels come from `api.vndb.org/kana/schema`.
-- **`tags_vn.uid` is replaced by `counts`**, resolved at load time against
-  `users.perm_tag`. The users table is read during import but never stored, so
-  no user data lands in the database. An unknown voter counts, matching vndb's
-  `LEFT JOIN`.
-- **No foreign keys.** They would validate every row during COPY; the dump is
-  internally consistent and import verification checks integrity instead.
-- **`tags_vn_direct` and `tags_vn_inherit` are separate.** Kana's `vn.tags`
-  returns the direct scores; the `tag=` filter expands parents.
-- **Responses are cached under the generation's code.** The database only
-  changes when an import is promoted, so a rendered response stays correct
-  until then. Putting the live generation's code at the front of every key
-  means a promote makes the whole previous generation unreachable at once,
-  with nothing to invalidate by hand. The key is built from the *parsed*
-  request, so `fields=a,b` and `fields=b,a` are one entry. The live
-  generation is read per request rather than remembered: that read is a
-  fraction of a millisecond, and paying it is what keeps a promote from being
-  followed by a window where some types answer out of the new generation and
-  others out of entries keyed to the old one. The key also carries the
-  translation corpus's revision, which every `trans seed` bumps, so a changed
-  translation is served at once too.
-- **Every bound is a setting.** Page size, id-list length, field depth, the
-  response cost ceiling, the graph's depth and node cap, and the request
-  timeout all come from the environment (see `.env.sample`). They bound work
-  rather than correctness, and what a deployment can afford differs; 0 turns
-  a ceiling off.
-- **No migrations.** Each generation is built fresh from the DDL, and its
-  `import_info.ddl_checksum` says which version built it. `db status` reports
-  when the live generation is behind the source.
-
-## Reference
-
-Conversion rules extracted from vndb's source (AGPL,
-`code.blicky.net/yorhel/vndb`) are written up in `../../temp/`:
-`vndb-source-answers.md`, `vndb-tag-score-formula.md`, `vndb-official-er.md`,
-and the data-layer plan in `PLAN-data-layer.md`.
+`docs/` holds the design and structure notes, in Chinese:
+`后端代码结构.md` (backend structure), `前端代码结构.md` (frontend structure),
+`已实现功能.md` (what is done) and `拟实现功能.md` (what is planned or declined).

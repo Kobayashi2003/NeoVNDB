@@ -188,7 +188,7 @@ func (s *Store) atomically(ctx context.Context, stmts []string) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	defer tx.Rollback(ctx)
 
 	for _, stmt := range stmts {
 		if _, err := tx.Exec(ctx, stmt); err != nil {
@@ -215,7 +215,7 @@ func (s *Store) execIn(ctx context.Context, schema, sql string, args ...any) err
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	defer tx.Rollback(ctx)
 
 	path := pgx.Identifier{schema}.Sanitize() + ",public"
 	if _, err := tx.Exec(ctx, "SET LOCAL search_path TO "+path); err != nil {

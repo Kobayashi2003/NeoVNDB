@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  byCount,
   byYear,
   filled,
+  halfPoint,
+  lowest,
   median,
   months,
   ofSex,
   stepped,
   summed,
   total,
+  valueOf,
   years,
 } from '@/lib/siteStats';
 
@@ -113,5 +117,23 @@ describe('site stats', () => {
         { key: '2019-11', count: 1 },
       ]).map(c => c.key),
     ).toEqual(['2019-11', '2019-12', '2020-01']);
+  });
+
+  it('names a rating step by the span it covers, the top one reaching 10', () => {
+    expect(halfPoint(65)).toBe('6.5–6.99');
+    expect(halfPoint(95)).toBe('9.5–10');
+    expect(halfPoint(null)).toBe('—');
+  });
+
+  it('looks a key up, sorts by count and finds where a chart starts', () => {
+    const counts = [
+      { key: '30', count: 1 },
+      { key: '10', count: 4 },
+    ];
+    expect(valueOf(counts, '10')).toBe(4);
+    expect(valueOf(counts, '20')).toBe(0);
+    expect(byCount(counts).map(c => c.key)).toEqual(['10', '30']);
+    expect(lowest(counts)).toBe(10);
+    expect(lowest([])).toBe(0);
   });
 });

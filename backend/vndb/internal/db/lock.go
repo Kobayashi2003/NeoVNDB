@@ -34,7 +34,7 @@ func (s *Store) Exclusive(ctx context.Context, name string, fn func() error) err
 	// connection that could not unlock is closed rather than handed back.
 	defer func() {
 		if _, err := conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext($1))`, name); err != nil {
-			conn.Conn().Close(context.Background()) //nolint:errcheck
+			conn.Conn().Close(context.Background())
 		}
 	}()
 	return fn()

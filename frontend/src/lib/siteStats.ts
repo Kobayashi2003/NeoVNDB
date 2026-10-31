@@ -68,6 +68,29 @@ export function total(counts: Counted[]): number {
   return counts.reduce((s, c) => s + c.count, 0);
 }
 
+/** The count under one key, nothing when it is missing. */
+export function valueOf(counts: Counted[], key: string): number {
+  return counts.find(c => c.key === key)?.count ?? 0;
+}
+
+/** Most first: counts added up across sexes keep the first sex's order. */
+export function byCount(counts: Counted[]): Counted[] {
+  return [...counts].sort((a, b) => b.count - a.count);
+}
+
+/** The smallest numeric key, so a chart starts where its data does. */
+export function lowest(counts: Counted[]): number {
+  return counts.length ? Math.min(...counts.map(c => Number(c.key))) : 0;
+}
+
+/** A half-point step keyed ×10 (65) as the span it covers (6.5–6.99); the
+ *  top one holds a 10 too. */
+export function halfPoint(key: number | null): string {
+  if (key === null) return '—';
+  const r = key / 10;
+  return `${r.toFixed(1)}–${r >= 9.5 ? '10' : (r + 0.49).toFixed(2)}`;
+}
+
 /** The middle of numeric keys weighted by their counts; null for none. */
 export function median(counts: Counted[]): number | null {
   const sorted = [...counts].sort((a, b) => Number(a.key) - Number(b.key));

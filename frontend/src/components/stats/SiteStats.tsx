@@ -10,36 +10,27 @@ import type { BySex, Counted, CountedSite, Leader } from '@/lib/api';
 import { enumLabel, type EnumGroup } from '@/lib/enums';
 import { display } from '@/lib/format';
 import {
-  byYear,
+  byCount,
   filled,
+  halfPoint,
+  lowest,
   median,
-  months,
   ofSex,
-  stepped,
   total,
-  years,
+  valueOf,
   type Sex,
 } from '@/lib/siteStats';
 import { ROLE_ORDER } from '@/lib/characters';
-import { cn } from '@/lib/utils';
 import { usePrefs } from '@/hooks/usePrefs';
-import { Block, Plot } from '@/components/dashboard/Block';
-import { Columns, type Column } from '@/components/dashboard/Columns';
-import { Ranking, type Ranked } from '@/components/dashboard/Ranking';
-import { ChoiceMenu } from '@/components/ui/ChoiceMenu';
+import type { Column } from '@/components/dashboard/Columns';
+import type { Ranked } from '@/components/dashboard/Ranking';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { Group, GROUP } from '@/components/ui/Group';
 import { SectionNav } from '@/components/ui/SectionNav';
 import { Segmented } from '@/components/ui/Segmented';
 import { surface } from '@/components/ui/Surface';
+import { Added, Chart, Choice, List, Measure, Picked, Released } from './blocks';
 
-const KINDS = [
-  { value: 'v', label: 'Visual novels' },
-  { value: 'r', label: 'Releases' },
-  { value: 'c', label: 'Characters' },
-  { value: 'p', label: 'Producers' },
-  { value: 's', label: 'Staff' },
-];
 /** Each total, and the page that lists what it counts. */
 const TOTALS: [string, string, string][] = [
   ['v', 'Visual novels', '/v'],
@@ -434,249 +425,6 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
   );
 }
 
-/** When vndb's entries were created: one kind at a time, by year or month. */
-function Added({ added }: { added: Record<string, Counted[]> }) {
-  const [kind, setKind] = useState('v');
-  const [grain, setGrain] = useState<'year' | 'month'>('year');
-  const monthly = added[kind] ?? [];
-  const data = grain === 'month' ? months(monthly) : years(byYear(monthly));
-  const name = KINDS.find(k => k.value === kind)?.label.toLowerCase() ?? 'entries';
-  return (
-    <Block
-      title="Added to vndb"
-      action={
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <ChoiceMenu label="Kind" value={kind} onChange={setKind} choices={KINDS} align="end" />
-          <Segmented
-            label="Count by"
-            value={grain}
-            onChange={setGrain}
-            options={[
-              { value: 'year', label: 'Year' },
-              { value: 'month', label: 'Month' },
-            ]}
-          />
-        </div>
-      }
-      table={{ head: [grain === 'year' ? 'Year' : 'Month', cap(name)], rows: rowsOf(data) }}
-    >
-      <Plot>
-        <Columns data={data} unit={name} label={`${cap(name)} added by ${grain}`} />
-        <p className={NOTE}>When each entry was created on vndb.</p>
-      </Plot>
-    </Block>
-  );
-}
-
-/** Years up to this one; later ones are dates announced, said apart. */
-function Released({
-  title,
-  unit,
-  counts,
-  thisYear,
-}: {
-  title: string;
-  unit: string;
-  counts: Counted[];
-  thisYear: number;
-}) {
-  const past = counts.filter(c => Number(c.key) <= thisYear);
-  const later = total(counts) - total(past);
-  return (
-    <Chart
-      title={title}
-      unit={unit}
-      head="Year"
-      data={years(past)}
-      note={
-        later
-          ? `${later.toLocaleString()} more ${unit} announced for after ${thisYear}.`
-          : undefined
-      }
-    />
-  );
-}
-
-/** A measurement of characters: a spread over a range, with its median and
- *  how many have one given at all. */
-function Measure({
-  title,
-  unit,
-  head,
-  counts,
-  range: [from, to],
-  step = 1,
-  suffix,
-  what,
-}: {
-  title: string;
-  unit: string;
-  head: string;
-  counts: Counted[];
-  range: [number, number];
-  step?: number;
-  suffix: string;
-  what: string;
-}) {
-  const inside = counts.filter(c => Number(c.key) >= from && Number(c.key) < to + step);
-  const outside = total(counts) - total(inside);
-  const mid = median(counts);
-  const data = filled(stepped(inside, step), from, to, step).map(c => ({
-    ...c,
-    title: step > 1 ? `${c.key}–${Number(c.key) + step - 1}${suffix}` : `${c.key}${suffix}`,
-  }));
-  return (
-    <Chart
-      title={title}
-      unit={unit}
-      head={head}
-      data={data}
-      note={
-        mid === null
-          ? `No ${unit} with ${what} given.`
-          : `Median ${mid}${suffix}, of ${total(counts).toLocaleString()} ${unit} with ${what} given${
-              outside ? `; ${outside.toLocaleString()} fall outside the chart` : ''
-            }.`
-      }
-    />
-  );
-}
-
-const NOTE = 'mt-3 text-[0.6875rem] leading-snug text-muted';
-
-function Chart({
-  title,
-  unit,
-  head,
-  data,
-  note,
-}: {
-  title: string;
-  unit: string;
-  head: string;
-  data: Column[];
-  note?: string;
-}) {
-  return (
-    <Block title={title} table={{ head: [head, cap(unit)], rows: rowsOf(data) }}>
-      <Plot className="flex flex-col">
-        <Columns data={data} unit={unit} label={`${cap(unit)} by ${head.toLowerCase()}`} />
-        {note && <p className={NOTE}>{note}</p>}
-      </Plot>
-    </Block>
-  );
-}
-
-function List({
-  title,
-  head,
-  rows,
-  of,
-  format,
-  picked,
-  note,
-  action,
-}: {
-  title: string;
-  head: string;
-  rows: Ranked[] | undefined;
-  of?: number;
-  format?: (n: number) => string;
-  /** A row to light, the rest dimmed. */
-  picked?: string;
-  note?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <Block
-      title={title}
-      action={action}
-      table={{
-        head: [head, 'Count'],
-        rows: (rows ?? []).map(r => [r.label, format ? format(r.count) : r.count]),
-      }}
-    >
-      <Plot className="flex flex-col">
-        <Ranking rows={rows} of={of} format={format} picked={picked} />
-        {note && <p className={cn(NOTE, 'mt-auto pt-3')}>{note}</p>}
-      </Plot>
-    </Block>
-  );
-}
-
-/** A ranking with a few views of it, one at a time. */
-function Choice({
-  title,
-  head,
-  views,
-  notes,
-  of,
-}: {
-  title: string;
-  head: string;
-  views: Record<string, Ranked[]>;
-  notes?: Record<string, string>;
-  of?: number;
-}) {
-  const names = Object.keys(views);
-  const [shown, setShown] = useState(names[0]);
-  return (
-    <List
-      title={title}
-      head={head}
-      rows={views[shown]}
-      of={of}
-      note={notes?.[shown]}
-      action={
-        <Segmented
-          label={`${title} by`}
-          value={shown}
-          onChange={setShown}
-          options={names.map(n => ({ value: n, label: n }))}
-        />
-      }
-    />
-  );
-}
-
-/** A ranking per choice from a longer menu. */
-function Picked({
-  title,
-  head,
-  label,
-  choices,
-  rows,
-  note,
-}: {
-  title: string;
-  head: string;
-  label: string;
-  choices: { value: string; label: string; count?: number }[];
-  rows: (key: string) => Ranked[] | undefined;
-  note?: string;
-}) {
-  const [picked, setPicked] = useState(choices[0]?.value ?? '');
-  return (
-    <List
-      title={title}
-      head={head}
-      rows={rows(picked)}
-      note={note}
-      action={
-        choices.length > 1 && (
-          <ChoiceMenu
-            label={label}
-            value={picked}
-            choices={choices}
-            onChange={setPicked}
-            align="end"
-          />
-        )
-      }
-    />
-  );
-}
-
 function enumRows(counts: Counted[], group: EnumGroup): Ranked[] {
   return counts.map(c => ({ id: c.key, label: enumLabel(group, c.key), count: c.count }));
 }
@@ -690,38 +438,8 @@ function labelled(counts: Counted[], label: (key: string) => string): Column[] {
   }));
 }
 
-function rowsOf(data: Column[]): (string | number)[][] {
-  return data.map(d => [d.title, d.value]);
-}
-
-/** A half-point step keyed ×10 (65) as the span it covers (6.5–6.99); the
- *  top one holds a 10 too. */
-function halfPoint(key: number | null): string {
-  if (key === null) return '—';
-  const r = key / 10;
-  return `${r.toFixed(1)}–${r >= 9.5 ? '10' : (r + 0.49).toFixed(2)}`;
-}
-
-/** Most first: counts added up across sexes keep the first sex's order. */
-function byCount(counts: Counted[]): Counted[] {
-  return [...counts].sort((a, b) => b.count - a.count);
-}
-
-/** The smallest numeric key, so a chart starts where its data does. */
-function lowest(counts: Counted[]): number {
-  return counts.length ? Math.min(...counts.map(c => Number(c.key))) : 0;
-}
-
-function valueOf(counts: Counted[], key: string): number {
-  return counts.find(c => c.key === key)?.count ?? 0;
-}
-
 function given(n: number, who: string, what: string): string {
   return n
     ? `Of ${n.toLocaleString()} ${who} with ${what} given.`
     : `No ${who} with ${what} given.`;
-}
-
-function cap(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

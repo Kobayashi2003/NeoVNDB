@@ -94,6 +94,15 @@ type SiteStats struct {
 // statsTop is how many entries each ranking keeps.
 const statsTop = 15
 
+// listed is every entry the site can show, by type. entry_meta alone counts
+// more: it keeps rows for entries the dump leaves out of the type's own table
+// (some hundreds of characters and releases), which no list would ever find.
+const listed = `WITH listed(entity_type, id) AS (
+	SELECT 'v', id FROM vn UNION ALL SELECT 'r', id FROM releases
+	UNION ALL SELECT 'c', id FROM chars UNION ALL SELECT 'p', id FROM producers
+	UNION ALL SELECT 's', id FROM staff UNION ALL SELECT 'g', id FROM tags
+	UNION ALL SELECT 'i', id FROM traits) `
+
 // SiteStats counts the live generation. It reads whole tables, seconds of
 // work, so callers keep the answer for the generation rather than ask again.
 func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
@@ -104,7 +113,7 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 		into *[]Count
 		sql  string
 	}{
-		{&out.Totals, `SELECT entity_type, COUNT(*) FROM entry_meta GROUP BY 1 ORDER BY 2 DESC`},
+		{&out.Totals, listed + `SELECT entity_type, COUNT(*) FROM listed GROUP BY 1 ORDER BY 2 DESC`},
 		// 0 is no release yet and 9999xxxx is "TBA"; neither is a year.
 		{&out.VNYears, `SELECT c_released / 10000, COUNT(*) FROM vn
 			WHERE c_released > 0 AND c_released < 99990000 GROUP BY 1 ORDER BY 1`},
@@ -181,9 +190,10 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 		*b.into = got
 	}
 
-	rows, err := s.pool.Query(ctx, `
-		SELECT entity_type, to_char(created, 'YYYY-MM'), COUNT(*) FROM entry_meta
-		 WHERE entity_type IN ('v', 'r', 'p', 'c', 's') GROUP BY 1, 2 ORDER BY 1, 2`)
+	rows, err := s.pool.Query(ctx, listed+`
+		SELECT m.entity_type, to_char(m.created, 'YYYY-MM'), COUNT(*)
+		  FROM entry_meta m JOIN listed l ON l.entity_type = m.entity_type AND l.id = m.id
+		 WHERE m.entity_type IN ('v', 'r', 'p', 'c', 's') GROUP BY 1, 2 ORDER BY 1, 2`)
 	if err != nil {
 		return nil, err
 	}

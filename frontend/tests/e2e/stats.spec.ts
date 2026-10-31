@@ -50,3 +50,21 @@ test('the counts are a public route of the read API', async ({ request }) => {
   const { stats } = (await res.json()) as { stats: { totals: { key: string; count: number }[] } };
   expect(stats.totals.find(t => t.key === 'v')?.count).toBeGreaterThan(0);
 });
+
+test('each total is what its list counts', async ({ request }) => {
+  const { stats } = (await (await request.get('/vndbserve/stats')).json()) as {
+    stats: { totals: { key: string; count: number }[] };
+  };
+  // The dump keeps entry dates for some entries it leaves out of the type's
+  // own table: a total from those would promise entries no list can show.
+  for (const [key, type] of [
+    ['v', 'vn'],
+    ['r', 'release'],
+    ['c', 'character'],
+  ]) {
+    const listed = (await (await request.get(`/vndbserve/${type}?fields=id&limit=1`)).json()) as {
+      count: number;
+    };
+    expect(stats.totals.find(t => t.key === key)?.count, type).toBe(listed.count);
+  }
+});

@@ -81,7 +81,7 @@ func (s *Store) SetTranslation(ctx context.Context, category, source, target str
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck // a commit makes this a no-op
+	defer tx.Rollback(ctx)
 	q := gen.New(tx)
 	lang := s.transLang
 
@@ -114,7 +114,7 @@ func (s *Store) Seed(ctx context.Context, c *trans.Corpus) (terms, passages int,
 	if err != nil {
 		return 0, 0, err
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck // a commit makes this a no-op
+	defer tx.Rollback(ctx)
 	q := gen.New(tx)
 	lang := s.transLang
 

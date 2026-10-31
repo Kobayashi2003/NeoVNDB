@@ -84,7 +84,7 @@ func (s *Store) Rehearse(ctx context.Context, fn func(pgx.Tx, *gen.Queries) erro
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck // the rollback is the point
+	defer tx.Rollback(ctx) // the rollback is the point
 
 	return fn(tx, gen.New(tx))
 }

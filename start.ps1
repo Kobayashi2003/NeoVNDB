@@ -23,11 +23,19 @@
     it away from the machine holding the image mirror, where every image is a
     request that has to time out before the page gives up on it. The boxes are
     still drawn at the size the image would have taken. With -Prod this is
-    baked into the build, so changing it needs -Build.
+    baked into the build, so changing it needs -Build or -BuildFrontend.
 
 .PARAMETER Build
-    Build the Go services first, and with -Prod the frontend too. Without it
-    the existing build runs, and a missing one stops the script.
+    Build everything first: the Go services and the frontend's production
+    build. Without a build switch the existing build runs, and a missing one
+    stops the script. The dev server needs no build of its own (it reads the
+    source); building the frontend anyway checks it compiles and readies -Prod.
+
+.PARAMETER BuildBackend
+    Build only the Go services.
+
+.PARAMETER BuildFrontend
+    Build only the frontend.
 
 .PARAMETER NoBrowser
     Do not open the site in the browser once it answers.
@@ -42,13 +50,16 @@
 .EXAMPLE
     .\start.ps1 -Build
     .\start.ps1
-    .\start.ps1 -Prod -Build
+    .\start.ps1 -BuildBackend
+    .\start.ps1 -Prod -BuildFrontend
     .\start.ps1 -Stop
 #>
 [CmdletBinding()]
 param(
     [switch]$Prod,
     [switch]$Build,
+    [switch]$BuildBackend,
+    [switch]$BuildFrontend,
     [switch]$NoBrowser,
     [switch]$NoImages,
     [switch]$Stop,
@@ -216,7 +227,7 @@ if (-not $env:NEOVNDB_API_BASE) {
 # Before anything starts: on Windows a running binary cannot be overwritten,
 # so building afterwards would fail on the second run of the day.
 
-if ($Build) {
+if ($Build -or $BuildBackend) {
     Write-Step 'building backend/vndb'
     & go -C $vndbDir build -o bin/neovndb.exe ./cmd/neovndb
     if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
@@ -224,12 +235,16 @@ if ($Build) {
     Write-Step 'building backend/users'
     & go -C $usersDir build -o bin/users.exe ./cmd/users
     if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
+}
 
-    if ($Prod) {
-        Write-Step 'building frontend (production)'
-        Push-Location $webDir
-        try { pnpm build | Out-Null } finally { Pop-Location }
-        if ($LASTEXITCODE -ne 0) { Write-Bad 'next build failed'; return }
+if ($Build -or $BuildFrontend) {
+    Write-Step 'building frontend (production)'
+    Push-Location $webDir
+    try { $log = pnpm build 2>&1 } finally { Pop-Location }
+    if ($LASTEXITCODE -ne 0) {
+        $log | Select-Object -Last 20 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Write-Bad 'next build failed'
+        return
     }
 }
 
@@ -240,7 +255,7 @@ $missing = @(
     Where-Object { -not (Test-Path $_) }
 if ($missing) {
     foreach ($m in $missing) { Write-Bad "not built: $m" }
-    Write-Step 'run again with -Build'
+    Write-Step 'run again with -Build (or -BuildBackend / -BuildFrontend for one side)'
     return
 }
 

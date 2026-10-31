@@ -74,7 +74,7 @@ export function Block({
 }
 
 /** Its children settle in whenever `view` changes, rather than cutting. */
-export function Swap({
+function Swap({
   view,
   className,
   children,
