@@ -29,15 +29,18 @@ suggestive or explicit are blurred until a reader chooses otherwise.
   sorting, search and paging. Also the relation graph, facet counts,
   similar titles, recommendations and whole-database statistics. It
   describes itself as OpenAPI 3.1 (`/vndbserve/meta/openapi`, rendered at `/api`).
-- **Image mirror.** Keeps vndb's images byte for byte, fetched on first
-  request and crawled ahead of readers; stored ones are served straight off
-  disk.
+- **Image mirror.** Keeps vndb's images byte for byte, crawled ahead of
+  readers; stored ones are served straight off disk. One not stored yet sends
+  the reader to vndb and is fetched behind them, or, set to `fetch`, is
+  fetched while they wait.
 - **Site.** Lists with a condition builder, detail pages, the relation graph,
   a global search, statistics, and for signed-in readers lists, ratings,
   saved searches, a dashboard and preferences that follow the account. Tag and
   trait names have a translation, with the original one switch away.
 - **Admin page.** Generations, updates, rollback, the image crawl, user
-  backups, translations and accounts, for administrators only.
+  backups, translations and accounts, for administrators only. The schedules,
+  the import guard and how images are served can be changed there while the
+  services run.
 
 ## How it fits together
 
@@ -72,7 +75,7 @@ backend/users/   accounts, sessions, lists, ratings, saved searches
 edge/            the Caddy config
 frontend/        the site (Next.js)
 docs/            design and structure notes (Chinese)
-data/            archives, images and backups; reproducible, not in git
+data/            archives, images, backups and admin-page settings; not in git
 ```
 
 ## Setup
@@ -120,6 +123,21 @@ the services' ports and image directory from their `.env` files and hands them
 to the edge, waits until each service answers, and logs each to
 `<name>.out.log` / `<name>.err.log` in its own directory. Nothing starts
 PostgreSQL.
+
+Without the launcher, start each part in its own window:
+
+```powershell
+cd backend/vndb;  go run ./cmd/neovndb serve    # read API, 17031
+cd backend/vndb;  go run ./cmd/neovndb images   # image mirror, 17032
+cd backend/users; go run ./cmd/users            # user service, 17033
+cd frontend;      pnpm dev                      # Next, 17034
+cd edge;          caddy run                     # edge, 17030
+```
+
+The edge needs the upstreams and image directory in its environment, as
+`start.ps1` sets them: `VNDBSERVE_UPSTREAM=127.0.0.1:17031`,
+`IMGSERVE_UPSTREAM=127.0.0.1:17032`, `USERSERVE_UPSTREAM=127.0.0.1:17033`,
+`NEXT_UPSTREAM=127.0.0.1:17034` and `NEOVNDB_IMAGE_DIR` (default `data/images`).
 
 Open the site at <http://127.0.0.1:17030>, never on Next's own port: only the
 edge serves the API prefixes. Another device on the network can use this
@@ -190,6 +208,11 @@ system scheduler. Each waits `*_FIRST_AFTER`, then runs every `*_EVERY`
 | Crawl images | `images` | `NEOVNDB_IMAGE_CRAWL_EVERY` (1h), `NEOVNDB_IMAGE_CRAWL_PER_RUN` (200) at a time |
 | Expire sessions | user service | `NEOVNDB_USERS_SWEEP_EVERY` (1h) |
 | Back up the user database | user service | when the newest is older than `NEOVNDB_USERS_BACKUP_EVERY` (a week) |
+
+The two jobs in `backend/vndb`, and `NEOVNDB_GUARD_MAX_LOSS`,
+`NEOVNDB_DUMP_KEEP` and `NEOVNDB_IMAGE_MISS`, can also be set on the admin
+page. A change takes effect at once and is kept in `data/settings/`, which
+holds only what differs from `.env` and wins over it at the next start.
 
 A new generation goes live only if it passes the guards: no table lost more
 than `NEOVNDB_GUARD_MAX_LOSS` of its rows, none was skipped, no derived table
