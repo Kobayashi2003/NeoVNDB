@@ -13,29 +13,23 @@
     `go run`, which would put a second process between this script and the
     server and leave the real one behind when the wrapper is killed.
 
-.PARAMETER Prod
-    Serve a production build of the frontend instead of the dev server. Slower
-    to start and it will not pick up a source change, but it is what the CLS
-    and timing measurements in docs/ were taken against.
-
 .PARAMETER NoImages
     Draw the site without fetching a single cover or screenshot. For working on
     it away from the machine holding the image mirror, where every image is a
     request that has to time out before the page gives up on it. The boxes are
-    still drawn at the size the image would have taken. With -Prod this is
-    baked into the build, so changing it needs -Build or -BuildFrontend.
+    still drawn at the size the image would have taken.
 
 .PARAMETER Build
-    Build everything first: the Go services and the frontend's production
-    build. Without a build switch the existing build runs, and a missing one
-    stops the script. The dev server needs no build of its own (it reads the
-    source); building the frontend anyway checks it compiles and readies -Prod.
+    Build everything first and run what was built: the Go services, and the
+    frontend's production build, served by `next start`. Without it the Go
+    services run their existing build (a missing one stops the script) and the
+    frontend runs the dev server, which reads the source and needs no build.
 
 .PARAMETER BuildBackend
-    Build only the Go services.
+    Build only the Go services; the frontend runs the dev server.
 
 .PARAMETER BuildFrontend
-    Build only the frontend.
+    Build only the frontend, and serve that build.
 
 .PARAMETER NoBrowser
     Do not open the site in the browser once it answers.
@@ -51,12 +45,11 @@
     .\start.ps1 -Build
     .\start.ps1
     .\start.ps1 -BuildBackend
-    .\start.ps1 -Prod -BuildFrontend
+    .\start.ps1 -BuildFrontend
     .\start.ps1 -Stop
 #>
 [CmdletBinding()]
 param(
-    [switch]$Prod,
     [switch]$Build,
     [switch]$BuildBackend,
     [switch]$BuildFrontend,
@@ -203,9 +196,12 @@ if ($busy) {
     }
 }
 
-# Passed to the frontend, and read by it at build time -- which in `next dev`
-# means the dev server's own environment, so setting it here is enough. Always
-# assigned, so that leaving the switch off actually turns images back on.
+# A frontend built in this run is the one served; otherwise the dev server.
+$builtWeb = $Build -or $BuildFrontend
+
+# Passed to the frontend, and read by it at build time: the build below, or in
+# `next dev` the dev server's own environment, so setting it here is enough.
+# Always assigned, so that leaving the switch off actually turns images back on.
 $env:NEXT_PUBLIC_NO_IMAGES = if ($NoImages) { '1' } else { '' }
 
 # The edge is told where everything is, so a port changed in an .env moves
@@ -237,7 +233,7 @@ if ($Build -or $BuildBackend) {
     if ($LASTEXITCODE -ne 0) { Write-Bad 'build failed'; return }
 }
 
-if ($Build -or $BuildFrontend) {
+if ($builtWeb) {
     Write-Step 'building frontend (production)'
     Push-Location $webDir
     try { $log = pnpm build 2>&1 } finally { Pop-Location }
@@ -251,11 +247,10 @@ if ($Build -or $BuildFrontend) {
 $missing = @(
     (Join-Path $vndbDir 'bin/neovndb.exe'),
     (Join-Path $usersDir 'bin/users.exe')
-) + $(if ($Prod) { @(Join-Path $webDir '.next/BUILD_ID') } else { @() }) |
-    Where-Object { -not (Test-Path $_) }
+) | Where-Object { -not (Test-Path $_) }
 if ($missing) {
     foreach ($m in $missing) { Write-Bad "not built: $m" }
-    Write-Step 'run again with -Build (or -BuildBackend / -BuildFrontend for one side)'
+    Write-Step 'run again with -Build or -BuildBackend'
     return
 }
 
@@ -288,7 +283,7 @@ function Start-Child {
 # Next runs straight through node rather than a pnpm shim, so Stop-Tree reaches
 # the server itself.
 $nextBin = Join-Path $webDir 'node_modules/next/dist/bin/next'
-$webArgs = @($nextBin, ($Prod ? 'start' : 'dev'), '-p', "$($ports.web)")
+$webArgs = @($nextBin, ($builtWeb ? 'start' : 'dev'), '-p', "$($ports.web)")
 
 Start-Child 'api'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('serve')  'api'    | Out-Null
 Start-Child 'img'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('images') 'img'    | Out-Null
