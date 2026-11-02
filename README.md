@@ -106,19 +106,19 @@ the numbers a deployment wants.
 ## Running
 
 ```powershell
-.\start.ps1 -Build           # build the Go services and the frontend, start all five, open the site
-.\start.ps1 -BuildBackend    # build only the Go services
-.\start.ps1 -BuildFrontend   # build only the frontend
-.\start.ps1                  # start with the existing build
-.\start.ps1 -Prod            # serve the production build instead of the dev server
+.\start.ps1 -Build           # build the Go services and the frontend, serve those builds, open the site
+.\start.ps1 -BuildBackend    # build only the Go services; the frontend runs the dev server
+.\start.ps1 -BuildFrontend   # build only the frontend, and serve that build
+.\start.ps1                  # existing Go builds and the frontend's dev server
 .\start.ps1 -NoImages        # request no cover or screenshot (boxes keep their size)
 .\start.ps1 -NoBrowser       # do not open the browser
 .\start.ps1 -Force           # take ports that are already in use
 .\start.ps1 -Stop            # stop a run left behind (or .\stop.ps1)
 ```
 
-Ctrl+C stops everything. The dev server reads the source directly, so a
-frontend change needs no build unless it runs with `-Prod`. The script reads
+Ctrl+C stops everything. A frontend built in the run is what is served (`next
+start`); otherwise the dev server runs, which reads the source directly and
+picks up a change without a build. The script reads
 the services' ports and image directory from their `.env` files and hands them
 to the edge, waits until each service answers, and logs each to
 `<name>.out.log` / `<name>.err.log` in its own directory. Nothing starts
@@ -164,7 +164,7 @@ Caddy has no `.env`; `start.ps1` sets its environment.
    `NEOVNDB_USERS_BCRYPT_COST=12`.
 3. Make `NEOVNDB_IMAGE_DIR` absolute: the image mirror and the edge read it
    from different directories.
-4. `.\start.ps1 -Prod -Build`, or `pnpm build` and `next start`; point
+4. `.\start.ps1 -Build`, or `pnpm build` and `next start`; point
    `NEOVNDB_API_BASE` at the edge as the server reaches it.
 5. Run `edge/Caddyfile` behind whatever terminates TLS, or import
    `edge/Caddyfile.snippet` into a shared edge's site block.
