@@ -109,7 +109,7 @@ export function JobFacts({ job, extra = [] }: { job: Job; extra?: [string, React
 export function Output({ lines }: { lines: string[] }) {
   if (lines.length === 0) return null;
   return (
-    <pre className="max-h-64 overflow-auto rounded-lg bg-background/60 p-3 font-mono text-[0.6875rem] leading-relaxed text-white/80">
+    <pre className="max-h-64 overflow-auto rounded-lg bg-background/60 p-3 font-mono text-2xs leading-relaxed text-white/80">
       {lines.join('\n')}
     </pre>
   );

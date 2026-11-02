@@ -55,7 +55,7 @@ export function Tooltip({
           <span
             role="tooltip"
             style={{ left: at.x, top: at.y }}
-            className="pointer-events-none fixed z-60 -mt-1.5 max-w-[min(20rem,90vw)] -translate-x-1/2 -translate-y-full rounded border border-white/10 bg-black/90 px-1.5 py-0.5 text-[11px] leading-tight text-white/90 shadow-lg"
+            className="pointer-events-none fixed z-60 -mt-1.5 max-w-[min(20rem,90vw)] -translate-x-1/2 -translate-y-full rounded border border-white/10 bg-black/90 px-1.5 py-0.5 text-2xs leading-tight text-white/90 shadow-lg"
           >
             {label}
           </span>,

@@ -14,6 +14,8 @@ export function ImageWithFallback({
   wrapperClassName,
   width,
   height,
+  priority = false,
+  backdrop,
 }: {
   src: string;
   alt: string;
@@ -21,6 +23,12 @@ export function ImageWithFallback({
   wrapperClassName?: string;
   width?: number;
   height?: number;
+  /** The page's own picture (a detail page's cover): fetched at once and
+   *  first, rather than lazily behind everything else on the line. */
+  priority?: boolean;
+  /** A smaller copy shown under the image until it has loaded, often already
+   *  in the cache from a list: a large original is seconds on a slow line. */
+  backdrop?: string;
 }) {
   type Status = 'loading' | 'ready' | 'failed';
   // Kept with the src it describes, so that a new src starts over as loading
@@ -78,6 +86,19 @@ export function ImageWithFallback({
 
   return (
     <span className={cn('relative block', wrapperClassName)}>
+      {backdrop && (
+        // Decoration under the real image, which names it; stretched to its
+        // box, since the copy is smaller.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={backdrop}
+          alt=""
+          aria-hidden
+          referrerPolicy="no-referrer"
+          fetchPriority="high"
+          className={cn(className, 'absolute inset-0 h-full w-full object-cover')}
+        />
+      )}
       {/* Not next/image: these are third-party URLs at every size, and the
           optimiser would pull each one through this server. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -89,12 +110,22 @@ export function ImageWithFallback({
         height={height}
         // The mirror may redirect a miss to vndb, which need not see the page.
         referrerPolicy="no-referrer"
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         onLoad={() => setState('ready')}
         onError={() => setState('failed')}
-        className={cn(className, pending && 'opacity-0')}
+        // Held back until loaded, then faded in over the placeholder: a page of
+        // covers arriving one by one read as a page of flashes. An animation,
+        // not a transition, so it leaves the caller's own transitions alone.
+        className={cn(
+          className,
+          // Positioned, so it paints over the backdrop rather than under it.
+          backdrop && 'relative',
+          pending && 'opacity-0',
+          sized && state === 'ready' && 'animate-image-in',
+        )}
       />
-      {pending && (
+      {pending && !backdrop && (
         <span className="skeleton absolute inset-0 rounded-[inherit] bg-white/5" aria-hidden />
       )}
     </span>

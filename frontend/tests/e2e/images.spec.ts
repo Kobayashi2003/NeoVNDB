@@ -47,13 +47,19 @@ test('screenshots show st thumbnails and characters their originals', async ({ p
 });
 
 test("a narrow cover's missing thumbnail is answered with the original", async ({ request }) => {
-  // cv/39/10039 is 256px wide; vndb never made its cv.t. Redirecting, the
-  // first ask is sent to vndb, and only once the fetch behind it has met the
-  // 404 does the mirror answer it itself.
-  const thumb = '/imgserve/img/cv.t/39/10039.jpg';
-  await expect
-    .poll(async () => (await request.get(thumb, { maxRedirects: 0 })).status(), { timeout: 15_000 })
-    .toBe(200);
+  // cv/39/10039 is 256px wide; vndb never made its cv.t. Fetching, or once a
+  // redirect's fetch behind it has met the 404, the mirror answers with the
+  // original. Until then a redirect sends the asker to vndb's own address;
+  // how long that takes depends on what else is queued behind redirects, so
+  // the turn from one to the other is left to the Go tests
+  // (TestMissRedirectStopsForWhatVndbLacks).
+  const thumb = await request.get('/imgserve/img/cv.t/39/10039.jpg', { maxRedirects: 0 });
+  if (thumb.status() === 302) {
+    expect(thumb.headers().location).toBe('https://t.vndb.org/cv.t/39/10039.jpg');
+    expect(thumb.headers()['cache-control']).toBe('no-store');
+    return;
+  }
+  expect(thumb.status()).toBe(200);
   const original = await request.get('/imgserve/img/cv/39/10039.jpg');
-  expect(Buffer.compare(await (await request.get(thumb)).body(), await original.body())).toBe(0);
+  expect(Buffer.compare(await thumb.body(), await original.body())).toBe(0);
 });

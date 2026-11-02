@@ -106,7 +106,7 @@ export function TitleList({
                   <Fragment key={e.id}>
                     {heads && (
                       <li
-                        className="sticky top-0 z-10 border-b border-white/5 bg-surface-solid px-3 py-1 text-[0.625rem] font-semibold tabular-nums text-muted"
+                        className="sticky top-0 z-10 border-b border-white/5 bg-surface-solid px-3 py-1 text-3xs font-semibold tabular-nums text-muted"
                         aria-hidden
                       >
                         {month}
@@ -169,7 +169,7 @@ function TitleRow({ entry, detail, came }: { entry: Entry; detail?: Detail; came
         <span className="truncate text-xs font-medium transition-colors group-hover:text-accent">
           {name}
         </span>
-        <span className="flex items-center gap-2 text-[0.6875rem] tabular-nums text-muted">
+        <span className="flex items-center gap-2 text-2xs tabular-nums text-muted">
           {entry.rating !== null && <span className="text-accent">★{entry.rating}</span>}
           {detail.rating !== null && <span>{score(detail.rating)}</span>}
           <span className="ml-auto">

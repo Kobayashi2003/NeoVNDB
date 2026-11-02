@@ -69,7 +69,7 @@ export function Columns({
           <span className="text-muted">{shown ? `${unit}, ${shown.title}` : `${unit} in all`}</span>
         </span>
         {!counted && (
-          <span className="shrink-0 text-[0.625rem] tabular-nums text-muted">
+          <span className="shrink-0 text-3xs tabular-nums text-muted">
             most {max.toLocaleString()}
           </span>
         )}
@@ -106,7 +106,7 @@ export function Columns({
               {counted && (
                 <span
                   className={cn(
-                    'pb-1 text-[0.625rem] leading-3 tabular-nums text-muted transition-colors',
+                    'pb-1 text-3xs leading-3 tabular-nums text-muted transition-colors',
                     (on || hover === i) && 'text-white',
                   )}
                   aria-hidden
@@ -144,7 +144,7 @@ export function Columns({
           );
         })}
       </div>
-      <div className="flex h-4 gap-0.5 text-[0.625rem] leading-4 text-muted" aria-hidden>
+      <div className="flex h-4 gap-0.5 text-3xs leading-4 text-muted" aria-hidden>
         {data.map((d, i) => (
           <span
             key={i}

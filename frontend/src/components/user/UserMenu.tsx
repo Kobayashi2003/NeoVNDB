@@ -133,10 +133,6 @@ function SignedIn() {
             <LayoutDashboard className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Dashboard
           </Link>
-          <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
-            <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-            Change password
-          </Link>
           {session.user?.is_admin && (
             <Link href="/admin" onClick={() => setOpen(false)} className={menuItem()}>
               <Wrench className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
@@ -144,6 +140,11 @@ function SignedIn() {
             </Link>
           )}
           <MenuDivider />
+          {/* The account's own business, with leaving it. */}
+          <Link href="/account" onClick={() => setOpen(false)} className={menuItem()}>
+            <KeyRound className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+            Change password
+          </Link>
           <button type="button" onClick={() => leave(false)} className={menuItem()}>
             <LogOut className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out

@@ -20,7 +20,7 @@ const KINDS = [
   { value: 's', label: 'Staff' },
 ];
 
-const NOTE = 'mt-3 text-[0.6875rem] leading-snug text-muted';
+const NOTE = 'mt-3 text-2xs leading-snug text-muted';
 
 /** When vndb's entries were created: one kind at a time, by year or month. */
 export function Added({ added }: { added: Record<string, Counted[]> }) {

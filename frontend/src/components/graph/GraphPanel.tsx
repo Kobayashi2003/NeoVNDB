@@ -165,7 +165,7 @@ export function GraphPanel({
                 {hidden.size > 0 && (
                   <button
                     onClick={onShowAll}
-                    className="text-[0.6875rem] text-muted transition-colors hover:text-white"
+                    className="text-2xs text-muted transition-colors hover:text-white"
                   >
                     Show all
                   </button>
@@ -205,7 +205,7 @@ export function GraphPanel({
                 );
               })}
               {shown < total && (
-                <p className="mt-1.5 px-1 text-[0.6875rem] tabular-nums text-muted">
+                <p className="mt-1.5 px-1 text-2xs tabular-nums text-muted">
                   Showing {shown} of {total} titles
                 </p>
               )}

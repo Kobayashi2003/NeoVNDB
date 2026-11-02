@@ -171,7 +171,7 @@ export function VNCharacterCard({
           <div className="mt-0.5 flex flex-col gap-1.5">
             {traits.groups.map(([group, list]) => (
               <div key={group}>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                <p className="mb-1 text-2xs font-semibold uppercase tracking-wider text-muted">
                   {display(group, list[0]?.group_translation ?? null, original)}
                 </p>
                 <div className="flex flex-wrap gap-1">

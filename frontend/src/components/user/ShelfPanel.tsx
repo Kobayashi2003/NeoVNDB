@@ -245,7 +245,7 @@ export function ShelfPanel({
           key="results"
           data-results
           data-stale={stale || undefined}
-          className="flex flex-col gap-4"
+          className="animate-swap-in flex flex-col gap-4"
         >
           <Results
             type={shownType}

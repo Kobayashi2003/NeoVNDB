@@ -7,6 +7,26 @@ const QUIET_MS = 120;
 /** A navigation that never finishes (an error page, a dropped request) must
  *  not leave the bar running forever. */
 const GIVE_UP_MS = 15_000;
+/** Longer than the page crossfade (globals.css), which stops the moment its
+ *  mark goes. */
+const CROSSFADE_MS = 600;
+let settling: ReturnType<typeof setTimeout> | undefined;
+
+/** Marks the document as going to another page, which is what lets the page
+ *  crossfade play (globals.css). React runs a view transition for commits that
+ *  are not navigations too -- the first after hydration among them -- and the
+ *  crossfade on a page that stayed where it was blanked it for a frame. */
+export function markMoving() {
+  document.documentElement.setAttribute('data-moving', '');
+  // A move that never lands on a new address (back over a #fragment, one
+  // given up) must not leave the mark for the next commit that is no move.
+  settleMoving(GIVE_UP_MS);
+}
+
+function settleMoving(after = CROSSFADE_MS) {
+  clearTimeout(settling);
+  settling = setTimeout(() => document.documentElement.removeAttribute('data-moving'), after);
+}
 
 let pending = false;
 let shown = false;
@@ -56,6 +76,7 @@ export function startNavigation(href: string) {
   )
     return;
   clear();
+  markMoving();
   pending = true;
   stopImages();
   timers.push(
@@ -69,6 +90,7 @@ export function startNavigation(href: string) {
 
 export function finishNavigation() {
   clear();
+  settleMoving();
   restoreImages();
   if (!pending && !shown) return;
   pending = shown = false;

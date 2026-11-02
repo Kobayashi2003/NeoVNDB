@@ -129,7 +129,7 @@ function Field({
         className="rounded-lg border border-white/10 bg-background/40 px-3 py-2 text-sm outline-none transition-colors focus:border-white/30"
         {...rest}
       />
-      {hint && <span className="text-[0.6875rem] text-muted">{hint}</span>}
+      {hint && <span className="text-2xs text-muted">{hint}</span>}
     </label>
   );
 }

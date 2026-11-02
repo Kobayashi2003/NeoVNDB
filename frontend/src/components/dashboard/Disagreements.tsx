@@ -92,7 +92,7 @@ export function Disagreements({
   return (
     <Block title="Where you part from vndb">
       <Plot className="flex flex-col gap-4">
-        <p className="flex items-center gap-4 text-[0.625rem] text-muted" aria-hidden>
+        <p className="flex items-center gap-4 text-3xs text-muted" aria-hidden>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-accent" />
             You

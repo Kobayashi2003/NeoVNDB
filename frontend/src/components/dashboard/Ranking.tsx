@@ -79,7 +79,7 @@ export function Ranking({
               {format(r.count)}
               {of ? (
                 // A column of its own width, so the shares line up.
-                <span className="ml-2 inline-block w-8 text-right text-[0.6875rem] text-muted/70">
+                <span className="ml-2 inline-block w-8 text-right text-2xs text-muted/70">
                   {share(r.count, of)}
                 </span>
               ) : null}

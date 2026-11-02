@@ -35,6 +35,8 @@ export function CharacterTraits({ traits, spoiler }: { traits: Trait[]; spoiler:
               <Link
                 key={t.id}
                 href={`/${t.id}`}
+                // Dozens to a character: see VNTags.
+                prefetch={false}
                 title={t.lie ? 'Flagged as untrue' : undefined}
                 className={cn(
                   'inline-flex items-center rounded-full px-2.5 py-1 text-xs transition-colors',

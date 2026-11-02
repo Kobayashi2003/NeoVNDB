@@ -75,7 +75,7 @@ export function GraphLine({ id, data, style, markerEnd }: EdgeProps<Line>) {
       {data?.showLabel && (
         <EdgeLabelRenderer>
           <span
-            className="nodrag nopan pointer-events-none absolute rounded-full border bg-background/90 px-1.5 py-px text-[0.625rem] font-semibold leading-tight"
+            className="nodrag nopan pointer-events-none absolute rounded-full border bg-background/90 px-1.5 py-px text-3xs font-semibold leading-tight"
             style={{
               transform: `translate(-50%, -50%) translate(${data.label.x}px, ${data.label.y}px)`,
               color: data.colour,

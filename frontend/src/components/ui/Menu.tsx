@@ -77,7 +77,7 @@ export function MenuMark({ kind, on }: { kind: 'check' | 'radio'; on: boolean })
   return (
     <span
       className={cn(
-        'flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
+        'flex size-3.5 shrink-0 items-center justify-center rounded-sm border transition-colors',
         on ? 'border-accent bg-accent' : 'border-white/25',
       )}
       aria-hidden
@@ -100,7 +100,7 @@ export function MenuLabel({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 px-2.5 pb-1 pt-1.5">
-      <span className="flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
+      <span className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wider text-muted/70">
         {icon && <span className="icon-caps flex">{icon}</span>}
         {children}
       </span>
@@ -110,7 +110,7 @@ export function MenuLabel({
 }
 
 /** The look of that action: quieter than a row, and never uppercase. */
-export const menuAction = 'text-[0.6875rem] text-muted transition-colors hover:text-white';
+export const menuAction = 'text-2xs text-muted transition-colors hover:text-white';
 
 export function MenuDivider() {
   return <div className="-mx-1 my-1 h-px bg-white/10" role="separator" />;

@@ -14,7 +14,7 @@ export function ControlLabel({
     <span
       data-control-label
       className={cn(
-        'mr-1 shrink-0 whitespace-nowrap text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70',
+        'mr-1 shrink-0 whitespace-nowrap text-3xs font-semibold uppercase tracking-wider text-muted/70',
         className,
       )}
     >

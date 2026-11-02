@@ -46,7 +46,7 @@ function Connector({ node, at }: { node: Group; at: number }) {
       type="button"
       onClick={() => edit(node.key, n => switchAt(n as Group, at), null)}
       title={`Change to "${node.and ? 'or' : 'and'}"`}
-      className="rounded px-1 text-[0.6875rem] text-muted underline decoration-white/25 decoration-dotted underline-offset-2 transition-colors hover:bg-white/10 hover:text-white"
+      className="rounded px-1 text-2xs text-muted underline decoration-white/25 decoration-dotted underline-offset-2 transition-colors hover:bg-white/10 hover:text-white"
     >
       {node.and ? 'and' : 'or'}
     </button>
@@ -58,7 +58,7 @@ function SubGroup({ type, node }: { type: string; node: Group }) {
   return (
     <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5 rounded-2xl bg-white/[0.04] px-1.5 py-1 ring-1 ring-inset ring-white/10">
       <ModeMenu node={node} onRemove={() => edit(node.key, () => null, null)} />
-      <span className="text-[0.6875rem] text-muted">of</span>
+      <span className="text-2xs text-muted">of</span>
       <Flow type={type} node={node} />
     </span>
   );
@@ -115,7 +115,7 @@ function Chip({ type, node }: { type: string; node: Leaf }) {
         {nested.items.length > 1 && (
           <>
             <ModeMenu node={nested} />
-            <span className="text-[0.6875rem] text-sky-300/60">of</span>
+            <span className="text-2xs text-sky-300/60">of</span>
           </>
         )}
         <Flow type={inside} node={nested} />

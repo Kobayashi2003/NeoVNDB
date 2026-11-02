@@ -38,6 +38,7 @@ export function CharacterInfoPanel({
           image={character.image}
           alt={character.name}
           blurred={blur}
+          priority
           className="w-32 shrink-0 self-start border border-white/5 sm:w-40 lg:w-full"
         />
       )}

@@ -53,6 +53,10 @@ export function VNTags({ tags }: { tags: Tag[] }) {
                 <Link
                   key={tag.id}
                   href={`/${tag.id}`}
+                  // A page holds a hundred of these, each prefetched as it came
+                  // into view, and a tag page is dynamic: all that came back was
+                  // the layout, at the cost of a queue on a slow line.
+                  prefetch={false}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-colors',
                     // A tag flagged as a lie is kept visible but struck: it is

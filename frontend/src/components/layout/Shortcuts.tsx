@@ -129,7 +129,7 @@ export function Shortcuts() {
                 {keys.map(k => (
                   <kbd
                     key={k}
-                    className="min-w-6 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-center font-mono text-[0.6875rem] text-white"
+                    className="min-w-6 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-center font-mono text-2xs text-white"
                   >
                     {k}
                   </kbd>

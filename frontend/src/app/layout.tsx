@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 import { Righteous } from 'next/font/google';
 import './globals.css';
 import { Suspense, ViewTransition } from 'react';
+import { preload } from 'react-dom';
+import spritePng from './icons/icons.png';
+import spriteSvg from './icons/icons.svg';
 import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
 import { Shortcuts } from '@/components/layout/Shortcuts';
@@ -35,6 +38,11 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const jar = await cookies();
   const prefs = readPrefs(jar.get(PREFS_COOKIE)?.value);
   const name = jar.get(NAME_COOKIE)?.value ?? null;
+  // The icon sprites are asked for only once the CSS naming them has been
+  // applied, so flags and platforms came in after the text around them.
+  // These are the files the CSS points at: the bundler emits each once.
+  preload(spritePng.src, { as: 'image' });
+  preload(spriteSvg.src, { as: 'image' });
 
   return (
     <html lang="en" className={`${display.variable} h-full antialiased`}>

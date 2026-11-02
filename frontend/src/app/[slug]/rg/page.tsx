@@ -72,7 +72,7 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
           <div className="flex flex-col gap-2 p-3">
             <Back id={slug} />
             <div>
-              <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-accent">
+              <p className="text-3xs font-semibold uppercase tracking-wider text-accent">
                 Relation graph
               </p>
               {/* Through Name, so the heading answers the script toggle the
@@ -156,7 +156,7 @@ function Steps({
           Deepest
         </StepLink>
       </div>
-      <p className="text-[0.6875rem] leading-snug text-muted">
+      <p className="text-2xs leading-snug text-muted">
         {graph.capped
           ? `${count}, the most one graph shows; it stops here.`
           : !graph.truncated

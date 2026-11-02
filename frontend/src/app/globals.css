@@ -33,6 +33,10 @@
   --color-accent-hover: var(--accent-hover);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  /* Below text-xs, for counts, captions and chips. No line height of their
+     own: they take their line's, as the one-off sizes they replaced did. */
+  --text-2xs: 0.6875rem;
+  --text-3xs: 0.625rem;
   /* The wordmark's face. Latin-only and decorative, so it is named here and
      used on one element rather than let anywhere near running text. */
   --font-display: var(--font-display-src), ui-sans-serif, system-ui, sans-serif;
@@ -171,7 +175,7 @@ html[data-selecting] [data-scroll-top] {
 .react-flow .react-flow__attribution a {
   color: var(--muted);
   opacity: 0.4;
-  font-size: 0.625rem;
+  font-size: var(--text-3xs);
 }
 /* The graph, not its panels, until the first layout is framed (RelationGraph). */
 .react-flow.graph-unframed .react-flow__viewport {
@@ -223,9 +227,23 @@ html[data-selecting] [data-scroll-top] {
   }
 }
 
+/* An image that has just loaded (ui/ImageWithFallback) comes up over its
+   placeholder instead of cutting in. */
+@keyframes image-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .animate-image-in {
+    animation: image-in 280ms ease-out;
+  }
+}
+
 /* A panel that swaps what it shows (year to month, chart to table, one role
    to another) settles in rather than cutting; keyed by the view, so it plays
-   on a swap and not on every change of data. */
+   on a swap and not on every change of data. Also content arriving in place
+   of a placeholder that held no text of its own (one that did would blink). */
 @keyframes swap-in {
   from {
     opacity: 0;
@@ -259,15 +277,19 @@ html[data-selecting] [data-scroll-top] {
    a group already at the new size scaled the old page (/u, narrower than a
    list, was blown up; the reverse shrunk), and one already at the new place
    showed a page left scrolled down from its top. Interpolating the box
-   instead would stretch one page into the other. */
-::view-transition-group(.page) {
+   instead would stretch one page into the other.
+   Only while going to another page (lib/navigating marks it): React also runs
+   a transition for commits that change nothing, the first after hydration
+   among them, and this crossfade blanked a page that stayed put for a frame.
+   Those get the browser's own crossfade, invisible between equal pictures. */
+:root[data-moving]::view-transition-group(.page) {
   animation-duration: 100ms;
   animation-timing-function: step-end;
 }
-::view-transition-old(.page) {
+:root[data-moving]::view-transition-old(.page) {
   animation: 100ms ease-out both page-out;
 }
-::view-transition-new(.page) {
+:root[data-moving]::view-transition-new(.page) {
   animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both page-in;
 }
 @keyframes page-out {

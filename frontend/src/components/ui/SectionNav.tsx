@@ -16,7 +16,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidewaysWheel } from '@/hooks/useSidewaysWheel';
-import { pill } from './Pill';
+import { CONTROL_H, pill } from './Pill';
+import { Placeholder } from './Surface';
+
+/** The placeholder pills' widths, about those of the sections' names. */
+const WAITING = ['w-24', 'w-16', 'w-24', 'w-20'];
 
 interface Mark {
   id: string;
@@ -137,6 +141,14 @@ export function SectionNav({
               : 'border-transparent',
           )}
         >
+          {/* Until the page is live and the sections known, pills to come
+              rather than an empty row. */}
+          {marks.length === 0 &&
+            WAITING.map((width, i) => (
+              <li key={i} className="shrink-0" aria-hidden>
+                <Placeholder className={cn(CONTROL_H, 'rounded-full', width)} />
+              </li>
+            ))}
           {marks.map(m => (
             <li key={m.id} className="shrink-0">
               <a

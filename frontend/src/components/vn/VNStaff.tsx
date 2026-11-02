@@ -63,7 +63,7 @@ export function VNStaff({ staff, editions }: { staff: StaffCredit[]; editions: E
             )}
             <span className="min-w-0 truncate">{edition.name}</span>
             {!edition.official && (
-              <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-medium">
+              <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-3xs font-medium">
                 Unofficial
               </span>
             )}

@@ -209,7 +209,7 @@ function Value({
             ))}
           </div>
           <div className="flex items-center justify-between gap-2 border-t border-white/10 px-1.5 pt-1.5">
-            <span className="text-[0.6875rem] text-muted">
+            <span className="text-2xs text-muted">
               {chosen.length > 1 ? `${chosen.length} chosen` : 'Choose one or more'}
             </span>
             <DoneButton onClick={done} disabled={chosen.length === 0} />
@@ -391,7 +391,7 @@ function Picked({
   return (
     <div className="flex items-center gap-2 rounded-lg bg-white/[0.06] px-2.5 py-1.5 text-xs">
       <span className="min-w-0 flex-1 truncate text-white">{name}</span>
-      <span className="font-mono text-[0.6875rem] text-muted">{id}</span>
+      <span className="font-mono text-2xs text-muted">{id}</span>
       <button type="button" onClick={onAction} className={menuAction}>
         {action}
       </button>

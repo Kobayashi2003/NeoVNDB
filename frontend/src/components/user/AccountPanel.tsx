@@ -43,7 +43,7 @@ export function AccountPanel() {
   const { user } = session;
 
   return (
-    <div key="account" className="flex w-full max-w-sm flex-col gap-4">
+    <div key="account" className="animate-swap-in flex w-full max-w-sm flex-col gap-4">
       <div className={surface('p-6')}>
         <h1 className="text-lg font-bold">{user.username}</h1>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
@@ -119,7 +119,7 @@ function PasswordForm() {
       <label className="flex flex-col gap-1">
         <span className="text-xs font-medium text-muted">New password</span>
         <input name="next" type="password" autoComplete="new-password" required className={FIELD} />
-        <span className="text-[0.6875rem] text-muted">{RULES.password}</span>
+        <span className="text-2xs text-muted">{RULES.password}</span>
       </label>
 
       {error && (

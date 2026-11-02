@@ -8,7 +8,13 @@
 
 import { useEffect, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { finishNavigation, isNavigating, onNavigating, startNavigation } from '@/lib/navigating';
+import {
+  finishNavigation,
+  isNavigating,
+  markMoving,
+  onNavigating,
+  startNavigation,
+} from '@/lib/navigating';
 
 /** Clicks on links start the sign; a new address ends it. */
 export function Navigation() {
@@ -29,7 +35,13 @@ export function Navigation() {
     // Capturing: next/link prevents the default to navigate on the client,
     // so a listener after it could not tell its clicks from inert ones.
     document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
+    // Back and forward: no bar (the page is usually cached), but the same
+    // crossfade as any other move.
+    window.addEventListener('popstate', markMoving);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      window.removeEventListener('popstate', markMoving);
+    };
   }, []);
 
   useEffect(() => {

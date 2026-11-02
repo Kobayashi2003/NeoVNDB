@@ -10,7 +10,7 @@ import { SearchPill } from '@/components/ui/SearchPill';
 import { useNavigate } from '@/hooks/useNavigate';
 
 const CHIP =
-  'flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums';
+  'flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-2xs font-semibold tabular-nums';
 
 /** What only the reader knows of an item, on its card: their rating, and the
  *  day they saved or rated it when that is the order. Over the picture on a

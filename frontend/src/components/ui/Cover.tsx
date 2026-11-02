@@ -15,6 +15,7 @@ export function Cover({
   className,
   imageClassName,
   thumbnail = false,
+  priority = false,
 }: {
   image: Image;
   alt: string;
@@ -25,8 +26,12 @@ export function Cover({
   /** vndb's thumbnail where the frame is small; the viewer always gets the
    *  original. */
   thumbnail?: boolean;
+  /** See ImageWithFallback. */
+  priority?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const full = imageURL(image.url);
+  const small = thumbnailURL(image);
 
   return (
     <>
@@ -40,10 +45,14 @@ export function Cover({
         )}
       >
         <ImageWithFallback
-          src={thumbnail ? thumbnailURL(image) : imageURL(image.url)}
+          src={thumbnail ? small : full}
           alt={alt}
           width={image.dims[0]}
           height={image.dims[1]}
+          priority={priority}
+          // vndb's thumbnail first, which a list just showed, then the
+          // original over it.
+          backdrop={priority && !thumbnail && small !== full ? small : undefined}
           wrapperClassName="w-full"
           className={cn(
             'h-auto w-full transition-[filter,transform] duration-300 group-hover:scale-[1.02]',

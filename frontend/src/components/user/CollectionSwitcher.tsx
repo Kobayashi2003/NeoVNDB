@@ -46,7 +46,7 @@ export function CollectionColumn({
     <nav aria-label="Your lists" className={cn('flex flex-col gap-4', className)}>
       {byType(lists).map(({ type, mine }) => (
         <div key={type} className="flex flex-col gap-0.5">
-          <p className="px-2.5 text-[0.625rem] font-semibold uppercase tracking-wider text-muted/70">
+          <p className="px-2.5 text-3xs font-semibold uppercase tracking-wider text-muted/70">
             {LIST[type].label}
           </p>
           {mine.map(list => (

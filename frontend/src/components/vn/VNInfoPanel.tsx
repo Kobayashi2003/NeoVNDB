@@ -42,6 +42,7 @@ export function VNInfoPanel({ vn }: { vn: Omit<VN, 'characters'> }) {
             image={vn.image}
             alt={vn.title ?? ''}
             blurred={blur}
+            priority
             className="w-32 shrink-0 self-start border border-white/5 sm:w-40 lg:w-full"
           />
         )}

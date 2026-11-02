@@ -260,7 +260,7 @@ function Field({
             {draft.trim() === '' ? 'Remove' : 'Save'}
           </Button>
         )}
-        {!changed && stored && <span className="text-[0.6875rem] text-muted">Saved</span>}
+        {!changed && stored && <span className="text-2xs text-muted">Saved</span>}
         <Trouble text={error} />
       </div>
     </div>

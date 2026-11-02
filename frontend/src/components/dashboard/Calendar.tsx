@@ -77,7 +77,7 @@ export function Calendar({
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-1 text-[0.625rem] text-muted" aria-hidden>
+      <div className="flex items-center gap-1 text-3xs text-muted" aria-hidden>
         Fewer
         {STEPS.map(s => (
           <span key={s} className={cn('size-2.5 rounded-[3px]', s)} />

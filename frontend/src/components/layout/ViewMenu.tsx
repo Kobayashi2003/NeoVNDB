@@ -117,7 +117,7 @@ export function ViewMenu() {
             <MenuMark kind="check" on={p.original} />
             <span className="min-w-0 flex-1">
               Original script
-              <span className="block text-[0.6875rem] text-muted">
+              <span className="block text-2xs text-muted">
                 Names as first written; Japanese for tags and traits
               </span>
             </span>
@@ -134,7 +134,7 @@ export function ViewMenu() {
           >
             <Keyboard className="size-3.5 shrink-0 text-muted" aria-hidden />
             <span className="flex-1">Keyboard shortcuts</span>
-            <kbd className="font-mono text-[0.6875rem] text-muted">?</kbd>
+            <kbd className="font-mono text-2xs text-muted">?</kbd>
           </button>
         </MenuPanel>
       )}

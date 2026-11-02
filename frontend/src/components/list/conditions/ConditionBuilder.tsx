@@ -85,7 +85,7 @@ export function ConditionBuilder({
               )}
             />
             <p
-              className={cn('text-[0.6875rem]', error ? 'text-red-400' : 'text-muted')}
+              className={cn('text-2xs', error ? 'text-red-400' : 'text-muted')}
               role={error ? 'alert' : undefined}
             >
               {error ?? (

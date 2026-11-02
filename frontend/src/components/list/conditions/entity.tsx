@@ -118,7 +118,7 @@ export function EntitySearch({ type, onPick }: { type: string; onPick: (id: stri
       {rows.map(row => (
         <button key={row.id} type="button" onClick={() => pick(row.id)} className={menuItem()}>
           <span className="truncate">{display(...pairOf(row), original)}</span>
-          <span className="ml-auto shrink-0 font-mono text-[0.6875rem] text-muted">{row.id}</span>
+          <span className="ml-auto shrink-0 font-mono text-2xs text-muted">{row.id}</span>
         </button>
       ))}
       {q.length >= 2 && hits.for === q && rows.length === 0 && !asID && (

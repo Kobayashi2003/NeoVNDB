@@ -99,7 +99,7 @@ export function Recommendations({
             wrap={card => (
               <div className="flex flex-col gap-1">
                 {card.node}
-                <p className="line-clamp-2 text-[0.6875rem] text-muted">
+                <p className="line-clamp-2 text-2xs text-muted">
                   Like{' '}
                   {(because.get(card.id) ?? []).slice(0, 2).map((id, i) => (
                     <span key={id}>

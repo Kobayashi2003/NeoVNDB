@@ -98,7 +98,7 @@ export function GraphCard({ data }: NodeProps<CardNode>) {
           <span className="line-clamp-2 text-xs font-semibold leading-snug text-white">
             {title}
           </span>
-          <span className="flex items-center gap-1.5 text-[0.6875rem] tabular-nums text-muted">
+          <span className="flex items-center gap-1.5 text-2xs tabular-nums text-muted">
             {status && (
               <span
                 title={status.label}
