@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { ImageSettings, ServeSettings, Settings } from '@/lib/admin';
 import { errorText } from '@/lib/user';
+import { ChoiceMenu } from '@/components/ui/ChoiceMenu';
 import { PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, FIELD, Trouble } from './parts';
 
@@ -58,8 +59,8 @@ export const IMAGE_FIELDS: Field<ImageSettings>[] = [
     hint: 'Sending the reader to vndb is quicker where vndb is close to them, and shows vndb who they are.',
     kind: {
       choices: [
-        ['redirect', 'Send the reader to vndb, fetch it behind them'],
-        ['fetch', 'Fetch it while the reader waits'],
+        ['redirect', 'Send to vndb, fetch behind'],
+        ['fetch', 'Fetch while the reader waits'],
       ],
     },
   },
@@ -220,33 +221,34 @@ export function SettingsCard<T extends object>({
           const changed = settings.changed.includes(f.key);
           return (
             <div key={f.key} className="flex flex-col gap-1 text-xs">
-              <label htmlFor={id} className="font-medium">
-                {f.label}
-              </label>
               {typeof f.kind === 'object' ? (
-                <select
-                  id={id}
-                  value={draft[f.key]}
-                  disabled={busy}
-                  onChange={e => setDraft({ ...draft, [f.key]: e.target.value })}
-                  className={FIELD}
-                >
-                  {f.kind.choices.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  {/* The menu names itself to a screen reader; this is for the eye. */}
+                  <span className="font-medium" aria-hidden>
+                    {f.label}
+                  </span>
+                  <ChoiceMenu
+                    label={f.label}
+                    value={draft[f.key]}
+                    choices={f.kind.choices.map(([value, label]) => ({ value, label }))}
+                    onChange={value => setDraft({ ...draft, [f.key]: value })}
+                  />
+                </>
               ) : (
-                <input
-                  id={id}
-                  value={draft[f.key]}
-                  disabled={busy}
-                  inputMode={f.kind === 'duration' ? 'text' : 'decimal'}
-                  spellCheck={false}
-                  onChange={e => setDraft({ ...draft, [f.key]: e.target.value })}
-                  className={cn(FIELD, 'font-mono tabular-nums')}
-                />
+                <>
+                  <label htmlFor={id} className="font-medium">
+                    {f.label}
+                  </label>
+                  <input
+                    id={id}
+                    value={draft[f.key]}
+                    disabled={busy}
+                    inputMode={f.kind === 'duration' ? 'text' : 'decimal'}
+                    spellCheck={false}
+                    onChange={e => setDraft({ ...draft, [f.key]: e.target.value })}
+                    className={cn(FIELD, 'font-mono tabular-nums')}
+                  />
+                </>
               )}
               <p className="text-muted">
                 {f.hint}

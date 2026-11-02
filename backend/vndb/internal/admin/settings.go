@@ -1,8 +1,10 @@
 package admin
 
 import (
+	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/kobayashi/neovndb/internal/settings"
 )
@@ -30,9 +32,14 @@ func handleSettings[T any](mux *http.ServeMux, live *settings.Live[T]) {
 			fail(w, http.StatusBadRequest, "That request body could not be read.")
 			return
 		}
-		if _, err := live.Set(body); err != nil {
+		switch _, err := live.Set(body); {
+		case errors.Is(err, settings.ErrInvalid):
 			// Which value and why, for the person who typed it.
-			fail(w, http.StatusBadRequest, err.Error())
+			fail(w, http.StatusBadRequest, strings.TrimPrefix(err.Error(), settings.ErrInvalid.Error()+": "))
+			return
+		case err != nil:
+			// Nothing changed; the file says why.
+			fail(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		send(w, http.StatusOK, view())

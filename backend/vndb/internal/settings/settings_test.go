@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,13 +69,41 @@ func TestLiveRefusesBadValues(t *testing.T) {
 		`{"nonsense":1}`,
 		`[1]`,
 		`{"crawl_per_run":5,"miss":"proxy"}`,
+		// Would read as 0, which turns the crawl off.
+		`{"crawl_every":null}`,
+		`{"crawl_per_run":null}`,
 	} {
-		if _, err := live.Set([]byte(patch)); err == nil {
-			t.Errorf("%s was accepted", patch)
+		if _, err := live.Set([]byte(patch)); !errors.Is(err, ErrInvalid) {
+			t.Errorf("%s: %v, want ErrInvalid", patch, err)
 		}
 	}
 	if live.Get() != base() {
 		t.Errorf("a refused change left %+v", live.Get())
+	}
+	// A value that does not read names its field.
+	if _, err := live.Set([]byte(`{"crawl_delay":"1 hour"}`)); err == nil || !strings.Contains(err.Error(), "crawl_delay") {
+		t.Errorf("got %v", err)
+	}
+}
+
+// A change that cannot be written is not taken, and is not the asker's fault.
+func TestLiveRefusesWhatItCannotKeep(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "not-a-directory")
+	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	live, err := Open(filepath.Join(blocker, "images.json"), base(), Images.check)
+	if err != nil {
+		t.Fatal(err)
+	}
+	told := false
+	live.Watch(func(Images) { told = true })
+	_, err = live.Set([]byte(`{"miss":"fetch"}`))
+	if err == nil || errors.Is(err, ErrInvalid) {
+		t.Errorf("got %v, want a failure to keep it", err)
+	}
+	if live.Get().Miss != "redirect" || told {
+		t.Errorf("an unkept change took effect: %+v, told %v", live.Get(), told)
 	}
 }
 

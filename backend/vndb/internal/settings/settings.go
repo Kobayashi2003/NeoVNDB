@@ -81,13 +81,20 @@ func (l *Live[T]) Watch(fn func(T)) {
 	l.watchers = append(l.watchers, fn)
 }
 
+// ErrInvalid marks a change refused for what it asked, as opposed to one
+// that could not be kept.
+var ErrInvalid = errors.New("invalid setting")
+
 // Set applies a JSON object of some of the fields, keeps the result and
-// tells the watchers. Nothing changes if any field is unknown or invalid.
+// tells the watchers. Nothing changes if any field is unknown or invalid
+// (ErrInvalid) or the file cannot be written.
 func (l *Live[T]) Set(patch []byte) (T, error) {
 	l.mu.Lock()
 	next, err := l.merge(l.current, patch)
-	if err == nil {
-		err = l.save(next)
+	if err != nil {
+		err = fmt.Errorf("%w: %w", ErrInvalid, err)
+	} else if err = l.save(next); err != nil {
+		err = fmt.Errorf("keeping the settings: %w", err)
 	}
 	if err != nil {
 		l.mu.Unlock()
@@ -117,6 +124,19 @@ func (l *Live[T]) merge(from T, patch []byte) (T, error) {
 	for name, value := range changes {
 		if _, ok := fields[name]; !ok {
 			return out, fmt.Errorf("no setting %q", name)
+		}
+		// null would decode to the zero value, which turns a schedule off.
+		if bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return out, fmt.Errorf("%s: a value is required", name)
+		}
+		// One at a time, so a value that does not read says which it was.
+		one, err := json.Marshal(map[string]json.RawMessage{name: value})
+		if err != nil {
+			return out, err
+		}
+		var probe T
+		if err := json.Unmarshal(one, &probe); err != nil {
+			return out, fmt.Errorf("%s: %w", name, err)
 		}
 		fields[name] = value
 	}
