@@ -1,7 +1,7 @@
 {
  "source_lang": "en",
  "target_lang": "ja",
- "_comment": "The translation corpus (en -> ja), the only copy: it cannot be rebuilt from a dump. \"terms\" holds tag and trait NAMES by category, keyed by the English name; \"passages\" holds DESCRIPTIONS keyed by their English text, with vndb markup kept exactly (checked on load). Load it with `neovndb trans seed` from backend/vndb; it replaces rows with the same key and leaves others alone, so running it again is safe.",
+ "_comment": "The translation corpus, the only copy: it cannot be rebuilt from a dump. \"terms\" holds tag and trait NAMES by category, keyed by the English name; \"passages\" holds DESCRIPTIONS keyed by their English text, with vndb markup kept exactly (checked on load). Load it with `neovndb trans seed` from backend/vndb; it replaces rows with the same key and leaves others alone, so running it again is safe. `neovndb trans export` (or the admin page) writes the database's corpus back out.",
  "terms": {
   "tag": {
    "100% Completion Bonus": "100%達成ボーナス",
@@ -27,6 +27,7 @@
    "AI Heroine": "AIヒロイン",
    "AI Protagonist": "AIの主人公",
    "AI-generated Assets": "AI生成素材",
+   "AI-generated Backgrounds": "AI生成背景",
    "AI-generated Graphics": "AI生成グラフィック",
    "AI-generated Music": "AI生成音楽",
    "AI-generated Story": "AI生成ストーリー",
@@ -208,6 +209,7 @@
    "Baseball Club": "野球部",
    "Based on Actual Events": "実話に基づく",
    "Based on Audio Drama": "ドラマCD原作",
+   "Based on Theatre": "舞台原作",
    "Based on a Light Novel": "ライトノベル原作",
    "Based on a Manga": "漫画原作",
    "Based on a Movie": "映画原作",
@@ -332,6 +334,7 @@
    "Buddhist Mythology": "仏教神話",
    "Built-in Encyclopedia": "内蔵用語辞典",
    "Built-in Flowchart": "内蔵フローチャート",
+   "Built-in Walkthrough": "攻略チャート内蔵",
    "Bukkake": "ぶっかけ",
    "Bunnyboy Hero": "バニーボーイのヒーロー（男性攻略対象）",
    "Bunnygirl Cosplay": "バニーガールコスプレ",
@@ -566,6 +569,7 @@
    "Cyborg Hero": "サイボーグのヒーロー（男性攻略対象）",
    "Cyborg Heroine": "サイボーグのヒロイン",
    "Cyborg Protagonist": "サイボーグの主人公",
+   "D.Gray-man": "D.Gray-man",
    "DC Comics": "DCコミックス",
    "Dancer Hero": "ダンサーのヒーロー（男性攻略対象）",
    "Dancer Heroine": "ダンサーのヒロイン",
@@ -844,6 +848,7 @@
    "Fisherman Protagonist": "漁師の主人公",
    "Fisting": "フィスト",
    "Fitness Centre": "フィットネスジム",
+   "Five Nights at Freddy's": "Five Nights at Freddy's",
    "Flashback": "回想（フラッシュバック）",
    "Flashforward": "フラッシュフォワード",
    "Flashing Lights": "点滅する光",
@@ -875,6 +880,7 @@
    "Former All-girls School": "元女子校",
    "Fortune-teller Heroine": "占い師のヒロイン",
    "Found Family": "疑似家族",
+   "Foxes": "狐",
    "Framed GUI": "枠付きGUI",
    "France": "フランス",
    "Free Camera": "フリーカメラ",
@@ -1012,6 +1018,7 @@
    "Hacker Heroine": "ハッカーのヒロイン",
    "Hacker Protagonist": "ハッカーの主人公",
    "Hacking": "ハッキング",
+   "Haikyu!!": "ハイキュー!!",
    "Hair Pulling (Sexual)": "髪掴み（性的）",
    "Hairjob": "髪コキ",
    "Hairstyle Option": "髪型選択",
@@ -1330,6 +1337,7 @@
    "Journalist Heroine": "ジャーナリストのヒロイン",
    "Journalist Protagonist": "ジャーナリストの主人公",
    "Journey": "旅",
+   "Jujutsu Kaisen": "呪術廻戦",
    "Jump Scares": "ビックリ系演出",
    "Jump to Next Choice": "次の選択肢へジャンプ",
    "Jump to Next Scene": "次のシーンへジャンプ",
@@ -1375,11 +1383,13 @@
    "Landlord Hero": "大家のヒーロー（男性攻略対象）",
    "Late Branching Plot": "後半分岐プロット",
    "Late Sexual Content": "後半の性的描写",
+   "Latin American Mythology": "ラテンアメリカ神話",
    "Lawyer Hero": "弁護士のヒーロー（男性攻略対象）",
    "Lawyer Heroine": "弁護士のヒロイン",
    "Lawyer Protagonist": "弁護士の主人公",
    "Lazy Hero": "怠け者のヒーロー（男性攻略対象）",
    "Lazy Heroine": "怠け者のヒロイン",
+   "Lazy Protagonist": "怠け者の主人公",
    "Leader Hero": "リーダーのヒーロー（男性攻略対象）",
    "Leader Heroine": "リーダーヒロイン",
    "Leader Protagonist": "リーダーの主人公",
@@ -1432,12 +1442,14 @@
    "Lots of Sex Scenes": "Hシーン多め",
    "Love Hotel": "ラブホテル",
    "Love Interest's Gender Choice": "恋愛対象の性別選択",
+   "Love Overcomes All": "愛はすべてに打ち勝つ",
    "Love Rivalry": "恋のライバル関係",
    "Love Triangle": "三角関係",
    "Lovecraftian Horror": "クトゥルフ系ホラー",
    "Low Amount of Rape": "レイプ描写少なめ",
    "Low Fantasy": "ローファンタジー",
    "Low Sexual Content": "性的描写少なめ",
+   "Lucky Star": "らき☆すた",
    "Macho Protagonist": "マッチョな主人公",
    "Macrophilia": "巨大化フェチ（マクロフィリア）",
    "Mad Scientist Support Character": "マッドサイエンティストのサポートキャラ",
@@ -1497,6 +1509,7 @@
    "Martial Artist Hero": "格闘家のヒーロー（男性攻略対象）",
    "Martial Artist Heroine": "格闘家のヒロイン",
    "Martial Artist Protagonist": "格闘家の主人公",
+   "Marvel Comics": "マーベル・コミック",
    "Masochist Hero": "マゾヒストのヒーロー（男性攻略対象）",
    "Masochist Heroine": "マゾヒストのヒロイン",
    "Masochist Protagonist": "マゾヒストの主人公",
@@ -1622,6 +1635,7 @@
    "Mother/Daughter Romance": "母娘の恋愛",
    "Mother/Son Incest": "母子近親相姦",
    "Mother/Son Romance": "母子の恋愛",
+   "Mothercon Protagonist": "マザコンの主人公",
    "Motion Controls": "モーション操作",
    "Mourning": "喪失（喪に服す）",
    "Mousegirl Heroine": "ネズミ娘ヒロイン",
@@ -2138,7 +2152,9 @@
    "Protagonist's Clothing and Accessories": "主人公の衣装・装身具",
    "Protagonist's Cousin as a Hero": "主人公のいとこヒーロー（男性攻略対象）",
    "Protagonist's Cousin as a Heroine": "主人公のいとこヒロイン",
+   "Protagonist's Cousin as a Support Character": "主人公のいとこのサポートキャラ",
    "Protagonist's Daughter as a Heroine": "主人公の娘ヒロイン",
+   "Protagonist's Daughter as a Support Character": "主人公の娘のサポートキャラ",
    "Protagonist's Employee as Hero": "主人公の従業員ヒーロー（男性攻略対象）",
    "Protagonist's Employee as a Heroine": "主人公の従業員ヒロイン",
    "Protagonist's Ex as a Hero": "主人公の元恋人ヒーロー（男性攻略対象）",
@@ -2653,6 +2669,7 @@
    "Suction on Nipples": "乳首吸引",
    "Suction on Penis": "ペニス吸引",
    "Sudden Girlfriend Appearance": "突然の彼女登場",
+   "Sudden Love Interest Appearance": "恋愛対象の突然の登場",
    "Sugar Dating": "パパ活・援助交際",
    "Suicidal Hero": "自殺願望のあるヒーロー（男性攻略対象）",
    "Suicidal Heroine": "自殺願望のあるヒロイン",
@@ -2774,6 +2791,7 @@
    "Trains": "電車",
    "Trampling": "踏みつけ",
    "Trans Woman on Female": "トランス女性×女性",
+   "Trans Woman on Male": "トランス女性×男性",
    "Trans Woman on Trans Woman": "トランス女性×トランス女性",
    "Transfer Student Hero": "転校生のヒーロー（男性攻略対象）",
    "Transfer Student Heroine": "転校生ヒロイン",
@@ -3036,24 +3054,7 @@
    "Zombie": "ゾンビ",
    "Zombie Apocalypse": "ゾンビアポカリプス",
    "Zombie Hero": "ゾンビのヒーロー（男性攻略対象）",
-   "Zombie Heroine": "ゾンビのヒロイン",
-   "Protagonist's Daughter as a Support Character": "主人公の娘のサポートキャラ",
-   "Love Overcomes All": "愛はすべてに打ち勝つ",
-   "Built-in Walkthrough": "攻略チャート内蔵",
-   "Sudden Love Interest Appearance": "恋愛対象の突然の登場",
-   "Protagonist's Cousin as a Support Character": "主人公のいとこのサポートキャラ",
-   "Trans Woman on Male": "トランス女性×男性",
-   "Lazy Protagonist": "怠け者の主人公",
-   "D.Gray-man": "D.Gray-man",
-   "Haikyu!!": "ハイキュー!!",
-   "Jujutsu Kaisen": "呪術廻戦",
-   "Five Nights at Freddy's": "Five Nights at Freddy's",
-   "Mothercon Protagonist": "マザコンの主人公",
-   "Lucky Star": "らき☆すた",
-   "Based on Theatre": "舞台原作",
-   "Latin American Mythology": "ラテンアメリカ神話",
-   "Marvel Comics": "マーベル・コミック",
-   "Foxes": "狐"
+   "Zombie Heroine": "ゾンビのヒロイン"
   },
   "trait": {
    "-shi": "〜氏（敬称）",
@@ -3350,6 +3351,7 @@
    "Bounty": "賞金（懸賞金）",
    "Bounty Hunter": "賞金稼ぎ",
    "Bouquet": "花束",
+   "Bovine": "牛",
    "Bow": "弓",
    "Bow Tie": "蝶ネクタイ",
    "Bowl Cut": "おかっぱ（ボウルカット）",
@@ -3906,7 +3908,7 @@
    "Fourth Grader": "小学4年生",
    "Fox": "狐",
    "Fox Ears": "狐耳",
-   "Frameup": "冤罪（はめられる）",
+   "Frameup": "罪の捏造（冤罪）",
    "Fratricide": "兄弟殺し",
    "Freckles": "そばかす",
    "Freelancer": "フリーランス",
@@ -3986,6 +3988,7 @@
    "Grandchild": "孫",
    "Granddaughter": "孫娘",
    "Grandfather": "祖父",
+   "Grandiose": "誇大的",
    "Grandiosit": "誇大妄想",
    "Grandmother": "祖母",
    "Grandparent": "祖父母",
@@ -4251,6 +4254,7 @@
    "Kevlar Armor": "ケブラー製防具",
    "Keyboardist": "キーボード奏者",
    "Khakkhara": "錫杖",
+   "Kickboxing": "キックボクシング",
    "Kid": "子供",
    "Kidnapping": "誘拐",
    "Kigurumi": "着ぐるみ",
@@ -4356,6 +4360,7 @@
    "Long Beard": "長いあごひげ",
    "Long Distance Relationship": "遠距離恋愛",
    "Long Hair": "ロングヘア",
+   "Long Lived": "長命",
    "Long Tongue": "長い舌",
    "Longevity": "長寿",
    "Longsword": "ロングソード",
@@ -4860,6 +4865,7 @@
    "Prison Guard Uniform": "看守の制服",
    "Prison Uniform": "囚人服",
    "Prisoner": "囚人",
+   "Prisoner Uniform": "囚人服",
    "Proactive": "積極的",
    "Producer": "プロデューサー",
    "Professional Athlete": "プロのアスリート",
@@ -4981,6 +4987,7 @@
    "Royalty": "王族",
    "Rubber Band With Beads": "ビーズ付きゴムバンド",
    "Rude": "無礼",
+   "Ruff": "ラフ（ひだ襟）",
    "Ruler": "支配者（君主）",
    "Runaway": "家出",
    "Russian": "ロシア系",
@@ -5326,6 +5333,7 @@
    "Straitjacket": "拘束衣",
    "Strange": "風変わり",
    "Strap-on Dildo": "ストラップオンディルド",
+   "Strapless Bikini": "ストラップレスビキニ",
    "Strapless Dress": "ストラップレスドレス",
    "Strapless Leotard": "ストラップレスレオタード",
    "Strapless Mini-dress": "ストラップレスミニドレス",
@@ -5378,6 +5386,7 @@
    "Suit": "スーツ",
    "Suitcase": "スーツケース",
    "Sukeban": "スケバン",
+   "Sumo": "相撲",
    "Sun Hat": "麦わら帽子（日よけ帽）",
    "Sundress": "サンドレス",
    "Sunglasses": "サングラス",
@@ -5487,6 +5496,7 @@
    "Tiger": "トラ",
    "Time Manipulation": "時間操作",
    "Timid": "臆病",
+   "Tinfoil Hat": "アルミホイル帽",
    "Tiny": "極小（とても小柄）",
    "Tiny Braid": "小さな三つ編み",
    "Title Character": "タイトルキャラクター",
@@ -5720,18 +5730,10 @@
    "Yukata Minidress": "浴衣風ミニドレス",
    "Yuki-onna": "雪女",
    "Zashiki-Warashi": "座敷童子",
+   "Zettai Ryouiki": "絶対領域",
    "Zipper Dress": "ジッパー付きドレス",
    "Zouri": "草履",
-   "Zucchetto": "ズッケット（聖職者の帽子）",
-   "Grandiose": "誇大的",
-   "Prisoner Uniform": "囚人服",
-   "Long Lived": "長命",
-   "Bovine": "牛",
-   "Sumo": "相撲",
-   "Ruff": "ラフ（ひだ襟）",
-   "Tinfoil Hat": "アルミホイル帽",
-   "Zettai Ryouiki": "絶対領域",
-   "Kickboxing": "キックボクシング"
+   "Zucchetto": "ズッケット（聖職者の帽子）"
   }
  },
  "passages": [
@@ -8101,6 +8103,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "At the start of the game one or more heroines are already in a relationship with the protagonist as their girlfriend(s).\n\n[url=http://en.wikipedia.org/wiki/Girlfriend]Girlfriend[/url] is a female partner in a non-marital romantic relationship.\n\nThis tag should not be used if a heroine becomes protagonist's girlfriend over the course of the story.",
+   "target": "ゲーム開始の時点で、一人以上のヒロインがすでに主人公の恋人として付き合っています。\n\n[url=http://en.wikipedia.org/wiki/Girlfriend]恋人（ガールフレンド）[/url]とは、結婚していない恋愛関係にある女性のパートナーのことです。\n\n物語の途中でヒロインが主人公の恋人になる場合には、このタグを使用しないでください。",
+   "entity_type": "tag"
+  },
+  {
    "source": "At the start of these games, the player could choose if the participants would have [url=http://en.wikipedia.org/wiki/Pubic_hair]pubic hair[/url] or not.",
    "target": "これらのゲームでは、開始時に、登場人物が[url=http://en.wikipedia.org/wiki/Pubic_hair]陰毛[/url]を持つかどうかをプレイヤーが選択できます。",
    "entity_type": "tag"
@@ -8936,6 +8943,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "Latin American mythology strongly influences the setting and events in this VN",
+   "target": "ラテンアメリカ神話が、このVNの設定や出来事に強く影響している。",
+   "entity_type": "tag"
+  },
+  {
    "source": "Long sticks with a blade at the point, usually used to pierce the enemy.\nNot to be confused with the Naginata, which is primarily used for slashing attacks.\nPikes and similar weapons belong here as well.",
    "target": "先端に刃の付いた長い棒で、通常は敵を突き刺すために使われる。\n主に斬撃に使われる薙刀と混同しないこと。\nパイクやそれに類する武器もここに属する。",
    "entity_type": "tag"
@@ -9311,8 +9323,8 @@
    "entity_type": "tag"
   },
   {
-   "source": "The protagonist is lazy, they has absolutely no motivation to do anything, or do it with a half-hearted attitude.",
-   "target": "主人公は怠け者で、何かをする意欲がまったくないか、中途半端な態度でそれを行う。",
+   "source": "One of the heroes is lazy, he has absolutely no motivation to do anything, or do it with a half-hearted attitude.",
+   "target": "本作のヒーローの1人は怠け者で、何かをする意欲がまったくないか、中途半端な態度でそれを行う。",
    "entity_type": "tag"
   },
   {
@@ -9663,6 +9675,11 @@
   {
    "source": "One of the side characters in the game is a [url=http://en.wikipedia.org/wiki/Nun]nun[/url].",
    "target": "本作の脇役の1人は[url=http://en.wikipedia.org/wiki/Nun]修道女[/url]である。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "One of the stories characters is the daughter of the protagonist. This tag is for pure fatherly relations, no ill intentions included.",
+   "target": "物語のキャラクターの一人は主人公の娘である。このタグは純粋に父としての関係を対象とし、邪な意図は含まない。",
    "entity_type": "tag"
   },
   {
@@ -10406,8 +10423,8 @@
    "entity_type": "tag"
   },
   {
-   "source": "One or more protagonists in this game are [url=http://en.wikipedia.org/wiki/Actor]actors/actresses[/url].\n\nAn actor/actress is a person who acts in a dramatic production and who works in film, television, theatre, or radio in that capacity. The ancient Greek word for an \"actor\" means literally \"one who interprets\" in this sense, an actor is one who interprets a dramatic character.",
-   "target": "このゲームの主人公のうち一人以上が[url=http://en.wikipedia.org/wiki/Actor]俳優・女優[/url]である。\n\n俳優（男優・女優）とは、演劇作品で演技をし、その立場で映画、テレビ、演劇、ラジオに携わる人のことである。「俳優」を意味する古代ギリシャ語は文字どおり「解釈する者」を意味する。この意味で、俳優とは劇中の人物を解釈する者である。",
+   "source": "One or more heros in this game are [url=http://en.wikipedia.org/wiki/Actor]actors[/url].\n\nAn actor/actress is a person who acts in a dramatic production and who works in film, television, theatre, or radio in that capacity. The ancient Greek word for an \"actor\" means literally \"one who interprets\" in this sense, an actor is one who interprets a dramatic character.",
+   "target": "このゲームのヒーローのうち一人以上が[url=http://en.wikipedia.org/wiki/Actor]俳優[/url]である。\n\n俳優（男優・女優）とは、演劇作品で演技をし、その立場で映画、テレビ、演劇、ラジオに携わる人のことである。「俳優」を意味する古代ギリシャ語は文字どおり「解釈する者」を意味する。この意味で、俳優とは劇中の人物を解釈する者である。",
    "entity_type": "tag"
   },
   {
@@ -10423,6 +10440,11 @@
   {
    "source": "One or more of supporting cast is hotblooded.\n\nFor those uninitiated, a hotblooded character feels extremely passionate about justice/love/protecting his friends (there are also other types, like hot blooded artists, but these are usually played for laughs) to such a degree that he WILL overcome challenges that aren't humanly possible.\nHotblooded characters regularly keep fighting after all others would've died, overcome mind control, poison, disease, gravity, radiation and fate itself by sheer guts and passion.",
    "target": "1人以上のサポートキャストが熱血である。\n\n知らない人のために言えば、熱血のキャラクターは正義／愛／友を守ることに極めて情熱を感じ（熱血の芸術家など他のタイプもあるが、これらはたいてい笑いのために用いられる）、その度合いは、人間には不可能な難題を乗り越えるほどである。\n熱血のキャラクターは、他の誰もが死んでいたであろう後も決まって戦い続け、マインドコントロール、毒、病気、重力、放射線、そして運命そのものを、ただ根性と情熱で乗り越える。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "One or more of the characters in this game are involved in sexual activities while they are handcuffed, willingly or unwillingly.\n\n[url=http://simg4.gelbooru.com//images/f7/a6/f7a6c66f3520d90a365578bd9c1b2b81.jpg?1237896]NSFW Example 1[/url]\n[url=http://simg4.gelbooru.com//images/64/87/6487dba7a52c59d32ea01da97704a81d.jpeg?2185430]NSFW Example 2[/url]",
+   "target": "このゲームの一人以上のキャラクターが、自らの意思であるかどうかを問わず、手錠をかけられた状態で性的行為に関わります。\n\n[url=http://simg4.gelbooru.com//images/f7/a6/f7a6c66f3520d90a365578bd9c1b2b81.jpg?1237896]NSFW例1[/url]\n[url=http://simg4.gelbooru.com//images/64/87/6487dba7a52c59d32ea01da97704a81d.jpeg?2185430]NSFW例2[/url]",
    "entity_type": "tag"
   },
   {
@@ -10861,6 +10883,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "One or more protagonists in this game are [url=http://en.wikipedia.org/wiki/Actor]actors/actresses[/url].\n\nAn actor/actress is a person who acts in a dramatic production and who works in film, television, theatre, or radio in that capacity. The ancient Greek word for an \"actor\" means literally \"one who interprets\" in this sense, an actor is one who interprets a dramatic character.",
+   "target": "このゲームの主人公のうち一人以上が[url=http://en.wikipedia.org/wiki/Actor]俳優・女優[/url]である。\n\n俳優（男優・女優）とは、演劇作品で演技をし、その立場で映画、テレビ、演劇、ラジオに携わる人のことである。「俳優」を意味する古代ギリシャ語は文字どおり「解釈する者」を意味する。この意味で、俳優とは劇中の人物を解釈する者である。",
+   "entity_type": "tag"
+  },
+  {
    "source": "One or more sex scenes in this visual novel depicts the [url=https://sexinfo101.com/positions/butterfly]butterfly[/url] position.\n\nIn a sexual context, \"butterfly\" may refer to a [url=https://sexinfo101.com/positions/butterfly]specific position[/url] in which the receiving partner lies down, face up, while the penetrating partner stands or kneels on a lower surface. However, this trait (or one of its child traits) should be used for any position in which the receiving partner lies down, face up, while the penetrating partner kneels, squats or stands in front of them with their torso mostly upright. The receiving partner may have their hips raised up or rotated slightly. The penetrating partner may kneel or stand on a lower surface than the receiver so that they are not too high up.\n\nIf the penetrating partner is supporting themselves over the top of the receiving partner, consider use the [url=/g878]Missionary Position[/url] tag instead. If the penetrating partner is standing and the receiving partner's hips are raised far above their shoulders, then use the [url=/g1739]Piledriver[/url] tag instead.\n\nThe tag's use should include the common Butterfly variants like [url=/i1702]Tominagi[/url] and [url=/i1701]Seventh Posture[/url].",
    "target": "このビジュアルノベルの一つ以上の性的シーンが[url=https://sexinfo101.com/positions/butterfly]バタフライ[/url]の体位を描いています。\n\n性的な文脈では、「バタフライ」は、受け手が仰向けに横たわり、挿入する側がより低い面に立つか膝立ちになる[url=https://sexinfo101.com/positions/butterfly]特定の体位[/url]を指すことがあります。ただし、このトレイト（またはその子トレイトのいずれか）は、受け手が仰向けに横たわり、挿入する側が上半身をほぼ起こした状態で受け手の前に膝立ち・しゃがみ・立ちのいずれかになる、あらゆる体位に使用すべきです。受け手は腰を持ち上げたり、わずかに回転させたりしていることもあります。挿入する側は、高くなりすぎないように受け手より低い面に膝立ちまたは立ちになることもあります。\n\n挿入する側が受け手の上で体を支えている場合は、代わりに[url=/g878]正常位[/url]タグの使用を検討してください。挿入する側が立っていて、受け手の腰が肩よりはるかに高く持ち上げられている場合は、代わりに[url=/g1739]マングリ返し[/url]タグを使用してください。\n\nこのタグの使用には、[url=/i1702]とみなぎ[/url]や[url=/i1701]第七の体位[/url]といった一般的なバタフライのバリエーションが含まれます。",
    "entity_type": "tag"
@@ -11226,6 +11253,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "Protagonist of this game is a victim of a rape and the story involves the drama and psychological problems they have afterwards.\n\nDo not use for games that has rape scenes quickly followed by a game over, or games that don't consider this as an element of drama.",
+   "target": "このゲームの主人公はレイプの被害者であり、物語ではその後に主人公が抱えるドラマや心理的な問題が描かれます。\n\nレイプシーンの直後にすぐゲームオーバーになるゲームや、それをドラマの要素として扱っていないゲームには使用しないでください。",
+   "entity_type": "tag"
+  },
+  {
    "source": "Protagonist of this game is an [url=http://en.wikipedia.org/wiki/Artist]artist[/url].",
    "target": "このゲームの主人公は[url=http://en.wikipedia.org/wiki/Artist]芸術家[/url]です。",
    "entity_type": "tag"
@@ -11421,12 +11453,17 @@
    "entity_type": "tag"
   },
   {
+   "source": "Sex between a [url=/i2450]trans woman[/url] and a man, with the man on the receiving end.",
+   "target": "[url=/i2450]トランス女性[/url]と男性の間のセックスで、男性が受ける側である。",
+   "entity_type": "tag"
+  },
+  {
    "source": "Sex between a [url=/i2450]trans woman[/url] and a man, with the trans woman on the receiving end.",
    "target": "[url=/i2450]トランス女性[/url]と男性の間のセックスで、トランス女性が受ける側である。",
    "entity_type": "tag"
   },
   {
-   "source": "Sex between a [url=/i2450]trans woman[/url] and a man, with the man on the receiving end.",
+   "source": "Sex between a [url=/i2450]transwoman[/url] and a man with the man on the receiving end.",
    "target": "[url=/i2450]トランス女性[/url]と男性の間のセックスで、男性が受ける側である。",
    "entity_type": "tag"
   },
@@ -11811,6 +11848,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "The backgrounds used in this game were generated by an AI.",
+   "target": "このゲームで使われている背景はAIによって生成されたものです。",
+   "entity_type": "tag"
+  },
+  {
    "source": "The bad endings in this game have their own stories compared to the games that \"Game Over\" shortly after a bad choice, with or without an undesirable last scene like a bloody death or sexual assault etc.\n\nPeople who like to read more of their games but prefer to avoid disturbing bad ends can find these endings satisfactory as well.\n\nDo not use this tag for every game that has a non-violent bad ending, but for the ones that has new bits of reading in them.",
    "target": "このゲームのバッドエンドは、悪い選択の直後に「ゲームオーバー」となる（流血の死や性的暴行などの好ましくない最後のシーンを伴う場合も伴わない場合もある）ゲームと比べて、それぞれ独自の物語を持っています。\n\nゲームをより多く読みたいが、不快なバッドエンドは避けたいという人々も、これらのエンディングに満足できるでしょう。\n\nこのタグは、非暴力的なバッドエンドを持つすべてのゲームに使うのではなく、その中に新たに読める部分があるゲームに使用してください。",
    "entity_type": "tag"
@@ -12066,6 +12108,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "The game contains at least one sex scene that involves the use of appendages (tails, tentacles, roots, etc.) to sexually stimulate in a non-penetrative way another character. \n\nA tail/tentacle/root job is a non-penetrative sexual act where a character use one or more of his appendages to rub penis or suck it.\n\nAvoid using this trait when the tail/tentacle/root is used to penetrate anus, vagina or urethra and becomes penetrative sex, use [url=/g600]Consensual Sex Involving Tentacles[/url] or [url=/g178]Tentacle Rape[/url] instead.\n\n[url=https://s.vndb.org/sf/67/88367.jpg]NSFW Example Tailjob[/url]\n[url=https://s.vndb.org/sf/69/88369.jpg]NSFW Rootjob/Flowerjob[/url]\n[url=https://s.vndb.org/sf/68/88368.jpg]NSFW Example Tentaclejob[/url]",
+   "target": "このゲームには、付属器官（尻尾、触手、根など）を使い、挿入を伴わない形で他のキャラクターを性的に刺激する性的シーンが少なくとも一つあります。\n\n尻尾・触手・根コキとは、キャラクターが一つ以上の付属器官でペニスを擦ったり吸ったりする、挿入を伴わない性行為です。\n\n尻尾・触手・根が肛門、膣、尿道に挿入され、挿入を伴うセックスになる場合はこのタグを使わず、代わりに[url=/g600]合意の上の触手セックス[/url]または[url=/g178]触手レイプ[/url]を使用してください。\n\n[url=https://s.vndb.org/sf/67/88367.jpg]NSFW 尻尾コキの例[/url]\n[url=https://s.vndb.org/sf/69/88369.jpg]NSFW 根コキ／花コキ[/url]\n[url=https://s.vndb.org/sf/68/88368.jpg]NSFW 触手コキの例[/url]",
+   "entity_type": "tag"
+  },
+  {
    "source": "The game contains at least one sex scene that involves the use of appendages (tails, tentacles, roots, etc.) to sexually stimulate in a non-penetrative way another character. \n\nA tail/tentacle/root job is a non-penetrative sexual act where a character use one or more of his appendages to rub penis or suck it.\n\nAvoid using this trait when the tail/tentacle/root is used to penetrate anus, vagina or urethra and becomes penetrative sex, use [url=/g600]Consensual Sex Involving Tentacles[/url] or [url=/g178]Tentacle Rape[/url] instead.\n\n[url=https://s.vndb.org/sf/67/88367.jpg]NSWF Example Tailjob[/url]\n[url=https://s.vndb.org/sf/69/88369.jpg]NSFW Rootjob/Flowerjob[/url]\n[url=https://s.vndb.org/sf/68/88368.jpg]NSFW Example Tentaclejob[/url]",
    "target": "このゲームには、別のキャラクターを非挿入的な形で性的に刺激するために付属器官（尻尾、触手、根など）を使用する性的なシーンが少なくとも一つ含まれます。\n\nテイル／触手／根ジョブとは、キャラクターが一本以上の付属器官を使ってペニスをこすったり吸ったりする、非挿入的な性行為です。\n\n尻尾／触手／根が肛門・膣・尿道を貫いて挿入的なセックスになる場合は、この特徴は使用せず、代わりに[url=/g600]Consensual Sex Involving Tentacles[/url]または[url=/g178]Tentacle Rape[/url]を使用してください。\n\n[url=https://s.vndb.org/sf/67/88367.jpg]NSFW テイルジョブ例[/url]\n[url=https://s.vndb.org/sf/69/88369.jpg]NSFW ルートジョブ／フラワージョブ[/url]\n[url=https://s.vndb.org/sf/68/88368.jpg]NSFW 触手ジョブ例[/url]",
    "entity_type": "tag"
@@ -12133,6 +12180,11 @@
   {
    "source": "The game features a dungeon or chamber used and equipped specifically to torture people (slaves / victims of kidnapping / PoW / etc.) in.",
    "target": "このゲームには、人々（奴隷／誘拐の被害者／捕虜など）を拷問するために専用に使われ、そのための設備が整えられた地下牢または部屋が登場する。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "The game features a negative true ending in which the protagonist fails completely, loses all they have worked for, or gets defeated by their rival or enemy.",
+   "target": "このゲームには、主人公が完全に失敗する、努力してきたものをすべて失う、あるいはライバルや敵に敗れるといった、否定的なトゥルーエンドがあります。",
    "entity_type": "tag"
   },
   {
@@ -12986,6 +13038,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "The protagonist is lazy, they has absolutely no motivation to do anything, or do it with a half-hearted attitude.",
+   "target": "主人公は怠け者で、何かをする意欲がまったくないか、中途半端な態度でそれを行う。",
+   "entity_type": "tag"
+  },
+  {
    "source": "The protagonist is sexually or romantically attracted to both females and males. It is expressed by their behavior through the game. Their sexual experience on the subject is irrelevant for this tag.\n\nThis tag is for protagonists who express an interest in both women and men from the start, or who discover their sexuality during the course of the novel. For protagonists interested in characters of the same sex only, please use the Homosexual Protagonist tag.",
    "target": "主人公は、女性と男性の両方に性的または恋愛的に惹かれます。それはゲームを通じた彼らの振る舞いによって表されます。その点に関する彼らの性的経験はこのタグには関係ありません。\n\nこのタグは、最初から女性と男性の両方に興味を示す主人公、またはノベルの過程で自分の性的指向に気づく主人公のためのものです。同性のキャラクターのみに興味がある主人公には、同性愛主人公タグを使用してください。",
    "entity_type": "tag"
@@ -13338,6 +13395,11 @@
   {
    "source": "The protagonist of this game is a monster.\n\nA monster is any fictional creature, usually found in legends or horror fiction, that is often hideous and may produce fear or physical harm by either its appearance or its actions.",
    "target": "このゲームの主人公はモンスターである。\n\nモンスターとは、通常は伝説やホラー作品に登場する架空の生き物で、しばしば醜悪で、その外見や行動によって恐怖や身体的な害をもたらしうるものを指す。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "The protagonist of this game is a mothercon, a person who is always passionate and OVERLY attached to their mother (or mother-like figure) and would do anything for her.\n\nNote: This tag is only used to describe the protagonist's personality.\n\nThe tag is valid if the protagonist (or general populace in the VN) views their relationship as mother/child. They might or might not have a real parent/child connection.",
+   "target": "本作の主人公はマザコン、すなわち常に母親（または母親のような存在）に夢中で、過度に執着し、彼女のためなら何でもする人物である。\n\n注：このタグは主人公の性格を表すのにのみ用いられる。\n\nこのタグは、主人公（またはVNの一般の人々）がその関係を母と子とみなす場合に有効である。実際の親子のつながりがあることもないこともある。",
    "entity_type": "tag"
   },
   {
@@ -14161,6 +14223,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "There is no title screen and the game just automatically starts the moment it is launched...",
+   "target": "タイトル画面が存在せず、ゲームは起動した瞬間に自動的に始まる……",
+   "entity_type": "tag"
+  },
+  {
    "source": "These VN's protagonist is a [url=http://en.wikipedia.org/wiki/High_school]high school[/url] student.",
    "target": "これらのVNの主人公は[url=http://en.wikipedia.org/wiki/High_school]高校[/url]生です。",
    "entity_type": "tag"
@@ -14631,6 +14698,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "These games feature characters that are from the Lucky Star series, or is set in its universe.",
+   "target": "これらのゲームには『らき☆すた』シリーズのキャラクターが登場するか、その世界を舞台とする。",
+   "entity_type": "tag"
+  },
+  {
    "source": "These games feature characters that are from the [url=http://en.wikipedia.org/wiki/Death_Note]Death Note[/url] series.",
    "target": "これらのゲームには[url=http://en.wikipedia.org/wiki/Death_Note]デスノート[/url]シリーズのキャラクターが登場する。",
    "entity_type": "tag"
@@ -14916,6 +14988,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "These games have only a single ending.\n\nSimple screens saying \"You are dead\" or \"Game over\" without any story bits do not count as separate endings for the purpose of this tag.",
+   "target": "このゲームにはエンディングが一つしかありません。\n\nストーリー性のない「あなたは死んだ」「ゲームオーバー」といった画面だけのものは、このタグでは別のエンディングとして数えません。",
+   "entity_type": "tag"
+  },
+  {
    "source": "These games have optional side stories, which don't affect the main story and may be non-canonical. They may be available from the very beginning, or they may require unlocking by fulfilling certain conditions, e.g. reaching the true ending.\n\nBonus stories may appear as choices that signify a detour, or may be accessible from the main menu itself.",
    "target": "これらのゲームには、本編に影響せず、非正史であることもある任意のサイドストーリーがあります。最初から利用できる場合もあれば、真エンドに到達するなど一定の条件を満たして解放する必要がある場合もあります。\n\nボーナスストーリーは寄り道を示す選択肢として現れることもあれば、メインメニューそのものからアクセスできることもあります。",
    "entity_type": "tag"
@@ -15148,6 +15225,16 @@
   {
    "source": "These visual novels feature characters that are from the [url=https://en.wikipedia.org/wiki/Fullmetal_Alchemist]Fullmetal Alchemist[/url] series.",
    "target": "これらのビジュアルノベルには[url=https://en.wikipedia.org/wiki/Fullmetal_Alchemist]鋼の錬金術師[/url]シリーズのキャラクターが登場する。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "These visual novels features characters from Haikyu!! or is set in its universe.",
+   "target": "これらのビジュアルノベルには『ハイキュー!!』のキャラクターが登場するか、その世界を舞台とする。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "These visual novels features characters from [url=https://en.wikipedia.org/wiki/D.Gray-man]D.Gray-man[/url] or is set in its universe.",
+   "target": "これらのビジュアルノベルには[url=https://en.wikipedia.org/wiki/D.Gray-man]D.Gray-man[/url]のキャラクターが登場するか、その世界を舞台とする。",
    "entity_type": "tag"
   },
   {
@@ -15628,6 +15715,11 @@
   {
    "source": "This game contains a story of [url=http://en.wikipedia.org/wiki/Rape_by_deception]rape by deception[/url]. \n\nIt is a crime in which the perpetrator gains the victim's sexual consent and compliance through deception. Also called Rape by Fraud it is only recognized as a crime in some jurisdictions.\n\nExamples include the use of disguises to confuse the victim or lying about oneself or the purpose for having sex.",
    "target": "このゲームには[url=http://en.wikipedia.org/wiki/Rape_by_deception]欺瞞によるレイプ[/url]の物語が含まれる。\n\nこれは、加害者が欺瞞を通じて被害者の性的同意と応諾を得る犯罪である。詐欺によるレイプとも呼ばれ、一部の法域でのみ犯罪として認められている。\n\n例としては、被害者を混乱させるための変装の使用や、自分自身や性行為の目的についての虚偽が挙げられる。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This game contains an [url=http://en.wikipedia.org/wiki/Achievement_%28video_gaming%29l]achievements/trophies[/url] system within the game itself.\n\nDo not use the tag if the achievements are delivered via and external program tied to the game's distribution (e.g. Steam, GOG Galaxy, etc.).",
+   "target": "このゲームには、ゲーム自体に組み込まれた[url=http://en.wikipedia.org/wiki/Achievement_%28video_gaming%29l]実績・トロフィー[/url]のシステムがある。\n\n実績がゲームの配信に結びついた外部のプログラム（Steam、GOG Galaxy など）を通じて提供される場合は、このタグを使わないこと。",
    "entity_type": "tag"
   },
   {
@@ -17491,6 +17583,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This game has one or multiple [url=https://en.wikipedia.org/wiki/Fox]foxes[/url] taking an important role in the story. Or it has foxes all around on many scenes with multiple lines of dialogs related to them.",
+   "target": "このゲームには物語で重要な役割を果たす1匹または複数の[url=https://en.wikipedia.org/wiki/Fox]狐[/url]が登場する。あるいは、多くのシーンのあちこちに狐が登場し、それらに関連する複数のセリフがある。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This game has one or multiple [url=https://en.wikipedia.org/wiki/Insect]insects[/url] taking an important role in the story. Or it has insects all around on many scenes with multiple lines of dialogs related to them.",
    "target": "このゲームには、物語で重要な役割を果たす[url=https://en.wikipedia.org/wiki/Insect]昆虫[/url]が一匹または複数登場します。あるいは、多くのシーンの至る所に昆虫が登場し、それらに関連する複数のセリフがあります。",
    "entity_type": "tag"
@@ -17876,6 +17973,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This game uses 3D graphics for its presentation.",
+   "target": "このゲームは表現に3Dグラフィックスを用いている。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This game uses [url=https://en.m.wikipedia.org/wiki/Pixel_art]pixel art[/url].\n\nThis tag indicates that the game's art assets are primarily created digitally at a pixel level.",
    "target": "このゲームは[url=https://en.m.wikipedia.org/wiki/Pixel_art]ピクセルアート[/url]を使用しています。\n\nこのタグは、ゲームの美術素材が主にピクセル単位でデジタルに作成されていることを示します。",
    "entity_type": "tag"
@@ -18151,6 +18253,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This metatag is to house other tags about the mechanics of games ending.\n\nTags about the content of an ending are not allowed, ex. Happy Ending.\n\nYou can read the related [url=http://en.wikipedia.org/wiki/Types_of_fiction_with_multiple_endings]Wikipedia[/url] article for details.",
+   "target": "このメタタグは、ゲームの終わり方の仕組みに関するタグをまとめるためのものです。\n\nハッピーエンドなど、エンディングの内容に関するタグは認められません。\n\n詳しくは関連する[url=http://en.wikipedia.org/wiki/Types_of_fiction_with_multiple_endings]Wikipedia[/url]の記事を参照してください。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This metatag is to house other tags about the mechanics of games ending.\n\nTags about the content of an ending are not allowed, ex. Happy Ending.\n\nYou can the related [url=http://en.wikipedia.org/wiki/Types_of_fiction_with_multiple_endings]Wikipedia[/url] article for details.",
    "target": "このメタタグは、ゲームのエンディングの仕組みに関する他のタグを収める。\n\nエンディングの内容に関するタグは許されない。例：ハッピーエンド。\n\n詳細は関連する[url=http://en.wikipedia.org/wiki/Types_of_fiction_with_multiple_endings]Wikipedia[/url]の記事を見られる。",
    "entity_type": "tag"
@@ -18253,6 +18360,11 @@
   {
    "source": "This story features at least one sexual scene involving the use of a [url=https://en.wikipedia.org/wiki/Clitoral_pump]pump[/url]. \n\nA clitoral, vaginal or anal pump is a sex toy designed for women's pleasure creating suction and increase blood flow to the genitals or inflate cavities. A clitoral pump may be used on the clitoris, clitoral hood, labia or the entire genital area. \n\n[url=https://s2.vndb.org/sf/50/125250.jpg]NSFW Example Clitoral Pump[/url]\n[url=https://s2.vndb.org/sf/51/125251.jpg]NSFW Example Vaginal Pump[/url]\n[url=https://s2.vndb.org/sf/73/159373.jpg]NSFW Example Anal Pump[/url]",
    "target": "この物語には、[url=https://en.wikipedia.org/wiki/Clitoral_pump]ポンプ[/url]の使用を伴う性的シーンが少なくとも1つ登場する。\n\nクリトリス、膣、肛門用のポンプは、吸引を生み出し、性器への血流を増やしたり空洞を膨らませたりする、女性の快感のために設計された性具である。クリトリスポンプは、クリトリス、クリトリス包皮、陰唇、または性器全域に使用できる。\n\n[url=https://s2.vndb.org/sf/50/125250.jpg]NSFW例（クリトリスポンプ）[/url]\n[url=https://s2.vndb.org/sf/51/125251.jpg]NSFW例（膣ポンプ）[/url]\n[url=https://s2.vndb.org/sf/73/159373.jpg]NSFW例（アナルポンプ）[/url]",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story features events or characters that break the illusion of reality of the game's setting. (referred as the [url=http://en.wikipedia.org/wiki/Fourth_wall]fourth wall[/url])\n\nExamples include characters directly speaking to the player, or scenes were the real world is compared with the stories fictional world.",
+   "target": "この物語には、ゲームの設定の現実という幻想（[url=http://en.wikipedia.org/wiki/Fourth_wall]第四の壁[/url]と呼ばれる）を破る出来事やキャラクターが登場します。\n\n例としては、キャラクターがプレイヤーに直接話しかけることや、現実世界が物語のフィクションの世界と比較されるシーンなどが挙げられます。",
    "entity_type": "tag"
   },
   {
@@ -18411,6 +18523,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This story has elements of [url=http://en.wikipedia.org/wiki/Alcoholism]alcoholism[/url].\n\nPS: Don't use it on every game that a person drinks a glass oｒ two...",
+   "target": "この物語には[url=http://en.wikipedia.org/wiki/Alcoholism]アルコール依存症[/url]の要素がある。\n\n追記：登場人物がグラスに一、二杯飲むだけのゲームすべてに使わないこと……",
+   "entity_type": "tag"
+  },
+  {
    "source": "This story has elements of [url=http://en.wikipedia.org/wiki/Murder_mystery]crime fiction[/url], mainly on the murder mystery front.",
    "target": "この物語には、主に殺人ミステリーの面での[url=http://en.wikipedia.org/wiki/Murder_mystery]犯罪小説[/url]の要素があります。",
    "entity_type": "tag"
@@ -18541,6 +18658,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This story takes place at a time between years 1950-1959 on Earth.\n\nMore details on [url=http://en.wikipedia.org/wiki/50's]50's[/url] can be found on wikipedia.",
+   "target": "この物語は地球上の1950年から1959年の間のある時を舞台とする。\n\n[url=http://en.wikipedia.org/wiki/50's]50年代[/url]の詳細はwikipediaで見つけられる。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This story takes place at a time between years 1950-1959 on Earth.\n\nMore details on [url=https://en.wikipedia.org/wiki/1950s]50's[/url] can be found on wikipedia.",
    "target": "この物語は地球上の1950年から1959年の間のある時を舞台とする。\n\n[url=https://en.wikipedia.org/wiki/1950s]50年代[/url]の詳細はwikipediaで見つけられる。",
    "entity_type": "tag"
@@ -18551,8 +18673,43 @@
    "entity_type": "tag"
   },
   {
+   "source": "This story takes place at a time between years 1970-1979 on Earth.\n\nMore details on [url=https://en.wikipedia.org/wiki/1970s]70's[/url] can be found on wikipedia.",
+   "target": "この物語は、地球上の1970年から1979年までの時代に展開される。\n\n[url=https://en.wikipedia.org/wiki/1970s]70年代[/url]についての詳細は、ウィキペディアで見つけられる。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This story takes place at a time between years 1980-1989 on Earth.\n\nMore details on [url=http://en.wikipedia.org/wiki/1980s]80's[/url] can be found on wikipedia.",
    "target": "この物語は、地球上の1980年から1989年までの時代に展開される。\n\n[url=http://en.wikipedia.org/wiki/1980s]80年代[/url]についての詳細は、ウィキペディアで見つけられる。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place at a time between years 2000-2009 on Earth.",
+   "target": "この物語は、地球上の2000年から2009年までの時代に展開される。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place at a time between years 2001-2100 on Earth.\n\nMore details on [url=https://en.wikipedia.org/wiki/21st_century]21st Century[/url] can be found on Wikipedia.",
+   "target": "この物語は、地球の西暦2001年から2100年の間の時代を舞台にしています。\n\n[url=https://en.wikipedia.org/wiki/21st_century]21世紀[/url]の詳細はWikipediaで見られます。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place at a time between years 2010-2019 on Earth.",
+   "target": "この物語は、地球上の2010年から2019年までの時代に展開される。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place at a time between years 2020-2029 on Earth.",
+   "target": "この物語は、地球上の2020年から2029年までの時代に展開される。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place at a time between years 2030-2039 on Earth.",
+   "target": "この物語は、地球上の2030年から2039年までの時代に展開される。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This story takes place sometime during the years 1801-1900 on Earth.\n\nMore details on the [url=https://en.wikipedia.org/wiki/19th_century]19th Century[/url] can be found on Wikipedia.",
+   "target": "この物語は、地球の西暦1801年から1900年のいずれかの時代を舞台にしています。\n\n[url=https://en.wikipedia.org/wiki/19th_century]19世紀[/url]の詳細はWikipediaで見られます。",
    "entity_type": "tag"
   },
   {
@@ -19391,8 +19548,18 @@
    "entity_type": "tag"
   },
   {
+   "source": "This visual novel features characters from [url=https://en.wikipedia.org/wiki/Jujutsu_Kaisen]Jujutsu Kaisen[/url], or is set in its universe.",
+   "target": "このビジュアルノベルには[url=https://en.wikipedia.org/wiki/Jujutsu_Kaisen]呪術廻戦[/url]のキャラクターが登場するか、その世界を舞台とする。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This visual novel features characters from [url=https://en.wikipedia.org/wiki/Touken_Ranbu]Touken Ranbu[/url].",
    "target": "このビジュアルノベルには[url=https://en.wikipedia.org/wiki/Touken_Ranbu]刀剣乱舞[/url]のキャラクターが登場する。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This visual novel features characters from the Five Nights at Freddy's franchise or is set in its universe.",
+   "target": "このビジュアルノベルには『Five Nights at Freddy's』シリーズのキャラクターが登場するか、その世界を舞台とする。",
    "entity_type": "tag"
   },
   {
@@ -19771,6 +19938,11 @@
    "entity_type": "tag"
   },
   {
+   "source": "This visual novel is based on or an adaptation of a Theatre \\ Stage Production. Theatre has existed for thousands of years and various forms of it can be found in nearly every culture.",
+   "target": "このビジュアルノベルは、演劇・舞台作品を原作とするか、それを翻案したものである。演劇は数千年前から存在し、ほぼあらゆる文化にさまざまな形で見られる。",
+   "entity_type": "tag"
+  },
+  {
    "source": "This visual novel is based on or an adaptation of a movie.\n\nDo not mix with [url=http://vndb.org/g1056]fan-fiction[/url], fan fictions are basically side stories that are not found in the original work.",
    "target": "このビジュアルノベルは映画に基づく、またはその翻案である。\n\n[url=http://vndb.org/g1056]二次創作[/url]と混同しないこと。二次創作は基本的に、原作には見られないサイドストーリーである。",
    "entity_type": "tag"
@@ -19878,6 +20050,11 @@
   {
    "source": "This visual novel is set in the Dragon Ball universe, or features characters from the manga and/or anime.",
    "target": "このビジュアルノベルはドラゴンボールの世界を舞台とするか、その漫画かつ／またはアニメのキャラクターが登場する。",
+   "entity_type": "tag"
+  },
+  {
+   "source": "This visual novel is set in the Marvel Comics universe, or features characters from the comics, movies and/or TV shows.",
+   "target": "このビジュアルノベルはマーベル・コミックの世界を舞台とするか、そのコミック、映画、テレビ番組のキャラクターが登場する。",
    "entity_type": "tag"
   },
   {
@@ -20157,6 +20334,11 @@
   },
   {
    "source": "Utsuge stands for utsu game, and it means \"depressing game\". It is said that the purpose of these types of games is to depress the player.\n\nMost of the time these games have no happy end, no help, no hope...\n\nDo not mix with a similar game type, [url=http://vndb.org/g596]nakige[/url].\n\nFor example in an imaginary utsuge, the heroine would be sick from the very beginning and would die in the end. But in an imaginary nakige, the game would be about a happy school romance with the heroine suddenly getting sick at the very end of the game to only recover at the very last moment. (Though there are nakige with deaths too.)",
+   "target": "鬱ゲーは鬱ゲーム（utsu game）の略で、「気の滅入るゲーム」を意味します。この種のゲームの目的は、プレイヤーを憂鬱にすることだと言われています。\n\nたいていの場合、これらのゲームにはハッピーエンドも、救いも、希望もありません……。\n\n似たゲームの種類である[url=http://vndb.org/g596]泣きゲー[/url]と混同しないでください。\n\nたとえば、架空の鬱ゲーでは、ヒロインが最初から病気で、最後に死んでしまうでしょう。しかし架空の泣きゲーでは、幸せな学園恋愛を描き、ゲームのまさに終盤でヒロインが突然病気になるが、最後の最後の瞬間に回復する、という具合です。（とはいえ、死を伴う泣きゲーもあります。）",
+   "entity_type": "tag"
+  },
+  {
+   "source": "Utsuge stands for utsu game, and it means \"depressing game\". It is said that the purpose of these types of games is to depress the player.\n\nMost of the time these games have no happy end, no help, no hope...\n\nDo not mix with a similar game type, [url=http://vndb.org/g596]nakige[/url].\n\nFor example on an imaginary utsuge, the heroine would be sick from the very beginning and would die in the end. But on an imaginary nakige, the game would be about a happy school romance with the heroine suddenly getting sick at the very end of the game to only recover at the very last moment. (Though there are nakige with deaths too.)",
    "target": "鬱ゲーは鬱ゲーム（utsu game）の略で、「気の滅入るゲーム」を意味します。この種のゲームの目的は、プレイヤーを憂鬱にすることだと言われています。\n\nたいていの場合、これらのゲームにはハッピーエンドも、救いも、希望もありません……。\n\n似たゲームの種類である[url=http://vndb.org/g596]泣きゲー[/url]と混同しないでください。\n\nたとえば、架空の鬱ゲーでは、ヒロインが最初から病気で、最後に死んでしまうでしょう。しかし架空の泣きゲーでは、幸せな学園恋愛を描き、ゲームのまさに終盤でヒロインが突然病気になるが、最後の最後の瞬間に回復する、という具合です。（とはいえ、死を伴う泣きゲーもあります。）",
    "entity_type": "tag"
   },
@@ -20986,6 +21168,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "A [url=https://mgewiki.moe/index.php/Slime]slime[/url] is semi-liquid monster, with a flexible half-transparent body that can change into various forms. They are intelligent enough to speak, but their thoughts are simple, and they instinctively wander around in search of human men who will end up as their prey.\n\nA slime monster can grow upon feeding and duplicate himself originating a smaller copy. Various kind/color of slime monster exists every one with his own characteristics: bubble slime, red slime, dark slime, queen slime, sea slime, ecc...",
+   "target": "[url=https://mgewiki.moe/index.php/Slime]スライム[/url]とは、さまざまな形に変化できる柔軟な半透明の体を持つ、半液体状のモンスターである。言葉を話せる程度には知的だが、その思考は単純で、本能的に獲物となる人間の男を求めて徘徊する。\n\nスライムモンスターは捕食によって成長し、より小さなコピーを生み出して自らを複製することができる。さまざまな種類・色のスライムモンスターが存在し、それぞれ独自の特徴を持つ：バブルスライム、レッドスライム、ダークスライム、クイーンスライム、シースライムなど……",
+   "entity_type": "trait"
+  },
+  {
    "source": "A [url=https://monstergirlencyclopedia.miraheze.org/wiki/Beelzebub]beelzebub[/url] is a bug type monster, with the body of a girl and the legs of a fly, with big fly-like wings. Beelzebubs can fly and for this reason bodies are usually light and small.\n\nBeelzebubs are referred to as \"Lord of the flies\" and \"Lord of gluttony\" since their lust and appetite are extremely ravenous.",
    "target": "[url=https://monstergirlencyclopedia.miraheze.org/wiki/Beelzebub]ベルゼブブ[/url]とは、少女の体とハエの脚を持ち、大きなハエのような翼を持つ虫型のモンスターである。ベルゼブブは飛べるため、たいてい体は軽く小さい。\n\nベルゼブブは、その欲望と食欲が極めて貪欲なため、「蠅の王」「暴食の王」と呼ばれる。",
    "entity_type": "trait"
@@ -20996,8 +21183,8 @@
    "entity_type": "trait"
   },
   {
-   "source": "A [url=https://mgewiki.moe/index.php/Slime]slime[/url] is semi-liquid monster, with a flexible half-transparent body that can change into various forms. They are intelligent enough to speak, but their thoughts are simple, and they instinctively wander around in search of human men who will end up as their prey.\n\nA slime monster can grow upon feeding and duplicate himself originating a smaller copy. Various kind/color of slime monster exists every one with his own characteristics: bubble slime, red slime, dark slime, queen slime, sea slime, ecc...",
-   "target": "[url=https://mgewiki.moe/index.php/Slime]スライム[/url]とは、さまざまな形に変化できる柔軟な半透明の体を持つ、半液体状のモンスターである。言葉を話せる程度には知的だが、その思考は単純で、本能的に獲物となる人間の男を求めて徘徊する。\n\nスライムモンスターは捕食によって成長し、より小さなコピーを生み出して自らを複製することができる。さまざまな種類・色のスライムモンスターが存在し、それぞれ独自の特徴を持つ：バブルスライム、レッドスライム、ダークスライム、クイーンスライム、シースライムなど……",
+   "source": "A [url=https://monstergirlencyclopedia.miraheze.org/wiki/Slime]slime[/url] is semi-liquid monster, with a flexible half-transparent body that can change into various forms. They are intelligent enough to speak, but their thoughts are simple, and they instinctively wander around in search of human men who will end up as their prey.\n\nA slime monster can grow upon feeding and duplicate himself originating a smaller copy. Various kind/color of slime monster exists every one with his own characteristics: bubble slime, red slime, dark slime, queen slime, sea slime, ecc...",
+   "target": "[url=https://monstergirlencyclopedia.miraheze.org/wiki/Slime]スライム[/url]とは、さまざまな形に変化できる柔軟な半透明の体を持つ、半液体状のモンスターである。言葉を話せる程度には知的だが、その思考は単純で、本能的に獲物となる人間の男を求めて徘徊する。\n\nスライムモンスターは捕食によって成長し、より小さなコピーを生み出して自らを複製することができる。さまざまな種類・色のスライムモンスターが存在し、それぞれ独自の特徴を持つ：バブルスライム、レッドスライム、ダークスライム、クイーンスライム、シースライムなど……",
    "entity_type": "trait"
   },
   {
@@ -21237,6 +21424,11 @@
   },
   {
    "source": "A character with this trait is subject of netori, which is the stealing of their significant other, a very close friend, or in some cases, a close relative. This could happen by someone seducing, coercing, blackmailing, outright raping their partner or through other techniques. The trait does not describe someone \"stealing\" their unrequited crush or a potential hero(ine) on a different route, as the close ties between the partners and their forcible separation is important to the netori/netorare fetish.\n\nIt doesn't necessarily mean that the loved one is literally stolen, but the negative feelings experienced by the character might make it seem so.\n\nNetori/Netorare is more than a simple act of infidelity, but the fetishization of jealousy and other negative feelings commonly associated with it. The one who loses their loved one almost always finds out about the situation and suffers from jealousy and the feeling of helplessness arisen from an inability to change anything. The one committing netori and/or the stolen loved one might rub it in by humiliating the loser in private or in public.\n\nPlease apply the [url=/i1325](Engages in) Netori[/url] trait to the character doing the stealing, and [url=/i3271](Subject of) Netorare[/url] trait for the character being stolen.",
+   "target": "このトレイトを持つキャラクターは寝取りの対象、すなわち恋人、ごく親しい友人、あるいは場合によっては近い親族を奪われる側です。これは、誰かが本人のパートナーを誘惑、強要、脅迫、あからさまなレイプ、その他の手段によって奪うことで起こり得ます。パートナー同士の親密な絆とその強制的な引き離しが寝取り／寝取られフェチには重要であるため、このトレイトは、報われない片思いの相手や別ルートの攻略対象（ヒーロー／ヒロイン）候補を誰かが「奪う」ことは表しません。\n\nこれは必ずしも愛する者が文字どおり奪われることを意味するわけではありませんが、このキャラクターが味わう負の感情によってそう見えることがあります。\n\n寝取り／寝取られは単なる不貞行為以上のものであり、それに一般的に伴う嫉妬やその他の負の感情をフェティシズム化したものです。愛する者を失う側はほぼ必ずその状況を知り、嫉妬と、何も変えられないことから生じる無力感に苦しみます。寝取りを行う者、または奪われた愛する者は、奪われた側を私的にあるいは公然と辱めることで、それを見せつけることがあります。\n\n奪う側のキャラクターには[url=/i1325]（する側）寝取り[/url]トレイトを、奪われる側のキャラクターには[url=/i3271]（される側）寝取られ[/url]トレイトを適用してください。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "A character with this trait is subject of netori, which is the stealing of their significant other, a very close friend, or in some cases, a close relative. This could happen by someone seducing, coercing, blackmailing, outright raping their partner or through other techniques. The trait does not describe someone \"stealing\" their unrequited crush or a potential hero(ine) on a different route, as the the close ties between the partners and their forcible separation is important to the netori/netorare fetish.\n\nIt doesn't necessarily mean that the loved one is literally stolen, but the negative feelings experienced by the character might make it seem so.\n\nNetori/Netorare is more than a simple act of infidelity, but the fetishization of jealousy and other negative feelings commonly associated with it. The one who loses their loved one almost always finds out about the situation and suffers from jealousy and the feeling of helplessness arisen from an inability to change anything. The one committing netori and/or the stolen loved one might rub it in by humiliating the loser in private or in public.\n\nPlease apply the [url=/i1325](Engages in) Netori[/url] trait to the character doing the stealing, and [url=/i3271](Subject of) Netorare[/url] trait for the character being stolen.",
    "target": "このトレイトを持つキャラクターは寝取りの対象、すなわち恋人、ごく親しい友人、あるいは場合によっては近い親族を奪われる側です。これは、誰かが本人のパートナーを誘惑、強要、脅迫、あからさまなレイプ、その他の手段によって奪うことで起こり得ます。パートナー同士の親密な絆とその強制的な引き離しが寝取り／寝取られフェチには重要であるため、このトレイトは、報われない片思いの相手や別ルートの攻略対象（ヒーロー／ヒロイン）候補を誰かが「奪う」ことは表しません。\n\nこれは必ずしも愛する者が文字どおり奪われることを意味するわけではありませんが、このキャラクターが味わう負の感情によってそう見えることがあります。\n\n寝取り／寝取られは単なる不貞行為以上のものであり、それに一般的に伴う嫉妬やその他の負の感情をフェティシズム化したものです。愛する者を失う側はほぼ必ずその状況を知り、嫉妬と、何も変えられないことから生じる無力感に苦しみます。寝取りを行う者、または奪われた愛する者は、奪われた側を私的にあるいは公然と辱めることで、それを見せつけることがあります。\n\n奪う側のキャラクターには[url=/i1325]（する側）寝取り[/url]トレイトを、奪われる側のキャラクターには[url=/i3271]（される側）寝取られ[/url]トレイトを適用してください。",
    "entity_type": "trait"
   },
@@ -23731,6 +23923,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character [url=http://en.wikipedia.org/wiki/Cross-dressing]cross-dresses[/url].\n\nCross-dressing is the wearing of clothing and other accoutrement commonly associated with a gender within a particular society that is seen as different than the one usually presented by the dresser. Cross-dressing has been used for disguise, performance art and as a literary trope in modern times and throughout history.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Cross-dressing]異性装[/url]をします。\n\n異性装とは、特定の社会の中で、その装う人が普段示す性別とは異なるとみなされる性別に一般的に結びつけられた衣服やその他の装身具を身に着けることです。異性装は、現代においても歴史を通じても、変装、パフォーマンスアート、そして文学的な趣向として用いられてきました。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character [url=http://en.wikipedia.org/wiki/Cross-dressing]cross-dresses[/url].\n\nCross-dressing is the wearing of clothing and other accoutrement commonly associated with a gender within a particular society that is seen as different than the one usually presented by the dresser. Cross-dressing has been used for disguise, performance art and as a literary trope in modern times and throughout history.\n\nUse this trait for the cross-dressing consented by the character themselves, use [url=/i2418]Subject of > Forced Cross-dressing[/url] for non-consensual situations instead.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Cross-dressing]異性装[/url]をします。\n\n異性装とは、特定の社会の中で、その装う人が普段示す性別とは異なるとみなされる性別に一般的に結びつけられた衣服やその他の装身具を身に着けることです。異性装は、現代においても歴史を通じても、変装、パフォーマンスアート、そして文学的な趣向として用いられてきました。\n\nこのトレイトはキャラクター自身が同意したうえでの異性装に使用し、同意のない状況には代わりに[url=/i2418]される対象 > 強制女装・男装[/url]を使用してください。",
    "entity_type": "trait"
@@ -24566,6 +24763,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character engages in [url=http://en.wikipedia.org/wiki/Flirting]flirting[/url] with other characters.\n\nFlirting is a playful, romantic or sexual overture by one person to another subtly indicating an interest in a deeper relationship with the other person, and can involve verbal communication as well as body language. Body language can include flicking the hair, eye contact, brief touching, open stances, proximity etc. Verbal communication of interest can include the vocal tone, such as pace, volume, intonation. Challenges (teasing, questions, qualifying, feigned disinterest) serve to increase tension, test intention and congruity.\n\nAlmost every VN has some romance and relationships, but rarely they do have actual flirting. Use this trait sparingly for only the ones that actually do.",
+   "target": "このキャラクターは他のキャラクターと[url=http://en.wikipedia.org/wiki/Flirting]いちゃつき（フラート）[/url]を行います。\n\nフラートとは、ある人が別の人に対して行う、遊び心のある、恋愛的または性的な働きかけで、相手とのより深い関係への関心をそれとなく示すものです。言語的なコミュニケーションだけでなくボディランゲージも伴います。ボディランゲージには、髪をかき上げる、アイコンタクト、軽く触れる、開いた姿勢、距離の近さなどが含まれます。関心の言語的な伝達には、速さ・声量・抑揚といった声のトーンが含まれます。挑発（からかい、質問、品定め、無関心を装うこと）は、緊張を高め、意図や相性を試す役割を果たします。\n\nほぼすべてのVNには多少の恋愛や人間関係がありますが、実際にいちゃつきがあることはまれです。この特徴は、本当にそれがあるものだけに控えめに使用してください。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character engages in [url=http://en.wikipedia.org/wiki/Frot]frot[/url].\n\nFrot is a non-penetrative sexual activity involving direct penis-to-penis contact.\n\n[url=https://s.vndb.org/sf/09/119109.jpg]NSFW Example 1 (Bara)[/url]\n[url=https://s.vndb.org/sf/08/119108.jpg]NSFW Example 2 (Futanari)[/url]",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Frot]フロット[/url]を行います。\n\nフロットとは、ペニス同士の直接の接触を伴う非挿入の性的行為です。\n\n[url=https://s.vndb.org/sf/09/119109.jpg]NSFW例1（バラ）[/url]\n[url=https://s.vndb.org/sf/08/119108.jpg]NSFW例2（ふたなり）[/url]",
    "entity_type": "trait"
@@ -24627,6 +24829,11 @@
   },
   {
    "source": "This character engages in [url=http://en.wikipedia.org/wiki/Polyamory]polyamory[/url].\n\nPolyamory is the practice of having more than one intimate relationship at the same time, with the full knowledge and consent of all partners involved.\n\nUse [url=/i862]polygamy[/url] instead if the character is married to more than one spouse.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Polyamory]ポリアモリー[/url]を実践しています。\n\nポリアモリーとは、関わるすべてのパートナーの十分な認識と同意のもとで、同時に複数の親密な関係を持つことです。\n\nキャラクターが複数の配偶者と結婚している場合は、代わりに[url=/i862]一夫多妻（複婚）[/url]を使用してください。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character engages in [url=http://en.wikipedia.org/wiki/Polyamory]polyamory[/url].\n\nPolyamory is the practice of having more than one intimate relationship at the same time, with the full knowledge and consent of all partners involved.\n\nUse [url=/i862]polygamy[/url] instead if the character is married to more then one spouse.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Polyamory]ポリアモリー[/url]を実践しています。\n\nポリアモリーとは、関わるすべてのパートナーの十分な認識と同意のもとで、同時に複数の親密な関係を持つことです。\n\nキャラクターが複数の配偶者と結婚している場合は、代わりに[url=/i862]一夫多妻（複婚）[/url]を使用してください。",
    "entity_type": "trait"
   },
@@ -24711,6 +24918,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character engages in [url=https://en.wikipedia.org/wiki/Kickboxing]kickboxing[/url].\n\nKickboxing is a full-contact hybrid martial art and boxing type based on punching and kicking.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Kickboxing]キックボクシング[/url]をします。\n\nキックボクシングとは、パンチとキックを基本とする、全身接触型の混合格闘技・ボクシングの一種です。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character engages in [url=https://en.wikipedia.org/wiki/Krav_Maga]Krav Maga[/url].\n\nKrav Maga is a martial art and self-defense system developed in Israel that focuses on practical techniques for real-world situations. It combines elements from boxing, wrestling, judo, and karate, emphasizing quick counterattacks, targeting vulnerable points, and neutralizing threats as efficiently as possible.",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Krav_Maga]クラヴ・マガ[/url]に従事する。\n\nクラヴ・マガとは、イスラエルで開発された武道かつ護身術の体系で、現実世界の状況のための実践的な技に焦点を当てる。ボクシング、レスリング、柔道、空手の要素を組み合わせ、素早い反撃、弱点を狙うこと、そしてできるだけ効率的に脅威を無力化することに重きを置く。",
    "entity_type": "trait"
@@ -24728,6 +24940,11 @@
   {
    "source": "This character engages in [url=https://en.wikipedia.org/wiki/Parachuting]parachuting[/url].\n\nParachuting, or skydiving, is a method of exiting an aircraft and returning to Earth with the aid of gravity, then slowing down during the last part of the descent by using a parachute.",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Parachuting]パラシュート降下[/url]に従事する。\n\nパラシュート降下（スカイダイビング）とは、航空機から出て重力の助けで地球に戻り、それから降下の最後の部分でパラシュートを使って減速する方法である。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character engages in [url=https://en.wikipedia.org/wiki/Paraphilic_infantilism]paraphilic infantilism[/url].\n\nParaphilic infantilism is a sexual fetish for some that involves role-playing a regression to an infant-like state. Behaviors may include drinking from a baby bottle or wearing diapers. Use this trait only on the rolepalying character.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Paraphilic_infantilism]幼児性愛倒錯（パラフィリック・インファンティリズム）[/url]を行う。\n\n幼児性愛倒錯とは、一部の人にとって、幼児のような状態への退行を演じることを伴う性的フェティシズムである。行動には、哺乳瓶から飲む、おむつを着用するといったものが含まれることがある。この特徴は演じる側のキャラクターにのみ使用する。",
    "entity_type": "trait"
   },
   {
@@ -25086,6 +25303,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character engages in sexual masochism - has sadistic acts performed on them during the sex scenes.\n\nSexual masochism is the act of obtaining pleasure from having pain inflicted on themselves (by either themselves or by others). 'Pain' can refer both to the physical pain and mental/psychological discomfort. In the latter case this can include activities like verbal humiliation, spitting/pissing on a person, or dressing them in skimpy/humiliating outfits.\n\nIf this character [i]doesn't[/i] obtain pleasure from such activities - they are just willingly or unwillingly subjected to [url=/i423]Sexual Sadism[/url] - this trait should not be applied to them.\n\nThe opposite trait is [url=/i423]Sexual Sadism[/url].",
+   "target": "このキャラクターは性的マゾヒズムを行う。性的シーンでサディスティックな行為を受ける。\n\n性的マゾヒズムとは、（自分自身または他者によって）自らに苦痛を与えられることで快楽を得る行為である。「苦痛」は身体的な痛みと、精神的・心理的な不快感の両方を指しうる。後者の場合、言葉による辱め、唾や尿をかけること、露出の多い服や屈辱的な服を着せることなどが含まれる。\n\nこのキャラクターがそうした行為から快楽を[i]得ない[/i]（単に自ら望んで、あるいは望まずに[url=/i423]性的サディズム[/url]を受けているだけの）場合は、このトレイトを付けるべきではない。\n\n対になるトレイトは[url=/i423]性的サディズム[/url]である。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character engages in sexual masochism - has sadistic acts performed on them during the sex scenes.\n\nSexual masochism is the act of obtaining pleasure from having pain inflicted on themselves (by either themselves or by others). 'Pain' can refer both to the physical pain and mental/psychological discomfort. In the latter case this can include activities like verbal humiliation, spitting/pissing on a person, or dressing them in skimpy/humiliating outfits.\n\nIf this character [i]doesn't[/i] obtain pleasure from such activities - they are just willingly or unwillingly subjected to [url=/i424]Sexual Sadism[/url] - this trait should not be applied to them.\n\nThe opposite trait is [url=/i423]Sexual Sadism[/url].",
    "target": "このキャラクターは性的マゾヒズムを行います。すなわち、性的シーンで自身にサディスティックな行為を施されます。\n\n性的マゾヒズムとは、（自分自身によって、または他人によって）自身に苦痛を与えられることから快楽を得る行為です。「苦痛」は肉体的な苦痛と精神的・心理的な不快の両方を指しえます。後者の場合、言葉による辱め、人に唾を吐く／放尿する、露出度の高い／屈辱的な衣装を着せるといった行為が含まれることがあります。\n\nこのキャラクターがそうした行為から快楽を得て[i]いない[/i]場合――単に自ら進んで、あるいは意に反して[url=/i424]性的サディズム[/url]を施されているだけの場合――このトレイトを適用すべきではありません。\n\n反対のトレイトは[url=/i423]性的サディズム[/url]です。",
    "entity_type": "trait"
@@ -25278,6 +25500,11 @@
   {
    "source": "This character frames another person for a crime.\n\nFrame-up is a plan to make an innocent person appear to be guilty of a crime.",
    "target": "このキャラクターは別の人物に罪をなすりつけます。\n\n冤罪工作（フレームアップ）とは無実の人物を犯罪に見せかける計画です。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character frames another person for a crime.\n\nFrame-up is an action or a series of actions to make an innocent person appear to be guilty of a crime.",
+   "target": "このキャラクターは他人に罪を着せる。\n\nフレームアップ（罪の捏造）とは、無実の人が罪を犯したように見せかけるための行為、または一連の行為である。",
    "entity_type": "trait"
   },
   {
@@ -25853,6 +26080,11 @@
   {
    "source": "This character has a [url=http://en.wikipedia.org/wiki/Goatee]goatee[/url].\n\nGoatee refers to a style of facial hair incorporating hair on a man’s chin.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Goatee]あごひげ（ヤギひげ）[/url]を生やしています。\n\nヤギひげとは、男性の顎の毛を含む顔のひげのスタイルを指します。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character has a [url=http://en.wikipedia.org/wiki/Grandiosity]grandiose[/url] personality.\n\nAn extreme case of narcissism. Grandiose characters have an unrealistic sense of superiority, a sustained view of oneself as better than others that causes the narcissist to view others with disdain or as inferior. It also refers to a sense of uniqueness, the belief that few others have in common with oneself and that one can only be understood by a few or very special people.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Grandiosity]誇大的[/url]な性格である。\n\nナルシシズムの極端な例。誇大的なキャラクターは非現実的な優越感、すなわち自分が他者より優れているという持続的な自己認識を持ち、それによってナルシストは他者を軽蔑したり劣った者とみなしたりする。また、自分には他者とほとんど共通点がなく、ごく少数の非常に特別な人々にしか理解されえないという独自性の感覚も指す。",
    "entity_type": "trait"
   },
   {
@@ -26981,8 +27213,18 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character has sex in the [url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]reverse cowgirl[/url] position. Apply this trait to the penetrated partner and apply [url=/i1690]i1690[/url] to the penetrating partner.\n\nSimilarly to the [url=/i95]cowgirl[/url] position, the penetrating partner lies on their back, while the receiving partner straddles them with their torso mostly upright. Unlike the cowgirl position, the receiving partner faces away.\n\n[url=https://s.vndb.org/sf/35/84135.jpg]Example 1[/url]",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]背面騎乗位[/url]で性交します。この特徴は挿入される側に適用し、挿入する側には[url=/i1690]i1690[/url]を適用してください。\n\n[url=/i95]騎乗位[/url]と同様に、挿入する側が仰向けに寝て、受ける側が上体をほぼ起こしてその上にまたがります。騎乗位と異なり、受ける側は背を向けます。\n\n[url=https://s.vndb.org/sf/35/84135.jpg]例1[/url]",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character has sex in the [url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]reverse cowgirl[/url] position. Apply this trait to the penetrating partner and apply [url=/i1069]i1069[/url] to the penetrated partner.\n\nSimilarly to the [url=/i1689]cowgirl[/url] position, the penetrating partner lies on their back, while the receiving partner straddles them with their torso mostly upright. Unlike the cowgirl position, the receiving partner faces away.\n\nAfter the penetration has occurred, the receiving partner can keep their torso upright, or they can lean forward or back to lie on their partner's chest, or move sideways at will.\n\n[url=https://s.vndb.org/sf/35/84135.jpg]Example 1[/url]",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]背面騎乗位[/url]の体位で性行為を行います。挿入する側にこのトレイトを、挿入される側に[url=/i1069]i1069[/url]を適用してください。\n\n[url=/i1689]騎乗位[/url]の体位と同様に、挿入する側が仰向けに横たわり、受け手が上半身をほぼ起こした状態でその上にまたがります。騎乗位の体位とは異なり、受け手は背を向けます。\n\n挿入の後、受け手は上半身を起こしたままでも、前や後ろに倒れて相手の胸に身を預けても、自由に横へ動いてもかまいません。\n\n[url=https://s.vndb.org/sf/35/84135.jpg]例1[/url]",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character has sex in the [url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]reverse cowgirl[/url] position. Apply this trait to the penetrating partner and apply [url=/i1069]i1069[/url] to the penetrated partner.\n\nSimilarly to the [url=/i1689]cowgirl[/url] position, the penetrating partner lies on their back, while the receiving partner straddles them with their torso mostly upright. Unlike the cowgirl position, the receiving partner faces away.\n\n[url=https://s.vndb.org/sf/35/84135.jpg]Example 1[/url]",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Woman_on_top#Reverse_cowgirl_position]背面騎乗位[/url]の体位で性行為を行います。挿入する側にこのトレイトを、挿入される側に[url=/i1069]i1069[/url]を適用してください。\n\n[url=/i1689]騎乗位[/url]の体位と同様に、挿入する側が仰向けに横たわり、受け手が上半身をほぼ起こした状態でその上にまたがります。騎乗位の体位とは異なり、受け手は背を向けます。\n\n[url=https://s.vndb.org/sf/35/84135.jpg]例1[/url]",
    "entity_type": "trait"
   },
   {
@@ -27063,6 +27305,11 @@
   {
    "source": "This character has sex while being suspended above the floor. Apply this trait on the bound partner.\n[url=http://en.wikipedia.org/wiki/Suspension_bondage]Suspension bondage[/url] is a form of sexual bondage where a bound person is hung from one or more overhead suspension points.",
    "target": "このキャラクターは床から吊るされた状態で性行為を行います。縛られている側のパートナーにこのトレイトを適用してください。\n[url=http://en.wikipedia.org/wiki/Suspension_bondage]吊り緊縛[/url]とは、縛られた人が一つ以上の頭上の吊り点から吊るされる性的な緊縛の一形態です。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character has sex while he is killing someone. For this trait to apply the other sexual partecipant should be alive at the beginning of the sexual scene and dead by the end by this character's doing.\n\nWhen NOT to apply this trait:\n1) When this character is having sex with an already dead body, just use the trait [url=https://vndb.org/i1148]Necrophilia[/url].\n2) When this character attempts to kill his sexual partner but in the end he doesn't succeeds in doing so.\n3) When this character's sexual partner is already dying or dies because of someone else's doing.\n\n[url=https://s2.vndb.org/sf/13/131913.jpg]NSFW Example[/url] (Oni draining life energy by sexual intercourse)",
+   "target": "このキャラクターは、誰かを殺しながらセックスをします。この特徴が適用されるには、もう一方の性的な参加者が性的なシーンの始めには生きていて、終わりにはこのキャラクターの仕業で死んでいる必要があります。\n\nこの特徴を適用しない場合:\n1) このキャラクターがすでに死んでいる体とセックスをしている場合は、単に[url=https://vndb.org/i1148]死姦（ネクロフィリア）[/url]の特徴を使用してください。\n2) このキャラクターが性的なパートナーを殺そうとするが、結局それに成功しない場合。\n3) このキャラクターの性的なパートナーがすでに死にかけているか、他の誰かの仕業で死ぬ場合。\n\n[url=https://s2.vndb.org/sf/13/131913.jpg]NSFW 例[/url]（鬼が性交によって生命エネルギーを吸い取っている）",
    "entity_type": "trait"
   },
   {
@@ -27451,8 +27698,8 @@
    "entity_type": "trait"
   },
   {
-   "source": "This character is timid. A timid character is someone who is lacking in courage or confidence in everyday interactions.\n\nThey usually will face the challenge if there are enough reasons to do so (like saving their friend, or won't watch any scary movie if it's not a popular film that will help them to blend in with others), but they scare themselves to death when facing the thing. Popular example would be [url=/c51035]Niimi Sora[/url].",
-   "target": "このキャラクターは臆病です。臆病なキャラクターとは、日常のやり取りで勇気や自信に欠ける人のことです。\n\n彼らは通常、十分な理由があれば（友達を救うためなど）困難に立ち向かいますし、人気作で周りに溶け込むのに役立つのでなければ怖い映画を見ようとしませんが、いざその対象に直面すると怖くて死にそうになります。有名な例として[url=/c51035]Niimi Sora[/url]が挙げられます。",
+   "source": "This character is [url=http://dictionary.reference.com/browse/timid]timid[/url]. A timid character is someone who is lacking in courage or confidence in everyday interactions.\n\nThey usually will face the challange if there are enough reasons to do so (like saving their friend, or won't watch any scary movie if it's not a popular film that will help them to blend in with others), but they scare themselves to death when facing the thing. Popular example would be [url=/c51035]Niimi Sora[/url].",
+   "target": "このキャラクターは[url=http://dictionary.reference.com/browse/timid]臆病[/url]です。臆病なキャラクターとは、日常のやり取りで勇気や自信に欠ける人のことです。\n\n彼らは通常、十分な理由があれば（友達を救うためなど）困難に立ち向かいますし、人気作で周りに溶け込むのに役立つのでなければ怖い映画を見ようとしませんが、いざその対象に直面すると怖くて死にそうになります。有名な例として[url=/c51035]Niimi Sora[/url]が挙げられます。",
    "entity_type": "trait"
   },
   {
@@ -27483,6 +27730,11 @@
   {
    "source": "This character is [url=http://en.wikipedia.org/wiki/Bisexuality]bisexual[/url].\n\nBisexuality is sexual behavior or an orientation involving physical or romantic attraction to both males and females, especially with regard to men and women.\n\nIt is one of the three main classifications of sexual orientation, along with a heterosexual and a homosexual orientation, all a part of the heterosexual–homosexual continuum. Pansexuality may or may not be subsumed under bisexuality, with some sources stating that bisexuality encompasses sexual or romantic attraction to all gender identities. People who have a distinct but not exclusive preference for one sex over the other may also identify themselves as bisexual, and people who lack sexual attraction to either sex or genders are known as asexual.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Bisexuality]両性愛者（バイセクシュアル）[/url]です。\n\n両性愛とは、男性と女性の両方に対する身体的または恋愛的な魅力を伴う性的行動または性的指向であり、特に男女に関するものを指します。\n\nこれは、異性愛・同性愛と並ぶ性的指向の三つの主要な分類の一つであり、いずれも異性愛－同性愛の連続体の一部です。汎性愛（パンセクシュアリティ）は両性愛に含められる場合もあれば、含められない場合もあり、両性愛がすべての性自認に対する性的または恋愛的魅力を包含するとする説もあります。一方の性をはっきりと、しかし排他的にではなく好む人々も自らを両性愛者と認識することがあり、どちらの性や性別にも性的魅力を感じない人々は無性愛者（アセクシュアル）と呼ばれます。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is [url=http://en.wikipedia.org/wiki/Bisexuality]bisexual[/url]. They may not have any sexual scenes displaying this but it is a part of their character in the story.\n\nBisexuality is sexual behavior or an orientation involving physical or romantic attraction to both males and females, especially with regard to men and women.\n\nIt is one of the three main classifications of sexual orientation, along with a heterosexual and a homosexual orientation, all a part of the heterosexual–homosexual continuum. Pansexuality may or may not be subsumed under bisexuality, with some sources stating that bisexuality encompasses sexual or romantic attraction to all gender identities. People who have a distinct but not exclusive preference for one sex over the other may also identify themselves as bisexual, and people who lack sexual attraction to either sex or genders are known as asexual.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Bisexuality]バイセクシュアル[/url]である。それを示す性的シーンがなくてもよいが、物語の中でキャラクターの一部となっている。\n\nバイセクシュアル（両性愛）とは、男性と女性の両方に対する身体的または恋愛的な魅力を伴う性行動、あるいは性的指向である。\n\n異性愛・同性愛と並ぶ性的指向の三つの主要な分類の一つであり、いずれも異性愛から同性愛に至る連続体の一部をなす。パンセクシュアル（全性愛）はバイセクシュアルに含まれる場合とそうでない場合があり、バイセクシュアルはあらゆる性自認に対する性的または恋愛的な魅力を包含するとする資料もある。一方の性に明確だが排他的ではない好みを持つ人も自らをバイセクシュアルと認識することがあり、どちらの性やジェンダーにも性的な魅力を感じない人はアセクシュアル（無性愛）と呼ばれる。",
    "entity_type": "trait"
   },
   {
@@ -27646,6 +27898,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is [url=http://en.wikipedia.org/wiki/Unemployed]unemployed[/url].\n\nUnemployment, as defined by the International Labour Organization, occurs when people are without jobs and they have actively looked for work within the past four weeks.\n\nThe difference between an unemployed person and a neet is that the fist one is looking for a job.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Unemployed]無職[/url]です。\n\n国際労働機関の定義によると、失業とは職がなく過去4週間以内に積極的に仕事を探している状態です。\n\n失業者とニートの違いは、失業者は仕事を探しているということです。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is [url=http://en.wikipedia.org/wiki/Vietnamese]Vietnamese[/url].\n\nVietnamese refers to a member of the Vietnamese people, persons from Vietnam or of Vietnamese descent.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Vietnamese]ベトナム人[/url]である。\n\nベトナム人とは、ベトナム民族の一員、ベトナム出身者、またはベトナム系の人々を指す。",
    "entity_type": "trait"
@@ -27703,6 +27960,11 @@
   {
    "source": "This character is [url=https://en.wikipedia.org/wiki/Belarusians]Belarusian[/url].",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Belarusians]ベラルーシ人[/url]である。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is [url=https://en.wikipedia.org/wiki/Brazilians]Brazilian[/url].\n\nBrazilian people are from a multiethnic Portoguese speaking nation in South America called Brazil. Brazilians are predominantly Roman Catholic. Brazil is a multiethnic society, which means that it is home to people of many different ethnic origins. As a result, majority of Brazilians do not equate their nationality with their ethnicity, usually embracing and espousing both simultaneously.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Brazilians]ブラジル人[/url]である。\n\nブラジル人は、ブラジルと呼ばれる南米の多民族のポルトガル語を話す国の出身である。ブラジル人は主にローマ・カトリックである。ブラジルは多民族社会であり、つまり多くの異なる民族的出自の人々の故郷である。その結果、ブラジル人の大半は国籍を民族と同一視せず、たいてい両方を同時に受け入れ表明する。",
    "entity_type": "trait"
   },
   {
@@ -27878,6 +28140,11 @@
   {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Boyfriend]boyfriend[/url].\n\nA boyfriend is a person's regular male companion in a romantic and/or sexual relationship, though normally not in long-term committed (e.g. marital) relationships, where other titles (e.g. husband) are more commonly used.\n\nDue to database classification, this trait should not be used for the meaning of \"guy friend\" as \"a male non-romantic and non-sexual friend\".",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Boyfriend]ボーイフレンド（恋人）[/url]です。\n\nボーイフレンドとは、恋愛的および/または性的な関係にある、ある人の決まった男性の相手を指します。ただし通常、結婚のような長期的に約束された関係（その場合は夫など別の呼称がより一般的）は含みません。\n\nデータベースの分類上、この特徴は「恋愛的でも性的でもない男友達」という意味では使用しないでください。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Boyfriend]boyfriend[/url].\n\nA boyfriend is a person's regular male companion in a romantic and/or sexual relationship, though normally not in long-term committed (e.g. marital) relationships, where other titles (e.g. husband, partner) are more commonly used.\n\nDue to database classification, this trait should not be used for the meaning of \"guy friend\" as \"a male non-romantic and non-sexual friend\".",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Boyfriend]ボーイフレンド（恋人）[/url]です。\n\nボーイフレンドとは、恋愛的および/または性的な関係にある、ある人の決まった男性の相手を指します。ただし通常、結婚のような長期的に約束された関係（その場合は夫・パートナーなど別の呼称がより一般的）は含みません。\n\nデータベースの分類上、この特徴は「恋愛的でも性的でもない男友達」という意味では使用しないでください。",
    "entity_type": "trait"
   },
   {
@@ -28091,6 +28358,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Futanari]futanari[/url].\n\nFutanari have a mostly female body and female gender presentation, but possess both female and male genitalia (testicles are not always present). The character may be this way naturally or become futanari through magical or scientific means.\n\nPlease note that futanari and [URL=https://vndb.org/i2450]transwomen[/URL] are not the same as transwomen only have one set of genitalia.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Futanari]ふたなり[/url]です。\n\nふたなりは、大部分が女性の体と女性のジェンダー表現を持ちながら、女性と男性の両方の性器を備えています（睾丸は必ずしも存在しません）。キャラクターは生まれつきこうである場合もあれば、魔法的または科学的な手段でふたなりになる場合もあります。\n\nなお、ふたなりと[url=https://vndb.org/i2450]トランス女性[/url]は同じではありません。トランス女性は一組の性器しか持たないからです。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Gamer]gamer[/url].\n\nGamer refers to someone who frequently plays table-top games (boardgames and role playing games), wargames or video games.\n\nWhile the term nominally includes those who do not necessarily consider themselves to be gamers (i.e., casual gamers), it is commonly used to identify those who spend much of their leisure time playing or learning about games.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Gamer]ゲーマー[/url]です。\n\nゲーマーとは、テーブルトップゲーム（ボードゲームやロールプレイングゲーム）、ウォーゲーム、ビデオゲームを頻繁にプレイする人を指します。\n\nこの用語は名目上、必ずしも自分をゲーマーとは考えていない人（すなわちカジュアルゲーマー）も含みますが、一般には余暇の多くをゲームのプレイや学習に費やす人を指すのに使われます。",
    "entity_type": "trait"
@@ -28111,6 +28383,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Girlfriend]girlfriend[/url].\n\nA girlfriend is a person's regular female companion in a romantic and/or sexual relationship, though normally not in long-term committed (e.g. marital) relationships, where other titles (e.g. husband, partner) are more commonly used.\n\nDue to database classification, this trait should not be used for the meaning of \"female non-romantic friend that is closer than other friends\".",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Girlfriend]ガールフレンド（恋人）[/url]です。\n\nガールフレンドとは、恋愛的および/または性的な関係にある、ある人の決まった女性の相手を指します。ただし通常、結婚のような長期的に約束された関係（その場合は夫・パートナーなど別の呼称がより一般的）は含みません。\n\nデータベースの分類上、この特徴は「他の友人より親しい、恋愛関係にない女友達」という意味では使用しないでください。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Girlfriend]girlfriend[/url].\n\nA girlfriend is a person's regular female companion in a romantic and/or sexual relationship, though normally not in long-term committed (e.g. marital) relationships, where other titles (e.g. wife) are more commonly used.\n\nDue to database classification, this trait should not be used for the meaning of \"female non-romantic friend that is closer than other friends\".",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Girlfriend]ガールフレンド（恋人）[/url]です。\n\nガールフレンドとは、恋愛的および/または性的な関係にある、ある人の決まった女性の相手を指します。ただし通常、結婚のような長期的に約束された関係（その場合は妻など別の呼称がより一般的）は含みません。\n\nデータベースの分類上、この特徴は「他の友人より親しい、恋愛関係にない女友達」という意味では使用しないでください。",
    "entity_type": "trait"
@@ -28126,8 +28403,8 @@
    "entity_type": "trait"
   },
   {
-   "source": "This character has a [url=http://en.wikipedia.org/wiki/Grandiosity]grandiose[/url] personality.\n\nAn extreme case of narcissism. Grandiose characters have an unrealistic sense of superiority, a sustained view of oneself as better than others that causes the narcissist to view others with disdain or as inferior. It also refers to a sense of uniqueness, the belief that few others have in common with oneself and that one can only be understood by a few or very special people.",
-   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Grandiosity]誇大的[/url]な性格である。\n\nナルシシズムの極端な例。誇大的なキャラクターは非現実的な優越感、すなわち自分が他者より優れているという持続的な自己認識を持ち、それによってナルシストは他者を軽蔑したり劣った者とみなしたりする。また、自分には他者とほとんど共通点がなく、ごく少数の非常に特別な人々にしか理解されえないという独自性の感覚も指す。",
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Grandiosity]grandiosit[/url].\n\nAn extreme case of narcissism. Grandiosit characters have an unrealistic sense of superiority, a sustained view of oneself as better than others that causes the narcissist to view others with disdain or as inferior. It also refers to a sense of uniqueness, the belief that few others have in common with oneself and that one can only be understood by a few or very special people.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Grandiosity]誇大的[/url]な人物である。\n\nナルシシズムの極端な例。誇大的なキャラクターは非現実的な優越感、すなわち自分が他者より優れているという持続的な自己認識を持ち、それによってナルシストは他者を軽蔑したり劣った者とみなしたりする。また、自分には他者とほとんど共通点がなく、ごく少数の非常に特別な人々にしか理解されえないという独自性の感覚も指す。",
    "entity_type": "trait"
   },
   {
@@ -28306,6 +28583,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Misogyny]misogynist[/url], a person who hates, dislikes, mistrusts, or mistreats women.\n\nMisogyny is the hatred or dislike of women or girls. Misogyny can be manifested in numerous ways, including sexual discrimination, denigration of women, violence against women, and sexual objectification of women. Misogyny has been characterised as a prominent feature of the mythologies of the ancient world as well as various religions. In addition, many influential Western philosophers have been described as misogynistic.\n\nThe male counterpart of misogyny is [url=/i1162]misandry[/url], the hatred or dislike of men; the antonym of misogyny is philogyny, the love or fondness of women.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Misogyny]女性嫌悪者[/url]、つまり女性を憎み、嫌い、信用せず、あるいは虐げる人物である。\n\nミソジニー（女性嫌悪）とは、女性や少女に対する憎しみや嫌悪のことである。ミソジニーは、性差別、女性の蔑視、女性への暴力、女性の性的対象化など、さまざまな形で表れる。ミソジニーは古代世界の神話や様々な宗教の顕著な特徴であったとされる。また、多くの影響力のある西洋の哲学者がミソジニー的であったと評されている。\n\nミソジニーの男性版は[url=/i1162]ミサンドリー[/url]（男性に対する憎しみや嫌悪）であり、ミソジニーの対義語はフィロジニー（女性への愛情や好意）である。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Misogyny]misogynist[/url], a person who hates, dislikes, mistrusts, or mistreats women.\n\nMisogyny is the hatred or dislike of women or girls. Misogyny can be manifested in numerous ways, including sexual discrimination, denigration of women, violence against women, and sexual objectification of women. Misogyny has been characterised as a prominent feature of the mythologies of the ancient world as well as various religions. In addition, many influential Western philosophers have been described as misogynistic. The male counterpart of misogyny is misandry, the hatred or dislike of men; the antonym of misogyny is philogyny, the love or fondness of women.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Misogyny]女性差別主義者[/url]、すなわち女性を憎んだり、嫌ったり、不信を抱いたり、ひどく扱ったりする人物です。\n\nミソジニーとは、女性や女の子に対する憎悪または嫌悪のことです。ミソジニーは、性差別、女性の貶め、女性への暴力、女性の性的客体化など、数多くの形で現れ得ます。ミソジニーは、古代世界の神話やさまざまな宗教の顕著な特徴であったと特徴づけられています。さらに、西洋の影響力ある哲学者の多くが女性差別主義者であったと評されています。ミソジニーの対をなすのはミサンドリー、すなわち男性に対する憎悪または嫌悪であり、ミソジニーの対義語はフィロジニー、すなわち女性への愛情や好意です。",
    "entity_type": "trait"
@@ -28328,6 +28610,11 @@
   {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Musician]musician[/url].\n\nA musician is a person who writes, performs, or makes music.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Musician]音楽家[/url]です。\n\n音楽家とは、音楽を作る、演奏する、または制作する人のことです。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Narcissism_%28psychology%29]narcissist[/url].\n\nNarcissist characters have an inordinate fascination with themselves, excessive self-love and vanity.\n\nNarcissism is the personality trait of egotism, vanity, conceit, or simple selfishness. Applied to a social group, it is sometimes used to denote elitism or an indifference to the plight of others.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Narcissism_%28psychology%29]ナルシスト[/url]です。\n\nナルシストのキャラクターは、自分自身への過度の魅了、行きすぎた自己愛と虚栄心を持っています。\n\nナルシシズムとは、自己中心、虚栄、うぬぼれ、あるいは単純な利己心という性格的特徴です。社会集団に当てはめると、エリート主義や他者の苦境への無関心を表すのに使われることもあります。",
    "entity_type": "trait"
   },
   {
@@ -28781,6 +29068,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=http://en.wikipedia.org/wiki/Yandere#Y]yangire[/url].\n\nYangire is used to describe a character who is mentally ill and snaps instantly without showing affection for the victim of their outbursts.\n\nJust like yandere characters, yangire characters star very loving and gentle, and suddenly turn out violent, but the difference is that yangire characters' actions are not related to romantic feelings.",
+   "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Yandere#Y]ヤンギレ[/url]である。\n\nヤンギレは、精神を病んでおり、暴発の対象に愛情を示すことなく即座にキレるキャラクターを表すのに用いられる。\n\nヤンデレのキャラクターと同様に、ヤンギレのキャラクターも最初は非常に愛情深く穏やかで、突然暴力的になるが、違いは、ヤンギレのキャラクターの行動が恋愛感情に関係していない点である。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Yandere#Y]yangire[/url].\n\nYangire is used to describe a character who is mentally ill and snaps instantly without showing affection for the victim of their outbursts.\n\nJust like yandere characters, yangire characters start very loving and gentle, and suddenly turn out violent, but the difference is that yangire characters' actions are not related to romantic feelings.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Yandere#Y]ヤンギレ[/url]である。\n\nヤンギレは、精神を病んでおり、暴発の対象に愛情を示すことなく即座にキレるキャラクターを表すのに用いられる。\n\nヤンデレのキャラクターと同様に、ヤンギレのキャラクターも最初は非常に愛情深く穏やかで、突然暴力的になるが、違いは、ヤンギレのキャラクターの行動が恋愛感情に関係していない点である。",
    "entity_type": "trait"
@@ -28793,6 +29085,11 @@
   {
    "source": "This character is a [url=http://en.wikipedia.org/wiki/Zombie_%28fictional%29]zombie[/url], a type of reanimated corpse.",
    "target": "このキャラクターは[url=http://en.wikipedia.org/wiki/Zombie_%28fictional%29]ゾンビ[/url]、すなわち蘇った死体の一種である。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a [url=http://jisho.org/words?jap=%E7%9C%8B%E6%9D%BF%E5%A8%98&eng=&dict=edict]kanban musume[/url].\n\nThis term (看板娘) traditionally refers to a pretty girl who attracts customers by working at her parents' shop. It generally refers to any girl who works at a shop run by her family.",
+   "target": "このキャラクターは[url=http://jisho.org/words?jap=%E7%9C%8B%E6%9D%BF%E5%A8%98&eng=&dict=edict]看板娘[/url]です。\n\n「看板娘」とは伝統的に親の店で働いて客を引き付ける可愛い女の子を指します。一般的には家族が経営する店で働く女の子を指します。",
    "entity_type": "trait"
   },
   {
@@ -29046,6 +29343,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=https://en.wikipedia.org/wiki/Misandry]misandrist[/url], a person who hates, dislikes, mistrusts, or mistreats men.\n\nMisandry is the hatred or dislike of men or boys. Misandry is the antonym of philandry, the fondness, love, or admiration of men. Misandry is a back-formation from [url=/i1160]misogyny[/url], the hatred or dislike of women.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Misandry]男性嫌悪者[/url]、つまり男性を憎み、嫌い、信用せず、あるいは虐げる人物である。\n\nミサンドリー（男性嫌悪）とは、男性や少年に対する憎しみや嫌悪のことである。ミサンドリーは、男性への好意・愛情・賞賛を意味するフィランドリーの対義語である。ミサンドリーという語は[url=/i1160]ミソジニー[/url]（女性に対する憎しみや嫌悪）から逆成されたものである。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=https://en.wikipedia.org/wiki/Mollusca]mollusc[/url] or has mollusc-like physical features.\n\nFamous molluscs are: squids, octopuses, etc.",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Mollusca]軟体動物[/url]である、または軟体動物のような身体的特徴を持つ。\n\n有名な軟体動物は、イカ、タコなどである。",
    "entity_type": "trait"
@@ -29256,6 +29558,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a [url=https://en.wikipedia.org/wiki/Trans_woman]transwoman[/url].\n\nTranssexual people experience a gender identity that is inconsistent or not culturally associated with their assigned sex, and desire to permanently transition to the gender with which they identify- usually seeking medical assistance to help them align their body with their identified sex or gender.\n\nA transwoman is a woman who was assigned male at birth, but who has already made a permanent or partial transition, or have recently started to transition to the opposite sex (this could be before or during the story).\n\nPlease note that transwomen and [URL=https://vndb.org/i737]futanari[/URL] are not the same- transwomen only have one set of genitalia whereas futanari possess both male and female genitalia.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Trans_woman]トランス女性[/url]です。\n\nトランスセクシャルの人々は、割り当てられた性別と一致しないまたは文化的に関連していない性自認を持ち、自身が同一化する性別へ永続的に移行することを望んでいます。通常は自身が認識する性別に体を合わせるための医療支援を求めます。\n\nトランス女性とは出生時に男性として割り当てられた女性で、反対の性別への永続的または部分的な移行をすでに行っているか、最近始めた（これはストーリーの前または途中である場合があります）人物です。\n\nトランス女性と[url=https://vndb.org/i737]ふたなり[/url]は同じではないことに注意してください。トランス女性は一種類の性器しか持たないのに対し、ふたなりは男女両方の性器を持ちます。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a [url=https://en.wikipedia.org/wiki/Twelfth_grade]twelfth grader[/url].",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Twelfth_grade]第12学年（高校3年生）[/url]です。",
    "entity_type": "trait"
@@ -29323,6 +29630,11 @@
   {
    "source": "This character is a beautician. He or she might work at a beauty salon.\n\nThis can include hair stylists, cosmeticians, and manicurists.",
    "target": "このキャラクターは美容師である。美容院で働いていることがある。\n\nこれには、ヘアスタイリスト、美容部員、ネイリストが含まれうる。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a boy who looks like, or is usually mistaken, for a girl.\n\nDressing and acting like a girl is optional.\n\n\"Trap\" does not imply any specific form of sexual orientation but only the physical appearance.\n\nThis trait is used for works that frame a male character as female in order to \"trap\" the player, or for those VNs with the characters that explicitly identify as \"traps\".\n\nFor gender ambiguous body types use [url=/i1519]Androgynous[/url] instead. Do not apply the trait to [url=/i49]transgender[/url] characters, as that is a separate fetish. A possible exception could be allowed, if the character starts as a Trap and later transitions during the course of the story.",
+   "target": "このキャラクターは、女の子のように見える、あるいは普段女の子と間違えられる男の子です。\n\n女の子のような服装や振る舞いは任意です。\n\n「男の娘（トラップ）」は特定の性的指向を含意するものではなく、あくまで外見のみを指します。\n\nこのトレイトは、プレイヤーを「ひっかける」ために男性キャラクターを女性として見せる作品や、キャラクターが明確に「男の娘」を自認しているVNに使用されます。\n\n性別の曖昧な体型には、代わりに[url=/i1519]中性的[/url]を使用してください。これは別のフェチであるため、[url=/i49]トランスジェンダー[/url]のキャラクターにはこのトレイトを適用しないでください。ただし、キャラクターが男の娘として始まり、後に物語の過程で性別移行する場合は、例外が認められることがあります。",
    "entity_type": "trait"
   },
   {
@@ -29936,6 +30248,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is a practitioner of [url=https://en.wikipedia.org/wiki/Sumo]sumo wrestling[/url].\n\nSumo is a form of competitive full-contact wrestling where a rikishi (wrestler) attempts to force his opponent out of a circular ring (dohyō) or into touching the ground with any body part other than the soles of his feet (usually by throwing, shoving or pushing him down).",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Sumo]相撲[/url]を取ります。\n\n相撲とは、力士が相手を円形の土俵の外に押し出すか、足の裏以外の体の部分を地面につけさせる（通常は投げる、突く、押し倒すことによる）ことを目指す、全身接触の格闘競技です。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is a practitioner of board games in the story.\n\nBoard Game is a type of tabletop game, where the small objects moved or placed on a specially designed game board. A game board is played on a table or other flat surface.",
    "target": "このキャラクターは物語の中でボードゲームを嗜みます。\n\nボードゲームとは、専用に設計されたゲーム盤の上で小さな駒を動かしたり置いたりするテーブルトップゲームの一種です。ゲーム盤はテーブルやその他の平らな面の上でプレイされます。",
    "entity_type": "trait"
@@ -30103,6 +30420,16 @@
   {
    "source": "This character is a teaching assistant.\n\n[url=https://en.wikipedia.org/wiki/Teaching_assistant]Teaching assistant[/url] is an individual who assists a teacher with instructional responsibilities in university or college. By definition, TAs assist with classes, but many graduate students serve as the sole instructor for one or more classes each semester.\n\nNot to be confused with [url=/i4159]Role > Student Teacher[/url], which is a role for elementary to high school students.",
    "target": "このキャラクターはティーチングアシスタントである。\n\n[url=https://en.wikipedia.org/wiki/Teaching_assistant]ティーチングアシスタント[/url]とは、大学などで教員の指導上の職務を補助する人のことである。定義上、TAは授業を補助するが、多くの大学院生は学期ごとに一つ以上の授業の唯一の担当者を務める。\n\n小学校から高校の生徒を対象とする役割である[url=/i4159]役割 > 教育実習生[/url]と混同しないこと。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a teaching assistant.\n\n[url=https://en.wikipedia.org/wiki/Teaching_assistant]Teaching assistant[/url] is an individual who assists a teacher with instructional responsibilities. By definition, TAs assist with classes, but many graduate students serve as the sole instructor for one or more classes each semester.",
+   "target": "このキャラクターはティーチングアシスタントである。\n\n[url=https://en.wikipedia.org/wiki/Teaching_assistant]ティーチングアシスタント[/url]とは、教員の指導上の職務を補助する人のことである。定義上、TAは授業を補助するが、多くの大学院生は学期ごとに一つ以上の授業の唯一の担当者を務める。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is a temporary protagonist for a short while, before the game switches to the main protagonist",
+   "target": "このキャラクターはゲームが主人公に切り替わる前、しばらくの間一時的な主人公を務めます。",
    "entity_type": "trait"
   },
   {
@@ -30546,6 +30873,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is based on a famous person from the history of Earth, and on rare cases someone that is still alive.\n\nThis is different from [url=http://en.wikipedia.org/wiki/Real_person_fiction]real person fiction[/url] where the character is the actual famous person, not just a character inspired by that person.",
+   "target": "このキャラクターは、地球の歴史上の有名人、まれにまだ存命の人物をもとにしています。\n\nこれは、キャラクターがその人物に着想を得たキャラクターではなく、実際の有名人そのものである[url=http://en.wikipedia.org/wiki/Real_person_fiction]実在人物フィクション[/url]とは異なります。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is being [url=http://en.wikipedia.org/wiki/Tutor#Private_tutors]tutored[/url] by someone.\n\nA private tutor teaches a specific subject or skill to an individual student or small group of students. Such attention ideally allows the student to improve knowledge or skills more rapidly than in a classroom setting.",
    "target": "このキャラクターは誰かに[url=http://en.wikipedia.org/wiki/Tutor#Private_tutors]個人指導[/url]を受けている。\n\n家庭教師は、特定の科目や技能を個々の生徒または少人数のグループに教える。このような個別の指導により、理想的には、生徒は教室での授業よりも速やかに知識や技能を向上させることができる。",
    "entity_type": "trait"
@@ -30612,6 +30944,11 @@
   },
   {
    "source": "This character is considered [url=http://dictionary.reference.com/browse/Strange]strange[/url] by the people around.\n\nA strange character speaks and behaves in a different way than the surrounding people, who consider him/her off, odd, weird or even repulsive/attractive.",
+   "target": "このキャラクターは周りの人々から[url=http://dictionary.reference.com/browse/Strange]奇妙[/url]だと思われています。\n\n奇妙なキャラクターは、周囲の人々とは違った話し方や振る舞いをし、周囲の人々はその人を変だ、おかしい、風変わりだ、あるいは不快/魅力的だとさえ思います。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is considered [url=http://dictionary.reference.com/browse/Strange]strange[/url] by the people around.\n\nA strange character speaks and behaves in a different way then the surrounding people, who consider him/her off, odd, weird or even repulsive/attractive.",
    "target": "このキャラクターは周りの人々から[url=http://dictionary.reference.com/browse/Strange]奇妙[/url]だと思われています。\n\n奇妙なキャラクターは、周囲の人々とは違った話し方や振る舞いをし、周囲の人々はその人を変だ、おかしい、風変わりだ、あるいは不快/魅力的だとさえ思います。",
    "entity_type": "trait"
   },
@@ -30723,6 +31060,11 @@
   {
    "source": "This character is framed for a crime.\n\nFrame-up is a plan to make an innocent person appear to be guilty of a crime.",
    "target": "このキャラクターは犯罪の濡れ衣を着せられます。\n\n濡れ衣（フレームアップ）とは、無実の人を犯罪で有罪に見せかける計画のことです。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is framed for a crime.\n\nFrame-up is an action or a series of actions to make an innocent person appear to be guilty of a crime.",
+   "target": "このキャラクターは罪を着せられる。\n\nフレームアップ（罪の捏造）とは、無実の人が罪を犯したように見せかけるための行為、または一連の行為である。",
    "entity_type": "trait"
   },
   {
@@ -31162,6 +31504,11 @@
   },
   {
    "source": "This character is one of the performers of a twin footjob. Apply [url=/i1919]Subject of (Sexual) > Twin Footjob[/url] to the receiving character.\n\nThis is a sexual act in which two characters simultaneously rub their feet against another character's penis. \n\n[url=https://s.vndb.org/sf/63/88363.jpg]NSFW Example 1[/url]\n[url=https://s.vndb.org/sf/62/88362.jpg]NSFW Example 2[/url]",
+   "target": "このキャラクターはツインフットジョブの実行者の一人です。受けるキャラクターには[url=/i1919]される側（Sexual）> ツインフットジョブ[/url]を適用してください。\n\nこれは二人のキャラクターが同時に別のキャラクターのペニスに足を擦り付ける性的行為です。\n\n[url=https://s.vndb.org/sf/63/88363.jpg]NSFWな例1[/url]\n[url=https://s.vndb.org/sf/62/88362.jpg]NSFWな例2[/url]",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is one of the performers of a twin footjob. Apply [url=/i1919]Subject of (Sexual) > Twin Footjob[/url] to the receiving character.\n\nThis is a sexual act in which two characters simultaneously rub their feet against another character's penis. \n\n[url=https://s.vndb.org/sf/63/88363.jpg]NSWF Example 1[/url]\n[url=https://s.vndb.org/sf/62/88362.jpg]NSFW Example 2[/url]",
    "target": "このキャラクターはツインフットジョブの実行者の一人です。受けるキャラクターには[url=/i1919]される側（Sexual）> ツインフットジョブ[/url]を適用してください。\n\nこれは二人のキャラクターが同時に別のキャラクターのペニスに足を擦り付ける性的行為です。\n\n[url=https://s.vndb.org/sf/63/88363.jpg]NSFWな例1[/url]\n[url=https://s.vndb.org/sf/62/88362.jpg]NSFWな例2[/url]",
    "entity_type": "trait"
   },
@@ -32321,6 +32668,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character is the subject of a [url=https://en.wikipedia.org/wiki/Coronation]coronation ceremony[/url].\n\nA coronation ceremony marks the formal investiture of a monarch with regal power using a crown. This ceremony may include the presentation of other items of regalia, and other rituals such as the taking of special vows by the new monarch, the investing and presentation of regalia to them, and acts of homage by the new monarch's subjects.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Coronation]戴冠式[/url]の主役です。\n\n戴冠式とは、王冠を用いて君主に王権を正式に授ける儀式です。この儀式には、その他の王権の象徴（レガリア）の授与や、新君主による特別な誓約、レガリアの授与と奉呈、新君主の臣下による臣従の礼といった儀礼が含まれることがあります。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character is the subject of a nursing handjob, add [url=/i2724]Engages in (Sexual) > Nursing Handjob[/url] to the performing character.\n\nA nursing handjob is a combination of adult breast feeding and a handjob. The subject of the act, whose penis is being teased, lies on their back and sucking on the performing partner's breasts while the performing character is sitting or standing next to them, teasing their partner's penis with their hand.\n\nThe subject of the nursing handjob is often lying down in their partner's lap, though this is a not strict requirement for the trait to be applicable.\n\n[url=https://s.vndb.org/sf/49/95949.jpg]NSFW Example 1[/url]\n[url=https://s2.vndb.org/sf/60/129660.jpg] NSFW Example 2[/url]\n[url=https://s.vndb.org/sf/50/95950.jpg]NSFW Example 3[/url]",
    "target": "このキャラクターは授乳手コキの対象となります。行う側のキャラクターには[url=/i2724]する側（Sexual）> 授乳手コキ[/url]を追加してください。\n\n授乳手コキとは母乳育児と手コキを組み合わせた性的行為です。ペニスを弄られる対象は仰向けに寝て、行う側のパートナーの乳房を吸いながら、行う側のキャラクターが隣に座ったり立ったりしてパートナーのペニスを手で弄ります。\n\n授乳手コキの対象はパートナーの膝の上に横になることが多いですが、これはトレイト適用の厳格な条件ではありません。\n\n[url=https://s.vndb.org/sf/49/95949.jpg]NSFWな例1[/url]\n[url=https://s2.vndb.org/sf/60/129660.jpg]NSFWな例2[/url]\n[url=https://s.vndb.org/sf/50/95950.jpg]NSFWな例3[/url]",
    "entity_type": "trait"
@@ -32368,6 +32720,11 @@
   {
    "source": "This character is the virtual avatar of another living character. Their real life counterpart may be known or they may only be presented as a virtual character.\n\nIn computing, an [url=https://en.wikipedia.org/wiki/Avatar_(computing)]avatar[/url] is a graphical representation of a user or the user's character or persona. It may take either a two-dimensional form as an icon in Internet forums and other online communities, or a three-dimensional form, as in games or virtual worlds.",
    "target": "このキャラクターは別の生きたキャラクターのバーチャルアバターである。その現実の対応人物が知られている場合もあれば、バーチャルなキャラクターとしてのみ提示される場合もある。\n\nコンピューティングにおいて、[url=https://en.wikipedia.org/wiki/Avatar_(computing)]アバター[/url]とは、ユーザー、またはユーザーのキャラクターやペルソナのグラフィカルな表現である。インターネットフォーラムやその他のオンラインコミュニティでのアイコンとしての2次元の形をとることも、ゲームや仮想世界でのように3次元の形をとることもある。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character is timid. A timid character is someone who is lacking in courage or confidence in everyday interactions.\n\nThey usually will face the challenge if there are enough reasons to do so (like saving their friend, or won't watch any scary movie if it's not a popular film that will help them to blend in with others), but they scare themselves to death when facing the thing. Popular example would be [url=/c51035]Niimi Sora[/url].",
+   "target": "このキャラクターは臆病です。臆病なキャラクターとは、日常のやり取りで勇気や自信に欠ける人のことです。\n\n彼らは通常、十分な理由があれば（友達を救うためなど）困難に立ち向かいますし、人気作で周りに溶け込むのに役立つのでなければ怖い映画を見ようとしませんが、いざその対象に直面すると怖くて死にそうになります。有名な例として[url=/c51035]Niimi Sora[/url]が挙げられます。",
    "entity_type": "trait"
   },
   {
@@ -33661,6 +34018,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character tried to commit suicide, but was stopped by people around, changed their mind in the last moment or simply didn't manage to actually kill themselves, even though they've tried.\n\nSuicide is the act of intentionally causing one's own death. Suicide is often committed out of despair, the cause of which can attributed to a mental disorder such as depression, bipolar disorder, schizophrenia, autism spectrum disorders, alcoholism, or drug abuse. Stress factors such as financial difficulties or troubles with interpersonal relationships often play a significant role.",
+   "target": "このキャラクターは自殺を試みましたが、周りの人々に止められた、最後の瞬間に思いとどまった、あるいは試みたものの単に実際には自殺し損ねました。\n\n自殺とは、意図的に自らの死を引き起こす行為です。自殺はしばしば絶望から行われ、その原因はうつ病、双極性障害、統合失調症、自閉症スペクトラム障害、アルコール依存症、薬物乱用などの精神障害に起因することがあります。経済的困難や対人関係の悩みといったストレス要因が大きな役割を果たすこともしばしばです。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character tried to commit suicide, but was stopped by people around, changed their mind in the last moment or simply didn't manage to actually kill themselves, even though they've tried.\n\nSuicide is the act of intentionally causing one's own death. Suicide is often committed out of despair, the cause of which can be attributed to a mental disorder such as depression, bipolar disorder, schizophrenia, autism spectrum disorders, alcoholism, or drug abuse. Stress factors such as financial difficulties or troubles with interpersonal relationships often play a significant role.",
    "target": "このキャラクターは自殺を試みましたが、周りの人々に止められた、最後の瞬間に思いとどまった、あるいは試みたものの単に実際には自殺し損ねました。\n\n自殺とは、意図的に自らの死を引き起こす行為です。自殺はしばしば絶望から行われ、その原因はうつ病、双極性障害、統合失調症、自閉症スペクトラム障害、アルコール依存症、薬物乱用などの精神障害に起因することがあります。経済的困難や対人関係の悩みといったストレス要因が大きな役割を果たすこともしばしばです。",
    "entity_type": "trait"
@@ -33793,6 +34155,11 @@
   {
    "source": "This character uses \"warawa\", one of the [url=http://en.wikipedia.org/wiki/Japanese_pronouns]Japanese pronouns[/url] for \"I\", to address themselves.\n\nWarawa is a female pronoun, with archaic connotations.",
    "target": "このキャラクターは「わらわ」という[url=http://en.wikipedia.org/wiki/Japanese_pronouns]日本語の一人称代名詞[/url]を使って自分自身を指します。\n\n「わらわ」は古風な含みを持つ女性の代名詞です。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character uses \"washi\", one of the [url=http://en.wikipedia.org/wiki/Japanese_pronouns]Japanese pronouns[/url] for \"I\", to address themselves.\n\nColloquial. Mainly used by males. Often used in western dialects and fictional settings to stereotypically represent old characters.",
+   "target": "このキャラクターは自分自身を指す[url=http://en.wikipedia.org/wiki/Japanese_pronouns]日本語の一人称代名詞[/url]「わし」を使います。\n\n口語的な表現で、主に男性が使います。西日本方言や架空の設定で老年キャラクターを典型的に表現するために使われることが多いです。",
    "entity_type": "trait"
   },
   {
@@ -34396,8 +34763,8 @@
    "entity_type": "trait"
   },
   {
-   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Haori]haori[/url] (Japanese formal coat).",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Haori]羽織[/url]（日本の正式な上着）を着用しています。",
+   "source": "This character wears a [url=http://amtwiki.net/amtwiki/index.php/Haori]haori[/url] (Japanese formal coat).",
+   "target": "このキャラクターは[url=http://amtwiki.net/amtwiki/index.php/Haori]羽織[/url]（日本の正式な上着）を着用しています。",
    "entity_type": "trait"
   },
   {
@@ -35056,6 +35423,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Haori]haori[/url] (Japanese formal coat).",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Haori]羽織[/url]（日本の正式な上着）を着用しています。",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character wears a [url=https://en.wikipedia.org/wiki/Hijab]hijab[/url]. A hijab is a headcovering worn by Muslim women. Many Muslims believe it is obligatory for every female Muslim who has reached the age of puberty to wear a head covering. While such headcoverings can come in many forms, hijab often specifically refers to a cloth wrapped around the head, neck and chest, covering the hair and neck but leaving the face visible.",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Hijab]ヒジャブ[/url]を着用している。ヒジャブとは、ムスリムの女性が着用する被り物である。多くのムスリムは、思春期に達したすべての女性ムスリムが被り物を着用することは義務だと信じている。こうした被り物はさまざまな形を取り得るが、ヒジャブはしばしば特に、頭・首・胸に巻きつけ、髪と首を覆うが顔は見えるままにする布を指す。",
    "entity_type": "trait"
@@ -35106,6 +35478,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Ruff_(clothing)]ruff[/url], a type of collar popular in Western, Central and Northern Europe, as well as Spanish America, from the mid-16th century to the mid-17th century.\n\n[url=https://vndb.org/c168286]Character example[/url]",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Ruff_(clothing)]ラフ[/url]を身に着けています。ラフは、16世紀半ばから17世紀半ばにかけて西欧・中欧・北欧、そしてスペイン領アメリカで流行した襟の一種です。\n\n[url=https://vndb.org/c168286]キャラクターの例[/url]",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character wears a [url=https://en.wikipedia.org/wiki/Sailor_suit]sailor suit[/url].\n\nA sailor suit is a uniform traditionally worn by enlisted seamen in the navy, and other government funded sea services. It later developed into a popular clothing style for children.\n\nSince some kind of Japanese school uniforms are in the style of sailor suits just use: [url=https://vndb.org/i1723]Sailor School Uniform[/url]",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Sailor_suit]セーラー服[/url]を着用している。\n\nセーラー服とは、海軍やその他の政府が出資する海上勤務において、伝統的に下士官の水兵が着用する制服である。後に子供向けの人気の服装スタイルへと発展した。\n\n日本の学校制服の一部はセーラー服のスタイルであるため、その場合は[url=https://vndb.org/i1723]セーラー服（学生服）[/url]を使用する。",
    "entity_type": "trait"
@@ -35118,6 +35495,11 @@
   {
    "source": "This character wears a [url=https://en.wikipedia.org/wiki/Sundress]sundress[/url].\n\nA sundress is a dress intended to be worn in warm weather. Typically, it is an informal or casual dress in a lightweight fabric, most commonly cotton, and usually loose fitting. The dress is intended to be worn without a layering top. Sundresses can be of any neckline and hemline, including modest styles and a variety of patterns.",
    "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Sundress]サンドレス[/url]を着用しています。\n\nサンドレスとは、暖かい季節に着ることを意図したドレスです。通常は軽量の生地、最も一般的には綿でできた、ゆったりとした、くだけたカジュアルなドレスです。このドレスは、上に何かを重ね着せずに着ることを意図しています。サンドレスはどんなネックラインや裾の形でもよく、控えめなスタイルやさまざまな柄を含みます。",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Tin_foil_hat]tinfoil hat[/url].\n\nA tin foil hat is a hat made from one or more sheets of tin foil or aluminium foil, or a piece of conventional headgear lined with foil, often worn in the belief or hope that it shields the brain from threats such as electromagnetic fields, mind control, and mind reading. The notion of wearing homemade headgear for such protection has become a popular stereotype and byword for paranoia, persecutory delusions, and belief in pseudoscience and conspiracy theories.",
+   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Tin_foil_hat]アルミホイル帽[/url]をかぶっています。\n\nアルミホイル帽とは、一枚以上のスズ箔またはアルミ箔で作った帽子、あるいは内側に箔を張った普通の帽子のことで、電磁場やマインドコントロール、読心といった脅威から脳を守ってくれるという信念や期待からかぶられることが多いものです。こうした防護のために手作りのかぶり物をかぶるという発想は、被害妄想や迫害妄想、疑似科学や陰謀論への傾倒を表す、よく知られた典型的なイメージや代名詞になっています。",
    "entity_type": "trait"
   },
   {
@@ -35386,6 +35768,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character wears a open cup bra.\n\nWhile the primary purpose of a bras is to enhance the wearer's comfort by supporting her breasts, open cup bras have also the purpose of enhance the wearer's sexyness. In fact open cup bras look sexier than traditional bras and they are usually worn in conjuction with other sexy lingerie to the purpose of having sex or modeling.\n\nNote: Do not use this trait with a normal transparent bra. This trait is about the shape of the bra and not about visible tits.\n\n[url=https://s2.vndb.org/sf/91/136791.jpg]NSWF Open Cup Bra[/url] \n[url=https://s2.vndb.org/sf/92/136792.jpg]NSWF Half Bra[/url]\n[url=https://s2.vndb.org/sf/93/136793.jpg]NSWF Open Cup Bustier[/url]",
+   "target": "このキャラクターはオープンカップブラを着けています。\n\nブラの主な目的は、着用者の乳房を支えることで快適さを高めることですが、オープンカップブラには着用者のセクシーさを高める目的もあります。実際、オープンカップブラは伝統的なブラよりセクシーに見え、通常は性行為やモデルを目的として他のセクシーなランジェリーと一緒に着けられます。\n\n注意：通常の透けるブラにはこのトレイトを使用しないでください。このトレイトはブラの形についてであり、乳房が見えることについてではありません。\n\n[url=https://s2.vndb.org/sf/91/136791.jpg]NSFW オープンカップブラ[/url]\n[url=https://s2.vndb.org/sf/92/136792.jpg]NSFW ハーフブラ[/url]\n[url=https://s2.vndb.org/sf/93/136793.jpg]NSFW オープンカップビスチェ[/url]",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character wears a open cup mini-dress.\n\nAn open cup mini-dress is like a [url=https://vndb.org/i138]mini-dress[/url] but it looks kinkier and sexier than traditional mini-dress since it leaves in plain sight the tits area of the wearer.\n\n[url=https://s2.vndb.org/sf/02/140002.jpg]NSFW Example 1[/url]\n[url=https://s2.vndb.org/sf/03/140003.jpg]NSFW Example 2[/url]",
    "target": "このキャラクターはオープンカップのミニドレスを着用している。\n\nオープンカップのミニドレスは[url=https://vndb.org/i138]ミニドレス[/url]に似ているが、着用者の乳房の領域をはっきり見せるため、伝統的なミニドレスよりいかがわしくセクシーに見える。\n\n[url=https://s2.vndb.org/sf/02/140002.jpg]NSFW例1[/url]\n[url=https://s2.vndb.org/sf/03/140003.jpg]NSFW例2[/url]",
    "entity_type": "trait"
@@ -35493,6 +35880,11 @@
   {
    "source": "This character wears a strapless [url=https://vndb.org/i138]mini-dress[/url].\n\nA strapless mini-dress is a very short [url=https://vndb.org/i988]strapless dress[/url], at least 10 cm above the knee.\n\n[url=https://s2.vndb.org/sf/01/128901.jpg]Example 1[/url]\n[url=https://s2.vndb.org/sf/02/128902.jpg]Example 2[/url]",
    "target": "このキャラクターはストラップレスの[url=https://vndb.org/i138]ミニドレス[/url]を着用しています。\n\nストラップレスミニドレスとは、少なくとも膝上10cmの、非常に短い[url=https://vndb.org/i988]ストラップレスドレス[/url]です。\n\n[url=https://s2.vndb.org/sf/01/128901.jpg]例1[/url]\n[url=https://s2.vndb.org/sf/02/128902.jpg]例2[/url]",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This character wears a strapless bikini.\n\nA strapless bikini has no shoulders or shoulder straps.",
+   "target": "このキャラクターはストラップレスビキニを着ている。\n\nストラップレスビキニには肩の部分や肩紐がない。",
    "entity_type": "trait"
   },
   {
@@ -36166,6 +36558,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "This character's hair has one or more [url=http://translate.google.com/translate?sl=ja&tl=en&js=n&prev=_t&hl=en&ie=UTF-8&layout=2&eotf=1&u=http%3A%2F%2Fja.wikipedia.org%2Fwiki%2F%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2586%25E3%2583%25BC%25E3%2582%25AF_%2528%25E9%25AB%25AA%25E5%259E%258B%2529&act=url]intakes[/url].\n\nAn intake is created by an arch in the character's hair that folds over itself, creating an upside-down V shape. The intake itself should be on the second layer of hair, which has an opening with visible shadow(s) created by the arch folding over itself.\n\nIf the intake is right at the hairline, please use the [url=/i25]Curtained[/url] hairstyle trait instead.\n\n[URL=/c4054]Example 1[/URL]\n[URL=/c74]Example 2[/URL]",
+   "target": "このキャラクターの髪には1つ以上の[url=http://translate.google.com/translate?sl=ja&tl=en&js=n&prev=_t&hl=en&ie=UTF-8&layout=2&eotf=1&u=http%3A%2F%2Fja.wikipedia.org%2Fwiki%2F%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2586%25E3%2583%25BC%25E3%2582%25AF_%2528%25E9%25AB%25AA%25E5%259E%258B%2529&act=url]インテーク[/url]があります。\n\nインテークとは、キャラクターの髪のアーチがそれ自体の上に折り重なり、逆さのV字型を作ることで生まれます。インテーク自体は髪の2層目にあるべきで、そこにはアーチがそれ自体の上に折り重なることで生じる、見える影を伴った開きがあります。\n\nインテークが生え際のすぐそばにある場合は、代わりに[url=/i25]カーテン[/url]の髪型の特徴を使用してください。\n\n[url=/c4054]例1[/url]\n[url=/c74]例2[/url]",
+   "entity_type": "trait"
+  },
+  {
    "source": "This character's hair has one or more intakes.\n\nAn intake is created by an arch in the character's hair that folds over itself, creating an upside-down V shape. The intake itself should be on the second layer of hair, which has an opening with visible shadow(s) created by the arch folding over itself.\n\nIf the intake is right at the hairline, please use the [url=/i25]Curtained[/url] hairstyle trait instead.\n\n[URL=/c4054]Example 1[/URL]\n[URL=/c74]Example 2[/URL]",
    "target": "このキャラクターの髪には、一つ以上のインテーク（髪の折り返し）があります。\n\nインテークは、キャラクターの髪がアーチを描いて折り返すことでできる、逆V字の形です。インテーク自体は髪の二層目にあり、折り返したアーチによってできた影が見える開口部があるものを指します。\n\nインテークが生え際のすぐそばにある場合は、代わりに[url=/i25]カーテン前髪（センター分け）[/url]の髪型トレイトを使用してください。\n\n[URL=/c4054]例1[/URL]\n[URL=/c74]例2[/URL]",
    "entity_type": "trait"
@@ -36353,6 +36750,11 @@
   {
    "source": "This characters wears a halter-neck type of swimsuit with deep triangle-like cut at front. This cut boldly exposes almost a half of the breasts, which makes a girl in this swimsuit pretty sexy.\n\n[url=https://s.vndb.org/sf/43/81443.jpg]Example[/url]",
    "target": "このキャラクターは、前面が深い三角形状にカットされたホルターネックタイプの水着を着用している。このカットは胸のほぼ半分を大胆に露出させ、この水着を着た女の子をかなりセクシーに見せる。\n\n[url=https://s.vndb.org/sf/43/81443.jpg]例[/url]",
+   "entity_type": "trait"
+  },
+  {
+   "source": "This characters wears tassets.\n\nTassets are a piece of armor designed to protect the upper leg area. These consists of hanging plates hanging down from a belt area.\n\nIt can be either metal or leather. Or both (studded).\n\n[url=http://ep.yimg.com/ay/yhst-87491460501412/king-tasset-belt-7.gif]Example 1[/url], [url=http://www.kultofathena.com/images%5CLP200911_l.jpg]Example 2[/url] - Metal\n[url=https://s-media-cache-ak0.pinimg.com/236x/75/78/7b/75787b3c183fb095f61cc8591f7001ac.jpg]Example 3[/url] - Leather\n\n[url=https://vndb.org/c33]Example 4 - Saber[/url]",
+   "target": "このキャラクターはタセット（草摺）を着けています。\n\nタセットとは、太ももの上部を守るために設計された鎧の一部です。これは、ベルト部分から垂れ下がる板から成ります。\n\n金属でも革でもありえます。あるいはその両方（鋲打ち）でも。\n\n[url=http://ep.yimg.com/ay/yhst-87491460501412/king-tasset-belt-7.gif]例1[/url]、[url=http://www.kultofathena.com/images%5CLP200911_l.jpg]例2[/url] - 金属\n[url=https://s-media-cache-ak0.pinimg.com/236x/75/78/7b/75787b3c183fb095f61cc8591f7001ac.jpg]例3[/url] - 革\n\n[url=https://vndb.org/c33]例4 - セイバー[/url]",
    "entity_type": "trait"
   },
   {
@@ -36811,6 +37213,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "Zettai ryouiki, also translated to \"absolute territory\" or \"absolute area\", refers to both the clothing combination of a mini-skirt and over-the-knee socks, as well as the bare skin in-between.",
+   "target": "絶対領域（「absolute territory」「absolute area」とも訳される）とは、ミニスカートとニーハイソックスの組み合わせと、その間にのぞく素肌の両方を指します。",
+   "entity_type": "trait"
+  },
+  {
    "source": "[URL=http://en.wikipedia.org/wiki/Fratricide]Fratricide[/URL] is the act of a person killing his or her brother.",
    "target": "[url=http://en.wikipedia.org/wiki/Fratricide]兄弟殺し[/url]とは、人が自分の兄弟を殺す行為である。",
    "entity_type": "trait"
@@ -37106,6 +37513,11 @@
    "entity_type": "trait"
   },
   {
+   "source": "[url=https://en.wikipedia.org/wiki/Karuta]Karuta[/url] is a Japanese card game originating from Portugal. Most of the karuta games use [url=/https://en.wikipedia.org/wiki/E-awase]e-awase[/url] cards.\n\nThe basic idea of any e-awase karuta game is to be able to quickly determine which card out of an array of cards is required and then to grab the card before it is grabbed by an opponent. The two types of e-awase karuta decks that are most often seen are the uta-garuta and iroha-karuta. In uta-garuta, players try to find the last two lines of a waka given the first three lines. It is often possible to identify a poem by its first one or two syllables. The poems for this game are taken from the Ogura Hyakunin Isshu and are traditionally played on New Year's Day.",
+   "target": "[url=https://en.wikipedia.org/wiki/Karuta]かるた[/url]とは、ポルトガルに由来する日本のカードゲームである。ほとんどのかるたゲームは[url=/https://en.wikipedia.org/wiki/E-awase]絵合わせ[/url]札を使う。\n\nあらゆる絵合わせかるたゲームの基本的な考えは、並んだ札の中からどの札が必要かを素早く見極め、相手に取られる前にその札をつかむことである。最もよく見られる2種類の絵合わせかるたのデッキは、歌がるたといろはかるたである。歌がるたでは、プレイヤーは最初の3行を与えられて和歌の最後の2行を見つけようとする。歌は最初の1〜2音節で見分けられることが多い。このゲームの歌は小倉百人一首から取られ、伝統的に元日に遊ばれる。",
+   "entity_type": "trait"
+  },
+  {
    "source": "[url=https://en.wikipedia.org/wiki/Karuta]Karuta[/url] is a Japanese card game originating from Portugal. Most of the karuta games use [url=https://en.wikipedia.org/wiki/E-awase]e-awase[/url] cards.\n\nThe basic idea of any e-awase karuta game is to be able to quickly determine which card out of an array of cards is required and then to grab the card before it is grabbed by an opponent. The two types of e-awase karuta decks that are most often seen are the uta-garuta and iroha-karuta. In uta-garuta, players try to find the last two lines of a waka given the first three lines. It is often possible to identify a poem by its first one or two syllables. The poems for this game are taken from the Ogura Hyakunin Isshu and are traditionally played on New Year's Day.",
    "target": "[url=https://en.wikipedia.org/wiki/Karuta]かるた[/url]とは、ポルトガルに由来する日本のカードゲームである。ほとんどのかるたゲームは[url=https://en.wikipedia.org/wiki/E-awase]絵合わせ[/url]札を使う。\n\nあらゆる絵合わせかるたゲームの基本的な考えは、並んだ札の中からどの札が必要かを素早く見極め、相手に取られる前にその札をつかむことである。最もよく見られる2種類の絵合わせかるたのデッキは、歌がるたといろはかるたである。歌がるたでは、プレイヤーは最初の3行を与えられて和歌の最後の2行を見つけようとする。歌は最初の1〜2音節で見分けられることが多い。このゲームの歌は小倉百人一首から取られ、伝統的に元日に遊ばれる。",
    "entity_type": "trait"
@@ -37199,131 +37611,6 @@
    "source": "[url=https://www.mayoclinic.org/symptoms/dry-orgasm/basics/definition/sym-20050906]Dry orgasm[/url] occurs when a man reaches sexual climax but doesn't ejaculate semen from the penis.",
    "target": "[url=https://www.mayoclinic.org/symptoms/dry-orgasm/basics/definition/sym-20050906]ドライオーガズム[/url]とは、男性が性的絶頂に達するが、ペニスから精液を射出しないときに起こる。",
    "entity_type": "trait"
-  },
-  {
-   "source": "This character is a practitioner of [url=https://en.wikipedia.org/wiki/Sumo]sumo wrestling[/url].\n\nSumo is a form of competitive full-contact wrestling where a rikishi (wrestler) attempts to force his opponent out of a circular ring (dohyō) or into touching the ground with any body part other than the soles of his feet (usually by throwing, shoving or pushing him down).",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Sumo]相撲[/url]を取ります。\n\n相撲とは、力士が相手を円形の土俵の外に押し出すか、足の裏以外の体の部分を地面につけさせる（通常は投げる、突く、押し倒すことによる）ことを目指す、全身接触の格闘競技です。",
-   "entity_type": "trait"
-  },
-  {
-   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Ruff_(clothing)]ruff[/url], a type of collar popular in Western, Central and Northern Europe, as well as Spanish America, from the mid-16th century to the mid-17th century.\n\n[url=https://vndb.org/c168286]Character example[/url]",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Ruff_(clothing)]ラフ[/url]を身に着けています。ラフは、16世紀半ばから17世紀半ばにかけて西欧・中欧・北欧、そしてスペイン領アメリカで流行した襟の一種です。\n\n[url=https://vndb.org/c168286]キャラクターの例[/url]",
-   "entity_type": "trait"
-  },
-  {
-   "source": "This character wears a [url=https://en.wikipedia.org/wiki/Tin_foil_hat]tinfoil hat[/url].\n\nA tin foil hat is a hat made from one or more sheets of tin foil or aluminium foil, or a piece of conventional headgear lined with foil, often worn in the belief or hope that it shields the brain from threats such as electromagnetic fields, mind control, and mind reading. The notion of wearing homemade headgear for such protection has become a popular stereotype and byword for paranoia, persecutory delusions, and belief in pseudoscience and conspiracy theories.",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Tin_foil_hat]アルミホイル帽[/url]をかぶっています。\n\nアルミホイル帽とは、一枚以上のスズ箔またはアルミ箔で作った帽子、あるいは内側に箔を張った普通の帽子のことで、電磁場やマインドコントロール、読心といった脅威から脳を守ってくれるという信念や期待からかぶられることが多いものです。こうした防護のために手作りのかぶり物をかぶるという発想は、被害妄想や迫害妄想、疑似科学や陰謀論への傾倒を表す、よく知られた典型的なイメージや代名詞になっています。",
-   "entity_type": "trait"
-  },
-  {
-   "source": "Zettai ryouiki, also translated to \"absolute territory\" or \"absolute area\", refers to both the clothing combination of a mini-skirt and over-the-knee socks, as well as the bare skin in-between.",
-   "target": "絶対領域（「absolute territory」「absolute area」とも訳される）とは、ミニスカートとニーハイソックスの組み合わせと、その間にのぞく素肌の両方を指します。",
-   "entity_type": "trait"
-  },
-  {
-   "source": "This character is the subject of a [url=https://en.wikipedia.org/wiki/Coronation]coronation ceremony[/url].\n\nA coronation ceremony marks the formal investiture of a monarch with regal power using a crown. This ceremony may include the presentation of other items of regalia, and other rituals such as the taking of special vows by the new monarch, the investing and presentation of regalia to them, and acts of homage by the new monarch's subjects.",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Coronation]戴冠式[/url]の主役です。\n\n戴冠式とは、王冠を用いて君主に王権を正式に授ける儀式です。この儀式には、その他の王権の象徴（レガリア）の授与や、新君主による特別な誓約、レガリアの授与と奉呈、新君主の臣下による臣従の礼といった儀礼が含まれることがあります。",
-   "entity_type": "trait"
-  },
-  {
-   "source": "This character engages in [url=https://en.wikipedia.org/wiki/Kickboxing]kickboxing[/url].\n\nKickboxing is a full-contact hybrid martial art and boxing type based on punching and kicking.",
-   "target": "このキャラクターは[url=https://en.wikipedia.org/wiki/Kickboxing]キックボクシング[/url]をします。\n\nキックボクシングとは、パンチとキックを基本とする、全身接触型の混合格闘技・ボクシングの一種です。",
-   "entity_type": "trait"
-  },
-  {
-   "source": "This story takes place at a time between years 1970-1979 on Earth.\n\nMore details on [url=https://en.wikipedia.org/wiki/1970s]70's[/url] can be found on wikipedia.",
-   "target": "この物語は、地球上の1970年から1979年までの時代に展開される。\n\n[url=https://en.wikipedia.org/wiki/1970s]70年代[/url]についての詳細は、ウィキペディアで見つけられる。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This game contains an [url=http://en.wikipedia.org/wiki/Achievement_%28video_gaming%29l]achievements/trophies[/url] system within the game itself.\n\nDo not use the tag if the achievements are delivered via and external program tied to the game's distribution (e.g. Steam, GOG Galaxy, etc.).",
-   "target": "このゲームには、ゲーム自体に組み込まれた[url=http://en.wikipedia.org/wiki/Achievement_%28video_gaming%29l]実績・トロフィー[/url]のシステムがある。\n\n実績がゲームの配信に結びついた外部のプログラム（Steam、GOG Galaxy など）を通じて提供される場合は、このタグを使わないこと。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place at a time between years 2000-2009 on Earth.",
-   "target": "この物語は、地球上の2000年から2009年までの時代に展開される。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place sometime during the years 1801-1900 on Earth.\n\nMore details on the [url=https://en.wikipedia.org/wiki/19th_century]19th Century[/url] can be found on Wikipedia.",
-   "target": "この物語は、地球の西暦1801年から1900年のいずれかの時代を舞台にしています。\n\n[url=https://en.wikipedia.org/wiki/19th_century]19世紀[/url]の詳細はWikipediaで見られます。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place at a time between years 2010-2019 on Earth.",
-   "target": "この物語は、地球上の2010年から2019年までの時代に展開される。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place at a time between years 2020-2029 on Earth.",
-   "target": "この物語は、地球上の2020年から2029年までの時代に展開される。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This game uses 3D graphics for its presentation.",
-   "target": "このゲームは表現に3Dグラフィックスを用いている。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place at a time between years 2030-2039 on Earth.",
-   "target": "この物語は、地球上の2030年から2039年までの時代に展開される。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This story takes place at a time between years 2001-2100 on Earth.\n\nMore details on [url=https://en.wikipedia.org/wiki/21st_century]21st Century[/url] can be found on Wikipedia.",
-   "target": "この物語は、地球の西暦2001年から2100年の間の時代を舞台にしています。\n\n[url=https://en.wikipedia.org/wiki/21st_century]21世紀[/url]の詳細はWikipediaで見られます。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "These visual novels features characters from [url=https://en.wikipedia.org/wiki/D.Gray-man]D.Gray-man[/url] or is set in its universe.",
-   "target": "これらのビジュアルノベルには[url=https://en.wikipedia.org/wiki/D.Gray-man]D.Gray-man[/url]のキャラクターが登場するか、その世界を舞台とする。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "These visual novels features characters from Haikyu!! or is set in its universe.",
-   "target": "これらのビジュアルノベルには『ハイキュー!!』のキャラクターが登場するか、その世界を舞台とする。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This visual novel features characters from [url=https://en.wikipedia.org/wiki/Jujutsu_Kaisen]Jujutsu Kaisen[/url], or is set in its universe.",
-   "target": "このビジュアルノベルには[url=https://en.wikipedia.org/wiki/Jujutsu_Kaisen]呪術廻戦[/url]のキャラクターが登場するか、その世界を舞台とする。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This visual novel features characters from the Five Nights at Freddy's franchise or is set in its universe.",
-   "target": "このビジュアルノベルには『Five Nights at Freddy's』シリーズのキャラクターが登場するか、その世界を舞台とする。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "The protagonist of this game is a mothercon, a person who is always passionate and OVERLY attached to their mother (or mother-like figure) and would do anything for her.\n\nNote: This tag is only used to describe the protagonist's personality.\n\nThe tag is valid if the protagonist (or general populace in the VN) views their relationship as mother/child. They might or might not have a real parent/child connection.",
-   "target": "本作の主人公はマザコン、すなわち常に母親（または母親のような存在）に夢中で、過度に執着し、彼女のためなら何でもする人物である。\n\n注：このタグは主人公の性格を表すのにのみ用いられる。\n\nこのタグは、主人公（またはVNの一般の人々）がその関係を母と子とみなす場合に有効である。実際の親子のつながりがあることもないこともある。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "These games feature characters that are from the Lucky Star series, or is set in its universe.",
-   "target": "これらのゲームには『らき☆すた』シリーズのキャラクターが登場するか、その世界を舞台とする。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This visual novel is based on or an adaptation of a Theatre \\ Stage Production. Theatre has existed for thousands of years and various forms of it can be found in nearly every culture.",
-   "target": "このビジュアルノベルは、演劇・舞台作品を原作とするか、それを翻案したものである。演劇は数千年前から存在し、ほぼあらゆる文化にさまざまな形で見られる。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "Latin American mythology strongly influences the setting and events in this VN",
-   "target": "ラテンアメリカ神話が、このVNの設定や出来事に強く影響している。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This visual novel is set in the Marvel Comics universe, or features characters from the comics, movies and/or TV shows.",
-   "target": "このビジュアルノベルはマーベル・コミックの世界を舞台とするか、そのコミック、映画、テレビ番組のキャラクターが登場する。",
-   "entity_type": "tag"
-  },
-  {
-   "source": "This game has one or multiple [url=https://en.wikipedia.org/wiki/Fox]foxes[/url] taking an important role in the story. Or it has foxes all around on many scenes with multiple lines of dialogs related to them.",
-   "target": "このゲームには物語で重要な役割を果たす1匹または複数の[url=https://en.wikipedia.org/wiki/Fox]狐[/url]が登場する。あるいは、多くのシーンのあちこちに狐が登場し、それらに関連する複数のセリフがある。",
-   "entity_type": "tag"
   }
  ]
 }
