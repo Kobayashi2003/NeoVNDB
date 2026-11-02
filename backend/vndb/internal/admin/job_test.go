@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/kobayashi/neovndb/internal/schedule"
 )
 
 func TestJobRunsOneAtATime(t *testing.T) {
@@ -76,7 +78,8 @@ func TestJobSchedule(t *testing.T) {
 	})
 	done := make(chan struct{})
 	go func() {
-		j.Schedule(ctx, 0, time.Hour, 20*time.Millisecond, func(error) bool { return true })
+		plan := func() schedule.Plan { return schedule.Plan{Every: time.Hour, Retry: 20 * time.Millisecond} }
+		j.Schedule(ctx, plan, func(error) bool { return true })
 		close(done)
 	}()
 

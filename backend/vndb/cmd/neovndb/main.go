@@ -15,6 +15,7 @@ import (
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
+	"github.com/kobayashi/neovndb/internal/settings"
 )
 
 const usage = `neovndb
@@ -80,17 +81,31 @@ func run() error {
 	}
 }
 
-// open loads the configuration and connects, for every subcommand but images.
+// open loads the configuration, with what the admin page changed in it, and
+// connects, for every subcommand but images and crawl.
 func open(ctx context.Context) (*config.Config, *db.Store, error) {
-	cfg, err := config.Load()
+	cfg, live, store, err := openLive(ctx)
 	if err != nil {
 		return nil, nil, err
+	}
+	return live.Get().Apply(cfg), store, nil
+}
+
+// openLive is open for serve, which keeps the settings so they can change.
+func openLive(ctx context.Context) (*config.Config, *settings.Live[settings.Serve], *db.Store, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	live, err := settings.OpenServe(cfg)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 	store, err := db.Open(ctx, cfg)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return cfg, store, nil
+	return cfg, live, store, nil
 }
 
 func newLog() *slog.Logger {

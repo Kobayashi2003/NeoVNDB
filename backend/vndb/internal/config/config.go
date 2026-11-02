@@ -65,6 +65,8 @@ const (
 	defaultImageFetchLimit = 30 * time.Second
 	// Concurrent fetches from vndb's CDN.
 	defaultImageFetchParallel = 8
+	// A miss sends the reader to vndb and is fetched behind them.
+	defaultImageMiss = "redirect"
 	// The crawl that mirrors ahead of readers: hourly, a few hundred images at
 	// a time, one every two seconds -- a day brings about 4,800 images in at a
 	// pace vndb's CDN will not notice.
@@ -76,6 +78,9 @@ const (
 	defaultRequestTimeout    = 5 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
+
+	// At the repository root, beside the other data: what the admin page set.
+	defaultSettingsDir = "../../data/settings"
 )
 
 type Config struct {
@@ -125,15 +130,21 @@ type Config struct {
 	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
 	GuardMaxLoss float64
 
-	ImageDir             string
-	ImagePort            int
-	ImageMaxBytes        int64
-	ImageFetchLimit      time.Duration
-	ImageFetchParallel   int
+	ImageDir           string
+	ImagePort          int
+	ImageMaxBytes      int64
+	ImageFetchLimit    time.Duration
+	ImageFetchParallel int
+	// ImageMiss is "redirect" or "fetch": what a request for an image not on
+	// disk gets, a redirect to vndb or the image once this mirror has it.
+	ImageMiss            string
 	ImageCrawlEvery      time.Duration // 0 turns the crawl off
 	ImageCrawlFirstAfter time.Duration
 	ImageCrawlPerRun     int // 0 means no ceiling
 	ImageCrawlDelay      time.Duration
+
+	// SettingsDir holds each service's settings changed on the admin page.
+	SettingsDir string
 }
 
 // Load reads .env when present; real environment variables take precedence.
@@ -188,10 +199,13 @@ func Load() (*Config, error) {
 		ImageMaxBytes:        int64(e.int("NEOVNDB_IMAGE_MAX_BYTES", defaultImageMaxBytes)),
 		ImageFetchLimit:      e.duration("NEOVNDB_IMAGE_FETCH_TIMEOUT", defaultImageFetchLimit),
 		ImageFetchParallel:   e.int("NEOVNDB_IMAGE_FETCH_PARALLEL", defaultImageFetchParallel),
+		ImageMiss:            e.text("NEOVNDB_IMAGE_MISS", defaultImageMiss),
 		ImageCrawlEvery:      e.duration("NEOVNDB_IMAGE_CRAWL_EVERY", defaultImageCrawlEvery),
 		ImageCrawlFirstAfter: e.duration("NEOVNDB_IMAGE_CRAWL_FIRST_AFTER", defaultImageCrawlFirstAfter),
 		ImageCrawlPerRun:     e.int("NEOVNDB_IMAGE_CRAWL_PER_RUN", defaultImageCrawlPerRun),
 		ImageCrawlDelay:      e.duration("NEOVNDB_IMAGE_CRAWL_DELAY", defaultImageCrawlDelay),
+
+		SettingsDir: e.text("NEOVNDB_SETTINGS_DIR", defaultSettingsDir),
 	}
 	if c.DatabaseURL == "" {
 		e.errs = append(e.errs, fmt.Errorf("NEOVNDB_DB_URL is not set"))

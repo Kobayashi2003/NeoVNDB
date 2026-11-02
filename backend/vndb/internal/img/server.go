@@ -1,15 +1,19 @@
 // Package img mirrors vndb's images, byte-exact, on first request and ahead of
-// it (crawl.go). Nothing is resized here: vndb publishes its own thumbnails
+// it (crawl.go). The first request either waits for the fetch or is sent to
+// vndb while it happens behind it (SetRedirect). Nothing is resized here: vndb publishes its own thumbnails
 // (cv.t for covers, st for screenshots), and they are mirrored like any other
 // original. No database: the URL names the image, so generations don't matter.
 package img
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kobayashi/neovndb/internal/config"
@@ -20,14 +24,53 @@ type Server struct {
 	source *Source
 	flight *flight
 	log    *slog.Logger
+
+	// Whether a miss is sent to vndb rather than fetched while it waits.
+	redirect atomic.Bool
+	// What redirected readers got from vndb, for Behind to fetch. A full
+	// queue drops the image; the crawl or the next reader brings it in.
+	behind chan Ref
+	// Images vndb answered 404 for, which a redirect would only send the
+	// reader to; they are answered here instead.
+	gone sync.Map
 }
 
+// behindQueue is how many redirected images may wait to be fetched.
+const behindQueue = 1024
+
 func NewServer(cfg *config.Config, log *slog.Logger) *Server {
-	return &Server{
+	s := &Server{
 		mirror: NewStore(cfg.ImageDir),
 		source: NewSource(cfg.ImageFetchLimit, cfg.ImageMaxBytes, cfg.ImageFetchParallel),
 		flight: newFlight(),
 		log:    log,
+		behind: make(chan Ref, behindQueue),
+	}
+	s.SetRedirect(cfg.ImageMiss == "redirect")
+	return s
+}
+
+// SetRedirect switches what a miss gets while the server runs.
+func (s *Server) SetRedirect(on bool) { s.redirect.Store(on) }
+
+// Behind fetches what redirected readers were sent to vndb for, until ctx
+// ends. As many at once as the source allows; the flight drops a duplicate.
+func (s *Server) Behind(ctx context.Context) {
+	for range cap(s.source.slots) {
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case ref := <-s.behind:
+					if _, err := s.original(ref); errors.Is(err, ErrMissing) {
+						s.gone.Store(ref, true)
+					} else if err != nil {
+						s.log.Warn("fetching behind a redirect", "ref", ref, "err", err)
+					}
+				}
+			}
+		}()
 	}
 }
 
@@ -58,6 +101,22 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, gone := s.gone.Load(ref); s.redirect.Load() && !gone {
+		if data, err := s.mirror.Read(ref); err == nil {
+			// Stored since the edge looked, or the edge does not serve files.
+			serve(w, r, data)
+			return
+		}
+		select {
+		case s.behind <- ref:
+		default:
+		}
+		// Not cached: next time the edge should find it on disk.
+		w.Header().Set("Cache-Control", "no-store")
+		http.Redirect(w, r, s.source.URL(ref), http.StatusFound)
+		return
+	}
+
 	data, err := s.original(ref)
 	if errors.Is(err, ErrMissing) {
 		// A thumbnail vndb never made: the original is already that small.
@@ -74,7 +133,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not serve this image", http.StatusBadGateway)
 		return
 	}
+	serve(w, r, data)
+}
 
+func serve(w http.ResponseWriter, r *http.Request, data []byte) {
 	// An image id never changes upstream.
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")

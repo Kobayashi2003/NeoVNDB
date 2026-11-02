@@ -26,6 +26,8 @@ const tailLines = 200
 // and remembers how its last run went.
 type Job struct {
 	run func(ctx context.Context, out io.Writer) (any, error)
+	// Replan's signal to the schedule; one pending is enough.
+	replan chan struct{}
 
 	mu    sync.Mutex
 	state JobState
@@ -47,7 +49,7 @@ type JobState struct {
 
 // NewJob wraps run, whose output also goes to stdout, as it did before.
 func NewJob(run func(ctx context.Context, out io.Writer) (any, error)) *Job {
-	return &Job{run: run, state: JobState{Output: []string{}}}
+	return &Job{run: run, replan: make(chan struct{}, 1), state: JobState{Output: []string{}}}
 }
 
 // Run runs the job now and waits for it, or returns ErrRunning.
@@ -96,32 +98,33 @@ func (j *Job) end(result any, err error) {
 	}
 }
 
-// Schedule runs the job on schedule.Every's timetable -- first, then every
-// interval -- and keeps NextAt in step with it. failed, when given, sees each
-// failed run's error (to log it) and says whether it is worth trying again
-// after retry rather than a whole interval. A run refused because one is
-// already going counts as a failure like any other.
-func (j *Job) Schedule(ctx context.Context, first, every, retry time.Duration, failed func(error) bool) {
-	if every <= 0 {
-		return
-	}
-	j.setNext(first)
-	schedule.Every(ctx, first, every, retry, func(ctx context.Context) error {
+// Schedule runs the job on plan's timetable (see schedule.Every) and keeps
+// NextAt in step with it. failed, when given, sees each failed run's error (to
+// log it) and says whether it is worth trying again after the plan's retry
+// rather than a whole interval. A run refused because one is already going
+// counts as a failure like any other.
+func (j *Job) Schedule(ctx context.Context, plan func() schedule.Plan, failed func(error) bool) {
+	schedule.Every(ctx, plan, j.replan, j.setNext, func(ctx context.Context) error {
 		err := j.Run(ctx)
-		if err != nil && ctx.Err() == nil && failed != nil && failed(err) && retry > 0 {
-			j.setNext(retry)
+		if err != nil && ctx.Err() == nil && failed != nil && failed(err) {
 			return err
 		}
-		j.setNext(every)
 		return nil
 	})
 }
 
-func (j *Job) setNext(after time.Duration) {
-	at := time.Now().Add(after)
+// Replan has the schedule read its plan again, after a setting changed.
+func (j *Job) Replan() {
+	select {
+	case j.replan <- struct{}{}:
+	default:
+	}
+}
+
+func (j *Job) setNext(at *time.Time) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	j.state.NextAt = &at
+	j.state.NextAt = at
 }
 
 func (j *Job) State() JobState {

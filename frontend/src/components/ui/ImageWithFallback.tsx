@@ -87,6 +87,8 @@ export function ImageWithFallback({
         alt={alt}
         width={width}
         height={height}
+        // The mirror may redirect a miss to vndb, which need not see the page.
+        referrerPolicy="no-referrer"
         loading="lazy"
         onLoad={() => setState('ready')}
         onError={() => setState('failed')}

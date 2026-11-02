@@ -4,35 +4,39 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kobayashi/neovndb/internal/config"
+	"github.com/kobayashi/neovndb/internal/settings"
 )
 
 // Images is the image mirror's admin surface: the crawl that fills the disk
-// ahead of readers, whose last report says how much of vndb is held.
+// ahead of readers, whose last report says how much of vndb is held, and the
+// settings behind it.
 type Images struct {
 	crawl *Job
-	cfg   *config.Config
+	live  *settings.Live[settings.Images]
 	base  context.Context
 }
 
-func NewImages(base context.Context, cfg *config.Config, crawl *Job) *Images {
-	return &Images{crawl: crawl, cfg: cfg, base: base}
+func NewImages(base context.Context, live *settings.Live[settings.Images], crawl *Job) *Images {
+	return &Images{crawl: crawl, live: live, base: base}
 }
 
 func (i *Images) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /admin/status", i.status)
 	mux.HandleFunc("POST /admin/crawl", i.startCrawl)
+	handleSettings(mux, i.live)
 	return mux
 }
 
 func (i *Images) status(w http.ResponseWriter, r *http.Request) {
+	s := i.live.Get()
 	send(w, http.StatusOK, map[string]any{
 		"crawl": i.crawl.State(),
+		"miss":  s.Miss,
 		"schedule": map[string]any{
-			"every":   i.cfg.ImageCrawlEvery.String(),
-			"per_run": i.cfg.ImageCrawlPerRun,
-			"delay":   i.cfg.ImageCrawlDelay.String(),
+			"every":   s.CrawlEvery,
+			"per_run": s.CrawlPerRun,
+			"delay":   s.CrawlDelay,
 		},
 	})
 }

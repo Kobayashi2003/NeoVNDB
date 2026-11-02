@@ -3,9 +3,12 @@ package schedule
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
+func fixed(p Plan) func() Plan { return func() Plan { return p } }
 
 // Lower bounds only, so a slow machine cannot fail it: the first run waits
 // first, and each later one waits every after the previous run ended.
@@ -15,7 +18,7 @@ func TestEvery(t *testing.T) {
 	defer cancel()
 	start := time.Now()
 	var at []time.Duration
-	Every(ctx, first, every, 0, func(context.Context) error {
+	Every(ctx, fixed(Plan{First: first, Every: every}), nil, nil, func(context.Context) error {
 		at = append(at, time.Since(start))
 		if len(at) == 3 {
 			cancel()
@@ -37,13 +40,12 @@ func TestEvery(t *testing.T) {
 
 // A failed run comes back after retry, well before the interval would.
 func TestEveryRetry(t *testing.T) {
-	const retry, every = 20 * time.Millisecond, time.Hour
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	runs := 0
 	done := make(chan struct{})
 	go func() {
-		Every(ctx, 0, every, retry, func(context.Context) error {
+		Every(ctx, fixed(Plan{Every: time.Hour, Retry: 20 * time.Millisecond}), nil, nil, func(context.Context) error {
 			if runs++; runs == 2 {
 				cancel()
 			}
@@ -58,10 +60,63 @@ func TestEveryRetry(t *testing.T) {
 	}
 }
 
-func TestEveryOff(t *testing.T) {
-	ran := false
-	Every(context.Background(), 0, 0, 0, func(context.Context) error { ran = true; return nil })
-	if ran {
-		t.Error("an interval of 0 should turn the job off")
+// Off waits rather than returning, says nothing is due, and runs once turned
+// on, after First.
+func TestEveryOffThenOn(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var every atomic.Int64
+	replan := make(chan struct{})
+	dues := make(chan *time.Time, 10)
+	ran := make(chan struct{})
+	go Every(ctx, func() Plan { return Plan{First: 10 * time.Millisecond, Every: time.Duration(every.Load())} },
+		replan, func(at *time.Time) { dues <- at }, func(context.Context) error {
+			close(ran)
+			cancel()
+			return nil
+		})
+
+	if at := <-dues; at != nil {
+		t.Fatalf("off, yet due at %v", at)
+	}
+	select {
+	case <-ran:
+		t.Fatal("ran while off")
+	case <-time.After(50 * time.Millisecond):
+	}
+	every.Store(int64(time.Hour))
+	replan <- struct{}{}
+	if at := <-dues; at == nil || time.Until(*at) > time.Second {
+		t.Fatalf("turned on, due at %v; want First from now", at)
+	}
+	select {
+	case <-ran:
+	case <-time.After(5 * time.Second):
+		t.Fatal("never ran once turned on")
+	}
+}
+
+// A shorter interval set after a run counts from that run, not from the
+// change.
+func TestEveryReplanShortens(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var every atomic.Int64
+	every.Store(int64(time.Hour))
+	replan := make(chan struct{})
+	runs := make(chan struct{}, 2)
+	go Every(ctx, func() Plan { return Plan{Every: time.Duration(every.Load())} },
+		replan, nil, func(context.Context) error {
+			runs <- struct{}{}
+			return nil
+		})
+
+	<-runs
+	every.Store(int64(20 * time.Millisecond))
+	replan <- struct{}{}
+	select {
+	case <-runs:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the shorter interval did not take effect")
 	}
 }

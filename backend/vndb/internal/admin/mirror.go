@@ -13,6 +13,7 @@ import (
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/dump"
+	"github.com/kobayashi/neovndb/internal/settings"
 )
 
 // transPage is how many tags or traits the translation table shows at once.
@@ -23,6 +24,7 @@ const transPage = 50
 type Mirror struct {
 	store  *db.Store
 	cfg    *config.Config
+	live   *settings.Live[settings.Serve]
 	log    *slog.Logger
 	update *Job
 	// What a run started from the page runs under: the process, not the
@@ -30,8 +32,8 @@ type Mirror struct {
 	base context.Context
 }
 
-func NewMirror(base context.Context, store *db.Store, cfg *config.Config, log *slog.Logger, update *Job) *Mirror {
-	return &Mirror{store: store, cfg: cfg, log: log, update: update, base: base}
+func NewMirror(base context.Context, store *db.Store, cfg *config.Config, live *settings.Live[settings.Serve], log *slog.Logger, update *Job) *Mirror {
+	return &Mirror{store: store, cfg: cfg, live: live, log: log, update: update, base: base}
 }
 
 func (m *Mirror) Routes() http.Handler {
@@ -42,6 +44,7 @@ func (m *Mirror) Routes() http.Handler {
 	mux.HandleFunc("GET /admin/trans", m.translatable)
 	mux.HandleFunc("PUT /admin/trans", m.translate)
 	mux.HandleFunc("GET /admin/trans/export", m.export)
+	handleSettings(mux, m.live)
 	return mux
 }
 
@@ -70,6 +73,7 @@ func (m *Mirror) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s := m.live.Get()
 	gens := make([]generation, 0, len(st.Generations))
 	for _, g := range st.Generations {
 		gens = append(gens, generation{Schema: g.Schema, Code: g.Code,
@@ -80,11 +84,11 @@ func (m *Mirror) status(w http.ResponseWriter, r *http.Request) {
 		"generations": gens,
 		"ddl_stale":   st.DDLStale,
 		"archives":    archives,
-		"dump_keep":   m.cfg.DumpKeep,
+		"dump_keep":   s.DumpKeep,
 		"update":      m.update.State(),
-		"schedule": map[string]string{
-			"every":       m.cfg.UpdateEvery.String(),
-			"retry_after": m.cfg.UpdateRetryAfter.String(),
+		"schedule": map[string]any{
+			"every":       s.UpdateEvery,
+			"retry_after": s.UpdateRetryAfter,
 		},
 		"translations": map[string]any{
 			"lang": m.store.TransLang(), "terms": counts.Terms, "passages": counts.Passages,

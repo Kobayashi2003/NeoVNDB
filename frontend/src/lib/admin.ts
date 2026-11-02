@@ -62,7 +62,33 @@ export interface CrawlReport {
 
 export interface ImageStatus {
   crawl: Job<CrawlReport>;
+  miss: ImageSettings['miss'];
   schedule: { every: string; per_run: number; delay: string };
+}
+
+/** What a service lets an administrator change while it runs; durations are
+ *  Go's ("1h0m0s"). */
+export interface ServeSettings {
+  update_every: string;
+  update_retry_after: string;
+  dump_keep: number;
+  /** A fraction: 0.02 refuses a table that lost 2%. */
+  guard_max_loss: number;
+}
+
+export interface ImageSettings {
+  miss: 'redirect' | 'fetch';
+  crawl_every: string;
+  crawl_per_run: number;
+  crawl_delay: string;
+}
+
+/** A service's settings: those in force, .env's, and which differ (those
+ *  the service keeps in its settings file). */
+export interface Settings<T> {
+  values: T;
+  env: T;
+  changed: (keyof T & string)[];
 }
 
 export interface Backups {
@@ -128,8 +154,15 @@ export const translate = (
 /** Downloaded by the browser, not fetched: it is a file to keep. */
 export const EXPORT_URL = '/vndbserve/admin/trans/export';
 
+export const serveSettings = () => mirror<Settings<ServeSettings>>('GET', '/admin/settings');
+export const changeServeSettings = (change: Partial<ServeSettings>) =>
+  mirror<Settings<ServeSettings>>('PATCH', '/admin/settings', change);
+
 export const imageStatus = () => images<ImageStatus>('GET', '/admin/status');
 export const startCrawl = () => images<Job<CrawlReport>>('POST', '/admin/crawl');
+export const imageSettings = () => images<Settings<ImageSettings>>('GET', '/admin/settings');
+export const changeImageSettings = (change: Partial<ImageSettings>) =>
+  images<Settings<ImageSettings>>('PATCH', '/admin/settings', change);
 
 export const backups = () => users<Backups>('GET', '/admin/backups');
 export const backUp = () => users<Backups>('POST', '/admin/backups');

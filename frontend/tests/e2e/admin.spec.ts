@@ -11,6 +11,37 @@ test("the services' admin routes are closed to anyone not signed in", async ({ r
   expect((await request.post('/vndbserve/admin/update')).status()).toBe(401);
 });
 
+test('an administrator changes a setting while the service runs, then puts .env back', async ({
+  page,
+  admin,
+}) => {
+  // Against the running site this would change the real service's settings.
+  test.skip(!process.env.E2E_DEPLOYED, 'changes settings; only on the deployment check');
+  void admin;
+  await page.goto('/admin');
+
+  const kept = page.getByLabel('Archives kept');
+  await expect(kept).toHaveValue('2');
+  await kept.fill('3');
+  const saved = page.waitForResponse(r => r.url().endsWith('/vndbserve/admin/settings'));
+  await page.getByRole('button', { name: 'Save' }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(page.getByText('Set here; .env says 2.')).toBeVisible();
+  // The Update card reads the service again and shows the new count.
+  await expect(page.getByText('the newest 3 are kept after each update')).toBeVisible();
+
+  await page.getByRole('button', { name: "Use .env's" }).click();
+  await expect(kept).toHaveValue('2');
+  await expect(page.getByText('Set here; .env says 2.')).toBeHidden();
+
+  // A value the service refuses comes back as its reason, and nothing changes.
+  const refused = await page.request.patch('/vndbserve/admin/settings', {
+    data: { update_every: '5s' },
+  });
+  expect(refused.status()).toBe(400);
+  expect((await refused.json()).error).toContain('update_every');
+});
+
 test('a reader who is not an administrator is turned away', async ({ page, user }) => {
   await page.goto('/admin');
   await expect(page.getByRole('heading', { name: 'Administrators only' })).toBeVisible();
@@ -30,8 +61,14 @@ test('an administrator sees the mirror, the accounts and the translations on one
 
   // Mirror: the live generation and every scheduled job's card.
   await expect(page.getByRole('cell', { name: 'vndb', exact: true })).toBeVisible();
-  for (const card of ['Update', 'Images', 'User database backups']) {
-    await expect(page.getByRole('heading', { name: card })).toBeVisible();
+  for (const card of [
+    'Update',
+    'Images',
+    'User database backups',
+    'Update settings',
+    'Image settings',
+  ]) {
+    await expect(page.getByRole('heading', { name: card, exact: true })).toBeVisible();
   }
 
   // The groups are listed in a row that jumps to each.

@@ -1,14 +1,19 @@
 /** The services' state and the scheduled work behind them, with a button for
- *  each piece of that work. The admin page's first group. */
+ *  each piece of that work and the settings it runs on. The admin page's first
+ *  group. */
 'use client';
 
 import { useEffect, useState } from 'react';
 import {
   backUp,
   backups as readBackups,
+  changeImageSettings,
+  changeServeSettings,
+  imageSettings,
   imageStatus,
   mirrorStatus,
   rollback,
+  serveSettings,
   startCrawl,
   startUpdate,
   type Backups,
@@ -18,9 +23,13 @@ import {
 import { errorText } from '@/lib/user';
 import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
+import { IMAGE_FIELDS, SERVE_FIELDS, SettingsCard, SettingsWaiting } from './Settings';
 
 /** While something runs the page follows it; otherwise it reads once. */
 const FOLLOW_MS = 2000;
+
+/** A schedule's interval of 0 turns it off. */
+const off = (every: string) => span(every) === '0s';
 
 /** One service's answer, or why there is none. */
 type Read<T> = { value: T | null; error: string | null };
@@ -50,6 +59,8 @@ export function MirrorWaiting() {
       <Card title="User database backups">
         <PlaceholderLines lines={3} />
       </Card>
+      <SettingsWaiting title="Update settings" />
+      <SettingsWaiting title="Image settings" />
     </div>
   );
 }
@@ -199,7 +210,9 @@ export function Mirror() {
                 extra={[
                   [
                     'Schedule',
-                    `every ${span(m.schedule.every)}; after a failed download, ${span(m.schedule.retry_after)}`,
+                    off(m.schedule.every)
+                      ? 'off'
+                      : `every ${span(m.schedule.every)}; after a failed download, ${span(m.schedule.retry_after)}`,
                   ],
                   ['Serving', live ? live.code : <span className="text-red-400">nothing</span>],
                 ]}
@@ -255,7 +268,15 @@ export function Mirror() {
                   ],
                   [
                     'Schedule',
-                    `every ${span(images.value.schedule.every)}, ${images.value.schedule.per_run || 'all'} per run, ${span(images.value.schedule.delay)} apart`,
+                    off(images.value.schedule.every)
+                      ? 'off'
+                      : `every ${span(images.value.schedule.every)}, ${images.value.schedule.per_run || 'all'} per run, ${span(images.value.schedule.delay)} apart`,
+                  ],
+                  [
+                    'Not on disk',
+                    images.value.miss === 'redirect'
+                      ? 'the reader is sent to vndb; fetched behind them'
+                      : 'fetched while the reader waits',
                   ],
                 ]}
               />
@@ -299,6 +320,21 @@ export function Mirror() {
             </>
           )}
         </Card>
+
+        <SettingsCard
+          title="Update settings"
+          fields={SERVE_FIELDS}
+          read={serveSettings}
+          change={changeServeSettings}
+          onSaved={refresh}
+        />
+        <SettingsCard
+          title="Image settings"
+          fields={IMAGE_FIELDS}
+          read={imageSettings}
+          change={changeImageSettings}
+          onSaved={refresh}
+        />
       </div>
     </div>
   );

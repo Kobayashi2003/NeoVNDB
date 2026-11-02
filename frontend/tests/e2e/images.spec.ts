@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 // Every mirrored image a page loads, with its status. Images below the fold
 // load lazily, so the page is scrolled to the end first.
+// A 302 is an image not on disk yet, sent to vndb (NEOVNDB_IMAGE_MISS).
+const served = (status: number) => status === 200 || status === 302;
 async function images(page: Page, path: string) {
   const seen: { kind: string; status: number }[] = [];
   page.on('response', res => {
@@ -29,7 +31,7 @@ test("list covers are vndb's thumbnails where it made them", async ({ page }) =>
   // Popular covers are recent and wide, so vndb made a cv.t for them.
   expect(seen.filter(i => i.kind === 'cv.t').length).toBeGreaterThan(0);
   expect(seen.every(i => i.kind === 'cv' || i.kind === 'cv.t')).toBe(true);
-  expect(seen.filter(i => i.status !== 200)).toEqual([]);
+  expect(seen.filter(i => !served(i.status))).toEqual([]);
 });
 
 test('screenshots show st thumbnails and characters their originals', async ({ page }) => {
@@ -41,13 +43,17 @@ test('screenshots show st thumbnails and characters their originals', async ({ p
   expect(kinds.has('st')).toBe(true);
   expect(kinds.has('ch')).toBe(true);
   expect(kinds.has('sf')).toBe(false); // full screenshots only in the viewer
-  expect(seen.filter(i => i.status !== 200)).toEqual([]);
+  expect(seen.filter(i => !served(i.status))).toEqual([]);
 });
 
 test("a narrow cover's missing thumbnail is answered with the original", async ({ request }) => {
-  // cv/39/10039 is 256px wide; vndb never made its cv.t.
-  const thumb = await request.get('/imgserve/img/cv.t/39/10039.jpg');
+  // cv/39/10039 is 256px wide; vndb never made its cv.t. Redirecting, the
+  // first ask is sent to vndb, and only once the fetch behind it has met the
+  // 404 does the mirror answer it itself.
+  const thumb = '/imgserve/img/cv.t/39/10039.jpg';
+  await expect
+    .poll(async () => (await request.get(thumb, { maxRedirects: 0 })).status(), { timeout: 15_000 })
+    .toBe(200);
   const original = await request.get('/imgserve/img/cv/39/10039.jpg');
-  expect(thumb.status()).toBe(200);
-  expect(Buffer.compare(await thumb.body(), await original.body())).toBe(0);
+  expect(Buffer.compare(await (await request.get(thumb)).body(), await original.body())).toBe(0);
 });

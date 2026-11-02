@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { isAbsolute, join, resolve } from 'node:path';
 
-/** NeoVNDB's slot (project/README.md) is 17030-17039; the tests take the top of it. */
+/** NeoVNDB's slot (project/PORTS.md) is 17030-17039; the tests take the top of it. */
 export const USERS_PORT = 17035;
 export const DEPLOYED = { edge: 17036, api: 17037, web: 17038 };
 export const STATE = join(tmpdir(), 'neovndb-e2e.json');
@@ -162,9 +162,11 @@ export default async function setup() {
   start(build(vndb, './cmd/neovndb', 'neovndb'), ['serve'], vndb, {
     ...ceilings,
     NEOVNDB_PORT: String(DEPLOYED.api),
-    // A second process must never import or crawl alongside the real one.
+    // A second process must never import or crawl alongside the real one, and
+    // the real one's admin settings would override these.
     NEOVNDB_UPDATE_EVERY: '0',
     NEOVNDB_IMAGE_CRAWL_EVERY: '0',
+    NEOVNDB_SETTINGS_DIR: mkdtempSync(join(tmpdir(), 'neovndb-e2e-settings-')),
   });
 
   // A production build, served the way a deployment serves it.

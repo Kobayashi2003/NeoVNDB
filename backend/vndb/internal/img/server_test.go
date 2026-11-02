@@ -150,6 +150,82 @@ func TestUpstreamFetchesAreBounded(t *testing.T) {
 	}
 }
 
+// eventually polls until ok or fails after a few seconds.
+func eventually(t *testing.T, what string, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !ok() {
+		if time.Now().After(deadline) {
+			t.Fatal(what)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// Redirecting, a miss sends the reader to vndb uncached and fetches the image
+// behind them; once stored it is served from here.
+func TestMissRedirectsAndFetchesBehind(t *testing.T) {
+	srv, up := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("cover"))
+	}))
+	srv.SetRedirect(true)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv.Behind(ctx)
+
+	ask := func() *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv/12/79412.jpg", nil))
+		return rec
+	}
+	rec := ask()
+	if rec.Code != http.StatusFound || rec.Header().Get("Location") != up.URL+"/cv/12/79412.jpg" {
+		t.Fatalf("got %d to %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-store" {
+		t.Errorf("redirect cached as %q", cc)
+	}
+	eventually(t, "never fetched behind the redirect", func() bool {
+		_, err := srv.mirror.Read(Ref{"cv", 79412})
+		return err == nil
+	})
+	if rec := ask(); rec.Code != http.StatusOK || rec.Body.String() != "cover" {
+		t.Errorf("once stored: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+// An image vndb no longer serves is not redirected to again: a thumbnail vndb
+// never made falls back to its original, as when fetching.
+func TestMissRedirectStopsForWhatVndbLacks(t *testing.T) {
+	srv, _ := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/cv/39/10039.jpg" {
+			_, _ = w.Write([]byte("the small original"))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	srv.SetRedirect(true)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv.Behind(ctx)
+
+	thumb := Ref{"cv.t", 10039}
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv.t/39/10039.jpg", nil))
+	if rec.Code != http.StatusFound {
+		t.Fatalf("first ask: %d, want a redirect", rec.Code)
+	}
+	eventually(t, "the 404 behind the redirect was not remembered", func() bool {
+		_, gone := srv.gone.Load(thumb)
+		return gone
+	})
+	rec = httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv.t/39/10039.jpg", nil))
+	if rec.Code != http.StatusOK || rec.Body.String() != "the small original" {
+		t.Errorf("second ask: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
 // A cover no wider than a thumbnail has no cv.t upstream; asking for one gets
 // the original, which is already that small.
 func TestMissingThumbnailServesTheOriginal(t *testing.T) {

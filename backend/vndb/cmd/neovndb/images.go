@@ -7,12 +7,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/img"
 	"github.com/kobayashi/neovndb/internal/listen"
+	"github.com/kobayashi/neovndb/internal/schedule"
+	"github.com/kobayashi/neovndb/internal/settings"
 )
 
 // runImages serves the image mirror. Serving opens no database: an image
@@ -35,22 +38,40 @@ func runImages(ctx context.Context, args []string) error {
 		cfg.Host, cfg.ImagePort = splitAddr(*addr, cfg.Host, cfg.ImagePort)
 	}
 
+	live, err := settings.OpenImages(cfg)
+	if err != nil {
+		return err
+	}
+	cfg = live.Get().Apply(cfg)
+
 	log := newLog()
-	log.Info("mirroring images", "store", cfg.ImageDir)
+	log.Info("mirroring images", "store", cfg.ImageDir, "miss", cfg.ImageMiss)
 
 	mirror := img.NewServer(cfg, log)
+	go mirror.Behind(ctx)
 	crawler := mirror.Crawler(cfg.ImageCrawlPerRun, cfg.ImageCrawlDelay)
-	// The schedule and the admin page's button share one job.
+	// The schedule and the admin page's button share one job. Each run takes
+	// the settings in force when it starts.
 	crawl := admin.NewJob(func(ctx context.Context, _ io.Writer) (any, error) {
+		s := live.Get()
+		crawler.PerRun, crawler.Delay = s.CrawlPerRun, time.Duration(s.CrawlDelay)
 		return crawlOnce(ctx, cfg, crawler, log)
 	})
+	// Read again rather than taken from the change: two changes close together
+	// may tell their watchers out of order, and the last to run must win.
+	live.Watch(func(settings.Images) {
+		mirror.SetRedirect(live.Get().Miss == "redirect")
+		crawl.Replan()
+	})
 	// crawlOnce logs its own failures; the next run comes on the interval.
-	go crawl.Schedule(ctx, cfg.ImageCrawlFirstAfter, cfg.ImageCrawlEvery, 0, nil)
+	go crawl.Schedule(ctx, func() schedule.Plan {
+		return schedule.Plan{First: cfg.ImageCrawlFirstAfter, Every: time.Duration(live.Get().CrawlEvery)}
+	}, nil)
 
 	routes := http.NewServeMux()
 	routes.Handle("/", mirror.Routes())
 	// Only the edge's administrator check lets anyone reach this.
-	routes.Handle("/admin/", admin.NewImages(ctx, cfg, crawl).Routes())
+	routes.Handle("/admin/", admin.NewImages(ctx, live, crawl).Routes())
 
 	return listen.Serve(ctx, &http.Server{
 		Addr:              cfg.ImageAddr(),
@@ -91,6 +112,11 @@ func runCrawl(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	live, err := settings.OpenImages(cfg)
+	if err != nil {
+		return err
+	}
+	cfg = live.Get().Apply(cfg)
 	limit := fs.Int("limit", cfg.ImageCrawlPerRun, "images to fetch; 0 for all")
 	if err := fs.Parse(args); err != nil {
 		return err

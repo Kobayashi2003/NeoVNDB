@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 import { Accounts } from '@/components/admin/Accounts';
-import type { Account } from '@/lib/admin';
+import { SERVE_FIELDS, SettingsCard } from '@/components/admin/Settings';
+import type { Account, ServeSettings } from '@/lib/admin';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -30,7 +31,14 @@ describe('AdminPanel', () => {
       'Translations',
     ]);
     // The cards and the table heads need no data, so they are there already.
-    for (const card of ['Generations', 'Update', 'Images', 'User database backups']) {
+    for (const card of [
+      'Generations',
+      'Update',
+      'Images',
+      'User database backups',
+      'Update settings',
+      'Image settings',
+    ]) {
       expect(screen.getByRole('heading', { level: 3, name: card })).toBeInTheDocument();
     }
     expect(screen.getByRole('columnheader', { name: 'Signed in' })).toBeInTheDocument();
@@ -42,6 +50,79 @@ describe('AdminPanel', () => {
     ]);
     // The services' admin routes would refuse most readers: not asked yet.
     expect(paths(fetch).every(p => !p.includes('/admin'))).toBe(true);
+  });
+});
+
+describe('SettingsCard', () => {
+  const env: ServeSettings = {
+    update_every: '24h0m0s',
+    update_retry_after: '1h0m0s',
+    dump_keep: 2,
+    guard_max_loss: 0.02,
+  };
+  const answer = (values: ServeSettings, changed: (keyof ServeSettings)[]) =>
+    Promise.resolve({ values, env, changed });
+
+  it('saves only what was edited, as the service takes it', async () => {
+    const change = vi.fn((patch: Partial<ServeSettings>) =>
+      answer({ ...env, ...patch }, Object.keys(patch) as (keyof ServeSettings)[]),
+    );
+    const onSaved = vi.fn();
+    render(
+      <SettingsCard
+        title="Update settings"
+        fields={SERVE_FIELDS}
+        read={() => answer(env, [])}
+        change={change}
+        onSaved={onSaved}
+      />,
+    );
+
+    // Go's durations as a person types them.
+    expect(await screen.findByLabelText('Check for a new dump every')).toHaveValue('24h');
+    expect(screen.getByLabelText('Largest table shrink allowed (%)')).toHaveValue('2');
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Largest table shrink allowed (%)'), {
+      target: { value: '5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(change).toHaveBeenCalledWith({ guard_max_loss: 0.05 });
+    expect(screen.getByText(/Set here; \.env says 2\./)).toBeInTheDocument();
+  });
+
+  it("puts .env's value back with one button", async () => {
+    const change = vi.fn(() => answer(env, []));
+    render(
+      <SettingsCard
+        title="Update settings"
+        fields={SERVE_FIELDS}
+        read={() => answer({ ...env, dump_keep: 5 }, ['dump_keep'])}
+        change={change}
+        onSaved={() => {}}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: "Use .env's" }));
+    await waitFor(() => expect(change).toHaveBeenCalledWith({ dump_keep: 2 }));
+    expect(await screen.findByLabelText('Archives kept')).toHaveValue('2');
+  });
+
+  it('refuses a count that is not a number before asking', async () => {
+    const change = vi.fn();
+    render(
+      <SettingsCard
+        title="Update settings"
+        fields={SERVE_FIELDS}
+        read={() => answer(env, [])}
+        change={change}
+        onSaved={() => {}}
+      />,
+    );
+    fireEvent.change(await screen.findByLabelText('Archives kept'), { target: { value: 'two' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Archives kept: not a number.');
+    expect(change).not.toHaveBeenCalled();
   });
 });
 

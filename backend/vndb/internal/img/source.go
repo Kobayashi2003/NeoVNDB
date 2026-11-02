@@ -30,6 +30,11 @@ func NewSource(timeout time.Duration, maxBytes int64, parallel int) *Source {
 	}
 }
 
+// URL is where vndb serves the image.
+func (s *Source) URL(ref Ref) string {
+	return s.base + vndb.ImagePath(ref.Kind, ref.Num)
+}
+
 // Fetch stores the bytes vndb served, unaltered, so the mirror can be
 // compared with upstream. Its context is not the caller's: one fetch answers
 // every waiter, so one reader leaving must not cancel it. The client timeout
@@ -38,7 +43,7 @@ func (s *Source) Fetch(store *Store, ref Ref) ([]byte, error) {
 	s.slots <- struct{}{}
 	defer func() { <-s.slots }()
 
-	url := s.base + vndb.ImagePath(ref.Kind, ref.Num)
+	url := s.URL(ref)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if err != nil {

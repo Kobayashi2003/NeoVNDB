@@ -8,11 +8,14 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/kobayashi/neovndb/internal/admin"
 	"github.com/kobayashi/neovndb/internal/api"
 	"github.com/kobayashi/neovndb/internal/db"
 	"github.com/kobayashi/neovndb/internal/listen"
+	"github.com/kobayashi/neovndb/internal/schedule"
+	"github.com/kobayashi/neovndb/internal/settings"
 )
 
 func runServe(ctx context.Context, args []string) error {
@@ -22,7 +25,7 @@ func runServe(ctx context.Context, args []string) error {
 		return err
 	}
 
-	cfg, store, err := open(ctx)
+	cfg, live, store, err := openLive(ctx)
 	if err != nil {
 		return err
 	}
@@ -39,18 +42,24 @@ func runServe(ctx context.Context, args []string) error {
 		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)
 	}
 	// One job for the schedule and the admin page's button, so the two never
-	// run at once and the page shows either.
+	// run at once and the page shows either. Each run takes the settings in
+	// force when it starts.
 	update := admin.NewJob(func(ctx context.Context, out io.Writer) (any, error) {
-		return nil, updateOnce(ctx, out, cfg, store, false)
+		return nil, updateOnce(ctx, out, live.Get().Apply(cfg), store, false)
 	})
-	go update.Schedule(ctx, cfg.UpdateFirstAfter, cfg.UpdateEvery, cfg.UpdateRetryAfter, func(err error) bool {
+	live.Watch(func(settings.Serve) { update.Replan() })
+	plan := func() schedule.Plan {
+		s := live.Get()
+		return schedule.Plan{First: cfg.UpdateFirstAfter, Every: time.Duration(s.UpdateEvery), Retry: time.Duration(s.UpdateRetryAfter)}
+	}
+	go update.Schedule(ctx, plan, func(err error) bool {
 		switch {
 		case errors.Is(err, admin.ErrRunning), errors.Is(err, db.ErrBusy):
 			log.Info("scheduled update skipped: an import is already running")
 		case errors.Is(err, errUpstream):
 			// Only this is worth retrying soon: a refused or failed import
 			// would fail the same way again an hour later.
-			log.Warn("scheduled update: upstream unreachable", "retry after", cfg.UpdateRetryAfter, "err", err)
+			log.Warn("scheduled update: upstream unreachable", "retry after", plan().Retry, "err", err)
 			return true
 		default:
 			log.Error("scheduled update", "err", err)
@@ -66,7 +75,7 @@ func runServe(ctx context.Context, args []string) error {
 
 	return listen.Serve(ctx, &http.Server{
 		Addr:              cfg.Addr(),
-		Handler:           srv.Routes(admin.NewMirror(ctx, store, cfg, log, update).Routes()),
+		Handler:           srv.Routes(admin.NewMirror(ctx, store, cfg, live, log, update).Routes()),
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 	}, cfg.ShutdownTimeout, log)
 }
