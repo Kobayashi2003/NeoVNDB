@@ -29,6 +29,12 @@ suggestive or explicit are blurred until a reader chooses otherwise.
   sorting, search and paging. Also the relation graph, facet counts,
   similar titles, recommendations and whole-database statistics. It
   describes itself as OpenAPI 3.1 (`/vndbserve/meta/openapi`, rendered at `/api`).
+- **All ages.** A reader not signed in only ever sees what is for all ages:
+  no 18+ release, no work that has nothing else, no tag or trait about sex,
+  no image voted suggestive or violent. Counts, search and statistics count
+  only that. An administrator can set it for everyone. What is held back is
+  decided at import (the `withheld` table), so a generation imported before
+  this existed needs one more import for it to apply.
 - **Image mirror.** Keeps vndb's images byte for byte, crawled ahead of
   readers; stored ones are served straight off disk. One not stored yet sends
   the reader to vndb and is fetched behind them, or, set to `fetch`, is
@@ -39,8 +45,8 @@ suggestive or explicit are blurred until a reader chooses otherwise.
   trait names have a translation, with the original one switch away.
 - **Admin page.** Generations, updates, rollback, the image crawl, user
   backups, translations and accounts, for administrators only. The schedules,
-  the import guard and how images are served can be changed there while the
-  services run.
+  the import guard, how images are served and all-ages mode can be changed
+  there while the services run.
 
 ## How it fits together
 
@@ -121,7 +127,8 @@ start`); otherwise the dev server runs, which reads the source directly and
 picks up a change without a build. The script reads
 the services' ports and image directory from their `.env` files and hands them
 to the edge, waits until each service answers, and logs each to
-`<name>.out.log` / `<name>.err.log` in its own directory. Nothing starts
+`<name>.out.log` / `<name>.err.log` in its own directory, or all in
+`NEOVNDB_LOG_DIR` when set (relative to this folder). Nothing starts
 PostgreSQL.
 
 Without the launcher, start each part in its own window:
@@ -230,7 +237,10 @@ cd frontend      && pnpm test:e2e    # end to end, against the running site
 
 The user service's storage tests, and the end-to-end tests that sign in, need
 `NEOVNDB_USERS_TEST_DB_URL` pointing at a database whose name ends in `_test`;
-each run empties it. Without it they skip. `layout.spec.ts` checks every main
+each run empties it. Without it they skip. The all-ages rules' test in
+`backend/vndb` needs `NEOVNDB_TEST_DB_URL`, likewise a `_test` database (the
+user service's will do): it works in a schema of its own and rolls it back.
+`layout.spec.ts` checks every main
 page at five widths for sideways overflow and measures layout shift on a
 throttled line.
 
