@@ -33,6 +33,8 @@ const usage = `neovndb
   db rollback            swap vndb_prev back
   db drop <schema>       drop one generation schema
   db verify              round-trip the generated query layer, then roll back
+  db withheld            build the live generation's all-ages list from what it
+                         holds (one imported before all-ages mode has none)
 
   trans status           what the translation corpus holds
   trans seed [file]      load a corpus (default internal/trans/init.json);
@@ -114,7 +116,7 @@ func newLog() *slog.Logger {
 
 func runDB(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("db: expected status, init, check, promote, rollback, drop or verify")
+		return fmt.Errorf("db: expected status, init, check, promote, rollback, drop, verify or withheld")
 	}
 
 	cfg, store, err := open(ctx)
@@ -144,6 +146,8 @@ func runDB(ctx context.Context, args []string) error {
 		return drop(ctx, store, args[1])
 	case "verify":
 		return verify(ctx, store)
+	case "withheld":
+		return buildWithheld(ctx, store)
 	default:
 		return fmt.Errorf("db: unknown subcommand %q", args[0])
 	}
@@ -235,6 +239,22 @@ func drop(ctx context.Context, store *db.Store, schema string) error {
 		return err
 	}
 	fmt.Println("dropped", schema)
+	return nil
+}
+
+func buildWithheld(ctx context.Context, store *db.Store) error {
+	var counts map[string]int64
+	err := store.Exclusive(ctx, db.ImportLock, func() error {
+		var err error
+		counts, err = store.BuildWithheld(ctx)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	for _, kind := range []string{"v", "r", "c", "g", "i"} {
+		fmt.Printf("%s  %d withheld\n", kind, counts[kind])
+	}
 	return nil
 }
 

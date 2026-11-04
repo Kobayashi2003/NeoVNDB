@@ -33,8 +33,8 @@ suggestive or explicit are blurred until a reader chooses otherwise.
   no 18+ release, no work that has nothing else, no tag or trait about sex,
   no image voted suggestive or violent. Counts, search and statistics count
   only that. An administrator can set it for everyone. What is held back is
-  decided at import (the `withheld` table), so a generation imported before
-  this existed needs one more import for it to apply.
+  decided at import (the `withheld` table); a generation imported before this
+  existed gets its table from the admin page's All ages card, in seconds.
 - **Image mirror.** Keeps vndb's images byte for byte, crawled ahead of
   readers; stored ones are served straight off disk. One not stored yet sends
   the reader to vndb and is fetched behind them, or, set to `fetch`, is
@@ -193,6 +193,7 @@ Caddy has no `.env`; `start.ps1` sets its environment.
 | `update [--force]` | Import and go live if upstream is newer |
 | `import [--file p] [--promote] [--force]` | Load an archive into `vndb_next` |
 | `db status \| init <code> \| check \| promote \| rollback \| drop <schema> \| verify` | Inspect and manage generations |
+| `db withheld` | Build the live generation's all-ages list from what it holds (the admin page's Build the list) |
 | `trans status \| seed [file] \| export [file]` | The translation corpus, kept in `internal/trans/init.json` |
 
 `backend/users` (`go run ./cmd/users`): no argument runs the service;

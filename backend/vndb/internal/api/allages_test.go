@@ -115,6 +115,10 @@ func TestAllAges(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// As the live generation was when all-ages mode came in (see below);
+	// before the server starts, which looks at once.
+	exec(`DROP TABLE vndb.withheld`)
+
 	var allAges atomic.Bool
 	srv, err := NewServer(ctx, store, slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError})), cfg, allAges.Load)
 	if err != nil {
@@ -153,6 +157,28 @@ func TestAllAges(t *testing.T) {
 			out = append(out, r.ID)
 		}
 		return out
+	}
+
+	// A generation from before all-ages mode, as the live one was when it
+	// came in: nothing to mask with, so nobody is masked, and the server says
+	// so. Building the list into it from the admin page masks guests at once,
+	// without a restart.
+	var before page
+	ask("", "/vn?fields=id", &before)
+	var unready struct {
+		Masked bool `json:"masked"`
+		Ready  bool `json:"ready"`
+	}
+	ask("", "/meta/viewer", &unready)
+	if len(before.Results) != 3 || unready.Masked || unready.Ready {
+		t.Errorf("before the list: %v, viewer %+v", ids(before), unready)
+	}
+	built, err := store.BuildWithheld(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if built["v"] != 1 || built["r"] != 2 || built["c"] != 1 {
+		t.Errorf("built %v, want v 1, r 2, c 1", built)
 	}
 
 	// A member sees everything.

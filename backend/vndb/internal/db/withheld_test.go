@@ -57,6 +57,7 @@ func TestWithheld(t *testing.T) {
 	     SET LOCAL check_function_bodies = off`)
 	run(file("ddl/01_mirror.sql"))
 	run(file("ddl/02_derived.sql"))
+	run(file("ddl/02_withheld.sql"))
 	// The rules read a handful of columns; the fixtures set only those.
 	run(`DO $$ DECLARE c record; BEGIN
 	       FOR c IN SELECT table_name, column_name FROM information_schema.columns

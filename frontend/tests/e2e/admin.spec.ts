@@ -65,11 +65,16 @@ test('an administrator sees the mirror, the accounts and the translations on one
     'Update',
     'Images',
     'User database backups',
+    'All ages',
     'Update settings',
     'Image settings',
   ]) {
     await expect(page.getByRole('heading', { name: card, exact: true })).toBeVisible();
   }
+  // The all-ages switch, as two choices in sight.
+  await expect(
+    page.getByRole('radiogroup', { name: 'Who sees only what is for all ages' }),
+  ).toBeVisible();
 
   // The groups are listed in a row that jumps to each.
   const nav = page.getByRole('navigation', { name: 'Sections' });

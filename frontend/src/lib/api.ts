@@ -45,11 +45,12 @@ const SESSION_COOKIES = ['__Host-neovndb_session', 'neovndb_session'];
 async function get<T>(path: string, params: Record<string, string>): Promise<T> {
   const url = `${BASE}${path}?${new URLSearchParams(params)}`;
   const cookie = await session();
-  // Answers to a reader are theirs: kept out of the cache every guest shares.
-  const res = await fetch(
-    url,
-    cookie ? { headers: { cookie }, cache: 'no-store' } : { next: { revalidate: 60 } },
-  );
+  // Not Next's data cache: it keeps answers on disk across restarts and
+  // hands back a stale one before refreshing it, so a page went on showing
+  // what all-ages mode had since held back, and earlier, data in a shape the
+  // API no longer had. The read API caches by generation and by mask itself;
+  // within one render a request is still sent once.
+  const res = await fetch(url, { cache: 'no-store', headers: cookie ? { cookie } : undefined });
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {

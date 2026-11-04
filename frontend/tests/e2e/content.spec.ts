@@ -21,7 +21,9 @@ test('a visual novel lists works alike in their tags, its own relations left out
   await page.goto('/v17');
   const section = page.locator('section', { has: page.getByRole('heading', { name: /Similar/ }) });
   const cards = section.locator("a[href^='/v']");
-  await expect(cards).toHaveCount(20);
+  // Twenty at most; a guest sees fewer where all-ages mode holds some back.
+  await expect(cards.first()).toBeVisible();
+  expect(await cards.count()).toBeLessThanOrEqual(20);
   // Never7 is related to Ever17, so it belongs to the sidebar, not here.
   await expect(section.locator("a[href='/v248']")).toHaveCount(0);
   await expect(section.locator("a[href='/v17']")).toHaveCount(0);
@@ -43,8 +45,7 @@ test('original mode reaches voice actors and the works a page links to', async (
   await page.goto('/c521');
   // Credited once per work she voices the character in.
   await expect(page.getByText('前田 このみ').first()).toBeVisible();
-  await page.goto('/r1');
-  await expect(
-    page.locator('main').getByText('みんなでニャンニャン', { exact: true }).first(),
-  ).toBeVisible();
+  // A release for all ages, which a guest is shown (all-ages mode).
+  await page.goto('/r11');
+  await expect(page.locator('main').getByText('マブラヴ', { exact: true }).first()).toBeVisible();
 });

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { ImageSettings, ServeSettings, Settings } from '@/lib/admin';
 import { errorText } from '@/lib/user';
-import { ChoiceMenu } from '@/components/ui/ChoiceMenu';
+import { Segmented } from '@/components/ui/Segmented';
 import { PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, FIELD, Trouble } from './parts';
 
@@ -26,19 +26,23 @@ export interface Field<T> {
   kind: Kind;
 }
 
-export const SERVE_FIELDS: Field<ServeSettings>[] = [
+/** The read API's switch, on a card of its own beside what it needs. */
+export const ALL_AGES_FIELDS: Field<ServeSettings>[] = [
   {
     key: 'all_ages',
-    label: 'All ages',
-    hint: 'What is for adults (18+ releases, sexual tags and traits, suggestive or violent images) is never shown to anyone not signed in. This decides whether it is hidden from everyone.',
+    label: 'Who sees only what is for all ages',
+    hint: 'Readers not signed in always do. Everyone also takes in those signed in.',
     kind: {
       flag: true,
       choices: [
-        ['false', 'Only for guests'],
-        ['true', 'For everyone'],
+        ['false', 'Guests'],
+        ['true', 'Everyone'],
       ],
     },
   },
+];
+
+export const SERVE_FIELDS: Field<ServeSettings>[] = [
   {
     key: 'update_every',
     label: 'Check for a new dump every',
@@ -69,11 +73,11 @@ export const IMAGE_FIELDS: Field<ImageSettings>[] = [
   {
     key: 'miss',
     label: 'An image not on disk yet',
-    hint: 'Sending the reader to vndb is quicker where vndb is close to them, and shows vndb who they are.',
+    hint: 'Sent to vndb, the reader gets it sooner where vndb is close to them, and vndb sees who they are; it is fetched here meanwhile. Otherwise they wait while it is fetched.',
     kind: {
       choices: [
-        ['redirect', 'Send to vndb, fetch behind'],
-        ['fetch', 'Fetch while the reader waits'],
+        ['redirect', 'Send to vndb'],
+        ['fetch', 'Fetch, then show'],
       ],
     },
   },
@@ -126,9 +130,9 @@ function draftOf<T>(fields: Field<T>[], s: Settings<T>): Record<string, string> 
   return Object.fromEntries(fields.map(f => [f.key, shown(f.kind, values[f.key])]));
 }
 
-export function SettingsWaiting({ title }: { title: string }) {
+export function SettingsWaiting({ title, className }: { title: string; className?: string }) {
   return (
-    <Card title={title}>
+    <Card title={title} className={className}>
       <PlaceholderLines lines={4} />
     </Card>
   );
@@ -140,13 +144,18 @@ export function SettingsCard<T extends object>({
   read,
   change,
   onSaved,
+  intro,
+  className,
 }: {
   title: string;
+  className?: string;
   fields: Field<T>[];
   read: () => Promise<Settings<T>>;
   change: (patch: Partial<T>) => Promise<Settings<T>>;
   /** After a change, for whatever shows these values elsewhere. */
   onSaved: () => void;
+  /** Above the fields: what they depend on. */
+  intro?: React.ReactNode;
 }) {
   const [settings, setSettings] = useState<Settings<T> | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -175,11 +184,11 @@ export function SettingsCard<T extends object>({
 
   if (!settings) {
     return trouble ? (
-      <Card title={title}>
+      <Card title={title} className={className}>
         <Trouble text={trouble} />
       </Card>
     ) : (
-      <SettingsWaiting title={title} />
+      <SettingsWaiting title={title} className={className} />
     );
   }
 
@@ -215,6 +224,7 @@ export function SettingsCard<T extends object>({
   return (
     <Card
       title={title}
+      className={className}
       aside={
         edited.length > 0 && (
           <span className="flex gap-2">
@@ -229,23 +239,31 @@ export function SettingsCard<T extends object>({
       }
     >
       <div className="flex flex-col gap-3">
+        {intro}
         {fields.map(f => {
           const id = `setting-${f.key}`;
-          const fromEnv = shown(f.kind, env[f.key]);
+          const raw = shown(f.kind, env[f.key]);
+          // A choice is named as the control names it, not as it is stored.
+          const fromEnv =
+            typeof f.kind === 'object'
+              ? (f.kind.choices.find(([v]) => v === raw)?.[1] ?? raw)
+              : raw;
           const changed = settings.changed.includes(f.key);
           return (
             <div key={f.key} className="flex flex-col gap-1 text-xs">
               {typeof f.kind === 'object' ? (
                 <>
-                  {/* The menu names itself to a screen reader; this is for the eye. */}
+                  {/* The group names itself to a screen reader; this is for the eye. */}
                   <span className="font-medium" aria-hidden>
                     {f.label}
                   </span>
-                  <ChoiceMenu
+                  {/* Both choices in sight, as wide as the fields around them. */}
+                  <Segmented
                     label={f.label}
                     value={draft[f.key]}
-                    choices={f.kind.choices.map(([value, label]) => ({ value, label }))}
+                    options={f.kind.choices.map(([value, label]) => ({ value, label }))}
                     onChange={value => setDraft({ ...draft, [f.key]: value })}
+                    className="w-full"
                   />
                 </>
               ) : (

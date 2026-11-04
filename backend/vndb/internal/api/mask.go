@@ -24,8 +24,9 @@ type masking struct {
 	allAges func() bool
 
 	mu sync.Mutex
-	// Whether the generation of each code holds the withheld table; one
-	// imported before all-ages mode existed does not, and cannot be masked.
+	// The generations, by code, known to hold the withheld table. One
+	// imported before all-ages mode existed does not until the table is
+	// built into it from the admin page, so only a yes is remembered.
 	ready map[string]bool
 }
 
@@ -52,16 +53,17 @@ func (m *masking) Withheld(ctx context.Context, letter string, ids []int32) (map
 func (m *masking) readyFor(ctx context.Context, key string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if ready, known := m.ready[key]; known {
-		return ready
+	if m.ready[key] {
+		return true
 	}
+	// A catalog lookup, asked again until the answer is yes.
 	ready, err := m.store.HasWithheld(ctx)
-	if err != nil {
+	if err != nil || !ready {
 		return false
 	}
 	// One entry per generation seen; a long-running server sees few.
-	m.ready[key] = ready
-	return ready
+	m.ready[key] = true
+	return true
 }
 
 // viewer is how a request is answered: masked or not, and why.

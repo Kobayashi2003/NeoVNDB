@@ -41,6 +41,7 @@ func (m *Mirror) Routes() http.Handler {
 	mux.HandleFunc("GET /admin/status", m.status)
 	mux.HandleFunc("POST /admin/update", m.startUpdate)
 	mux.HandleFunc("POST /admin/rollback", m.rollback)
+	mux.HandleFunc("POST /admin/withheld", m.buildWithheld)
 	mux.HandleFunc("GET /admin/trans", m.translatable)
 	mux.HandleFunc("PUT /admin/trans", m.translate)
 	mux.HandleFunc("GET /admin/trans/export", m.export)
@@ -72,6 +73,11 @@ func (m *Mirror) status(w http.ResponseWriter, r *http.Request) {
 		m.oops(w, "counting translations", err)
 		return
 	}
+	withheld, err := m.store.WithheldCounts(r.Context())
+	if err != nil {
+		m.oops(w, "counting what all-ages mode withholds", err)
+		return
+	}
 
 	s := m.live.Get()
 	gens := make([]generation, 0, len(st.Generations))
@@ -93,7 +99,32 @@ func (m *Mirror) status(w http.ResponseWriter, r *http.Request) {
 		"translations": map[string]any{
 			"lang": m.store.TransLang(), "terms": counts.Terms, "passages": counts.Passages,
 		},
+		// Null until the live generation has the list all-ages mode reads.
+		"all_ages": withheld,
 	})
+}
+
+// buildWithheld makes the live generation's all-ages list from what it holds:
+// one imported before all-ages mode existed cannot be masked until it has
+// one. Under the import lock, so no import or promote moves the schema
+// meanwhile.
+func (m *Mirror) buildWithheld(w http.ResponseWriter, r *http.Request) {
+	var counts map[string]int64
+	err := m.store.Exclusive(r.Context(), db.ImportLock, func() error {
+		var err error
+		counts, err = m.store.BuildWithheld(r.Context())
+		return err
+	})
+	switch {
+	case errors.Is(err, db.ErrBusy):
+		fail(w, http.StatusConflict, "An import is running; build the list once it is done.")
+		return
+	case err != nil:
+		m.oops(w, "building the all-ages list", err)
+		return
+	}
+	m.log.Info("built the all-ages list", "withheld", counts)
+	send(w, http.StatusOK, map[string]any{"all_ages": counts})
 }
 
 func (m *Mirror) startUpdate(w http.ResponseWriter, r *http.Request) {

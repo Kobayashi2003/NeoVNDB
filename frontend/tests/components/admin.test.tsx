@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 import { Accounts } from '@/components/admin/Accounts';
-import { SERVE_FIELDS, SettingsCard } from '@/components/admin/Settings';
+import { ALL_AGES_FIELDS, SERVE_FIELDS, SettingsCard } from '@/components/admin/Settings';
 import type { Account, ServeSettings } from '@/lib/admin';
 
 afterEach(() => {
@@ -36,6 +36,7 @@ describe('AdminPanel', () => {
       'Update',
       'Images',
       'User database backups',
+      'All ages',
       'Update settings',
       'Image settings',
     ]) {
@@ -70,17 +71,23 @@ describe('SettingsCard', () => {
     );
     render(
       <SettingsCard
-        title="Update settings"
-        fields={SERVE_FIELDS}
+        title="All ages"
+        fields={ALL_AGES_FIELDS}
         read={() => answer(env, [])}
         change={change}
         onSaved={() => {}}
       />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'All ages: Only for guests' }));
-    fireEvent.click(screen.getByRole('button', { name: 'For everyone' }));
+    // Both choices in sight, the one in force checked.
+    const group = await screen.findByRole('radiogroup', {
+      name: 'Who sees only what is for all ages',
+    });
+    expect(within(group).getByRole('radio', { name: 'Guests' })).toBeChecked();
+    fireEvent.click(within(group).getByRole('radio', { name: 'Everyone' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(change).toHaveBeenCalledWith({ all_ages: true }));
+    // .env's value named as the control names it.
+    expect(await screen.findByText(/\.env says Guests\./)).toBeInTheDocument();
   });
 
   it('saves only what was edited, as the service takes it', async () => {

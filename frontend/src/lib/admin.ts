@@ -51,6 +51,9 @@ export interface MirrorStatus {
   update: Job;
   schedule: { every: string; retry_after: string };
   translations: { lang: string; terms: number; passages: number };
+  /** What all-ages mode withholds, by type (v, r, c, g, i); null until the
+   *  live generation has the list, which /admin/withheld builds. */
+  all_ages: Record<string, number> | null;
 }
 
 export interface CrawlReport {
@@ -137,6 +140,9 @@ export type Category = 'tag' | 'trait';
 export const mirrorStatus = () => mirror<MirrorStatus>('GET', '/admin/status');
 export const startUpdate = () => mirror<Job>('POST', '/admin/update');
 export const rollback = () => mirror<{ live: string }>('POST', '/admin/rollback');
+/** Builds the live generation's all-ages list from what it holds. */
+export const buildAllAges = () =>
+  mirror<{ all_ages: Record<string, number> }>('POST', '/admin/withheld');
 
 export function translatable(category: Category, page: number, missing: boolean, q: string) {
   const params = new URLSearchParams({ category, page: String(page) });

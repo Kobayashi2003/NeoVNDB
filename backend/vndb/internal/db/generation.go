@@ -348,6 +348,72 @@ func (s *Store) HasWithheld(ctx context.Context) (bool, error) {
 	return ok, err
 }
 
+// BuildWithheld makes the live generation's withheld table afresh from what
+// it already holds, with the DDL and rules an import uses: a generation from
+// before all-ages mode gets it without a whole import, and one whose rules
+// changed is brought up to them. One transaction, so readers see the old
+// table or the new one; callers hold ImportLock, so no promote moves the
+// schema underneath.
+func (s *Store) BuildWithheld(ctx context.Context) (map[string]int64, error) {
+	table, err := sourceFS.ReadFile("ddl/02_withheld.sql")
+	if err != nil {
+		return nil, err
+	}
+	rules, err := sourceFS.ReadFile("derive/06_withheld.sql")
+	if err != nil {
+		return nil, err
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	for _, sql := range []string{
+		"SET LOCAL search_path TO " + pgx.Identifier{SchemaLive}.Sanitize() + ",public",
+		"DROP TABLE IF EXISTS withheld",
+		string(table),
+		string(rules),
+		"ANALYZE withheld",
+	} {
+		if _, err := tx.Exec(ctx, sql); err != nil {
+			return nil, fmt.Errorf("building withheld: %w", err)
+		}
+	}
+	counts, err := withheldCounts(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+	return counts, tx.Commit(ctx)
+}
+
+// WithheldCounts is how many of each type the live generation withholds, or
+// nil where it has no such table.
+func (s *Store) WithheldCounts(ctx context.Context) (map[string]int64, error) {
+	ready, err := s.HasWithheld(ctx)
+	if err != nil || !ready {
+		return nil, err
+	}
+	return withheldCounts(ctx, s.pool)
+}
+
+func withheldCounts(ctx context.Context, q querier) (map[string]int64, error) {
+	rows, err := q.Query(ctx, `SELECT entity_type, COUNT(*) FROM withheld GROUP BY 1`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var kind string
+		var n int64
+		if err := rows.Scan(&kind, &n); err != nil {
+			return nil, err
+		}
+		out[kind] = n
+	}
+	return out, rows.Err()
+}
+
 // DerivedCounts counts what the derive step built, so the recorded row counts
 // cover the whole generation rather than only what was copied in. A table a
 // generation does not have -- it was built before the table was added -- is

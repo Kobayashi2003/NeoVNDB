@@ -14,7 +14,7 @@ test('a detail page maps its sections and goes to one', async ({ page }) => {
     /^Staff\s*\d+/,
     /^Releases\s*\d+/,
     /^Screenshots\s*\d+/,
-    /^Similar\s*20/,
+    /^Similar\s*\d+/,
   ]);
   await sections(page)
     .getByRole('link', { name: /Releases/ })

@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import {
   backUp,
   backups as readBackups,
+  buildAllAges,
   changeImageSettings,
   changeServeSettings,
   imageSettings,
@@ -23,7 +24,22 @@ import {
 import { errorText } from '@/lib/user';
 import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
-import { IMAGE_FIELDS, SERVE_FIELDS, SettingsCard, SettingsWaiting } from './Settings';
+import {
+  ALL_AGES_FIELDS,
+  IMAGE_FIELDS,
+  SERVE_FIELDS,
+  SettingsCard,
+  SettingsWaiting,
+} from './Settings';
+
+/** What the all-ages list holds, by the letter it files each type under. */
+const WITHHELD: [string, string][] = [
+  ['v', 'works'],
+  ['r', 'releases'],
+  ['c', 'characters'],
+  ['g', 'tags'],
+  ['i', 'traits'],
+];
 
 /** While something runs the page follows it; otherwise it reads once. */
 const FOLLOW_MS = 2000;
@@ -59,6 +75,7 @@ export function MirrorWaiting() {
       <Card title="User database backups">
         <PlaceholderLines lines={3} />
       </Card>
+      <SettingsWaiting title="All ages" className="lg:col-span-2" />
       <SettingsWaiting title="Update settings" />
       <SettingsWaiting title="Image settings" />
     </div>
@@ -321,6 +338,37 @@ export function Mirror() {
           )}
         </Card>
 
+        <SettingsCard
+          title="All ages"
+          className="lg:col-span-2"
+          fields={ALL_AGES_FIELDS}
+          read={serveSettings}
+          change={changeServeSettings}
+          onSaved={refresh}
+          intro={
+            m &&
+            (m.all_ages ? (
+              <p className="text-xs text-muted tabular-nums">
+                Held back:{' '}
+                {WITHHELD.map(
+                  ([kind, noun]) => `${(m.all_ages?.[kind] ?? 0).toLocaleString()} ${noun}`,
+                ).join(', ')}
+                .
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <p className="text-amber-300">
+                  The live generation came in before all-ages mode, so nothing is held back from
+                  anyone yet. Its list can be built from what it already holds, in a few seconds;
+                  every import builds one after this.
+                </p>
+                <Button disabled={busy || m.update.running} onClick={() => act(buildAllAges)}>
+                  Build the list
+                </Button>
+              </div>
+            ))
+          }
+        />
         <SettingsCard
           title="Update settings"
           fields={SERVE_FIELDS}
