@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kobayashi/neovndb-users/internal/auth"
 	"github.com/kobayashi/neovndb-users/internal/config"
@@ -29,6 +30,8 @@ type Server struct {
 	// A hash at the configured cost, checked when the username is unknown so
 	// that answer takes as long as a wrong password.
 	decoy string
+	// Sessions viewer found good lately (viewer.go).
+	members *members
 }
 
 func NewServer(s *store.Store, cfg *config.Config, log *slog.Logger) *Server {
@@ -42,6 +45,7 @@ func NewServer(s *store.Store, cfg *config.Config, log *slog.Logger) *Server {
 		signInFor:  newTries(cfg.SignInTries, cfg.SignInWindow),
 		signUpFrom: newTries(cfg.SignUpTries, cfg.SignUpWindow),
 		decoy:      decoy,
+		members:    &members{until: map[string]time.Time{}},
 	}
 }
 
@@ -50,9 +54,11 @@ func (s *Server) Routes() http.Handler {
 
 	mux.HandleFunc("GET /health", s.health)
 
-	// The edge's probes: anyone signed in, and administrators only.
+	// The edge's probes: anyone signed in, administrators only, and who is
+	// asking (for the read API's all-ages mask).
 	mux.HandleFunc("GET /auth/verify", s.verify)
 	mux.HandleFunc("GET /auth/admin", s.adminOnly(s.verifyAdmin))
+	mux.HandleFunc("GET /auth/viewer", s.viewer)
 
 	mux.HandleFunc("POST /register", s.register)
 	mux.HandleFunc("POST /login", s.login)

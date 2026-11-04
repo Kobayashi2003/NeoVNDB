@@ -34,6 +34,8 @@ type Request struct {
 	// Paged says page= or limit= was given, which an id lookup honours.
 	Paged  bool
 	Limits Limits
+	// Masked leaves out what the all-ages mask withholds (mask.go).
+	Masked bool
 }
 
 // Reserved parameter names; everything else in the query string is a filter.
@@ -58,6 +60,7 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		Limit:   lim.PageSize,
 		Limits:  lim,
 		Paged:   values.Has("page") || values.Has("limit"),
+		Masked:  MaskOf(r.Context()) != nil,
 	}
 
 	if raw := values.Get("page"); raw != "" {

@@ -82,8 +82,12 @@ func loadImage(ctx context.Context, r *Resolver, page []gen.Vn,
 		if !ok {
 			continue
 		}
+		m, voted := meta[num]
+		if !query.ImageShown(ctx, m.CVotecount, m.CSexualAvg, m.CViolenceAvg) {
+			continue
+		}
 		img := map[string]any{"url": vndb.ImageURL("cv", num)}
-		if m, ok := meta[num]; ok {
+		if voted {
 			img["dims"] = []int16{m.Width, m.Height}
 			img["sexual"] = query.ContentLevel(m.CSexualAvg, m.CVotecount)
 			img["violence"] = query.ContentLevel(m.CViolenceAvg, m.CVotecount)
@@ -105,6 +109,9 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 	}
 	grouped := map[int32][]map[string]any{}
 	for _, s := range rows {
+		if !query.ImageShown(ctx, s.CVotecount, s.CSexualAvg, s.CViolenceAvg) {
+			continue
+		}
 		shot := map[string]any{
 			"url": vndb.ImageURL("sf", s.Scr),
 			// st is not an image row: vndb serves a screenshot's thumbnail under a

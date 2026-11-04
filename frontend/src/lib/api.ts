@@ -11,6 +11,8 @@ export interface Page<T> {
   results: T[];
   count: number;
   more: boolean;
+  /** Masked (all-ages mode), the ids an id= lookup named that were left out. */
+  withheld?: string[];
 }
 
 class ApiError extends Error {
@@ -23,9 +25,31 @@ class ApiError extends Error {
   }
 }
 
+/** The session cookie, on the server: the read API answers a reader signed in
+ *  in full and anyone else masked to all ages, so a page drawn for a reader
+ *  must ask as them. In the browser the request carries it anyway. */
+async function session(): Promise<string | null> {
+  if (typeof window !== 'undefined') return null;
+  const { cookies } = await import('next/headers');
+  const jar = await cookies();
+  for (const name of SESSION_COOKIES) {
+    const token = jar.get(name)?.value;
+    if (token) return `${name}=${token}`;
+  }
+  return null;
+}
+
+/** As the user service names it: behind https with the __Host- prefix. */
+const SESSION_COOKIES = ['__Host-neovndb_session', 'neovndb_session'];
+
 async function get<T>(path: string, params: Record<string, string>): Promise<T> {
   const url = `${BASE}${path}?${new URLSearchParams(params)}`;
-  const res = await fetch(url, { next: { revalidate: 60 } });
+  const cookie = await session();
+  // Answers to a reader are theirs: kept out of the cache every guest shares.
+  const res = await fetch(
+    url,
+    cookie ? { headers: { cookie }, cache: 'no-store' } : { next: { revalidate: 60 } },
+  );
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
@@ -55,6 +79,32 @@ export interface Generation {
 export async function byId<T>(type: string, id: string, fields: string): Promise<T | null> {
   const page = await get<Page<T>>(`/${type}`, { id, fields, limit: '1' });
   return page.results[0] ?? null;
+}
+
+/** Whether byId found nothing because all-ages mode held the entity back.
+ *  The same request, which a render makes only once. */
+export async function withheld(type: string, id: string, fields: string): Promise<boolean> {
+  const page = await get<Page<unknown>>(`/${type}`, { id, fields, limit: '1' });
+  return (page.withheld ?? []).includes(id);
+}
+
+/** How the read API is answering this reader (`/meta/viewer`). */
+export interface Viewer {
+  /** Only what is for all ages. */
+  masked: boolean;
+  /** Why: "guest" (not signed in) or "site" (set so for everyone). */
+  reason: 'guest' | 'site' | null;
+}
+
+/** Unmasked rather than a throw, as generation() is null: a page never fails
+ *  over this, and what the read API holds back it holds back regardless. */
+export async function viewer(): Promise<Viewer> {
+  try {
+    const v = await get<Viewer>('/meta/viewer', {});
+    return { masked: v.masked, reason: v.reason };
+  } catch {
+    return { masked: false, reason: null };
+  }
 }
 
 /** One page of a search. `filters` pass through unchecked; the API rejects

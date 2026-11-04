@@ -207,6 +207,13 @@ export function ShelfPanel({
           href={withParams(path, params, { sort: null, reverse: null, page: null })}
         />
       ) : null}
+      {held?.withheld ? (
+        // Kept on the list, only not shown: nothing here takes them off it.
+        <p className="text-xs text-muted">
+          {held.withheld.toLocaleString()} {held.withheld === 1 ? 'entry is' : 'entries are'} not
+          shown here: this site is set to show only what is for all ages.
+        </p>
+      ) : null}
       {held?.tooBig && (
         <p className="text-xs text-muted">
           This is longer than can be ordered by vndb&apos;s fields or searched here, so only{' '}

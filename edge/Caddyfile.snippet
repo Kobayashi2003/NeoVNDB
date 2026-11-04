@@ -41,10 +41,23 @@ handle_path /vndbserve/* {
 	# Anything not listed stays loopback-only.
 	@neovndb_read {
 		method GET HEAD
-		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|facets/[a-z]+/[a-z_]+|stats|(stats|recommend)/vn|meta/(generation|fields/[a-z]+|extlinks|openapi)|health)$
+		path_regexp ^/((vn|release|character|producer|staff|tag|trait)|vn/v?[0-9]+/relations|facets/[a-z]+/[a-z_]+|stats|(stats|recommend)/vn|meta/(generation|viewer|fields/[a-z]+|extlinks|openapi)|health)$
 	}
+	# Who is asking, for the read API's all-ages mask: a reader with a session
+	# cookie is asked about, and is a member if userserve says so; anyone else
+	# is a guest. A route runs these in the order written, so a header a client
+	# made up is gone before the real one is set.
+	# Behind https the cookie is __Host-neovndb_session (backend/users auth).
+	@neovndb_member header_regexp Cookie (^|;\s*)(__Host-)?neovndb_session=
 	handle @neovndb_read {
-		reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:17031}
+		route {
+			request_header -X-Viewer
+			forward_auth @neovndb_member {$USERSERVE_UPSTREAM:127.0.0.1:17033} {
+				uri /auth/viewer
+				copy_headers X-Viewer
+			}
+			reverse_proxy {$VNDBSERVE_UPSTREAM:127.0.0.1:17031}
+		}
 	}
 	handle {
 		respond 403

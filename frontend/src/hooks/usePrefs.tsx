@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import { DEFAULTS, PREFS_COOKIE, PREFS_STORAGE, readPrefs, type Prefs } from '@/lib/prefs';
+import { useViewer } from './useViewer';
 
 export type { Prefs } from '@/lib/prefs';
 
@@ -98,7 +99,11 @@ export function PrefsRendered({ value, children }: { value: Prefs; children: Rea
 
 export function usePrefs(): PrefsControl {
   const rendered = useContext(Rendered);
+  const { masked } = useViewer();
   // The server snapshot is used on the server and during hydration.
-  const prefs = useSyncExternalStore(subscribe, snapshot, () => rendered);
+  const saved = useSyncExternalStore(subscribe, snapshot, () => rendered);
+  // Masked, the strictest levels are the ones in force, whatever was chosen:
+  // the reader's choice is kept for when the mask comes off.
+  const prefs = masked ? { ...saved, sexual: 'safe' as const, violence: 'tame' as const } : saved;
   return { ...prefs, set: update, explicit: prefs.sexual === 'explicit' };
 }

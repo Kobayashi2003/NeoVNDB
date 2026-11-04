@@ -117,6 +117,9 @@ func conditions(spec PageSpec, req *Request, b *Builder, skip string) (byID bool
 		b.Where(spec.Alias+".id = ANY(%s)", ids)
 		byID = true
 	}
+	if req.Masked {
+		b.Where(VisibleSQL(spec.IDType, spec.Alias))
+	}
 	for name, value := range req.Filters {
 		if name == idFilter || name == skip {
 			continue

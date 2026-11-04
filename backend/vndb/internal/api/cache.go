@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
@@ -28,7 +29,8 @@ func newCache(ctx context.Context, cfg *config.Config) (cache.Cache, error) {
 }
 
 // generations reports which generation is live and which revision of the
-// translations it is read with, which every cache key starts with.
+// translations it is read with, which every cache key starts with; a masked
+// request's keys say so too, so the two kinds of answer never mix.
 type generations struct {
 	store *db.Store
 
@@ -41,6 +43,14 @@ type generations struct {
 // leaves a window where some types answer out of the new generation and others
 // out of entries keyed to the old one -- incoherent rather than merely stale.
 func (g *generations) current(ctx context.Context) string {
+	key := g.live(ctx)
+	if query.MaskOf(ctx) != nil {
+		key += "+m"
+	}
+	return key
+}
+
+func (g *generations) live(ctx context.Context) string {
 	gen, err := g.store.Describe(ctx, db.SchemaLive)
 	var revision int64
 	if err == nil {

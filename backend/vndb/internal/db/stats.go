@@ -103,9 +103,61 @@ const listed = `WITH listed(entity_type, id) AS (
 	UNION ALL SELECT 's', id FROM staff UNION ALL SELECT 'g', id FROM tags
 	UNION ALL SELECT 'i', id FROM traits) `
 
-// SiteStats counts the live generation. It reads whole tables, seconds of
-// work, so callers keep the answer for the generation rather than ask again.
-func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
+// querier is the pool, or the one transaction a masked count runs in.
+type querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// maskedViews stand in, for one transaction, for every table the count reads
+// that holds or reaches what all-ages mode withholds: a temporary relation is
+// found before the search path's, so the statements below count only what a
+// masked reader can see without a word of them changing. They are dropped
+// with the transaction, which is rolled back.
+const maskedViews = `
+	CREATE TEMP VIEW vn AS SELECT * FROM vndb.vn t
+	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'v' AND w.id = t.id);
+	CREATE TEMP VIEW releases AS SELECT * FROM vndb.releases t
+	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'r' AND w.id = t.id);
+	CREATE TEMP VIEW chars AS SELECT * FROM vndb.chars t
+	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'c' AND w.id = t.id);
+	CREATE TEMP VIEW tags AS SELECT * FROM vndb.tags t
+	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'g' AND w.id = t.id);
+	CREATE TEMP VIEW traits AS SELECT * FROM vndb.traits t
+	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'i' AND w.id = t.id);
+	CREATE TEMP VIEW vn_titles AS SELECT t.* FROM vndb.vn_titles t JOIN vn USING (id);
+	CREATE TEMP VIEW vn_staff AS SELECT t.* FROM vndb.vn_staff t JOIN vn USING (id);
+	CREATE TEMP VIEW vn_seiyuu AS SELECT t.* FROM vndb.vn_seiyuu t
+	  JOIN vn ON vn.id = t.id JOIN chars ON chars.id = t.cid;
+	CREATE TEMP VIEW releases_vn AS SELECT t.* FROM vndb.releases_vn t
+	  JOIN releases r ON r.id = t.id JOIN vn ON vn.id = t.vid;
+	CREATE TEMP VIEW releases_titles AS SELECT t.* FROM vndb.releases_titles t JOIN releases USING (id);
+	CREATE TEMP VIEW releases_platforms AS SELECT t.* FROM vndb.releases_platforms t JOIN releases USING (id);
+	CREATE TEMP VIEW releases_producers AS SELECT t.* FROM vndb.releases_producers t JOIN releases USING (id);
+	CREATE TEMP VIEW chars_vns AS SELECT t.* FROM vndb.chars_vns t
+	  JOIN chars c ON c.id = t.id JOIN vn ON vn.id = t.vid
+	 WHERE t.rid IS NULL OR EXISTS (SELECT 1 FROM releases r WHERE r.id = t.rid);
+	CREATE TEMP VIEW chars_traits AS SELECT t.* FROM vndb.chars_traits t
+	  JOIN chars c ON c.id = t.id JOIN traits ON traits.id = t.tid;`
+
+// SiteStats counts the live generation, everything in it or, masked, only
+// what all-ages mode shows. It reads whole tables, seconds of work, so callers
+// keep the answer for the generation rather than ask again.
+func (s *Store) SiteStats(ctx context.Context, masked bool) (*SiteStats, error) {
+	if !masked {
+		return siteStats(ctx, s.pool)
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, maskedViews); err != nil {
+		return nil, fmt.Errorf("stats: masking: %w", err)
+	}
+	return siteStats(ctx, tx)
+}
+
+func siteStats(ctx context.Context, q querier) (*SiteStats, error) {
 	out := &SiteStats{Added: map[string][]Count{}, StaffTop: map[string][]Ranked{},
 		Tags: map[string][]Ranked{}, Traits: map[string][]Ranked{}}
 
@@ -155,7 +207,7 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 		{&out.TagCategories, `SELECT cat, COUNT(*) FROM tags GROUP BY 1 ORDER BY 2 DESC`},
 	}
 	for _, c := range counted {
-		got, err := s.counts(ctx, c.sql)
+		got, err := counts(ctx, q, c.sql)
 		if err != nil {
 			return nil, err
 		}
@@ -183,14 +235,14 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 			GROUP BY 1, 2 ORDER BY 2`},
 	}
 	for _, b := range bySex {
-		got, err := s.bySex(ctx, b.sql)
+		got, err := countsBySex(ctx, q, b.sql)
 		if err != nil {
 			return nil, err
 		}
 		*b.into = got
 	}
 
-	rows, err := s.pool.Query(ctx, listed+`
+	rows, err := q.Query(ctx, listed+`
 		SELECT m.entity_type, to_char(m.created, 'YYYY-MM'), COUNT(*)
 		  FROM entry_meta m JOIN listed l ON l.entity_type = m.entity_type AND l.id = m.id
 		 WHERE m.entity_type IN ('v', 'r', 'p', 'c', 's') GROUP BY 1, 2 ORDER BY 1, 2`)
@@ -237,18 +289,18 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 		{&out.TraitGroups, vndb.TypeTrait, `SELECT '', g.id, g.name, NULL::text, COUNT(DISTINCT ct.id) FROM chars_traits ct
 			JOIN traits t ON t.id = ct.tid
 			JOIN traits g ON g.id = t.gid
-			WHERE ct.spoil = 0 AND NOT ct.lie GROUP BY g.id ORDER BY 5 DESC, g.id LIMIT $1`},
+			WHERE ct.spoil = 0 AND NOT ct.lie GROUP BY g.id, g.name ORDER BY 5 DESC, g.id LIMIT $1`},
 	}
 	for _, r := range ranked {
 		got := map[string][]Ranked{}
-		if err := s.rankedBy(ctx, got, r.kind, r.sql); err != nil {
+		if err := rankedBy(ctx, q, got, r.kind, r.sql); err != nil {
 			return nil, err
 		}
 		*r.into = got[""]
 	}
 
 	// Per role, the people credited on the most titles.
-	if err := s.rankedBy(ctx, out.StaffTop, vndb.TypeStaff, `
+	if err := rankedBy(ctx, q, out.StaffTop, vndb.TypeStaff, `
 		WITH counted AS (
 			SELECT vs.role, sa.id AS sid, COUNT(DISTINCT vs.id) AS n FROM vn_staff vs
 			  JOIN staff_alias sa ON sa.aid = vs.aid GROUP BY 1, 2),
@@ -260,14 +312,14 @@ func (s *Store) SiteStats(ctx context.Context) (*SiteStats, error) {
 	}
 	// Tags per category and traits per group, by the titles or characters
 	// carrying them (vndb's own count, children included).
-	if err := s.rankedBy(ctx, out.Tags, vndb.TypeTag, `
+	if err := rankedBy(ctx, q, out.Tags, vndb.TypeTag, `
 		WITH ranked AS (SELECT *, row_number() OVER (PARTITION BY cat ORDER BY c_items DESC, id) AS rk
 		                  FROM tags WHERE applicable)
 		SELECT cat, id, name, NULL::text, c_items FROM ranked WHERE rk <= $1 ORDER BY cat, rk`); err != nil {
 		return nil, err
 	}
 	// Keyed by the group's id, as TraitGroups names it.
-	if err := s.rankedBy(ctx, out.Traits, vndb.TypeTrait, `
+	if err := rankedBy(ctx, q, out.Traits, vndb.TypeTrait, `
 		WITH ranked AS (SELECT t.*, row_number() OVER (PARTITION BY t.gid ORDER BY t.c_items DESC, t.id) AS rk
 		                  FROM traits t WHERE t.applicable AND t.gid IS NOT NULL)
 		SELECT 'i' || gid, id, name, NULL::text, c_items FROM ranked WHERE rk <= $1 ORDER BY gid, rk`); err != nil {
@@ -302,8 +354,8 @@ func (m *SiteStats) Translate(name func(string) string) {
 	}
 }
 
-func (s *Store) counts(ctx context.Context, sql string) ([]Count, error) {
-	rows, err := s.pool.Query(ctx, sql)
+func counts(ctx context.Context, q querier, sql string) ([]Count, error) {
+	rows, err := q.Query(ctx, sql)
 	if err != nil {
 		return nil, fmt.Errorf("stats: %w", err)
 	}
@@ -319,9 +371,9 @@ func (s *Store) counts(ctx context.Context, sql string) ([]Count, error) {
 	})
 }
 
-// bySex reads rows of (sex, key, count), a sex not given as "u".
-func (s *Store) bySex(ctx context.Context, sql string) (BySex, error) {
-	rows, err := s.pool.Query(ctx, sql)
+// countsBySex reads rows of (sex, key, count), a sex not given as "u".
+func countsBySex(ctx context.Context, q querier, sql string) (BySex, error) {
+	rows, err := q.Query(ctx, sql)
 	if err != nil {
 		return nil, fmt.Errorf("stats: %w", err)
 	}
@@ -345,8 +397,8 @@ func (s *Store) bySex(ctx context.Context, sql string) (BySex, error) {
 
 // rankedBy fills into from rows of (group, id, name, latin, count), ids of
 // kind; $1 is how many to keep.
-func (s *Store) rankedBy(ctx context.Context, into map[string][]Ranked, kind, sql string) error {
-	rows, err := s.pool.Query(ctx, sql, statsTop)
+func rankedBy(ctx context.Context, q querier, into map[string][]Ranked, kind, sql string) error {
+	rows, err := q.Query(ctx, sql, statsTop)
 	if err != nil {
 		return fmt.Errorf("stats: %w", err)
 	}

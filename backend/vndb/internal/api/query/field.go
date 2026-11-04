@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/kobayashi/neovndb/internal/vndb"
@@ -255,6 +256,18 @@ func Relate(ctx context.Context, cat *Catalog, self, field string,
 	}
 
 	target := cat.Get(def.Target)
+	// Withheld children leave with their edges, so a list is shorter rather
+	// than holding holes.
+	if kept, err := Unwithheld(ctx, target.Type(), ids); err != nil {
+		return err
+	} else if len(kept) < len(ids) {
+		shown := make(map[int32]bool, len(kept))
+		for _, id := range kept {
+			shown[id] = true
+		}
+		edges = slices.DeleteFunc(slices.Clone(edges), func(e Edge) bool { return !shown[e.Child] })
+		ids = kept
+	}
 	objs := make(map[int32]map[string]any, len(ids))
 	switch {
 	case len(ids) == 0:

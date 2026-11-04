@@ -130,6 +130,9 @@ type Config struct {
 	// GuardMaxLoss is a fraction: 0.02 refuses a table that lost 2%.
 	GuardMaxLoss float64
 
+	// AllAges masks every reader, signed in or not; guests are masked always.
+	AllAges bool
+
 	ImageDir           string
 	ImagePort          int
 	ImageMaxBytes      int64
@@ -193,6 +196,7 @@ func Load() (*Config, error) {
 		RedisURL:      e.text("NEOVNDB_REDIS_URL", ""),
 
 		GuardMaxLoss: e.float("NEOVNDB_GUARD_MAX_LOSS", defaultGuardMaxLoss),
+		AllAges:      e.bool("NEOVNDB_ALL_AGES", false),
 
 		ImageDir:             e.text("NEOVNDB_IMAGE_DIR", defaultImageDir),
 		ImagePort:            e.int("NEOVNDB_IMAGE_PORT", defaultImagePort),
@@ -242,6 +246,10 @@ func (e *env) int(key string, fallback int) int {
 
 func (e *env) duration(key string, fallback time.Duration) time.Duration {
 	return read(e, key, fallback, time.ParseDuration)
+}
+
+func (e *env) bool(key string, fallback bool) bool {
+	return read(e, key, fallback, strconv.ParseBool)
 }
 
 func (e *env) float(key string, fallback float64) float64 {

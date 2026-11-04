@@ -49,12 +49,43 @@ func (s *Server) query(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, err
 		}
-		return map[string]any{
+		out := map[string]any{
 			"results": results,
 			"count":   total,
 			"more":    req.Offset()+len(results) < total,
-		}, nil
+		}
+		if req.Masked {
+			if out["withheld"], err = s.withheldOf(ctx, entity, req.Filters["id"]); err != nil {
+				return nil, err
+			}
+		}
+		return out, nil
 	})
+}
+
+// withheldOf is which ids of an id= lookup the mask kept back, so a page can
+// say "not shown" rather than "no such thing"; empty for any other request.
+func (s *Server) withheldOf(ctx context.Context, entity, raw string) ([]string, error) {
+	letter, ok := query.Withholdable(entity)
+	if raw == "" || !ok {
+		return []string{}, nil
+	}
+	ids, err := vndb.ParseIDs(entity, raw, s.limits.MaxIDs)
+	if err != nil {
+		// Already refused as a filter; nothing reaches here.
+		return []string{}, nil
+	}
+	gone, err := s.mask.Withheld(ctx, letter, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(gone))
+	for _, id := range ids {
+		if gone[id] {
+			out = append(out, vndb.FormatID(entity, id))
+		}
+	}
+	return out, nil
 }
 
 // facet counts one filter's values under the rest of the request: what each

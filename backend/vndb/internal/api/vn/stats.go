@@ -50,6 +50,14 @@ func (r *Resolver) Stats(ctx context.Context, req *query.Request, top int) (*Sta
 		return nil, err
 	}
 	pool := r.store.Pool()
+	// The titles are masked by the request itself; what is counted over them
+	// is masked here, or a publisher would be credited through an adult
+	// release and a tag about sex would rank.
+	maskRel, maskTag := "", ""
+	if req.Masked {
+		maskRel = " AND " + query.VisibleSQL(vndb.TypeRelease, "rel")
+		maskTag = " AND " + query.VisibleSQL(vndb.TypeTag, "t")
+	}
 	picked := fmt.Sprintf("WITH picked AS (SELECT vn.id, vn.c_developers FROM vn WHERE %s)", where)
 	limit := fmt.Sprintf("$%d", len(args)+1)
 	withTop := append(append([]any(nil), args...), top)
@@ -86,7 +94,7 @@ func (r *Resolver) Stats(ctx context.Context, req *query.Request, top int) (*Sta
 		SELECT p.id, p.name, p.latin, COUNT(DISTINCT rv.vid)::int AS n
 		  FROM picked
 		  JOIN releases_vn rv ON rv.vid = picked.id
-		  JOIN releases rel ON rel.id = rv.id AND rel.official
+		  JOIN releases rel ON rel.id = rv.id AND rel.official`+maskRel+`
 		  JOIN releases_producers rp ON rp.id = rv.id AND rp.publisher
 		  JOIN producers p ON p.id = rp.pid
 		 GROUP BY p.id ORDER BY n DESC, p.id LIMIT `+limit, vndb.TypeProducer); err != nil {
@@ -135,7 +143,7 @@ func (r *Resolver) Stats(ctx context.Context, req *query.Request, top int) (*Sta
 			  FROM picked
 			  JOIN tags_vn_direct tv ON tv.vid = picked.id
 			   AND tv.rating >= 1 AND tv.spoiler = 0 AND NOT tv.lie
-			  JOIN tags t ON t.id = tv.tag
+			  JOIN tags t ON t.id = tv.tag`+maskTag+`
 			 GROUP BY t.id),
 		ranked AS (
 			SELECT *, row_number() OVER (PARTITION BY cat ORDER BY n DESC, rating DESC, id) AS rk

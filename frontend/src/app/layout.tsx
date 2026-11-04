@@ -11,6 +11,8 @@ import { Navigation } from '@/components/layout/Navigation';
 import { Shortcuts } from '@/components/layout/Shortcuts';
 import { ToTop } from '@/components/layout/ToTop';
 import { PrefsRendered } from '@/hooks/usePrefs';
+import { ViewerRendered } from '@/hooks/useViewer';
+import { viewer } from '@/lib/api';
 import { PREFS_COOKIE, readPrefs } from '@/lib/prefs';
 import { NAME_COOKIE } from '@/lib/user';
 
@@ -38,6 +40,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const jar = await cookies();
   const prefs = readPrefs(jar.get(PREFS_COOKIE)?.value);
   const name = jar.get(NAME_COOKIE)?.value ?? null;
+  const viewing = await viewer();
   // The icon sprites are asked for only once the CSS naming them has been
   // applied, so flags and platforms came in after the text around them.
   // These are the files the CSS points at: the bundler emits each once.
@@ -47,18 +50,20 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <PrefsRendered value={prefs}>
-          {/* Reads the address, which a prerender does not have. */}
-          <Suspense fallback={null}>
-            <Navigation />
-          </Suspense>
-          <Header name={name} />
-          <Shortcuts />
-          <ToTop />
-          {/* Every navigation is a transition, so this crossfades one page into
+        <ViewerRendered value={viewing}>
+          <PrefsRendered value={prefs}>
+            {/* Reads the address, which a prerender does not have. */}
+            <Suspense fallback={null}>
+              <Navigation />
+            </Suspense>
+            <Header name={name} />
+            <Shortcuts />
+            <ToTop />
+            {/* Every navigation is a transition, so this crossfades one page into
               the next (globals.css, .page) while the header holds still. */}
-          <ViewTransition default="page">{children}</ViewTransition>
-        </PrefsRendered>
+            <ViewTransition default="page">{children}</ViewTransition>
+          </PrefsRendered>
+        </ViewerRendered>
       </body>
     </html>
   );

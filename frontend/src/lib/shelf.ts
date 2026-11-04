@@ -49,6 +49,9 @@ export interface ShelfPage {
   dates: Map<string, string>;
   /** Saved ids the read API no longer has, which its orders leave out. */
   missing: number;
+  /** Saved ids on this page (or, ordered by vndb, in the whole list) that
+   *  all-ages mode holds back. */
+  withheld: number;
   /** Too long for one read API request, so only the service's orders work. */
   tooBig: boolean;
 }
@@ -74,8 +77,10 @@ export async function readShelf({
   const spec = LIST[type];
   const ownSort = own.find(s => s.value === sort);
 
+  // The rows of these, and how many all-ages mode held back: those are left
+  // out, where an id the mirror no longer has stays as a gone card.
   const hydrate = async (owned: Owned[]) => {
-    if (owned.length === 0) return [];
+    if (owned.length === 0) return { rows: [], withheld: 0 };
     // No limit: an id lookup without one returns every row it names, and a
     // limit the length of a long list would be over the page size ceiling.
     const answer = await query<{ id: string }>(spec.type, {
@@ -83,7 +88,11 @@ export async function readShelf({
       filters: { id: owned.map(o => o.id).join(',') },
     });
     const byId = new Map(answer.results.map(r => [r.id, r]));
-    return owned.map(o => byId.get(o.id) ?? goneRow(o.id));
+    const held = new Set(answer.withheld ?? []);
+    return {
+      rows: owned.filter(o => !held.has(o.id)).map(o => byId.get(o.id) ?? goneRow(o.id)),
+      withheld: held.size,
+    };
   };
   // What only the reader knows about the ids, for the cards.
   const known = (owned: Owned[]) => ({
@@ -96,7 +105,7 @@ export async function readShelf({
   if (ownSort && !search) {
     const got = await source.page(order, page, PAGE_SIZE);
     return {
-      rows: await hydrate(got.rows),
+      ...(await hydrate(got.rows)),
       count: got.count,
       ...known(got.rows),
       missing: 0,
@@ -109,7 +118,7 @@ export async function readShelf({
     // Fall back rather than order or search only part of the set.
     const got = await source.page(ownDefault, page, PAGE_SIZE);
     return {
-      rows: await hydrate(got.rows),
+      ...(await hydrate(got.rows)),
       count: got.count,
       ...known(got.rows),
       missing: 0,
@@ -117,7 +126,7 @@ export async function readShelf({
     };
   }
   if (whole.items.length === 0) {
-    return { rows: [], count: 0, ...known([]), missing: 0, tooBig: false };
+    return { rows: [], count: 0, ...known([]), missing: 0, withheld: 0, tooBig: false };
   }
   const ids = whole.items.map(o => o.id).join(',');
 
@@ -131,7 +140,7 @@ export async function readShelf({
     const kept = whole.items.filter(o => hit.has(o.id));
     const shown = kept.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     return {
-      rows: await hydrate(shown),
+      ...(await hydrate(shown)),
       count: kept.length,
       ...known(kept),
       missing: 0,
@@ -148,13 +157,15 @@ export async function readShelf({
     filters: { id: ids, ...(search ? { search } : {}) },
   });
   // Without a search every saved id the read API still has is counted, so
-  // the shortfall is what it no longer has.
-  const missing = search ? 0 : whole.items.length - answer.count;
+  // the shortfall is what it no longer has, less what it only holds back.
+  const withheld = answer.withheld?.length ?? 0;
+  const missing = search ? 0 : whole.items.length - answer.count - withheld;
   return {
     rows: answer.results,
     count: answer.count,
     ...known(whole.items),
     missing,
+    withheld,
     tooBig: false,
   };
 }

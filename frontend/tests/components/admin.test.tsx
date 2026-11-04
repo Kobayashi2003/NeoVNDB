@@ -59,9 +59,29 @@ describe('SettingsCard', () => {
     update_retry_after: '1h0m0s',
     dump_keep: 2,
     guard_max_loss: 0.02,
+    all_ages: false,
   };
   const answer = (values: ServeSettings, changed: (keyof ServeSettings)[]) =>
     Promise.resolve({ values, env, changed });
+
+  it('sends the all-ages switch as a boolean', async () => {
+    const change = vi.fn((patch: Partial<ServeSettings>) =>
+      answer({ ...env, ...patch }, ['all_ages']),
+    );
+    render(
+      <SettingsCard
+        title="Update settings"
+        fields={SERVE_FIELDS}
+        read={() => answer(env, [])}
+        change={change}
+        onSaved={() => {}}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'All ages: Only for guests' }));
+    fireEvent.click(screen.getByRole('button', { name: 'For everyone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(change).toHaveBeenCalledWith({ all_ages: true }));
+  });
 
   it('saves only what was edited, as the service takes it', async () => {
     const change = vi.fn((patch: Partial<ServeSettings>) =>

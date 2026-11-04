@@ -336,7 +336,16 @@ func sqlFiles(dir string) ([]sqlFile, error) {
 // query matched nothing.
 var Derived = []string{
 	"tags_vn_direct", "tags_vn_inherit", "chars_traits_inherit",
-	"search_cache", "tags_closure", "traits_closure", "vn_similar",
+	"search_cache", "tags_closure", "traits_closure", "vn_similar", "withheld",
+}
+
+// HasWithheld says whether the live generation was imported with the table
+// all-ages mode reads, which generations from before it lack.
+func (s *Store) HasWithheld(ctx context.Context) (bool, error) {
+	var ok bool
+	err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`,
+		pgx.Identifier{SchemaLive, "withheld"}.Sanitize()).Scan(&ok)
+	return ok, err
 }
 
 // DerivedCounts counts what the derive step built, so the recorded row counts

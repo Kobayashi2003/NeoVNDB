@@ -3,6 +3,7 @@
 
 import { notFound } from 'next/navigation';
 import { byId } from '@/lib/api';
+import { missing } from '@/components/ui/Withheld';
 import {
   CHARACTER_PAGE,
   INSTANCE_GROUP,
@@ -50,12 +51,12 @@ export default async function Page({ params, searchParams }: PageProps<'/[slug]'
   switch (typeOf(slug)) {
     case 'v': {
       const vn = await byId<VN>('vn', slug, VN_PAGE);
-      if (!vn) notFound();
+      if (!vn) return missing('vn', slug, VN_PAGE);
       return <VNPage vn={vn} />;
     }
     case 'c': {
       const character = await byId<CharacterDetail>('character', slug, CHARACTER_PAGE);
-      if (!character) notFound();
+      if (!character) return missing('character', slug, CHARACTER_PAGE);
       // chars.main points from an instance to its parent and no further, so a
       // character in the middle of a group has to ask the top of it for the
       // rest -- one extra read, and only for the pages that need it.
@@ -83,7 +84,7 @@ export default async function Page({ params, searchParams }: PageProps<'/[slug]'
     }
     case 'r': {
       const release = await byId<ReleaseDetail>('release', slug, RELEASE_PAGE);
-      if (!release) notFound();
+      if (!release) return missing('release', slug, RELEASE_PAGE);
       return <ReleasePage release={release} />;
     }
     case 'p': {
@@ -98,12 +99,12 @@ export default async function Page({ params, searchParams }: PageProps<'/[slug]'
     }
     case 'g': {
       const tag = await byId<TagDetail>('tag', slug, TAG_PAGE);
-      if (!tag) notFound();
+      if (!tag) return missing('tag', slug, TAG_PAGE);
       return <TagPage tag={tag} params={query} />;
     }
     case 'i': {
       const trait = await byId<TraitDetail>('trait', slug, TRAIT_PAGE);
-      if (!trait) notFound();
+      if (!trait) return missing('trait', slug, TRAIT_PAGE);
       return <TraitPage trait={trait} params={query} />;
     }
     default:

@@ -68,6 +68,11 @@ func (r *Resolver) Recommend(ctx context.Context, from []Liked, exclude []int32,
 	for i, l := range from {
 		ids[i], weights[i] = l.ID, l.Weight
 	}
+	// Masked, a withheld title is neither suggested nor a reason for one.
+	masked := ""
+	if query.MaskOf(ctx) != nil {
+		masked = ` AND NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'v' AND w.id IN (s.vid, s.id))`
+	}
 	rows, err := r.store.Pool().Query(ctx, `
 		WITH src(id, w) AS (SELECT * FROM unnest($1::int[], $2::float8[]))
 		SELECT s.vid,
@@ -75,7 +80,7 @@ func (r *Resolver) Recommend(ctx context.Context, from []Liked, exclude []int32,
 		       (array_agg(src.id ORDER BY s.score * src.w DESC))[1:3] AS because
 		  FROM vn_similar s
 		  JOIN src ON src.id = s.id
-		 WHERE s.vid <> ALL($1::int[]) AND s.vid <> ALL($3::int[])
+		 WHERE s.vid <> ALL($1::int[]) AND s.vid <> ALL($3::int[])`+masked+`
 		 GROUP BY s.vid
 		HAVING SUM(s.score * src.w) > 0
 		 ORDER BY score DESC, s.vid

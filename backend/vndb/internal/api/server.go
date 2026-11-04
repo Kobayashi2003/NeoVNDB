@@ -32,11 +32,15 @@ type Server struct {
 	cache cache.Cache
 	gen   *generations
 	site  *siteStats
+	mask  *masking
 	// The process's context, for work that outlives a request.
 	base context.Context
 }
 
-func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *config.Config) (*Server, error) {
+// allAges reports the administrator's switch that masks every reader, not
+// only guests; it is read on each request, so a change applies at once.
+func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *config.Config,
+	allAges func() bool) (*Server, error) {
 	responses, err := newCache(ctx, cfg)
 	if err != nil {
 		return nil, err
@@ -62,7 +66,8 @@ func NewServer(ctx context.Context, store *db.Store, log *slog.Logger, cfg *conf
 		cat: cat, resolvers: resolvers,
 		cache: responses,
 		gen:   &generations{store: store},
-		site:  &siteStats{},
+		site:  &siteStats{bodies: map[string][]byte{}},
+		mask:  &masking{store: store, allAges: allAges, ready: map[string]bool{}},
 		base:  ctx,
 	}
 	go s.keepSiteStats(ctx)
@@ -97,6 +102,7 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	}
 	mux.HandleFunc("GET /health", s.health)
 	mux.HandleFunc("GET /meta/generation", s.generation)
+	mux.HandleFunc("GET /meta/viewer", s.viewerHandler)
 	mux.HandleFunc("GET /meta/fields/{type}", s.fields)
 	mux.HandleFunc("GET /meta/extlinks", s.extlinks)
 	mux.HandleFunc("GET /meta/openapi", s.openapi)
@@ -110,7 +116,7 @@ func (s *Server) Routes(admin http.Handler) http.Handler {
 	mux.HandleFunc("GET /stats", s.siteStatsHandler)
 	mux.HandleFunc("GET /recommend/vn", s.recommend)
 	mux.HandleFunc("GET /{type}", s.query)
-	return recovering(s.log, logging(s.log, mux))
+	return recovering(s.log, logging(s.log, s.masked(mux)))
 }
 
 // Close releases what the server owns; the store is the caller's.

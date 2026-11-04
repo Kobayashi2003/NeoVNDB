@@ -74,6 +74,8 @@ export interface ServeSettings {
   dump_keep: number;
   /** A fraction: 0.02 refuses a table that lost 2%. */
   guard_max_loss: number;
+  /** Every reader masked to all ages, not only guests. */
+  all_ages: boolean;
 }
 
 export interface ImageSettings {

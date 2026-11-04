@@ -99,6 +99,9 @@ func loadImages(ctx context.Context, r *Resolver, page []gen.Release,
 
 	grouped := map[int32][]map[string]any{}
 	for _, i := range rows {
+		if !query.ImageShown(ctx, i.CVotecount, i.CSexualAvg, i.CViolenceAvg) {
+			continue
+		}
 		img := map[string]any{
 			"url":       vndb.ImageURL("cv", i.Img),
 			"dims":      []int16{i.Width, i.Height},

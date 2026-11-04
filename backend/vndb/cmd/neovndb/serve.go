@@ -67,7 +67,7 @@ func runServe(ctx context.Context, args []string) error {
 		return false
 	})
 
-	srv, err := api.NewServer(ctx, store, log, cfg)
+	srv, err := api.NewServer(ctx, store, log, cfg, func() bool { return live.Get().AllAges })
 	if err != nil {
 		return err
 	}

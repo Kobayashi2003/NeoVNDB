@@ -16,7 +16,8 @@ type Kind =
   | 'count'
   /** A fraction, edited as a percentage. */
   | 'percent'
-  | { choices: [string, string][] };
+  /** One of several; `flag` sends "true" and "false" as a boolean. */
+  | { choices: [string, string][]; flag?: boolean };
 
 export interface Field<T> {
   key: keyof T & string;
@@ -26,6 +27,18 @@ export interface Field<T> {
 }
 
 export const SERVE_FIELDS: Field<ServeSettings>[] = [
+  {
+    key: 'all_ages',
+    label: 'All ages',
+    hint: 'What is for adults (18+ releases, sexual tags and traits, suggestive or violent images) is never shown to anyone not signed in. This decides whether it is hidden from everyone.',
+    kind: {
+      flag: true,
+      choices: [
+        ['false', 'Only for guests'],
+        ['true', 'For everyone'],
+      ],
+    },
+  },
   {
     key: 'update_every',
     label: 'Check for a new dump every',
@@ -104,6 +117,7 @@ export function parsed(kind: Kind, text: string): unknown {
     if (text.trim() === '' || !Number.isFinite(n)) return null;
     return kind === 'percent' ? n / 100 : n;
   }
+  if (typeof kind === 'object' && kind.flag) return text === 'true';
   return text.trim();
 }
 

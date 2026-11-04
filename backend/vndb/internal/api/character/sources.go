@@ -82,8 +82,12 @@ func loadImage(ctx context.Context, r *Resolver, page []gen.Char,
 		if !ok {
 			continue
 		}
+		m, voted := meta[num]
+		if !query.ImageShown(ctx, m.CVotecount, m.CSexualAvg, m.CViolenceAvg) {
+			continue
+		}
 		img := map[string]any{"url": vndb.ImageURL("ch", num)}
-		if m, ok := meta[num]; ok {
+		if voted {
 			img["dims"] = []int16{m.Width, m.Height}
 			img["sexual"] = query.ContentLevel(m.CSexualAvg, m.CVotecount)
 			img["violence"] = query.ContentLevel(m.CViolenceAvg, m.CVotecount)

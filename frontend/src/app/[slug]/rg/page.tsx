@@ -13,6 +13,7 @@ import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
 import { Name } from '@/components/ui/Name';
 import { Notice, noticeAction } from '@/components/ui/Notice';
+import { missing } from '@/components/ui/Withheld';
 import { RelationGraph } from '@/components/graph/RelationGraph';
 import { steps, type RelationGraph as Graph } from '@/lib/graph';
 
@@ -33,7 +34,7 @@ export default async function RelationGraphPage({ params, searchParams }: PagePr
     slug,
     'title,alttitle',
   );
-  if (!vn) notFound();
+  if (!vn) return missing('vn', slug, 'title,alttitle', `/${slug}/rg`);
 
   let graph: Graph;
   try {

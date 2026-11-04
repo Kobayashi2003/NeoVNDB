@@ -81,10 +81,17 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 	if err != nil {
 		return nil, err
 	}
+	if rows, err = unmasked(ctx, root, rows); err != nil {
+		return nil, err
+	}
 
 	w := walk(root, rows, depth, opt.MaxNodes)
 	deepest, err := deepestUseful(root, opt, func(ids []int32) ([]int32, error) {
-		return r.q.VNRelationNeighbours(ctx, ids)
+		near, err := r.q.VNRelationNeighbours(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
+		return query.Unwithheld(ctx, vndb.TypeVN, near)
 	})
 	if err != nil {
 		return nil, err
@@ -124,7 +131,8 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		}
 		// Width is null only when the images table has no row for the cover; a
 		// cover nobody can size or rate is left out rather than shown unrated.
-		if n.CImage != nil && n.Width != nil {
+		if n.CImage != nil && n.Width != nil &&
+			query.ImageShown(ctx, *n.CVotecount, *n.CSexualAvg, *n.CViolenceAvg) {
 			node.Image = map[string]any{
 				"url":      vndb.ImageURL("cv", *n.CImage),
 				"dims":     []int16{*n.Width, *n.Height},
@@ -140,6 +148,54 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 		graph.Nodes = append(graph.Nodes, node)
 	}
 	return graph, nil
+}
+
+// unmasked keeps the rows a masked reader may see: none touching a withheld
+// title, and none beyond what only such a title joined to the root. Depths
+// are walked again from the root over what is left, since the shortest way to
+// a title may have run through one taken out. Unmasked, rows pass as they are.
+func unmasked(ctx context.Context, root int32, rows []gen.VNRelationGraphRow) ([]gen.VNRelationGraphRow, error) {
+	if query.MaskOf(ctx) == nil {
+		return rows, nil
+	}
+	ids := []int32{root}
+	for _, e := range rows {
+		ids = append(ids, e.ID, e.Vid)
+	}
+	kept, err := query.Unwithheld(ctx, vndb.TypeVN, ids)
+	if err != nil {
+		return nil, err
+	}
+	shown := make(map[int32]bool, len(kept))
+	for _, id := range kept {
+		shown[id] = true
+	}
+	if !shown[root] {
+		return nil, query.BadRequest("%s is not shown in all-ages mode", vndb.FormatID(vndb.TypeVN, root))
+	}
+
+	from := map[int32][]gen.VNRelationGraphRow{}
+	for _, e := range rows {
+		if shown[e.ID] && shown[e.Vid] {
+			from[e.ID] = append(from[e.ID], e)
+		}
+	}
+	depth := map[int32]int32{root: 0}
+	queue := []int32{root}
+	var out []gen.VNRelationGraphRow
+	for len(queue) > 0 {
+		id := queue[0]
+		queue = queue[1:]
+		for _, e := range from[id] {
+			e.Depth = depth[id]
+			out = append(out, e)
+			if _, seen := depth[e.Vid]; !seen {
+				depth[e.Vid] = depth[id] + 1
+				queue = append(queue, e.Vid)
+			}
+		}
+	}
+	return out, nil
 }
 
 // deepestUseful walks out from root one layer at a time, as titles rather than

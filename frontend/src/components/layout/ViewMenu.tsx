@@ -4,9 +4,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Flame, Keyboard, Languages, Swords } from 'lucide-react';
+import { Eye, EyeOff, Flame, Keyboard, Languages, ShieldCheck, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePrefs } from '@/hooks/usePrefs';
+import { useViewer } from '@/hooks/useViewer';
 import { useMenu } from '@/hooks/useMenu';
 import { Segmented, type Option } from '@/components/ui/Segmented';
 import type { SexualLevel, SpoilerLevel, ViolenceLevel } from '@/lib/content';
@@ -42,6 +43,7 @@ const SPOILERS: Option<string>[] = [
 
 export function ViewMenu() {
   const p = usePrefs();
+  const viewing = useViewer();
   const [open, setOpen] = useState(false);
   // Hung from the right of a button that, on a phone, is not far from the left.
   const { box, panel: menu } = useMenu(open, setOpen);
@@ -76,26 +78,47 @@ export function ViewMenu() {
         // Fixed width: the scales are controls, not rows, and read best at the
         // same size every time.
         <MenuPanel ref={menu} align="end" className="w-72 p-1.5">
-          <MenuLabel icon={<Flame className="size-3.5" aria-hidden />}>Sexual content</MenuLabel>
-          <div className="px-1 pb-2">
-            <Segmented
-              label="Sexual content"
-              value={p.sexual}
-              options={SEXUAL}
-              onChange={sexual => p.set({ sexual })}
-              className="w-full"
-            />
-          </div>
-          <MenuLabel icon={<Swords className="size-3.5" aria-hidden />}>Violent content</MenuLabel>
-          <div className="px-1 pb-1">
-            <Segmented
-              label="Violent content"
-              value={p.violence}
-              options={VIOLENCE}
-              onChange={violence => p.set({ violence })}
-              className="w-full"
-            />
-          </div>
+          {viewing.masked ? (
+            // Nothing past these levels reaches the page, so there is nothing
+            // to choose; the reader is told why instead.
+            <>
+              <MenuLabel icon={<ShieldCheck className="size-3.5" aria-hidden />}>
+                All ages
+              </MenuLabel>
+              <p className="px-2.5 pb-2 text-xs text-muted">
+                {viewing.reason === 'site'
+                  ? 'An administrator has set this site to show only what is for all ages.'
+                  : 'Only what is for all ages is shown. Sign in to choose what else to see.'}
+              </p>
+            </>
+          ) : (
+            <>
+              <MenuLabel icon={<Flame className="size-3.5" aria-hidden />}>
+                Sexual content
+              </MenuLabel>
+              <div className="px-1 pb-2">
+                <Segmented
+                  label="Sexual content"
+                  value={p.sexual}
+                  options={SEXUAL}
+                  onChange={sexual => p.set({ sexual })}
+                  className="w-full"
+                />
+              </div>
+              <MenuLabel icon={<Swords className="size-3.5" aria-hidden />}>
+                Violent content
+              </MenuLabel>
+              <div className="px-1 pb-1">
+                <Segmented
+                  label="Violent content"
+                  value={p.violence}
+                  options={VIOLENCE}
+                  onChange={violence => p.set({ violence })}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
           <MenuLabel icon={<EyeOff className="size-3.5" aria-hidden />}>Spoilers</MenuLabel>
           <div className="px-1 pb-1">
             <Segmented

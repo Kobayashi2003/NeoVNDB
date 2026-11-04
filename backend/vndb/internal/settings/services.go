@@ -20,6 +20,8 @@ type Serve struct {
 	UpdateRetryAfter Duration `json:"update_retry_after"`
 	DumpKeep         int      `json:"dump_keep"`
 	GuardMaxLoss     float64  `json:"guard_max_loss"`
+	// Every reader sees only what is for all ages; guests always do.
+	AllAges bool `json:"all_ages"`
 }
 
 func ServeOf(cfg *config.Config) Serve {
@@ -28,6 +30,7 @@ func ServeOf(cfg *config.Config) Serve {
 		UpdateRetryAfter: Duration(cfg.UpdateRetryAfter),
 		DumpKeep:         cfg.DumpKeep,
 		GuardMaxLoss:     cfg.GuardMaxLoss,
+		AllAges:          cfg.AllAges,
 	}
 }
 
@@ -39,6 +42,7 @@ func (s Serve) Apply(cfg *config.Config) *config.Config {
 	c.UpdateRetryAfter = time.Duration(s.UpdateRetryAfter)
 	c.DumpKeep = s.DumpKeep
 	c.GuardMaxLoss = s.GuardMaxLoss
+	c.AllAges = s.AllAges
 	return &c
 }
 
