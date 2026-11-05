@@ -8,7 +8,9 @@ import (
 
 // Canonical is the cache key: built from the parsed request so equivalent
 // requests (fields=a,b and fields=b,a) share one entry. The limits are part of
-// it so raising a ceiling doesn't serve a cached refusal.
+// it so raising a ceiling doesn't serve a cached refusal. What the caller wrote
+// is quoted, so no value can spell out the separators and land on another
+// request's key.
 func (r *Request) Canonical(entity string) string {
 	var b strings.Builder
 	b.WriteString(entity)
@@ -20,17 +22,17 @@ func (r *Request) Canonical(entity string) string {
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		b.WriteString(name)
+		b.WriteString(strconv.Quote(name))
 		b.WriteByte('=')
-		b.WriteString(r.Filters[name])
+		b.WriteString(strconv.Quote(r.Filters[name]))
 		b.WriteByte(';')
 	}
 
 	b.WriteString("|e=")
-	b.WriteString(r.Filter)
+	b.WriteString(strconv.Quote(r.Filter))
 
 	b.WriteString("|s=")
-	b.WriteString(r.Sort)
+	b.WriteString(strconv.Quote(r.Sort))
 	if r.Reverse {
 		b.WriteString("-desc")
 	}

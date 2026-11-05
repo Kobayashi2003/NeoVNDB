@@ -8,6 +8,14 @@ import { ViewerRendered } from '@/hooks/useViewer';
 import { PREFS_COOKIE } from '@/lib/prefs';
 import { readShelf, type OwnSort, type ShelfSource } from '@/lib/shelf';
 import type { Viewer } from '@/lib/api';
+import { router } from '../router';
+
+const at = vi.hoisted(() => ({ path: '/' }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => router,
+  usePathname: () => at.path,
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 /** Answers the read API's id lookups from `answer`, and the user service's
  *  session (which the viewer follows) with nobody. */
@@ -65,6 +73,42 @@ describe('all-ages mode in the content menu', () => {
     // Kept as chosen, so it is there again once the mask comes off.
     expect(decodeURIComponent(document.cookie)).toContain('"sexual":"explicit"');
     act(() => open.result.current.set({ sexual: 'safe', violence: 'tame' }));
+  });
+});
+
+describe('the administrator changing all-ages mode', () => {
+  afterEach(() => {
+    at.path = '/';
+    router.refresh.mockClear();
+  });
+
+  it('redraws the page on the next move, once, and only when the answer changed', async () => {
+    let now: Viewer = { masked: false, reason: null };
+    const fetch = apis(() => ({}));
+    fetch.mockImplementation(async (input: string | URL | Request) =>
+      String(input).includes('/meta/viewer')
+        ? new Response(JSON.stringify(now))
+        : new Response('{"user":null}'),
+    );
+    const wrapper = inMode({ masked: false, reason: null });
+    const { rerender } = render(<p />, { wrapper });
+    // The page drawn first is not asked about again.
+    expect(fetch.mock.calls.some(([u]) => String(u).includes('/meta/viewer'))).toBe(false);
+
+    at.path = '/v';
+    rerender(<p />);
+    await act(async () => {});
+    expect(router.refresh).not.toHaveBeenCalled();
+
+    now = { masked: true, reason: 'site' };
+    at.path = '/c';
+    rerender(<p />);
+    await act(async () => {});
+    expect(router.refresh).toHaveBeenCalledTimes(1);
+    // Still drawn unmasked (the refresh is a mock): not redrawn again on the spot.
+    rerender(<p />);
+    await act(async () => {});
+    expect(router.refresh).toHaveBeenCalledTimes(1);
   });
 });
 

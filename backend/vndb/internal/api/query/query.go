@@ -88,7 +88,12 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		}
 		req.Filter, req.expr = raw, expr
 	}
-	if cost := Cost(cat, reg, fields, req.Limit); lim.MaxCost > 0 && cost > lim.MaxCost {
+	rows := req.Limit
+	if raw := values.Get(idFilter); raw != "" && !req.Paged {
+		// A lookup that skips paging returns every id it names.
+		rows = len(SplitValues(raw))
+	}
+	if cost := Cost(cat, reg, fields, rows); lim.MaxCost > 0 && cost > lim.MaxCost {
 		return nil, BadRequest("too much data selected (estimated %d values, limit %d); "+
 			"lower the limit or ask for fewer fields", cost, lim.MaxCost)
 	}

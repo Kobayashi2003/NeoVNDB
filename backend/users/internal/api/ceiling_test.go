@@ -107,6 +107,45 @@ func TestSignInCeiling(t *testing.T) {
 	}
 }
 
+// Signing in to one's own account between guesses does not reset the
+// address's count.
+func TestSignInCeilingPerAddressHolds(t *testing.T) {
+	h := server(t, func(c *config.Config) { c.SignInTries = 2 })
+	register(t, h, "mine")
+	register(t, h, "theirs")
+
+	guess := `{"username":"theirs","password":"not the password"}`
+	if w := call(h, "POST", "/login", guess, ""); w.Code != http.StatusUnauthorized {
+		t.Fatalf("first guess: %d", w.Code)
+	}
+	if w := call(h, "POST", "/login", `{"username":"mine","password":"a good long password"}`, ""); w.Code != http.StatusOK {
+		t.Fatalf("own sign-in: %d", w.Code)
+	}
+	if w := call(h, "POST", "/login", guess, ""); w.Code != http.StatusTooManyRequests {
+		t.Errorf("second guess after an own sign-in: %d, want 429", w.Code)
+	}
+}
+
+// Failing to sign in as "#1" leaves user 1 able to confirm their password.
+func TestSignInNamesDoNotSpendAnotherAccountsTries(t *testing.T) {
+	h := server(t, func(c *config.Config) { c.SignInTries = 2 })
+	session := register(t, h, "reader")
+
+	for i := range 2 {
+		r := httptest.NewRequest("POST", "/login", strings.NewReader(`{"username":"#1","password":"x"}`))
+		r.Header.Set("X-Forwarded-For", fmt.Sprintf("198.51.100.%d", i+1))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != http.StatusUnauthorized {
+			t.Fatalf("sign-in as #1, attempt %d: %d", i+1, w.Code)
+		}
+	}
+	w := call(h, "POST", "/me/password", `{"current":"a good long password","new":"another good long password"}`, session)
+	if w.Code != http.StatusNoContent {
+		t.Errorf("user 1 changing their password: %d %s", w.Code, w.Body)
+	}
+}
+
 func TestSignUpCeiling(t *testing.T) {
 	h := server(t, func(c *config.Config) { c.SignUpTries = 1 })
 	register(t, h, "first")

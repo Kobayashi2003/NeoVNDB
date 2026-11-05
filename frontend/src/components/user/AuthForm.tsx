@@ -14,10 +14,19 @@ import { surface } from '@/components/ui/Surface';
 const AUTH = new Set(['/login', '/register']);
 
 /** Where to go afterwards: only a path on this site (an off-site `next`
- *  would be an open redirect), and never back to this page. */
+ *  would be an open redirect), and never back to this page. The URL parser
+ *  decides, since browsers read `/\host` and `/<tab>/host` as `//host`. */
 function safe(next: string | undefined): string | null {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return null;
-  return AUTH.has(next.split('?')[0]) ? null : next;
+  if (!next?.startsWith('/')) return null;
+  const here = 'http://here.invalid';
+  let url: URL;
+  try {
+    url = new URL(next, here);
+  } catch {
+    return null;
+  }
+  if (url.origin !== here || AUTH.has(url.pathname.replace(/\/+$/, ''))) return null;
+  return url.pathname + url.search + url.hash;
 }
 
 export function AuthForm({ mode, next }: { mode: 'login' | 'register'; next?: string }) {

@@ -44,7 +44,14 @@ describe('AuthForm', () => {
   });
 
   it('never follows a next that leaves the site or loops back here', async () => {
-    for (const next of ['//evil.example', 'https://evil.example', '/login?next=/u']) {
+    for (const next of [
+      '//evil.example',
+      'https://evil.example',
+      '/\\evil.example',
+      '/\t/evil.example',
+      '/login?next=/u',
+      '/login/',
+    ]) {
       service(200);
       const { unmount } = render(<AuthForm mode="login" next={next} />);
       await signIn();

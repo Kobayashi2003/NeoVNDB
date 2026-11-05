@@ -17,7 +17,7 @@ func newCache(ctx context.Context, cfg *config.Config) (cache.Cache, error) {
 	case "off", "none", "":
 		return cache.Nop{}, nil
 	case "memory":
-		return cache.NewMemory(cfg.CacheEntries, cfg.CacheTTL), nil
+		return cache.NewMemory(cfg.CacheEntries, cfg.CacheBytes, cfg.CacheTTL), nil
 	case "redis":
 		if cfg.RedisURL == "" {
 			return nil, fmt.Errorf("NEOVNDB_CACHE=redis needs NEOVNDB_REDIS_URL")

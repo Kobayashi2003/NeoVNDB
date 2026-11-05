@@ -52,6 +52,7 @@ const (
 	defaultCacheBackend  = "memory"
 	defaultCacheTTL      = time.Hour
 	defaultCacheEntries  = 10000
+	defaultCacheBytes    = 256 << 20
 	defaultCacheMaxEntry = 1 << 20
 
 	// Max table shrink before promote is refused. vndb only grows, so a real
@@ -124,6 +125,7 @@ type Config struct {
 	CacheBackend  string
 	CacheTTL      time.Duration
 	CacheEntries  int
+	CacheBytes    int
 	CacheMaxEntry int
 	RedisURL      string
 
@@ -192,6 +194,7 @@ func Load() (*Config, error) {
 		CacheBackend:  e.text("NEOVNDB_CACHE", defaultCacheBackend),
 		CacheTTL:      e.duration("NEOVNDB_CACHE_TTL", defaultCacheTTL),
 		CacheEntries:  e.int("NEOVNDB_CACHE_ENTRIES", defaultCacheEntries),
+		CacheBytes:    e.int("NEOVNDB_CACHE_BYTES", defaultCacheBytes),
 		CacheMaxEntry: e.int("NEOVNDB_CACHE_MAX_ENTRY", defaultCacheMaxEntry),
 		RedisURL:      e.text("NEOVNDB_REDIS_URL", ""),
 

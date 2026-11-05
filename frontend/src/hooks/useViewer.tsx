@@ -5,8 +5,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Viewer } from '@/lib/api';
+import { usePathname, useRouter } from 'next/navigation';
+import { viewer, type Viewer } from '@/lib/api';
 import { useSession } from './useSession';
 
 const Rendered = createContext<Viewer>({ masked: false, reason: null });
@@ -15,6 +15,7 @@ export function ViewerRendered({ value, children }: { value: Viewer; children: R
   return (
     <Rendered value={value}>
       <FollowSession />
+      <FollowSite rendered={value} />
       {children}
     </Rendered>
   );
@@ -37,5 +38,30 @@ function FollowSession() {
     seen.current = status;
     if (was !== 'unknown' && status !== 'unknown' && was !== status) router.refresh();
   }, [status, router]);
+  return null;
+}
+
+/** The administrator turning all-ages mode on or off changes it too, with no
+ *  sign of it here: the read API masks at once, but the layout keeps the
+ *  answer it was drawn with. So each move to another page asks again. */
+function FollowSite({ rendered }: { rendered: Viewer }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  // The page drawn first is already current; and one redraw per page at most,
+  // so an answer that keeps disagreeing (a failed ask reads as unmasked) does
+  // not redraw it over and over.
+  const asked = useRef(pathname);
+  useEffect(() => {
+    if (asked.current === pathname) return;
+    asked.current = pathname;
+    let live = true;
+    void viewer().then(now => {
+      if (live && (now.masked !== rendered.masked || now.reason !== rendered.reason))
+        router.refresh();
+    });
+    return () => {
+      live = false;
+    };
+  }, [pathname, rendered, router]);
   return null;
 }

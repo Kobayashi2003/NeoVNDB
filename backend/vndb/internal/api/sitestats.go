@@ -36,7 +36,8 @@ func (s *Server) keepSiteStats(ctx context.Context) {
 	defer tick.Stop()
 	for {
 		ways := []context.Context{ctx}
-		if s.mask.readyFor(ctx, s.gen.current(ctx)) {
+		// An error only skips the masked count; a guest asking waits for one.
+		if ready, _ := s.mask.readyFor(ctx, s.gen.current(ctx)); ready {
 			ways = append(ways, query.WithMask(ctx, s.mask))
 		}
 		for _, way := range ways {

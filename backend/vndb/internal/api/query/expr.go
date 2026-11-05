@@ -102,9 +102,6 @@ func (p *parser) peek() rune {
 
 // expression := term ("," term)*
 func (p *parser) expression(depth int) (node, error) {
-	if depth > maxExprDepth {
-		return nil, BadRequest("filter: nested too deeply")
-	}
 	first, err := p.term(depth)
 	if err != nil {
 		return nil, err
@@ -146,7 +143,12 @@ func (p *parser) term(depth int) (node, error) {
 }
 
 // factor := "!" factor | "(" expression ")" | leaf
+//
+// Both kinds of nesting come through here, so the depth is checked here.
 func (p *parser) factor(depth int) (node, error) {
+	if depth > maxExprDepth {
+		return nil, BadRequest("filter: nested too deeply")
+	}
 	switch p.peek() {
 	case 0:
 		return nil, BadRequest("filter: ended early, expected a condition")

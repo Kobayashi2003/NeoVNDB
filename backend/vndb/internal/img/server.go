@@ -12,10 +12,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/config"
 )
 
@@ -30,13 +30,18 @@ type Server struct {
 	// What redirected readers got from vndb, for Behind to fetch. A full
 	// queue drops the image; the crawl or the next reader brings it in.
 	behind chan Ref
-	// Images vndb answered 404 for, which a redirect would only send the
-	// reader to; they are answered here instead.
-	gone sync.Map
+	// Images vndb answered 404 for: answered here rather than redirected to or
+	// asked for again. Bounded, since anyone can name a number vndb never had,
+	// and forgotten after a while, since it may yet have it.
+	gone *cache.Memory
 }
 
-// behindQueue is how many redirected images may wait to be fetched.
-const behindQueue = 1024
+const (
+	// behindQueue is how many redirected images may wait to be fetched.
+	behindQueue = 1024
+	goneEntries = 10000
+	goneFor     = time.Hour
+)
 
 func NewServer(cfg *config.Config, log *slog.Logger) *Server {
 	s := &Server{
@@ -45,6 +50,7 @@ func NewServer(cfg *config.Config, log *slog.Logger) *Server {
 		flight: newFlight(),
 		log:    log,
 		behind: make(chan Ref, behindQueue),
+		gone:   cache.NewMemory(goneEntries, 0, goneFor),
 	}
 	s.SetRedirect(cfg.ImageMiss == "redirect")
 	return s
@@ -63,9 +69,7 @@ func (s *Server) Behind(ctx context.Context) {
 				case <-ctx.Done():
 					return
 				case ref := <-s.behind:
-					if _, err := s.original(ref); errors.Is(err, ErrMissing) {
-						s.gone.Store(ref, true)
-					} else if err != nil {
+					if _, err := s.fetch(ref); err != nil && !errors.Is(err, ErrMissing) {
 						s.log.Warn("fetching behind a redirect", "ref", ref, "err", err)
 					}
 				}
@@ -101,7 +105,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, gone := s.gone.Load(ref); s.redirect.Load() && !gone {
+	if s.redirect.Load() && !s.isGone(ref) {
 		if data, err := s.mirror.Read(ref); err == nil {
 			// Stored since the edge looked, or the edge does not serve files.
 			serve(w, r, data)
@@ -117,11 +121,11 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := s.original(ref)
+	data, err := s.fetch(ref)
 	if errors.Is(err, ErrMissing) {
 		// A thumbnail vndb never made: the original is already that small.
 		if base, ok := baseOf(ref); ok {
-			data, err = s.original(base)
+			data, err = s.fetch(base)
 		}
 	}
 	switch {
@@ -142,6 +146,23 @@ func serve(w http.ResponseWriter, r *http.Request, data []byte) {
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	// ServeContent for range requests; zero time omits Last-Modified.
 	http.ServeContent(w, r, ".jpg", time.Time{}, bytes.NewReader(data))
+}
+
+// fetch is original, short of asking vndb again for what it lately did not have.
+func (s *Server) fetch(ref Ref) ([]byte, error) {
+	if s.isGone(ref) {
+		return nil, ErrMissing
+	}
+	data, err := s.original(ref)
+	if errors.Is(err, ErrMissing) {
+		s.gone.Set(context.Background(), ref.String(), nil)
+	}
+	return data, err
+}
+
+func (s *Server) isGone(ref Ref) bool {
+	_, gone := s.gone.Get(context.Background(), ref.String())
+	return gone
 }
 
 // original returns the mirrored bytes, fetching them if this is the first ask.

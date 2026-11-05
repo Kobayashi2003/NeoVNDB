@@ -105,8 +105,14 @@ func TestParseExprBudget(t *testing.T) {
 	if _, err := ParseExpr("a=1,b=2,c=3", Budget(0)); err != nil {
 		t.Errorf("no budget should mean no ceiling: %v", err)
 	}
-	if _, err := ParseExpr(strings.Repeat("(", 200)+"a=1", nil); err == nil {
-		t.Error("a tree deeper than the stack guard was accepted")
+	for _, deep := range []string{
+		strings.Repeat("(", 200) + "a=1" + strings.Repeat(")", 200),
+		strings.Repeat("!", 200) + "a=1",
+		strings.Repeat("!(", 100) + "a=1" + strings.Repeat(")", 100),
+	} {
+		if _, err := ParseExpr(deep, nil); err == nil || !strings.Contains(err.Error(), "too deeply") {
+			t.Errorf("%.12s… deeper than the stack guard: %v", deep, err)
+		}
 	}
 
 	// One budget, spent by everything it is passed to: two expressions that

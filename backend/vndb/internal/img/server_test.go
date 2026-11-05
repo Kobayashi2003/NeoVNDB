@@ -216,8 +216,7 @@ func TestMissRedirectStopsForWhatVndbLacks(t *testing.T) {
 		t.Fatalf("first ask: %d, want a redirect", rec.Code)
 	}
 	eventually(t, "the 404 behind the redirect was not remembered", func() bool {
-		_, gone := srv.gone.Load(thumb)
-		return gone
+		return srv.isGone(thumb)
 	})
 	rec = httptest.NewRecorder()
 	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv.t/39/10039.jpg", nil))
@@ -246,5 +245,25 @@ func TestMissingThumbnailServesTheOriginal(t *testing.T) {
 	srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv/40/10040.jpg", nil))
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("missing original: %d", rec.Code)
+	}
+}
+
+// What vndb just answered 404 for is not asked for again on every request:
+// anyone can name a number vndb never had, as often as they like.
+func TestMissingIsNotAskedForAgain(t *testing.T) {
+	var asked atomic.Int32
+	srv, _ := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked.Add(1)
+		http.NotFound(w, r)
+	}))
+	for range 3 {
+		rec := httptest.NewRecorder()
+		srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/cv/40/10040.jpg", nil))
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("missing original: %d", rec.Code)
+		}
+	}
+	if n := asked.Load(); n != 1 {
+		t.Errorf("vndb was asked %d times, want 1", n)
 	}
 }

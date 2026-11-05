@@ -181,6 +181,17 @@ func TestAllAges(t *testing.T) {
 		t.Errorf("built %v, want v 1, r 2, c 1", built)
 	}
 
+	// Before any guest has been answered, the server has yet to see the list;
+	// failing to look for it is no reason to answer a guest unmasked.
+	gone, cancel := context.WithCancel(ctx)
+	cancel()
+	r := httptest.NewRequestWithContext(gone, http.MethodGet, "/vn?fields=id", nil)
+	w := httptest.NewRecorder()
+	routes.ServeHTTP(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("a guest when the list cannot be looked for: %d %s", w.Code, w.Body)
+	}
+
 	// A member sees everything.
 	var member page
 	ask("member", "/vn?fields=id&sort=id", &member)

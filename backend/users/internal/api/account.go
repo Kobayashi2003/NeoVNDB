@@ -104,12 +104,12 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	// Counted before any lookup, so refusals are cheap.
 	name := strings.TrimSpace(body.Username)
-	from := caller(r)
-	if ok, wait := s.signInFrom.take(from); !ok {
+	if ok, wait := s.signInFrom.take(caller(r)); !ok {
 		refuseTooMany(w, wait)
 		return
 	}
-	if ok, wait := s.signInFor.take(strings.ToLower(name)); !ok {
+	account := nameKey(name)
+	if ok, wait := s.signInFor.take(account); !ok {
 		refuseTooMany(w, wait)
 		return
 	}
@@ -128,9 +128,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, refuse)
 		return
 	}
-	// A correct password clears earlier failed attempts.
-	s.signInFrom.forget(from)
-	s.signInFor.forget(strings.ToLower(name))
+	// A correct password clears the failed attempts on this account. Not the
+	// address's: signing in to one's own account between guesses at others'
+	// would reset that limit as often as it was reached.
+	s.signInFor.forget(account)
 
 	if err := s.start(w, r, user.ID); err != nil {
 		s.oops(w, "starting session", err)
@@ -263,7 +264,7 @@ func (s *Server) deleteAccount(w http.ResponseWriter, r *http.Request, userID in
 // Counted like sign-in attempts, so a borrowed session cannot be used to
 // guess the password without limit.
 func (s *Server) confirm(w http.ResponseWriter, r *http.Request, userID int32, password string) bool {
-	key := "#" + strconv.Itoa(int(userID))
+	key := idKey(userID)
 	if ok, wait := s.signInFor.take(key); !ok {
 		refuseTooMany(w, wait)
 		return false
@@ -280,3 +281,9 @@ func (s *Server) confirm(w http.ResponseWriter, r *http.Request, userID int32, p
 	s.signInFor.forget(key)
 	return true
 }
+
+// nameKey and idKey count one account's attempts, by the name signed in with
+// or the id of a session asking again. Sign-in takes any name, so the two are
+// kept apart: failing to sign in as "#1" must not use up user 1's tries.
+func nameKey(name string) string { return "name:" + strings.ToLower(name) }
+func idKey(id int32) string      { return "id:" + strconv.Itoa(int(id)) }

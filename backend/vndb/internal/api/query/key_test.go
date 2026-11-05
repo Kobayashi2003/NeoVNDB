@@ -62,3 +62,13 @@ func TestCanonicalSeparatesDifferentRequests(t *testing.T) {
 		t.Error("a different field selection did not change the key")
 	}
 }
+
+// A value that spells out the separators must not land on another request's
+// key, or one crafted request poisons the cache for everyone asking the other.
+func TestCanonicalValuesCannotForgeAKey(t *testing.T) {
+	two := canonical(t, "title", func(r *Request) { r.Filters["lang"] = "en"; r.Filters["olang"] = "ja" })
+	one := canonical(t, "title", func(r *Request) { r.Filters["lang"] = "en;olang=ja" })
+	if one == two {
+		t.Errorf("lang=en;olang=ja and lang=en&olang=ja share %s", one)
+	}
+}

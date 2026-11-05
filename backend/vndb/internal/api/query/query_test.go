@@ -2,6 +2,7 @@ package query
 
 import (
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -56,6 +57,20 @@ func TestParseRequestCost(t *testing.T) {
 	tight.MaxCost = 0 // no ceiling
 	if _, err := parse("fields=title&limit=10", tight); err != nil {
 		t.Errorf("no ceiling: %v", err)
+	}
+
+	// A whole id lookup is costed by the ids it names, not a page of them:
+	// 60 rows of id and title is 120 values, over 100; a page of 24 is 48.
+	tight.MaxCost = 100
+	ids := "id=v1"
+	for i := 2; i <= 60; i++ {
+		ids += ",v" + strconv.Itoa(i)
+	}
+	if _, err := parse("fields=title&"+ids, tight); err == nil {
+		t.Error("a whole lookup of 60 over the cost ceiling was accepted")
+	}
+	if _, err := parse("fields=title&limit=24&"+ids, tight); err != nil {
+		t.Errorf("the same lookup a page at a time: %v", err)
 	}
 }
 
