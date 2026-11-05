@@ -2,6 +2,7 @@ package vndb
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,12 +31,15 @@ func BuildExtLink(site, value string) (ExtLink, bool) {
 	return ExtLink{Site: site, Label: def.label, URL: url}, true
 }
 
+// numeric is a recipe's number verb, padded or not: %d, %07d.
+var numeric = regexp.MustCompile(`%0?[0-9]*d`)
+
 // formatExtLink fills a recipe. Most take the value whole; itch is the one
 // whose value carries two path segments, author and game.
 func formatExtLink(format, value string) (string, bool) {
 	switch strings.Count(format, "%") {
 	case 1:
-		if strings.Contains(format, "%d") {
+		if numeric.MatchString(format) {
 			n, err := strconv.Atoi(value)
 			if err != nil {
 				return "", false

@@ -180,15 +180,11 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, string, error) {
 // label's kind (title, alias, indirect); then trigram similarity and the
 // entry's popularity where the type has one. Ties go to the older entry.
 func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (string, error) {
-	raw, searching := req.Filters["search"]
+	value, searching := req.searchText()
 	if !searching {
 		return "", BadRequest("searchrank only orders a search")
 	}
-	value, err := matchOnly(raw)
-	if err != nil {
-		return "", err
-	}
-	terms := SearchTerms(value)
+	terms := SearchTerms(strings.TrimSpace(value))
 	// Uncorrelated, so it runs once rather than for every label ranked: with
 	// a bound parameter the planner cannot fold the call into a constant.
 	q := fmt.Sprintf("(SELECT search_norm_term(%s))", b.Arg(strings.Join(terms, " ")))
@@ -196,17 +192,17 @@ func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (stri
 	// With one word, "holds every word" is just "contains the query"; the
 	// general form unnests the words for every label and costs most of the
 	// time on a broad search.
-	every := "sc.label LIKE '%%' || " + q + " || '%%'"
+	every := "sc.label LIKE '%%' || " + q + " || '%%' ESCAPE ''"
 	if len(terms) > 1 {
 		words := fmt.Sprintf("(SELECT array_agg(search_norm_term(w)) FROM unnest(%s::text[]) w)", b.Arg(terms))
-		every = fmt.Sprintf(`(SELECT bool_and(sc.label LIKE '%%%%' || w || '%%%%') FROM unnest(%s) w)`, words)
+		every = fmt.Sprintf(`(SELECT bool_and(sc.label LIKE '%%%%' || w || '%%%%' ESCAPE '') FROM unnest(%s) w)`, words)
 	}
 
 	// Match bonuses count fully on a main title, less on an alias and least
 	// on an indirect hit such as a release title: an alias that happens to
 	// start with the query should not tie with a title that does.
 	rank := fmt.Sprintf(`(SELECT MAX(
-	      ( CASE WHEN sc.label = %[1]s THEN 100 WHEN sc.label LIKE %[1]s || '%%' THEN 50 ELSE 0 END
+	      ( CASE WHEN sc.label = %[1]s THEN 100 WHEN sc.label LIKE %[1]s || '%%' ESCAPE '' THEN 50 ELSE 0 END
 	      + CASE WHEN `+every+` THEN 20 ELSE 0 END )
 	      * CASE sc.prio WHEN 3 THEN 1.0 WHEN 2 THEN 0.7 ELSE 0.4 END
 	    + sc.prio * 5
@@ -256,18 +252,17 @@ const idFilter = "id"
 
 // SearchFilter adds one condition per word, ANDed, so a title and an alias can
 // each match part of the query. Terms go through the same normaliser as the
-// index.
+// index. The value is text, not a comparison: <3 is searched for as written.
+// A backslash is no escape (an empty ESCAPE), and a term that normalises to nothing,
+// all punctuation, matches nothing rather than every label.
 func SearchFilter(entity, alias string) FilterFunc {
 	condition := fmt.Sprintf(`EXISTS (
 		SELECT 1 FROM search_cache sc
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
-		   AND sc.label LIKE '%%%%' || search_norm_term(%%s) || '%%%%')`, entity, alias)
+		   AND search_norm_term(%%[1]s) <> ''
+		   AND sc.label LIKE '%%%%' || search_norm_term(%%[1]s) || '%%%%' ESCAPE '')`, entity, alias)
 	return func(b *Builder, value string) error {
-		value, err := matchOnly(value)
-		if err != nil {
-			return err
-		}
-		terms := SearchTerms(value)
+		terms := SearchTerms(strings.TrimSpace(value))
 		if len(terms) == 0 {
 			return BadRequest("search needs a term")
 		}

@@ -43,7 +43,9 @@ func ParseLiked(raw string, maxIDs int) ([]Liked, error) {
 		}
 		w := 1.0
 		if hasWeight {
-			if w, err = strconv.ParseFloat(weight, 64); err != nil || w < -maxWeight || w > maxWeight {
+			// Written as within rather than outside, since NaN is neither: it
+			// would pass, and the score it makes cannot be encoded.
+			if w, err = strconv.ParseFloat(weight, 64); err != nil || !(w >= -maxWeight && w <= maxWeight) {
 				return nil, query.BadRequest("weight %q is not a number from -%d to %d", weight, maxWeight, maxWeight)
 			}
 		}
@@ -61,7 +63,7 @@ func ParseLiked(raw string, maxIDs int) ([]Liked, error) {
 // Recommend sums, for every title alike to the ones given (vn_similar, by
 // tags), its likeness to each times that one's weight, and returns the best
 // `limit` that are neither given nor excluded. "Because" names the three that
-// added the most.
+// added the most; a title the reader disliked takes away, and is never one.
 func (r *Resolver) Recommend(ctx context.Context, from []Liked, exclude []int32, limit int) ([]Pick, error) {
 	ids := make([]int32, len(from))
 	weights := make([]float64, len(from))
@@ -77,7 +79,7 @@ func (r *Resolver) Recommend(ctx context.Context, from []Liked, exclude []int32,
 		WITH src(id, w) AS (SELECT * FROM unnest($1::int[], $2::float8[]))
 		SELECT s.vid,
 		       SUM(s.score * src.w)::float8 AS score,
-		       (array_agg(src.id ORDER BY s.score * src.w DESC))[1:3] AS because
+		       (array_agg(src.id ORDER BY s.score * src.w DESC) FILTER (WHERE src.w > 0))[1:3] AS because
 		  FROM vn_similar s
 		  JOIN src ON src.id = s.id
 		 WHERE s.vid <> ALL($1::int[]) AND s.vid <> ALL($3::int[])`+masked+`

@@ -176,6 +176,15 @@ func TestListCeilings(t *testing.T) {
 	if w := call(h, "GET", marks+"?limit=4", "", session); w.Code != http.StatusBadRequest {
 		t.Errorf("page of 4 over 3: %d", w.Code)
 	}
+	// A page so far out its offset would wrap is refused, not a 500.
+	for _, path := range []string{marks + "?page=9223372036854775807", "/ratings?type=v&page=9223372036854775807"} {
+		if w := call(h, "GET", path, "", session); w.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d", path, w.Code)
+		}
+	}
+	if w := call(h, "GET", marks+"?page=2147483647", "", session); w.Code != http.StatusOK {
+		t.Errorf("the highest page there is: %d %s", w.Code, w.Body)
+	}
 
 	// The whole list stops at MaxItems but still counts everything, so the
 	// reader can be told it was too long.

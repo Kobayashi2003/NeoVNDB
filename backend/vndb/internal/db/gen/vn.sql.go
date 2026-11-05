@@ -286,7 +286,8 @@ SELECT cv.vid AS vn_id,
   JOIN chars c ON c.id = cv.id
  WHERE cv.vid = ANY($1::int[])
  GROUP BY cv.vid, c.id
- ORDER BY cv.vid, role, c.id
+ -- By that weight: as text, "appears" would sort ahead of "main".
+ ORDER BY cv.vid, MIN(array_position(ARRAY['main', 'primary', 'side', 'appears'], cv.role)), c.id
 `
 
 type VNCharacterListRow struct {

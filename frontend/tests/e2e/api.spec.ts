@@ -20,3 +20,13 @@ test('the API describes itself, from the tables that serve it', async ({ page, r
   await expect(row).toContainText('Cover: sexual content');
   await expect(row).toContainText('safe, suggestive, explicit');
 });
+
+// By weight, not as text, where "appears" would come before "main".
+test("a work's characters come main roles first", async ({ request }) => {
+  const res = await request.get('/vndbserve/vn?id=v17&fields=characters.role');
+  const { results } = (await res.json()) as { results: { characters: { role: string }[] }[] };
+  const weight = ['main', 'primary', 'side', 'appears'];
+  const order = results[0].characters.map(c => weight.indexOf(c.role));
+  expect(order.length).toBeGreaterThan(1);
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+});

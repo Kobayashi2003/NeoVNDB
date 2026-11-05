@@ -3,10 +3,12 @@ SELECT * FROM import_info LIMIT 1;
 
 -- name: Search :many
 -- prio ranks main titles above aliases above indirect hits. The term goes
--- through the same normalizer that built the labels.
+-- through the same normalizer that built the labels; as in query.SearchFilter,
+-- a backslash is no escape and a term of punctuation alone matches nothing.
 SELECT entity_type, id, MAX(prio)::smallint AS prio
   FROM search_cache
- WHERE label LIKE '%' || search_norm_term(@term::text) || '%'
+ WHERE search_norm_term(@term::text) <> ''
+   AND label LIKE '%' || search_norm_term(@term::text) || '%' ESCAPE ''
    AND (@entity_type::text = '' OR entity_type = @entity_type::text)
  GROUP BY entity_type, id
  ORDER BY prio DESC, id

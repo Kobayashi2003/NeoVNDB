@@ -390,6 +390,14 @@ type Vn struct {
 	CDevelopers []int32  `db:"c_developers" json:"c_developers"`
 }
 
+type VnAllage struct {
+	ID          int32    `db:"id" json:"id"`
+	CReleased   int32    `db:"c_released" json:"c_released"`
+	CLanguages  []string `db:"c_languages" json:"c_languages"`
+	CPlatforms  []string `db:"c_platforms" json:"c_platforms"`
+	CDevelopers []int32  `db:"c_developers" json:"c_developers"`
+}
+
 type VnAnime struct {
 	ID  int32 `db:"id" json:"id"`
 	Aid int32 `db:"aid" json:"aid"`
@@ -490,4 +498,10 @@ type Wikidatum struct {
 	Lutris            []string      `db:"lutris" json:"lutris"`
 	Wine              []int32       `db:"wine" json:"wine"`
 	MobygamesGame     []int32       `db:"mobygames_game" json:"mobygames_game"`
+}
+
+type Withheld struct {
+	EntityType string `db:"entity_type" json:"entity_type"`
+	ID         int32  `db:"id" json:"id"`
+	Reason     string `db:"reason" json:"reason"`
 }

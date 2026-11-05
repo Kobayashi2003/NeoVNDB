@@ -277,6 +277,29 @@ func (p *parser) value() (string, error) {
 	return value, nil
 }
 
+// searchText is what a request searches for, for ranking by it: the search
+// parameter, or else the first search= in the expression that is not negated.
+func (r *Request) searchText() (string, bool) {
+	if raw, ok := r.Filters["search"]; ok {
+		return raw, true
+	}
+	return searchIn(r.expr)
+}
+
+func searchIn(n node) (string, bool) {
+	switch n := n.(type) {
+	case *leaf:
+		return n.value, n.name == "search" && n.op == "="
+	case *junction:
+		for _, child := range n.children {
+			if v, ok := searchIn(child); ok {
+				return v, true
+			}
+		}
+	}
+	return "", false
+}
+
 /* --- Compiling ------------------------------------------------------------- */
 
 // Expr compiles an expression and adds it as a single condition.

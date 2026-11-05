@@ -63,15 +63,17 @@ func Parse(cat *Catalog, reg Registry, lim Limits, r *http.Request) (*Request, e
 		Masked:  MaskOf(r.Context()) != nil,
 	}
 
+	// Both at most int32, so the offset they make cannot wrap negative.
 	if raw := values.Get("page"); raw != "" {
-		n, err := strconv.Atoi(raw)
+		n, err := strconv.ParseInt(raw, 10, 32)
 		if err != nil || n < 1 {
 			return nil, BadRequest("page must be a positive number")
 		}
-		req.Page = n
+		req.Page = int(n)
 	}
 	if raw := values.Get("limit"); raw != "" {
-		n, err := strconv.Atoi(raw)
+		n64, err := strconv.ParseInt(raw, 10, 32)
+		n := int(n64)
 		if err != nil || n < 1 {
 			return nil, BadRequest("limit must be a positive number")
 		}

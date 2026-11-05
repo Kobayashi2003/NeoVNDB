@@ -134,9 +134,12 @@ func TestAllAges(t *testing.T) {
 	if err := store.Promote(ctx); err != nil {
 		t.Fatal(err)
 	}
-	// Votes are not among the fixtures, so v101's tags go straight in.
+	// Votes are not among the fixtures, so v101's tags go straight in, and
+	// likewise how alike the works are.
 	exec(`INSERT INTO vndb.tags_vn_inherit (tag, vid, rating, spoiler, lie) VALUES
-	        (1, 101, 2, 0, false), (2, 101, 2, 0, false)`)
+	        (1, 101, 2, 0, false), (2, 101, 2, 0, false);
+	      INSERT INTO vndb.vn_similar (id, vid, score) VALUES (101, 102, 0.5), (100, 102, 0.4)
+	        ON CONFLICT (id, vid) DO UPDATE SET score = EXCLUDED.score`)
 
 	// As the live generation was when all-ages mode came in (see below);
 	// before the server starts, which looks at once.
@@ -220,6 +223,41 @@ func TestAllAges(t *testing.T) {
 	ask("member", "/vn?fields=id&sort=id", &member)
 	if !slices.Equal(ids(member), []string{"v100", "v101", "v102"}) || member.Withheld != nil {
 		t.Errorf("member: %v, withheld %v", ids(member), member.Withheld)
+	}
+
+	// Inputs that once made a 500: a work with no relations has edges [], not
+	// null; a number past what the column holds matches nothing.
+	var lone struct {
+		Edges []json.RawMessage `json:"edges"`
+	}
+	graphReq := httptest.NewRequest(http.MethodGet, "/vn/v102/relations", nil)
+	graphReq.Header.Set(viewerHeader, "member")
+	graph := httptest.NewRecorder()
+	routes.ServeHTTP(graph, graphReq)
+	if err := json.Unmarshal(graph.Body.Bytes(), &lone); graph.Code != http.StatusOK || err != nil ||
+		lone.Edges == nil || !strings.Contains(graph.Body.String(), `"edges":[]`) {
+		t.Errorf("a graph of one: %d %s", graph.Code, graph.Body)
+	}
+	// A search of punctuation alone matches nothing rather than everything; one
+	// ending in a backslash, or starting like a comparison, is only text.
+	for _, q := range []string{"length_minutes=%3E%3D40000", "search=!!!", "search=a%5C", "search=%3C3",
+		"search=%3C3&sort=searchrank", "f=search%3Dzzq&sort=searchrank"} {
+		var none page
+		ask("member", "/vn?fields=id&"+q, &none)
+		if len(none.Results) != 0 {
+			t.Errorf("%s: %v", q, ids(none))
+		}
+	}
+	// A title the reader disliked takes from a suggestion but is never its reason.
+	var picks struct {
+		Results []struct {
+			ID      string   `json:"id"`
+			Because []string `json:"because"`
+		} `json:"results"`
+	}
+	ask("member", "/recommend/vn?from=v101:1,v100:-0.5", &picks)
+	if p := picks.Results; len(p) != 1 || p[0].ID != "v102" || !slices.Equal(p[0].Because, []string{"v101"}) {
+		t.Errorf("suggestions from v101, against v100: %+v", picks.Results)
 	}
 
 	// A guest, with no header at all, does not see v100, and the count agrees.

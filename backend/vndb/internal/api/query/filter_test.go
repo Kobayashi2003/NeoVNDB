@@ -35,11 +35,24 @@ func TestListKeepsPlaceholdersInStep(t *testing.T) {
 	if err := IntColumn("vn.c_rating", 10)(b, ">=7,<3"); err != nil {
 		t.Fatal(err)
 	}
-	if got, want := b.SQL(), "x = $1 AND (vn.c_rating >= $2 OR vn.c_rating < $3)"; got != want {
+	if got, want := b.SQL(), "x = $1 AND (vn.c_rating >= $2::bigint OR vn.c_rating < $3::bigint)"; got != want {
 		t.Errorf("SQL = %s, want %s", got, want)
 	}
-	if !reflect.DeepEqual(b.Args, []any{"first", 70, 30}) {
+	if !reflect.DeepEqual(b.Args, []any{"first", int64(70), int64(30)}) {
 		t.Errorf("args = %v; the scale should apply to each", b.Args)
+	}
+}
+
+// A number past int32 is refused as a client error; one past what the column
+// holds is compared as it is, and simply matches nothing.
+func TestIntColumnRange(t *testing.T) {
+	f := IntColumn("vn.c_length", 1)
+	if err := f(&Builder{}, ">=99999999999"); err == nil || !IsClientError(err) {
+		t.Errorf("past int32: %v", err)
+	}
+	b := &Builder{}
+	if err := f(b, ">=40000"); err != nil || !strings.HasSuffix(b.SQL(), "::bigint") {
+		t.Errorf("past smallint: %v %s", err, b.SQL())
 	}
 }
 
@@ -80,7 +93,7 @@ func TestRelatedParts(t *testing.T) {
 			t.Errorf("%q: args %v, want %v", c.in, b.Args, c.args)
 		}
 	}
-	for _, bad := range []string{"g749:high", "g749:2:3", "g749:2:1:0", "i568", "g0"} {
+	for _, bad := range []string{"g749:high", "g749:2:3", "g749:2:1:0", "i568", "g0", "g749:NaN", "g749:Inf"} {
 		if err := tag(&Builder{}, bad); err == nil {
 			t.Errorf("tag=%q was accepted", bad)
 		}

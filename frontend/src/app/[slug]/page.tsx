@@ -2,7 +2,7 @@
  *  (/v). Static routes such as /q take precedence over this catch-all. */
 
 import { notFound } from 'next/navigation';
-import { byId } from '@/lib/api';
+import { byId, idType } from '@/lib/api';
 import { missing } from '@/components/ui/Withheld';
 import {
   CHARACTER_PAGE,
@@ -35,12 +35,7 @@ import type {
 } from '@/lib/types';
 
 /** The seven types the dump carries, each with the letter vndb gives it. */
-const ID = /^([vrcpsgi])\d+$/;
 const TYPE = /^([vrcpsgi])$/;
-
-function typeOf(slug: string): string | null {
-  return ID.exec(slug)?.[1] ?? null;
-}
 
 export default async function Page({ params, searchParams }: PageProps<'/[slug]'>) {
   const { slug } = await params;
@@ -48,7 +43,7 @@ export default async function Page({ params, searchParams }: PageProps<'/[slug]'
 
   if (TYPE.test(slug)) return <ListPage type={slug} params={query} />;
 
-  switch (typeOf(slug)) {
+  switch (idType(slug)) {
     case 'v': {
       const vn = await byId<VN>('vn', slug, VN_PAGE);
       if (!vn) return missing('vn', slug, VN_PAGE);
@@ -129,7 +124,7 @@ export async function generateMetadata({ params }: PageProps<'/[slug]'>) {
 
   if (TYPE.test(slug)) return { title: `${LIST[slug].label} - NeoVNDB` };
 
-  const letter = typeOf(slug);
+  const letter = idType(slug);
   if (!letter) return { title: 'NeoVNDB' };
   const { type, fields } = PAGE[letter];
   const e = await byId<{ title?: string | null; name?: string | null }>(type, slug, fields);

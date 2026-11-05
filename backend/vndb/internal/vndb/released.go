@@ -50,10 +50,13 @@ func ParseReleasedRange(value string) (low, high int32, err error) {
 	if len(parts) > 3 {
 		return 0, 0, fmt.Errorf("%q is not a date", value)
 	}
+	// Year, month, day, each within what a date holds: a year past four
+	// digits would wrap the int32 the dates are stored as.
+	bounds := [3][2]int{{0, 9999}, {1, 12}, {1, 31}}
 	nums := make([]int, 3)
 	for i, p := range parts {
 		n, convErr := strconv.Atoi(p)
-		if convErr != nil {
+		if convErr != nil || n < bounds[i][0] || n > bounds[i][1] {
 			return 0, 0, fmt.Errorf("%q is not a date", value)
 		}
 		nums[i] = n

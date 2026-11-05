@@ -4,6 +4,15 @@ import { midway } from './transition';
 const sections = (page: import('@playwright/test').Page) =>
   page.getByRole('navigation', { name: 'Sections' });
 
+// The read API refuses these ids outright; the page is not found, not a 500.
+test('an id that cannot name anything is not found', async ({ page }) => {
+  for (const path of ['/v0', '/c99999999999', '/r2147483648', '/v0/rg']) {
+    const res = await page.goto(path);
+    expect(res?.status(), path).toBe(404);
+    await expect(page.getByRole('heading', { name: 'Nothing here' })).toBeVisible();
+  }
+});
+
 test('a detail page maps its sections and goes to one', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/v17');

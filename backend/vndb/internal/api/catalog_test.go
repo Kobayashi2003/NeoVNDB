@@ -78,10 +78,10 @@ func TestEveryFilterFailsAsAClientError(t *testing.T) {
 		vndb.TypeProducer, vndb.TypeStaff, vndb.TypeTag, vndb.TypeTrait}
 	for _, typ := range types {
 		for name, f := range cat.Get(typ).Filters() {
-			// Nothing to match is refused by every filter; a search may look
-			// for a comma.
+			// Nothing to match is refused by every filter; a search is text, and
+			// may look for a comma or what reads as an operator (<3).
 			for _, v := range []string{"", ",", ">="} {
-				if name == "search" && v == "," {
+				if name == "search" && v != "" {
 					continue
 				}
 				if err := f(newBuilder(cat), v); err == nil || !query.IsClientError(err) {

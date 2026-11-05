@@ -22,7 +22,19 @@ import { publishers } from '@/lib/vn';
 import { errorText, UserError } from '@/lib/user';
 import { FILTERS } from '@/lib/filters';
 import { LIST, readsDown, reverseParam } from '@/lib/list';
+import { idType } from '@/lib/api';
 import type { Character, CharacterDetail, Release, Trait } from '@/lib/types';
+
+describe('idType', () => {
+  it('names the type of an id the read API can look up, and nothing else', () => {
+    expect(idType('v17')).toBe('v');
+    expect(idType('c017')).toBe('c');
+    expect(idType('i2147483647')).toBe('i');
+    for (const slug of ['v0', 'v2147483648', 'c99999999999', 'x17', 'v', 'v-1', 'v1.5']) {
+      expect(idType(slug), slug).toBeNull();
+    }
+  });
+});
 
 function trait(over: Partial<Trait>): Trait {
   return {

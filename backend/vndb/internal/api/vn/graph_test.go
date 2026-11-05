@@ -45,6 +45,21 @@ func TestWalkNodeCeiling(t *testing.T) {
 	}
 }
 
+// The walk hands back a title once per depth a path reaches it at -- 1 at 0
+// and again at 2, by way of 2 -- each time with all its edges. Each edge is
+// kept once.
+func TestWalkKeepsEachEdgeOnce(t *testing.T) {
+	rows := []gen.VNRelationGraphRow{
+		{ID: 1, Vid: 2, Relation: "seq", Depth: 0},
+		{ID: 2, Vid: 1, Relation: "preq", Depth: 1},
+		{ID: 1, Vid: 2, Relation: "seq", Depth: 2},
+		{ID: 2, Vid: 1, Relation: "preq", Depth: 3},
+	}
+	if w := walk(1, rows, 3, 0); len(w.kept) != 2 {
+		t.Errorf("kept %d edges, want 2: %+v", len(w.kept), w.kept)
+	}
+}
+
 func TestDeepestUseful(t *testing.T) {
 	// chain's relations, stored both ways as vn_relations stores them.
 	near := map[int32][]int32{1: {2, 3}, 2: {1, 4}, 3: {1}, 4: {2, 5}, 5: {4}}

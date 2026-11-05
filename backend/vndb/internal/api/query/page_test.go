@@ -33,6 +33,39 @@ func TestSearchTerms(t *testing.T) {
 	}
 }
 
+// A search is text: <3 is searched for, not compared with, and a backslash in
+// it is no LIKE escape.
+func TestSearchIsText(t *testing.T) {
+	b := &Builder{}
+	if err := SearchFilter("v", "vn")(b, "<3"); err != nil {
+		t.Fatalf("<3: %v", err)
+	}
+	if len(b.Args) != 1 || b.Args[0] != "<3" || !strings.Contains(b.SQL(), "ESCAPE ''") {
+		t.Errorf("<3: %v %s", b.Args, b.SQL())
+	}
+}
+
+// searchrank orders a search written in f= as well as one given on its own;
+// a negated one has nothing to rank by.
+func TestSearchRankFindsTheSearch(t *testing.T) {
+	spec := PageSpec{Alias: "vn", SearchEntity: "v", Sorts: map[string]Sort{"searchrank": {}}}
+	for in, ok := range map[string]bool{
+		"search=ever17+lang=en": true,
+		"lang=en,search=ever17": true,
+		"!search=ever17":        false,
+		"search!=ever17":        false,
+	} {
+		expr, err := ParseExpr(in, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := &Request{Sort: "searchrank", Filters: map[string]string{}, expr: expr}
+		if _, _, err := orderBy(spec, req, &Builder{}); (err == nil) != ok {
+			t.Errorf("%s: %v", in, err)
+		}
+	}
+}
+
 func TestSearchCeiling(t *testing.T) {
 	search := SearchFilter("v", "vn")
 	tight := lim

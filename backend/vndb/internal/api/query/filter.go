@@ -2,6 +2,7 @@ package query
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -155,15 +156,19 @@ func SplitValues(value string) []string {
 	return out
 }
 
+// IntColumn compares an integer column with a number, scaled to how it is
+// stored. The number is compared as a bigint: Postgres would otherwise take
+// the column's type for it, and 40000 against a smallint fails rather than
+// matching nothing. int2 and int4 compare with int8 under their indexes.
 func IntColumn(column string, scale int) FilterFunc {
 	return func(b *Builder, value string) error {
 		return b.AnyOf(value, func(b *Builder, v string) error {
 			op, rest := SplitComparison(v)
-			n, err := strconv.Atoi(rest)
+			n, err := strconv.ParseInt(rest, 10, 32)
 			if err != nil {
-				return BadRequest("%q is not a number", rest)
+				return BadRequest("%q is not a number in range", rest)
 			}
-			b.Where(column+" "+op+" %s", n*scale)
+			b.Where(column+" "+op+" %s::bigint", n*int64(scale))
 			return nil
 		})
 	}
@@ -291,7 +296,7 @@ func (r Related) byID() FilterFunc {
 		rest := parts[1:]
 		if r.Score != "" && len(rest) > 0 {
 			score, err := strconv.ParseFloat(strings.TrimSpace(rest[0]), 64)
-			if err != nil {
+			if err != nil || math.IsNaN(score) || math.IsInf(score, 0) {
 				return BadRequest("%q is not a score", rest[0])
 			}
 			where = append(where, r.Score+" >= "+b.Arg(score))

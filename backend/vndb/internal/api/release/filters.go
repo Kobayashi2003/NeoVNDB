@@ -123,15 +123,16 @@ func resolutionFilter(b *query.Builder, value string) error {
 		if !ok {
 			return query.BadRequest("%q is not a resolution like 1920x1080", rest)
 		}
+		// bigint, as in query.IntColumn: the columns are smallint.
 		switch op {
 		case "=":
-			b.Where("(r.reso_x = %s AND r.reso_y = %s)", w, h)
+			b.Where("(r.reso_x = %s::bigint AND r.reso_y = %s::bigint)", w, h)
 		case "!=":
-			b.Where("NOT (r.reso_x = %s AND r.reso_y = %s)", w, h)
+			b.Where("NOT (r.reso_x = %s::bigint AND r.reso_y = %s::bigint)", w, h)
 		case ">=":
-			b.Where("(r.reso_x >= %s AND r.reso_y >= %s)", w, h)
+			b.Where("(r.reso_x >= %s::bigint AND r.reso_y >= %s::bigint)", w, h)
 		case "<=":
-			b.Where("(r.reso_x > 0 AND r.reso_x <= %s AND r.reso_y <= %s)", w, h)
+			b.Where("(r.reso_x > 0 AND r.reso_x <= %s::bigint AND r.reso_y <= %s::bigint)", w, h)
 		default:
 			return query.BadRequest("a resolution compares with =, !=, >= or <=")
 		}

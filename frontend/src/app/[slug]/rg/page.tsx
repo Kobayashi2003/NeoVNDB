@@ -8,7 +8,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ChevronsRight, Minus, Plus, TriangleAlert } from 'lucide-react';
-import { ApiError, byId, relationGraph } from '@/lib/api';
+import { ApiError, byId, idType, relationGraph } from '@/lib/api';
 import { one, withParams } from '@/lib/href';
 import { cn } from '@/lib/utils';
 import { Name } from '@/components/ui/Name';
@@ -24,7 +24,7 @@ const MAX_PILLS = 8;
 export default async function RelationGraphPage({ params, searchParams }: PageProps<'/[slug]/rg'>) {
   const { slug } = await params;
   const query = await searchParams;
-  if (!/^v\d+$/.test(slug)) notFound();
+  if (idType(slug) !== 'v') notFound();
 
   const asked = Number(one(query, 'depth'));
   const depth = Number.isInteger(asked) && asked >= 1 ? asked : DEFAULT_DEPTH;
@@ -219,7 +219,7 @@ function Back({ id }: { id: string }) {
 
 export async function generateMetadata({ params }: PageProps<'/[slug]/rg'>) {
   const { slug } = await params;
-  if (!/^v\d+$/.test(slug)) return { title: 'NeoVNDB' };
+  if (idType(slug) !== 'v') return { title: 'NeoVNDB' };
   // The page's fields, so this and the page are one request.
   const vn = await byId<{ title: string | null }>('vn', slug, 'title,alttitle');
   return { title: vn?.title ? `Relations: ${vn.title} - NeoVNDB` : 'NeoVNDB' };

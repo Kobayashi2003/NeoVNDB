@@ -21,7 +21,7 @@ func TestParseLiked(t *testing.T) {
 		}
 	}
 
-	for _, bad := range []string{"", "v17:6", "v17:x", "r17", "v17,v11"} {
+	for _, bad := range []string{"", "v17:6", "v17:x", "r17", "v17,v11", "v17:NaN", "v17:Inf"} {
 		max := 0
 		if bad == "v17,v11" {
 			max = 1

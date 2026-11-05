@@ -12,6 +12,11 @@ func TestBuildExtLink(t *testing.T) {
 		{"steam", "616620", "https://store.steampowered.com/app/616620/"},
 		{"twitter", "tamwoo_k", "https://x.com/tamwoo_k"},
 		{"anidb", "8996", "https://anidb.net/cr8996"},
+		// Zero-padded numbers, which once came out as %!d(string=...).
+		{"imdb", "1234", "https://www.imdb.com/name/nm0001234"},
+		{"digiket", "78901", "https://www.digiket.com/work/show/_data/ID=ITM0078901/"},
+		{"melon", "12345", "https://www.melonbooks.com/index.php?main_page=product_info&products_id=IT0000012345"},
+		{"toranoana", "40030012345", "https://ec.toranoana.shop/tora/ec/item/040030012345/"},
 
 		// The nine sites vndb builds with a subroutine. Without an affiliate
 		// code and without extlinks.data, which the dump does not export, each
@@ -93,8 +98,12 @@ func TestParseReleasedRange(t *testing.T) {
 			t.Errorf("ParseReleasedRange(%q) = %d..%d, want %d..%d", c.in, low, high, c.low, c.high)
 		}
 	}
-	if _, _, err := ParseReleasedRange("20x2"); err == nil {
-		t.Error("ParseReleasedRange accepted a non-date")
+	// 300000 would wrap the int32 a date is stored in and turn the comparison
+	// round; a thirteenth month or a 32nd day is no date either.
+	for _, bad := range []string{"20x2", "300000", "2002-13", "2002-00", "2002-08-32"} {
+		if _, _, err := ParseReleasedRange(bad); err == nil {
+			t.Errorf("ParseReleasedRange accepted %q", bad)
+		}
 	}
 }
 

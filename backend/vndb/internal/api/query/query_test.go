@@ -31,13 +31,19 @@ func TestParseRequest(t *testing.T) {
 	if err != nil || req.Page != 1 || req.Limit != lim.PageSize {
 		t.Errorf("defaults: %v %+v", err, req)
 	}
+
+	// The last page there could be is far past the end, never a negative offset.
+	req, err = parse("page=2147483647&limit=100", lim)
+	if err != nil || req.Offset() <= 0 {
+		t.Errorf("the highest page: %v, offset %d", err, req.Offset())
+	}
 }
 
 func TestParseRequestRefuses(t *testing.T) {
 	small := lim
 	small.MaxPageSize = 50
 	for _, q := range []string{
-		"page=0", "page=-1", "page=two",
+		"page=0", "page=-1", "page=two", "page=9223372036854775807",
 		"limit=0", "limit=51", "limit=x",
 		"f=(olang%3Dja", // unclosed
 		"fields=nosuch",

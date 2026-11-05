@@ -217,13 +217,14 @@ func pathInt(r *http.Request, name string) (int32, bool) {
 }
 
 // positive reads a query number, or fallback. Over max (0: none) is refused,
-// not clamped.
+// not clamped. At most int32, so a page times its size cannot wrap negative.
 func positive(w http.ResponseWriter, r *http.Request, name string, fallback, max int) (int, bool) {
 	raw := r.URL.Query().Get(name)
 	if raw == "" {
 		return fallback, true
 	}
-	n, err := strconv.Atoi(raw)
+	n64, err := strconv.ParseInt(raw, 10, 32)
+	n := int(n64)
 	if err != nil || n < 1 {
 		fail(w, http.StatusBadRequest, name+" must be a positive number.")
 		return 0, false

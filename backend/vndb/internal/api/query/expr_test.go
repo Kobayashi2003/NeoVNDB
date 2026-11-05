@@ -137,7 +137,7 @@ func TestCompileExpr(t *testing.T) {
 	cases := []struct{ in, want string }{
 		{"lang=en", "$1 = ANY(vn.c_languages)"},
 		{"lang=en,lang=ja", "($1 = ANY(vn.c_languages) OR $2 = ANY(vn.c_languages))"},
-		{"lang=en+rating>=70", "($1 = ANY(vn.c_languages) AND vn.c_rating >= $2)"},
+		{"lang=en+rating>=70", "($1 = ANY(vn.c_languages) AND vn.c_rating >= $2::bigint)"},
 		{"!patch=true", "NOT (r.patch)"},
 		{"lang!=en", "NOT ($1 = ANY(vn.c_languages))"},
 		{"!(lang=en,lang=ja)", "NOT (($1 = ANY(vn.c_languages) OR $2 = ANY(vn.c_languages)))"},

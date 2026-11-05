@@ -99,6 +99,8 @@ func (r *Resolver) RelationGraph(ctx context.Context, rawID string, opt GraphOpt
 	graph := &Graph{
 		Root: vndb.FormatID(vndb.TypeVN, root), Depth: depth, MaxDepth: opt.MaxDepth,
 		Truncated: w.truncated, Capped: w.capped, Deepest: deepest,
+		// A title with no relations has none, which is [] and not null.
+		Edges: []GraphEdge{},
 	}
 	included, depthOf := w.included, w.depthOf
 
@@ -255,6 +257,11 @@ func walk(root int32, rows []gen.VNRelationGraphRow, depth, maxNodes int) walked
 	for _, e := range rows {
 		if w.depthOf[e.ID] >= depth {
 			continue // its target would sit past the boundary
+		}
+		// The walk reaches a title again at every depth a path leads back to
+		// it, each time with all its edges; only the shortest way in counts.
+		if int(e.Depth) != w.depthOf[e.ID] {
+			continue
 		}
 		if !w.included[e.Vid] && maxNodes > 0 && len(w.included) >= maxNodes {
 			w.truncated = true

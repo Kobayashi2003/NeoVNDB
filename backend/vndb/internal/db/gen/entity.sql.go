@@ -134,7 +134,8 @@ func (q *Queries) GetTraits(ctx context.Context, ids []int32) ([]Trait, error) {
 const search = `-- name: Search :many
 SELECT entity_type, id, MAX(prio)::smallint AS prio
   FROM search_cache
- WHERE label LIKE '%' || search_norm_term($3::text) || '%'
+ WHERE search_norm_term($3::text) <> ''
+   AND label LIKE '%' || search_norm_term($3::text) || '%' ESCAPE ''
    AND ($4::text = '' OR entity_type = $4::text)
  GROUP BY entity_type, id
  ORDER BY prio DESC, id
@@ -155,7 +156,8 @@ type SearchRow struct {
 }
 
 // prio ranks main titles above aliases above indirect hits. The term goes
-// through the same normalizer that built the labels.
+// through the same normalizer that built the labels; as in query.SearchFilter,
+// a backslash is no escape and a term of punctuation alone matches nothing.
 func (q *Queries) Search(ctx context.Context, arg SearchParams) ([]SearchRow, error) {
 	rows, err := q.db.Query(ctx, search,
 		arg.Limit,

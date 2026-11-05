@@ -76,6 +76,16 @@ export interface Generation {
   published_at: string | null;
 }
 
+/** The type letter an address names an entity of (v17 is "v"), or null for
+ *  one that names nothing: the read API refuses v0 and a number past its
+ *  int32 ids, and a page should say "nothing here" rather than fail. */
+export function idType(slug: string): string | null {
+  const id = /^([vrcpsgi])(\d+)$/.exec(slug);
+  if (!id) return null;
+  const n = Number(id[2]);
+  return n >= 1 && n <= 2 ** 31 - 1 ? id[1] : null;
+}
+
 /** byId returns the single entity, or null when the id matches nothing. */
 export async function byId<T>(type: string, id: string, fields: string): Promise<T | null> {
   const page = await get<Page<T>>(`/${type}`, { id, fields, limit: '1' });
