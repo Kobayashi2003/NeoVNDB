@@ -7,7 +7,7 @@ import { usePrefs } from '@/hooks/usePrefs';
 import { ViewerRendered } from '@/hooks/useViewer';
 import { PREFS_COOKIE } from '@/lib/prefs';
 import { readShelf, type OwnSort, type ShelfSource } from '@/lib/shelf';
-import type { Viewer } from '@/lib/api';
+import { withheld, type Viewer } from '@/lib/api';
 import { router } from '../router';
 
 const at = vi.hoisted(() => ({ path: '/' }));
@@ -38,6 +38,16 @@ beforeEach(() => apis(() => ({ results: [], count: 0, more: false })));
 afterEach(() => {
   vi.unstubAllGlobals();
   document.cookie = `${PREFS_COOKIE}=; max-age=0`;
+});
+
+describe('an address the mask holds back', () => {
+  it('is known held back however its number is written', async () => {
+    apis(() => ({ results: [], count: 0, more: false, withheld: ['v17'] }));
+    for (const id of ['v17', 'v017', 'V17']) {
+      expect(await withheld('vn', id, 'id')).toBe(true);
+    }
+    expect(await withheld('vn', 'v170', 'id')).toBe(false);
+  });
 });
 
 describe('all-ages mode in the content menu', () => {

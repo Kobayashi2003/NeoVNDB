@@ -53,12 +53,13 @@ func (r *Resolver) Stats(ctx context.Context, req *query.Request, top int) (*Sta
 	// The titles are masked by the request itself; what is counted over them
 	// is masked here, or a publisher would be credited through an adult
 	// release and a tag about sex would rank.
-	maskRel, maskTag := "", ""
+	maskRel, maskTag, developers := "", "", "vn.c_developers"
 	if req.Masked {
 		maskRel = " AND " + query.VisibleSQL(vndb.TypeRelease, "rel")
 		maskTag = " AND " + query.VisibleSQL(vndb.TypeTag, "t")
+		developers = allAges("c_developers")
 	}
-	picked := fmt.Sprintf("WITH picked AS (SELECT vn.id, vn.c_developers FROM vn WHERE %s)", where)
+	picked := fmt.Sprintf("WITH picked AS (SELECT vn.id, %s AS c_developers FROM vn WHERE %s)", developers, where)
 	limit := fmt.Sprintf("$%d", len(args)+1)
 	withTop := append(append([]any(nil), args...), top)
 

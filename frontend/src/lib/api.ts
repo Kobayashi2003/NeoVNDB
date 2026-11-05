@@ -86,7 +86,9 @@ export async function byId<T>(type: string, id: string, fields: string): Promise
  *  The same request, which a render makes only once. */
 export async function withheld(type: string, id: string, fields: string): Promise<boolean> {
   const page = await get<Page<unknown>>(`/${type}`, { id, fields, limit: '1' });
-  return (page.withheld ?? []).includes(id);
+  // The read API names what it held back in the canonical form: v017 is v17.
+  const named = id.toLowerCase().replace(/^([a-z])0+(?=\d)/, '$1');
+  return (page.withheld ?? []).includes(named);
 }
 
 /** How the read API is answering this reader (`/meta/viewer`). */

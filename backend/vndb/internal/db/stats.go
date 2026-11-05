@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -112,10 +113,8 @@ type querier interface {
 // that holds or reaches what all-ages mode withholds: a temporary relation is
 // found before the search path's, so the statements below count only what a
 // masked reader can see without a word of them changing. They are dropped
-// with the transaction, which is rolled back.
+// with the transaction, which is rolled back. vn comes first, from maskedVN.
 const maskedViews = `
-	CREATE TEMP VIEW vn AS SELECT * FROM vndb.vn t
-	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'v' AND w.id = t.id);
 	CREATE TEMP VIEW releases AS SELECT * FROM vndb.releases t
 	 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'r' AND w.id = t.id);
 	CREATE TEMP VIEW chars AS SELECT * FROM vndb.chars t
@@ -151,10 +150,43 @@ func (s *Store) SiteStats(ctx context.Context, masked bool) (*SiteStats, error) 
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	if _, err := tx.Exec(ctx, maskedViews); err != nil {
+	vn, err := maskedVN(ctx, tx)
+	if err != nil {
+		return nil, fmt.Errorf("stats: masking: %w", err)
+	}
+	if _, err := tx.Exec(ctx, vn+";"+maskedViews); err != nil {
 		return nil, fmt.Errorf("stats: masking: %w", err)
 	}
 	return siteStats(ctx, tx)
+}
+
+// vnShown are vn's columns that vn_allages gives again for all-ages mode.
+var vnShown = map[string]bool{"c_released": true, "c_languages": true, "c_platforms": true, "c_developers": true}
+
+// maskedVN is the view of vn a masked count reads: the works shown, each
+// with the derived columns the mask leaves it. Its columns are read from the
+// table, so it keeps step with the DDL as SELECT * would.
+func maskedVN(ctx context.Context, tx pgx.Tx) (string, error) {
+	rows, err := tx.Query(ctx, `SELECT attname FROM pg_attribute
+		 WHERE attrelid = 'vndb.vn'::regclass AND attnum > 0 AND NOT attisdropped ORDER BY attnum`)
+	if err != nil {
+		return "", err
+	}
+	names, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return "", err
+	}
+	cols := make([]string, len(names))
+	for i, name := range names {
+		col := pgx.Identifier{name}.Sanitize()
+		cols[i] = "t." + col
+		if vnShown[name] {
+			cols[i] = fmt.Sprintf("COALESCE(a.%[1]s, t.%[1]s) AS %[1]s", col)
+		}
+	}
+	return `CREATE TEMP VIEW vn AS SELECT ` + strings.Join(cols, ", ") + `
+		  FROM vndb.vn t LEFT JOIN vn_allages a ON a.id = t.id
+		 WHERE NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'v' AND w.id = t.id)`, nil
 }
 
 func siteStats(ctx context.Context, q querier) (*SiteStats, error) {

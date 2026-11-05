@@ -96,10 +96,21 @@ func loadImages(ctx context.Context, r *Resolver, page []gen.Release,
 	if err != nil {
 		return err
 	}
+	var vids []int32
+	for _, i := range rows {
+		if i.Vid != nil {
+			vids = append(vids, *i.Vid)
+		}
+	}
+	// A bundle's image of one withheld work in it is that work's.
+	gone, err := query.WithheldOf(ctx, vndb.TypeVN, vids)
+	if err != nil {
+		return err
+	}
 
 	grouped := map[int32][]map[string]any{}
 	for _, i := range rows {
-		if !query.ImageShown(ctx, i.CVotecount, i.CSexualAvg, i.CViolenceAvg) {
+		if !query.ImageShown(ctx, i.CVotecount, i.CSexualAvg, i.CViolenceAvg) || (i.Vid != nil && gone[*i.Vid]) {
 			continue
 		}
 		img := map[string]any{

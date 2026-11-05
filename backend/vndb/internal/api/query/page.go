@@ -49,6 +49,8 @@ func SortNames(spec PageSpec) []string {
 type Sort struct {
 	Expr string
 	Join string
+	// Masked, when set, is Expr under the all-ages mask.
+	Masked string
 }
 
 // Page runs one filtered, ordered page and returns the rows with the total. A
@@ -58,7 +60,7 @@ type Sort struct {
 func Page[T Countable](ctx context.Context, pool *pgxpool.Pool, spec PageSpec,
 	req *Request, scan pgx.RowToFunc[T]) ([]T, int, error) {
 
-	b := &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget}
+	b := builder(req)
 	byID, err := conditions(spec, req, b, "")
 	if err != nil {
 		return nil, 0, err
@@ -165,8 +167,12 @@ func orderBy(spec PageSpec, req *Request, b *Builder) (string, string, error) {
 		rank, err := searchRank(spec, req, b, direction)
 		return rank, "", err
 	}
+	expr := order.Expr
+	if req.Masked && order.Masked != "" {
+		expr = order.Masked
+	}
 	// id breaks ties so paging is stable between requests.
-	return order.Expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, order.Join, nil
+	return expr + direction + " NULLS LAST, " + spec.Alias + ".id" + direction, order.Join, nil
 }
 
 // searchRank scores each row by its best matching label: equal to the whole

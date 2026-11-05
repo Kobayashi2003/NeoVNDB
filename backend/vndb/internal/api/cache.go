@@ -30,12 +30,15 @@ func newCache(ctx context.Context, cfg *config.Config) (cache.Cache, error) {
 
 // generations reports which generation is live and which revision of the
 // translations it is read with, which every cache key starts with; a masked
-// request's keys say so too, so the two kinds of answer never mix.
+// request's keys say so too, and which build of the list masked it, so the two
+// kinds of answer never mix and a rebuilt list is not answered from the old.
 type generations struct {
 	store *db.Store
 
 	mu   sync.Mutex
 	last string
+	// The last withheld table seen, for when the catalog cannot be read.
+	lastList uint32
 }
 
 // current reads the code rather than remembering it. One row of a one-row
@@ -45,9 +48,24 @@ type generations struct {
 func (g *generations) current(ctx context.Context) string {
 	key := g.live(ctx)
 	if query.MaskOf(ctx) != nil {
-		key += "+m"
+		key += maskedSuffix + strconv.FormatUint(uint64(g.list(ctx)), 10)
 	}
 	return key
+}
+
+// maskedSuffix starts the part of a masked request's key that the unmasked
+// one lacks.
+const maskedSuffix = "+m"
+
+func (g *generations) list(ctx context.Context) uint32 {
+	oid, err := g.store.WithheldVersion(ctx)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if err != nil {
+		return g.lastList
+	}
+	g.lastList = oid
+	return oid
 }
 
 func (g *generations) live(ctx context.Context) string {

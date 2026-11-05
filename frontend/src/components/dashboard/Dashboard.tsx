@@ -113,7 +113,9 @@ function Board() {
     () => inRange(entries, range, today).sort((a, b) => b.at.localeCompare(a.at)),
     [entries, range, today],
   );
-  const details = useDetails(useMemo(() => scope.slice(0, MAX_IDS).map(e => e.id), [scope]));
+  const { details, answered } = useDetails(
+    useMemo(() => scope.slice(0, MAX_IDS).map(e => e.id), [scope]),
+  );
   const picked = useMemo(() => narrow(scope, details, picks), [scope, details, picks]);
   const ids = useMemo(() => picked.slice(0, MAX_IDS).map(e => e.id), [picked]);
   const { stats, stale } = useStats(ids);
@@ -153,7 +155,7 @@ function Board() {
     entries.map(e => details.get(e.id)).filter((d): d is Detail => !!d);
   const came = source === 'rated' ? 'Rated' : 'Added';
   const dates = without('added').map(e => e.at);
-  const counting = stale || ids.some(id => !details.has(id));
+  const counting = stale || ids.some(id => !answered.has(id));
 
   const sources: MenuChoice<string>[] = [
     { value: 'all', label: 'Every list' },
@@ -303,11 +305,17 @@ function Board() {
 
           <Disagreements scope={picked} details={details} original={original} />
 
-          <div className={cn(PAIR, 'transition-opacity', counting && 'opacity-60')}>
+          <div
+            aria-busy={counting}
+            className={cn(PAIR, 'transition-opacity', counting && 'opacity-60')}
+          >
             <TallyBlock title="Developers" tallies={stats?.developers} original={original} />
             <TallyBlock title="Publishers" tallies={stats?.publishers} original={original} />
           </div>
-          <div className={cn(PAIR, 'transition-opacity', counting && 'opacity-60')}>
+          <div
+            aria-busy={counting}
+            className={cn(PAIR, 'transition-opacity', counting && 'opacity-60')}
+          >
             <StaffBlock staff={stats?.staff} original={original} />
             <TagsBlock tags={stats?.tags} original={original} sexual={sexual === 'explicit'} />
           </div>
@@ -395,8 +403,14 @@ function useStuck(spot: HTMLElement | null, pinned: HTMLElement | null): boolean
 
 /** Titles fetched for the ids in scope, a chunk at a time, kept across changes
  *  of scope so going back to one costs nothing. */
-function useDetails(ids: string[]): Map<string, Detail> {
-  const [known, setKnown] = useState<Map<string, Detail>>(() => new Map());
+function useDetails(ids: string[]): { details: Map<string, Detail>; answered: Set<string> } {
+  // What came back, and what was asked and answered: an id the read API does
+  // not return (held back in all-ages mode, or gone from vndb) is answered
+  // too, and nothing is still being counted for it.
+  const [known, setKnown] = useState(() => ({
+    details: new Map<string, Detail>(),
+    answered: new Set<string>(),
+  }));
   const asked = useRef(new Set<string>());
   useEffect(() => {
     const missing = ids.filter(id => !asked.current.has(id));
@@ -406,9 +420,9 @@ function useDetails(ids: string[]): Map<string, Detail> {
       list<Detail>('vn', { fields: FIELDS, filters: { id: chunk.join(',') } }).then(
         page =>
           setKnown(now => {
-            const next = new Map(now);
-            for (const row of page.results) next.set(row.id, row);
-            return next;
+            const details = new Map(now.details);
+            for (const row of page.results) details.set(row.id, row);
+            return { details, answered: new Set([...now.answered, ...chunk]) };
           }),
         () => {
           for (const id of chunk) asked.current.delete(id);

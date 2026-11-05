@@ -3,6 +3,8 @@ package vn
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/db/gen"
 	"github.com/kobayashi/neovndb/internal/vndb"
@@ -107,6 +109,18 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 	if err != nil {
 		return err
 	}
+	var rids []int32
+	for _, s := range rows {
+		if s.Rid != nil {
+			rids = append(rids, *s.Rid)
+		}
+	}
+	// A shot passed on its own votes keeps its place, but not a link to a
+	// release that is not shown.
+	gone, err := query.WithheldOf(ctx, vndb.TypeRelease, rids)
+	if err != nil {
+		return err
+	}
 	grouped := map[int32][]map[string]any{}
 	for _, s := range rows {
 		if !query.ImageShown(ctx, s.CVotecount, s.CSexualAvg, s.CViolenceAvg) {
@@ -122,7 +136,7 @@ func loadScreenshots(ctx context.Context, r *Resolver, page []gen.Vn,
 			"violence":  query.ContentLevel(s.CViolenceAvg, s.CVotecount),
 			"release":   nil,
 		}
-		if s.Rid != nil {
+		if s.Rid != nil && !gone[*s.Rid] {
 			shot["release"] = vndb.FormatID(vndb.TypeRelease, *s.Rid)
 		}
 		grouped[s.VnID] = append(grouped[s.VnID], shot)
@@ -204,17 +218,39 @@ func loadSimilar(ctx context.Context, r *Resolver, page []gen.Vn,
 }
 
 // c_developers is a cached array on the row, so the producers come back
-// without going through the releases.
+// without going through the releases. Under the mask the array is the one
+// the mask leaves, so none is credited only through a withheld release.
 func loadDevelopers(ctx context.Context, r *Resolver, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
-	rows, err := r.q.VNDevelopers(ctx, idsOf(page))
-	if err != nil {
-		return err
-	}
-	edges := make([]query.Edge, len(rows))
-	for i, p := range rows {
-		edges[i] = query.Edge{Parent: p.VnID, Child: p.ID}
+	var edges []query.Edge
+	if query.MaskOf(ctx) != nil {
+		rows, err := r.store.Pool().Query(ctx, `
+			SELECT vn.id, p.id
+			  FROM vn
+			  JOIN producers p ON p.id = ANY(`+allAges("c_developers")+`)
+			 WHERE vn.id = ANY($1)
+			 ORDER BY vn.id, p.name`, idsOf(page))
+		if err != nil {
+			return err
+		}
+		edges, err = pgx.CollectRows(rows, func(row pgx.CollectableRow) (query.Edge, error) {
+			var e query.Edge
+			err := row.Scan(&e.Parent, &e.Child)
+			return e, err
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		rows, err := r.q.VNDevelopers(ctx, idsOf(page))
+		if err != nil {
+			return err
+		}
+		edges = make([]query.Edge, len(rows))
+		for i, p := range rows {
+			edges[i] = query.Edge{Parent: p.VnID, Child: p.ID}
+		}
 	}
 	return query.Relate(ctx, r.cat, vndb.TypeVN, "developers", edges, sel, byID)
 }

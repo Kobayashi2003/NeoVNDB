@@ -36,10 +36,10 @@ var filters = map[string]query.FilterFunc{
 	"rating":    query.IntColumn("vn.c_rating", 10),
 	"average":   query.IntColumn("vn.c_average", 10),
 	"votecount": query.IntColumn("vn.c_votecount", 1),
-	"lang":      query.ArrayColumn("vn.c_languages"),
-	"platform":  query.ArrayColumn("vn.c_platforms"),
+	"lang":      query.Masked(query.ArrayColumn("vn.c_languages"), query.ArrayColumn(allAges("c_languages"))),
+	"platform":  query.Masked(query.ArrayColumn("vn.c_platforms"), query.ArrayColumn(allAges("c_platforms"))),
 
-	"released": query.ReleasedColumn("vn.c_released"),
+	"released": query.Masked(query.ReleasedColumn("vn.c_released"), query.ReleasedColumn(allAges("c_released"))),
 	"search":   query.SearchFilter("v", "vn"),
 
 	"has_description": query.BoolFilter("vn.description <> ''", "vn.description = ''"),
@@ -61,17 +61,25 @@ var filters = map[string]query.FilterFunc{
 		Join: "tags g ON g.id = t.tag"}.Filter(),
 
 	// developers are a cached array on the row; publishers are not, so those
-	// go through the releases. producer is either.
-	"developer": query.Relation{Type: vndb.TypeProducer,
-		From: "producers p", Owner: "p.id = ANY(vn.c_developers)", ID: "p.id"}.Filter(),
-	"publisher": query.Relation{Type: vndb.TypeProducer,
-		From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
-		Owner: "rv.vid = vn.id AND rp.publisher", ID: "rp.pid",
-		Join: "producers p ON p.id = rp.pid"}.Filter(),
-	"producer": query.Relation{Type: vndb.TypeProducer,
-		From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
-		Owner: "rv.vid = vn.id", ID: "rp.pid",
-		Join: "producers p ON p.id = rp.pid"}.Filter(),
+	// go through the releases. producer is either. Masked, none is credited
+	// through a withheld release.
+	"developer": query.Masked(
+		query.Relation{Type: vndb.TypeProducer,
+			From: "producers p", Owner: "p.id = ANY(vn.c_developers)", ID: "p.id"}.Filter(),
+		query.Relation{Type: vndb.TypeProducer,
+			From: "producers p", Owner: "p.id = ANY(" + allAges("c_developers") + ")", ID: "p.id"}.Filter()),
+	"publisher": byRelease(func(shown string) query.FilterFunc {
+		return query.Relation{Type: vndb.TypeProducer,
+			From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
+			Owner: "rv.vid = vn.id AND rp.publisher" + shown, ID: "rp.pid",
+			Join: "producers p ON p.id = rp.pid"}.Filter()
+	}),
+	"producer": byRelease(func(shown string) query.FilterFunc {
+		return query.Relation{Type: vndb.TypeProducer,
+			From:  "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id",
+			Owner: "rv.vid = vn.id" + shown, ID: "rp.pid",
+			Join: "producers p ON p.id = rp.pid"}.Filter()
+	}),
 
 	// Credits name an alias, so the person is reached through staff_alias.
 	// Nested, the staff type's filters see the person; its role filter asks
@@ -94,13 +102,27 @@ var filters = map[string]query.FilterFunc{
 	"release": query.Relation{Type: vndb.TypeRelease,
 		From: "releases_vn rv", Owner: "rv.vid = vn.id", ID: "rv.id",
 		Join: "releases r ON r.id = rv.id"}.Filter(),
-	"medium": query.Match(func(b *query.Builder, v string) error {
-		b.Where(`EXISTS (
-			SELECT 1 FROM releases_vn rv
-			  JOIN releases_media rm ON rm.id = rv.id
-			 WHERE rv.vid = vn.id AND rm.medium = %s)`, v)
-		return nil
+	"medium": byRelease(func(shown string) query.FilterFunc {
+		return query.Match(func(b *query.Builder, v string) error {
+			b.Where(`EXISTS (
+				SELECT 1 FROM releases_vn rv
+				  JOIN releases_media rm ON rm.id = rv.id
+				 WHERE rv.vid = vn.id AND rm.medium = %s`+shown+`)`, v)
+			return nil
+		})
 	}),
+}
+
+// allAges is one of vn's derived columns as the all-ages mask sees it: from
+// vn_allages where the work has a row there, otherwise the column itself.
+func allAges(column string) string {
+	return "COALESCE((SELECT a." + column + " FROM vn_allages a WHERE a.id = vn.id), vn." + column + ")"
+}
+
+// byRelease is a filter that reaches the work through releases_vn rv, built
+// twice: as it is, and keeping to the releases the mask shows.
+func byRelease(build func(shown string) query.FilterFunc) query.FilterFunc {
+	return query.Masked(build(""), build(" AND "+query.VisibleSQL(vndb.TypeRelease, "rv")))
 }
 
 // Sortable expressions. searchrank ranks by the strength of the match, so it
@@ -108,7 +130,7 @@ var filters = map[string]query.FilterFunc{
 var sorts = map[string]query.Sort{
 	"id":             {Expr: "vn.id"},
 	"title":          {Expr: "COALESCE(vt.latin, vt.title)", Join: "LEFT JOIN vn_titles vt ON vt.id = vn.id AND vt.lang = vn.olang"},
-	"released":       {Expr: "vn.c_released"},
+	"released":       {Expr: "vn.c_released", Masked: allAges("c_released")},
 	"rating":         {Expr: "vn.c_rating"},
 	"average":        {Expr: "vn.c_average"},
 	"votecount":      {Expr: "vn.c_votecount"},

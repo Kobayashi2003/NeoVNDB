@@ -177,14 +177,26 @@ func loadSeiyuu(ctx context.Context, r *Resolver, page []gen.Char,
 	if err != nil {
 		return err
 	}
-	edges := make([]query.Edge, len(rows))
+	vns := make([]int32, len(rows))
 	for i, s := range rows {
-		edges[i] = query.Edge{Parent: s.CharID, Child: s.StaffID, Attrs: map[string]any{
+		vns[i] = s.VnID
+	}
+	// A part voiced in a withheld work goes with the work.
+	gone, err := query.WithheldOf(ctx, vndb.TypeVN, vns)
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, 0, len(rows))
+	for _, s := range rows {
+		if gone[s.VnID] {
+			continue
+		}
+		edges = append(edges, query.Edge{Parent: s.CharID, Child: s.StaffID, Attrs: map[string]any{
 			"vn":       vndb.FormatID(vndb.TypeVN, s.VnID),
 			"note":     query.EmptyToNil(s.Note),
 			"name":     query.PreferLatin(s.Name, s.Latin),
 			"original": query.OriginalOf(s.Name, s.Latin),
-		}}
+		}})
 	}
 	return query.Relate(ctx, r.cat, vndb.TypeCharacter, "seiyuu", edges, sel, byID)
 }

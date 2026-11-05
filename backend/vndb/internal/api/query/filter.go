@@ -21,6 +21,37 @@ type Builder struct {
 	// left to spend across the whole request.
 	Types  *Catalog
 	Budget *int
+	// Whether the request is masked, for a filter whose column differs then.
+	Masked bool
+}
+
+// unwithheld is, under the mask, a condition (starting " AND ") that the
+// entity of type typ whose id is the SQL expression id is not withheld: a
+// filter reaching one matches nothing, as if it were not there. Empty when
+// unmasked, or when nothing of typ is withheld.
+func (b *Builder) unwithheld(typ, id string) string {
+	letter, ok := Withholdable(typ)
+	if !b.Masked || !ok {
+		return ""
+	}
+	return " AND NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = '" + letter + "' AND w.id = " + id + ")"
+}
+
+// builder starts the conditions of req.
+func builder(req *Request) *Builder {
+	return &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget, Masked: req.Masked}
+}
+
+// Masked is open for a reader who sees everything and masked for one under
+// the all-ages mask, for a filter that would otherwise match through what is
+// withheld.
+func Masked(open, masked FilterFunc) FilterFunc {
+	return func(b *Builder, value string) error {
+		if b.Masked {
+			return masked(b, value)
+		}
+		return open(b, value)
+	}
 }
 
 // Arg records a value and returns its placeholder.
@@ -66,7 +97,7 @@ func (b *Builder) AnyOf(value string, one func(*Builder, string) error) error {
 // sub is a builder whose conditions can be combined rather than ANDed. Args are
 // shared so placeholder numbering stays in step.
 func (b *Builder) sub() *Builder {
-	return &Builder{Args: b.Args, Limits: b.Limits, Types: b.Types, Budget: b.Budget}
+	return &Builder{Args: b.Args, Limits: b.Limits, Types: b.Types, Budget: b.Budget, Masked: b.Masked}
 }
 
 func (b *Builder) SQL() string {
@@ -242,7 +273,8 @@ func (r Related) Filter() FilterFunc {
 			return err
 		}
 		b.Conds = append(b.Conds,
-			"EXISTS (SELECT 1 FROM "+r.From+" JOIN "+r.Join+" WHERE "+r.Owner+" AND "+cond+")")
+			"EXISTS (SELECT 1 FROM "+r.From+" JOIN "+r.Join+" WHERE "+r.Owner+" AND "+cond+
+				b.unwithheld(r.Entity, r.ID)+")")
 		return nil
 	}
 }
@@ -278,7 +310,7 @@ func (r Related) byID() FilterFunc {
 		}
 
 		b.Conds = append(b.Conds,
-			"EXISTS (SELECT 1 FROM "+r.From+" WHERE "+strings.Join(where, " AND ")+")")
+			"EXISTS (SELECT 1 FROM "+r.From+" WHERE "+strings.Join(where, " AND ")+b.unwithheld(r.Entity, r.ID)+")")
 		return nil
 	})
 }
@@ -319,7 +351,7 @@ func (rel Relation) Filter() FilterFunc {
 					return BadRequest("%v", err)
 				}
 				b.Where("EXISTS (SELECT 1 FROM "+rel.From+
-					" WHERE "+rel.Owner+" AND "+rel.ID+" = %s)", id)
+					" WHERE "+rel.Owner+" AND "+rel.ID+" = %s"+b.unwithheld(rel.Type, rel.ID)+")", id)
 				return nil
 			})(b, value)
 		}
@@ -334,7 +366,7 @@ func (rel Relation) Filter() FilterFunc {
 			from += " JOIN " + rel.Join
 		}
 		b.Conds = append(b.Conds,
-			"EXISTS (SELECT 1 FROM "+from+" WHERE "+rel.Owner+" AND "+cond+")")
+			"EXISTS (SELECT 1 FROM "+from+" WHERE "+rel.Owner+" AND "+cond+b.unwithheld(rel.Type, rel.ID)+")")
 		return nil
 	}
 }
@@ -385,6 +417,10 @@ func RelatedID(entity, template string) FilterFunc {
 		id, err := vndb.ParseID(entity, v)
 		if err != nil {
 			return BadRequest("%v", err)
+		}
+		if mask := b.unwithheld(entity, "%s"); mask != "" {
+			b.Where("("+template+")"+mask, id, id)
+			return nil
 		}
 		b.Where(template, id)
 		return nil

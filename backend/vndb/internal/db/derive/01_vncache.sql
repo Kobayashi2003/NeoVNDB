@@ -3,6 +3,9 @@
 -- The `hidden` conditions are dropped because hidden entries never reach the
 -- dump; everything else is unchanged.
 --
+-- 06_withheld.sql works the four out again for all-ages mode; a change to the
+-- rules here belongs there too.
+--
 -- The four vn columns are computed as grouped aggregates and applied in one
 -- UPDATE. Written as correlated subqueries instead, this scans the release
 -- tables once per VN and takes forty minutes rather than seconds.

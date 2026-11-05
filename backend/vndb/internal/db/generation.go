@@ -339,21 +339,38 @@ var Derived = []string{
 	"search_cache", "tags_closure", "traits_closure", "vn_similar", "withheld",
 }
 
-// HasWithheld says whether the live generation was imported with the table
-// all-ages mode reads, which generations from before it lack.
+// HasWithheld says whether the live generation has the tables all-ages mode
+// reads, which generations from before it lack, and those from before
+// vn_allages (2026-11-06) half lack: both, or it cannot be masked.
 func (s *Store) HasWithheld(ctx context.Context) (bool, error) {
 	var ok bool
-	err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`,
-		pgx.Identifier{SchemaLive, "withheld"}.Sanitize()).Scan(&ok)
+	err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL AND to_regclass($2) IS NOT NULL`,
+		pgx.Identifier{SchemaLive, "withheld"}.Sanitize(),
+		pgx.Identifier{SchemaLive, "vn_allages"}.Sanitize()).Scan(&ok)
 	return ok, err
 }
+
+// WithheldVersion names the live generation's withheld table as built: its
+// oid, which a rebuild changes, or 0 where there is none. Masked cache keys
+// carry it, so answers made from the old list are not served after a rebuild.
+func (s *Store) WithheldVersion(ctx context.Context) (uint32, error) {
+	var oid uint32
+	err := s.pool.QueryRow(ctx, `SELECT COALESCE(to_regclass($1)::oid, 0)`,
+		pgx.Identifier{SchemaLive, "withheld"}.Sanitize()).Scan(&oid)
+	return oid, err
+}
+
+// withheldBuild is where BuildWithheld fills the new table, inside its
+// transaction, so the old one goes on answering until the swap.
+const withheldBuild = "withheld_build"
 
 // BuildWithheld makes the live generation's withheld table afresh from what
 // it already holds, with the DDL and rules an import uses: a generation from
 // before all-ages mode gets it without a whole import, and one whose rules
 // changed is brought up to them. One transaction, so readers see the old
-// table or the new one; callers hold ImportLock, so no promote moves the
-// schema underneath.
+// table or the new one, and the new one is filled beside the old: readers
+// wait only for the swap at the end, not the seconds the rules take. Callers
+// hold ImportLock, so no promote moves the schema underneath.
 func (s *Store) BuildWithheld(ctx context.Context) (map[string]int64, error) {
 	table, err := sourceFS.ReadFile("ddl/02_withheld.sql")
 	if err != nil {
@@ -368,12 +385,21 @@ func (s *Store) BuildWithheld(ctx context.Context) (map[string]int64, error) {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
+	live, build := pgx.Identifier{SchemaLive}.Sanitize(), pgx.Identifier{withheldBuild}.Sanitize()
 	for _, sql := range []string{
-		"SET LOCAL search_path TO " + pgx.Identifier{SchemaLive}.Sanitize() + ",public",
-		"DROP TABLE IF EXISTS withheld",
+		"CREATE SCHEMA " + build,
+		// The new table lands in the first schema; the rules read the live
+		// generation's tables through the second.
+		"SET LOCAL search_path TO " + build + "," + live + ",public",
 		string(table),
 		string(rules),
 		"ANALYZE withheld",
+		"ANALYZE vn_allages",
+		"DROP TABLE IF EXISTS " + live + ".withheld, " + live + ".vn_allages",
+		"ALTER TABLE " + build + ".withheld SET SCHEMA " + live,
+		"ALTER TABLE " + build + ".vn_allages SET SCHEMA " + live,
+		"DROP SCHEMA " + build,
+		"SET LOCAL search_path TO " + live + ",public",
 	} {
 		if _, err := tx.Exec(ctx, sql); err != nil {
 			return nil, fmt.Errorf("building withheld: %w", err)

@@ -59,6 +59,18 @@ func VisibleSQL(entity, alias string) string {
 		letter, alias)
 }
 
+// WithheldOf is which of ids ctx's mask withholds; empty when nothing is
+// masked. For an id carried on an edge rather than followed: a screenshot's
+// release, a voice credit's work.
+func WithheldOf(ctx context.Context, entity string, ids []int32) (map[int32]bool, error) {
+	mask := MaskOf(ctx)
+	letter, ok := Withholdable(entity)
+	if mask == nil || !ok || len(ids) == 0 {
+		return map[int32]bool{}, nil
+	}
+	return mask.Withheld(ctx, letter, ids)
+}
+
 // Unwithheld keeps the ids under ctx's mask that are not withheld, in order.
 func Unwithheld(ctx context.Context, entity string, ids []int32) ([]int32, error) {
 	mask := MaskOf(ctx)

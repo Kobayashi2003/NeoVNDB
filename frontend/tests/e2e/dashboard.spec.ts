@@ -54,3 +54,22 @@ test('the dashboard counts what the reader holds and suggests more', async ({ pa
   const suggested = await cards.evaluateAll(as => as.map(a => a.getAttribute('href')));
   expect(suggested.filter(h => ['/v17', '/v11', '/v2'].includes(h!))).toEqual([]);
 });
+
+// A title the read API does not return -- gone from vndb, or held back in
+// all-ages mode -- is answered all the same: the counts settle.
+test('a title the read API does not have does not keep the counts waiting', async ({
+  page,
+  user,
+}) => {
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Read' })
+  ).json()) as { id: number };
+  await user.call('POST', `/collections/${list.id}/marks/add`, { items: ['v17', 'v99999999'] });
+
+  await page.goto('/u/dashboard');
+  const developers = page.locator('[aria-busy]', {
+    has: page.getByRole('heading', { name: 'Developers' }),
+  });
+  await expect(developers.getByRole('link').first()).toBeVisible();
+  await expect(developers).toHaveAttribute('aria-busy', 'false');
+});

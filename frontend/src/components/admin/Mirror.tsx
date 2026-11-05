@@ -358,9 +358,9 @@ export function Mirror() {
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <p className="text-amber-300">
-                  The live generation came in before all-ages mode, so nothing is held back from
-                  anyone yet. Its list can be built from what it already holds, in a few seconds;
-                  every import builds one after this.
+                  The live generation has no all-ages list, or one older than this version reads, so
+                  nothing is held back from anyone yet. It can be built from what the generation
+                  already holds, in a few seconds; every import builds one after this.
                 </p>
                 <Button disabled={busy || m.update.running} onClick={() => act(buildAllAges)}>
                   Build the list

@@ -21,6 +21,7 @@ export function Segmented<T extends string>({
   onChange,
   label,
   className,
+  disabled,
 }: {
   value: T;
   options: Option<T>[];
@@ -28,6 +29,8 @@ export function Segmented<T extends string>({
   /** Names the group for a screen reader, which cannot read the colours. */
   label: string;
   className?: string;
+  /** While what it sets is being saved. */
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -45,12 +48,13 @@ export function Segmented<T extends string>({
           key={option.value}
           role="radio"
           aria-checked={value === option.value}
+          disabled={disabled}
           onClick={() => onChange(option.value)}
           className={cn(
-            'flex flex-1 items-center justify-center whitespace-nowrap px-2.5 text-xs font-medium transition-colors',
+            'flex flex-1 items-center justify-center whitespace-nowrap px-2.5 text-xs font-medium transition-colors disabled:opacity-50',
             value === option.value
               ? (option.activeClass ?? 'bg-white/20 text-white')
-              : 'text-muted hover:bg-white/10 hover:text-white',
+              : 'text-muted enabled:hover:bg-white/10 enabled:hover:text-white',
           )}
         >
           {option.short ? (

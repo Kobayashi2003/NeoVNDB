@@ -57,7 +57,7 @@ func facetSQL(spec PageSpec, req *Request, name string, values []string) (string
 		return "", nil, BadRequest("at most %d values may be counted at once", max)
 	}
 
-	b := &Builder{Limits: req.Limits, Types: req.cat, Budget: req.budget}
+	b := builder(req)
 	if _, err := conditions(spec, req, b, name); err != nil {
 		return "", nil, err
 	}

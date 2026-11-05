@@ -77,7 +77,7 @@ func TestWithheld(t *testing.T) {
 	  INSERT INTO traits (id, sexual) VALUES (10, true), (11, false), (12, false);
 	  INSERT INTO traits_parents (id, parent) VALUES (11, 10);
 
-	  INSERT INTO vn (id) VALUES (100), (101), (102), (103), (104), (105);
+	  INSERT INTO vn (id) VALUES (100), (101), (102), (103), (104), (105), (106), (107);
 	  INSERT INTO releases (id, minage, has_ero) VALUES
 	    (200, 18, true),    -- adult: v100 has only this
 	    (201, 18, false),   -- adult: v101's original...
@@ -85,11 +85,19 @@ func TestWithheld(t *testing.T) {
 	    (203, 12, true),    -- erotic scenes at any age are adult
 	    (204, NULL, false), -- unrated: v103, tagged under sex
 	    (205, NULL, false), -- unrated: v104, tagged but the vote calls it a lie
-	    (206, 15, false);   -- all ages: v105
-	  INSERT INTO releases_vn (id, vid) VALUES
-	    (200, 100), (201, 101), (202, 101), (203, 102), (204, 103), (205, 104), (206, 105);
+	    (206, 15, false),   -- all ages: v105
+	    (207, 18, false),   -- adult: v106's game...
+	    (208, 0, false),    -- ...and its all-ages demo, which saves nothing
+	    (209, 0, false),    -- v107's all-ages demo...
+	    (210, NULL, false); -- ...and its game, unrated and tagged under sex
+	  INSERT INTO releases_vn (id, vid, rtype) VALUES
+	    (200, 100, 'complete'), (201, 101, 'complete'), (202, 101, 'complete'),
+	    (203, 102, 'complete'), (204, 103, 'complete'), (205, 104, 'complete'),
+	    (206, 105, 'complete'), (207, 106, 'complete'), (208, 106, 'trial'),
+	    (209, 107, 'trial'), (210, 107, 'complete');
 	  INSERT INTO tags_vn_direct (tag, vid, rating, spoiler, count, lie) VALUES
-	    (2, 103, 1.5, 0, 3, false), (2, 104, 1.5, 0, 3, true), (3, 105, 2, 0, 3, false);
+	    (2, 103, 1.5, 0, 3, false), (2, 104, 1.5, 0, 3, true), (3, 105, 2, 0, 3, false),
+	    (2, 107, 1.5, 0, 3, false);
 
 	  INSERT INTO chars (id) VALUES (300), (301), (302), (303);
 	  INSERT INTO chars_vns (id, vid, rid) VALUES
@@ -113,8 +121,8 @@ func TestWithheld(t *testing.T) {
 		"c300:c", "c301:c",
 		"g1:e", "g2:e",
 		"i10:s", "i11:s",
-		"r200:a", "r201:a", "r203:a",
-		"v100:a", "v102:a", "v103:t",
+		"r200:a", "r201:a", "r203:a", "r207:a",
+		"v100:a", "v102:a", "v103:t", "v106:a", "v107:t",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("withheld\n got  %v\n want %v", got, want)

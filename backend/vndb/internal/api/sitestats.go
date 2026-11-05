@@ -85,10 +85,11 @@ func (s *Server) siteStatsBody(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Only this generation's are worth keeping.
-	live := strings.TrimSuffix(key, "+m")
+	// Only this generation's are worth keeping, and of the masked ones only
+	// those counted with the list as it is.
+	live, _, _ := strings.Cut(key, maskedSuffix)
 	for k := range st.bodies {
-		if strings.TrimSuffix(k, "+m") != live {
+		if gen, _, isMasked := strings.Cut(k, maskedSuffix); gen != live || (masked && isMasked && k != key) {
 			delete(st.bodies, k)
 		}
 	}

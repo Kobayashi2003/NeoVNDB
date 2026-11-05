@@ -90,6 +90,30 @@ describe('SettingsCard', () => {
     expect(await screen.findByText(/\.env says Guests\./)).toBeInTheDocument();
   });
 
+  it('holds the choice still while it is being saved', async () => {
+    let done: (v: Awaited<ReturnType<typeof answer>>) => void = () => {};
+    const change = vi.fn(() => new Promise<Awaited<ReturnType<typeof answer>>>(r => (done = r)));
+    render(
+      <SettingsCard
+        title="All ages"
+        fields={ALL_AGES_FIELDS}
+        read={() => answer(env, [])}
+        change={change}
+        onSaved={() => {}}
+      />,
+    );
+    const group = await screen.findByRole('radiogroup', {
+      name: 'Who sees only what is for all ages',
+    });
+    fireEvent.click(within(group).getByRole('radio', { name: 'Everyone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(within(group).getByRole('radio', { name: 'Guests' })).toBeDisabled(),
+    );
+    done({ values: { ...env, all_ages: true }, env, changed: ['all_ages'] });
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Guests' })).toBeEnabled());
+  });
+
   it('saves only what was edited, as the service takes it', async () => {
     const change = vi.fn((patch: Partial<ServeSettings>) =>
       answer({ ...env, ...patch }, Object.keys(patch) as (keyof ServeSettings)[]),

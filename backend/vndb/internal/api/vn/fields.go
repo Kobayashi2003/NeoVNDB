@@ -115,7 +115,11 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Vn]{
 })
 
 func fetch(ctx context.Context, r *Resolver, ids []int32) ([]gen.Vn, error) {
-	return r.q.GetVNs(ctx, ids)
+	rows, err := r.q.GetVNs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	return rows, r.asShown(ctx, rows)
 }
 
 // The dump keeps a score as tenths of a point; the API reports 10 to 100.

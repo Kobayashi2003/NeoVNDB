@@ -263,6 +263,7 @@ export function SettingsCard<T extends object>({
                     value={draft[f.key]}
                     options={f.kind.choices.map(([value, label]) => ({ value, label }))}
                     onChange={value => setDraft({ ...draft, [f.key]: value })}
+                    disabled={busy}
                     className="w-full"
                   />
                 </>
