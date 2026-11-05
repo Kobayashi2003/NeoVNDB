@@ -21,6 +21,10 @@ SELECT 'r', id, 'a'
   FROM releases
  WHERE minage >= 18 OR has_ero;
 
+-- The steps below look withheld up row by row. Filled just now, it has no
+-- statistics, and planned as if empty this file takes minutes, not seconds.
+ANALYZE withheld;
+
 -- A work with an adult release and no rated one for all: one also out in an
 -- all-ages version stays, showing only that release. A work rated nowhere goes
 -- by its tags instead, as voted; one voted a lie does not count. A trial is
@@ -47,6 +51,9 @@ SELECT 'v', v.id, CASE WHEN x.adult THEN 'a' ELSE 't' END
              FROM tags_vn_direct d
              JOIN withheld w ON w.entity_type = 'g' AND w.id = d.tag
             WHERE d.vid = v.id AND d.rating > 0 AND NOT d.lie));
+
+-- Works are in it now too.
+ANALYZE withheld;
 
 -- A character seen nowhere but in withheld works, or in their withheld
 -- releases: one added only in a work's adult release goes with that release.

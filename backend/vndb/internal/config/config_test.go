@@ -20,6 +20,17 @@ func TestLoadRefusesWhatItCannotRead(t *testing.T) {
 	}
 }
 
+// No fetch slot would hang every image, and a negative one panics at start.
+func TestLoadRefusesNoImageFetchSlots(t *testing.T) {
+	t.Setenv("NEOVNDB_DB_URL", "postgres://localhost/x")
+	for _, n := range []string{"0", "-1"} {
+		t.Setenv("NEOVNDB_IMAGE_FETCH_PARALLEL", n)
+		if _, err := Load(); err == nil || !strings.Contains(err.Error(), "NEOVNDB_IMAGE_FETCH_PARALLEL") {
+			t.Errorf("NEOVNDB_IMAGE_FETCH_PARALLEL=%s: %v", n, err)
+		}
+	}
+}
+
 func TestLoadFallsBackOnlyWhenUnset(t *testing.T) {
 	t.Setenv("NEOVNDB_DB_URL", "postgres://localhost/x")
 	t.Setenv("NEOVNDB_PORT", "")

@@ -48,11 +48,18 @@ func Build(ctx context.Context, pool *pgxpool.Pool, schema string) (int, error) 
 	}
 
 	pairs := Neighbours(tags, func(a, b int32) bool { return related[[2]int32{a, b}] || related[[2]int32{b, a}] })
-	copied, err := pool.CopyFrom(ctx, pgx.Identifier{schema, "vn_similar"},
+	table := pgx.Identifier{schema, "vn_similar"}
+	copied, err := pool.CopyFrom(ctx, table,
 		[]string{"id", "vid", "score"},
 		pgx.CopyFromSlice(len(pairs), func(i int) ([]any, error) {
 			p := pairs[i]
 			return []any{p.Work, p.Similar, p.Score}, nil
 		}))
+	if err != nil {
+		return 0, err
+	}
+	// Filled after the derive step analysed the generation, so it would have no
+	// statistics of its own.
+	_, err = pool.Exec(ctx, "ANALYZE "+table.Sanitize())
 	return int(copied), err
 }

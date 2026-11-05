@@ -55,7 +55,12 @@ func runImages(ctx context.Context, args []string) error {
 	crawl := admin.NewJob(func(ctx context.Context, _ io.Writer) (any, error) {
 		s := live.Get()
 		crawler.PerRun, crawler.Delay = s.CrawlPerRun, time.Duration(s.CrawlDelay)
-		return crawlOnce(ctx, cfg, crawler, log)
+		report, err := crawlOnce(ctx, cfg, crawler, log)
+		if report == nil {
+			// Not a nil *Report in an any, which the job would take for one.
+			return nil, err
+		}
+		return *report, err
 	})
 	// Read again rather than taken from the change: two changes close together
 	// may tell their watchers out of order, and the last to run must win.
@@ -80,12 +85,13 @@ func runImages(ctx context.Context, args []string) error {
 	}, cfg.ShutdownTimeout, log)
 }
 
-// crawlOnce opens the database for the length of one run.
-func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slog.Logger) (img.Report, error) {
+// crawlOnce opens the database for the length of one run. With no database
+// there is no run, and no report: nil, not an empty one.
+func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slog.Logger) (*img.Report, error) {
 	store, err := db.Open(ctx, cfg)
 	if err != nil {
 		log.Warn("crawl skipped: no database", "err", err)
-		return img.Report{}, fmt.Errorf("no database: %w", err)
+		return nil, fmt.Errorf("no database: %w", err)
 	}
 	defer store.Close()
 	c.Known = func(ctx context.Context) ([]img.Known, error) {
@@ -101,7 +107,7 @@ func crawlOnce(ctx context.Context, cfg *config.Config, c *img.Crawler, log *slo
 		log.Warn("crawl", "err", err)
 	}
 	log.Info("crawled", "fetched", report.Fetched, "still missing", report.Left)
-	return report, err
+	return &report, err
 }
 
 // runCrawl is one crawl by hand, e.g. to fill a new mirror: --limit 0 fetches

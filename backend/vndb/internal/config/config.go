@@ -217,6 +217,11 @@ func Load() (*Config, error) {
 	if c.DatabaseURL == "" {
 		e.errs = append(e.errs, fmt.Errorf("NEOVNDB_DB_URL is not set"))
 	}
+	// Not one of the 0-is-unlimited settings: no fetch slot at all would leave
+	// every image waiting for one, and a negative count cannot be made.
+	if c.ImageFetchParallel < 1 {
+		e.errs = append(e.errs, fmt.Errorf("NEOVNDB_IMAGE_FETCH_PARALLEL=%d: at least 1", c.ImageFetchParallel))
+	}
 	if err := errors.Join(e.errs...); err != nil {
 		return nil, err
 	}

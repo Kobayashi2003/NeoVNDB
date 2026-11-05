@@ -155,8 +155,19 @@ func describe(ctx context.Context, archiveURL string, date []string) (*Release, 
 	return rel, nil
 }
 
+// downloadStall is how long a download may receive nothing before it is given
+// up. Not a bound on the whole download, which on a slow line rightly takes
+// long: a connection that stops without closing would otherwise hang the
+// import, and its lock, for good.
+var downloadStall = 2 * time.Minute
+
+// downloadPrefix names a download in progress.
+const downloadPrefix = ".download-"
+
 // Download fetches the release into dir unless present, via a temporary name
-// so an interrupted run leaves no complete-looking half file.
+// so an interrupted run leaves no complete-looking half file. Callers hold the
+// import lock, so no other download runs: a temporary file already there was
+// left by one that was killed, and goes.
 func Download(ctx context.Context, rel *Release, dir string) (path, sum string, err error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", "", err
@@ -167,12 +178,20 @@ func Download(ctx context.Context, rel *Release, dir string) (path, sum string, 
 		sum, err = digest(path)
 		return path, sum, err
 	}
+	stale, _ := filepath.Glob(filepath.Join(dir, downloadPrefix+"*"))
+	for _, f := range stale {
+		_ = os.Remove(f)
+	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rel.URL, nil)
 	if err != nil {
 		return "", "", err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = 30 * time.Second
+	resp, err := (&http.Client{Transport: transport}).Do(req)
 	if err != nil {
 		return "", "", err
 	}
@@ -181,15 +200,20 @@ func Download(ctx context.Context, rel *Release, dir string) (path, sum string, 
 		return "", "", fmt.Errorf("download %s: %s", rel.URL, resp.Status)
 	}
 
-	tmp, err := os.CreateTemp(dir, ".download-*")
+	tmp, err := os.CreateTemp(dir, downloadPrefix+"*")
 	if err != nil {
 		return "", "", err
 	}
 	defer os.Remove(tmp.Name())
 
 	h := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(tmp, h), resp.Body); err != nil {
+	body := &stallReader{r: resp.Body, timer: time.AfterFunc(downloadStall, cancel)}
+	defer body.timer.Stop()
+	if _, err := io.Copy(io.MultiWriter(tmp, h), body); err != nil {
 		tmp.Close()
+		if body.stalled() {
+			return "", "", fmt.Errorf("download %s: nothing received for %s", rel.URL, downloadStall)
+		}
 		return "", "", err
 	}
 	if err := tmp.Close(); err != nil {
@@ -200,6 +224,24 @@ func Download(ctx context.Context, rel *Release, dir string) (path, sum string, 
 	}
 	return path, hex.EncodeToString(h.Sum(nil)), nil
 }
+
+// stallReader puts timer off by downloadStall whenever bytes arrive; the
+// timer, left to fire, cancels the request.
+type stallReader struct {
+	r     io.Reader
+	timer *time.Timer
+}
+
+func (s *stallReader) Read(p []byte) (int, error) {
+	n, err := s.r.Read(p)
+	if n > 0 {
+		s.timer.Reset(downloadStall)
+	}
+	return n, err
+}
+
+// stalled says the timer fired, rather than the read failing on its own.
+func (s *stallReader) stalled() bool { return !s.timer.Stop() }
 
 func digest(path string) (string, error) {
 	f, err := os.Open(path)

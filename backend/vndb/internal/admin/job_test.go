@@ -48,6 +48,24 @@ func TestJobRunsOneAtATime(t *testing.T) {
 	}
 }
 
+// A run that got nowhere (a crawl with no database) keeps the last report on
+// the page, beside its own error, rather than an empty one.
+func TestJobKeepsTheLastReport(t *testing.T) {
+	reachable := true
+	j := NewJob(func(context.Context, io.Writer) (any, error) {
+		if reachable {
+			return 7, nil
+		}
+		return nil, errors.New("no database")
+	})
+	_ = j.Run(context.Background())
+	reachable = false
+	_ = j.Run(context.Background())
+	if s := j.State(); s.Result != 7 || s.Error != "no database" {
+		t.Errorf("after a run that got nowhere: result %v, error %q", s.Result, s.Error)
+	}
+}
+
 func TestJobKeepsTheTail(t *testing.T) {
 	j := NewJob(func(ctx context.Context, out io.Writer) (any, error) {
 		for i := range tailLines + 5 {

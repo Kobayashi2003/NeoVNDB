@@ -4,8 +4,67 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
+
+// A download that stops sending without closing is given up rather than
+// waited on for good, and leaves no temporary file.
+func TestDownloadGivesUpOnAStall(t *testing.T) {
+	defer func(was time.Duration) { downloadStall = was }(downloadStall)
+	downloadStall = 200 * time.Millisecond
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("the first bytes"))
+		w.(http.Flusher).Flush()
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	defer srv.Close()
+	defer close(release)
+
+	dir := t.TempDir()
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := Download(context.Background(), &Release{URL: srv.URL + "/vndb-db-2026-09-09.tar.zst"}, dir)
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("a stalled download succeeded")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("a stalled download was waited on")
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, "*")); len(left) != 0 {
+		t.Errorf("left behind: %v", left)
+	}
+}
+
+// What a killed download left is cleared by the next one.
+func TestDownloadClearsWhatAKilledOneLeft(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("an archive"))
+	}))
+	defer srv.Close()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".download-123"), []byte("half"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	path, _, err := Download(context.Background(), &Release{URL: srv.URL + "/vndb-db-2026-09-09.tar.zst"}, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	left, _ := filepath.Glob(filepath.Join(dir, "*"))
+	if len(left) != 1 || left[0] != path {
+		t.Errorf("left %v, want only %s", left, path)
+	}
+}
 
 // The `latest` link has redirected two different ways over time. Both shapes
 // have to resolve to the same archive.

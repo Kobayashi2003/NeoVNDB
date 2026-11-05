@@ -78,10 +78,11 @@ func (s *Server) Behind(ctx context.Context) {
 	}
 }
 
-// Crawler fetches ahead of readers into this server's store, through the same
-// source and its limit on concurrent fetches.
+// Crawler fetches ahead of readers into this server's store, the way a
+// reader's miss does: through the same flight, so the two never fetch one
+// image at once, and the same source and its limit on concurrent fetches.
 func (s *Server) Crawler(perRun int, delay time.Duration) *Crawler {
-	c := NewCrawler(s.mirror, s.source, s.log)
+	c := NewCrawler(s.mirror, s.fetch, s.log)
 	c.PerRun, c.Delay = perRun, delay
 	return c
 }

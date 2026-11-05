@@ -23,20 +23,23 @@ type Known struct {
 // its upstream thumbnail, that the store does not hold yet. t.vndb.org has no
 // listing, but the dump's images table is one, so there is nothing to probe.
 type Crawler struct {
-	store  *Store
-	source *Source
+	store *Store
+	// fetch brings one image in the way a reader's miss does, so the two never
+	// fetch, and write, the same image at once.
+	fetch func(Ref) ([]byte, error)
 	// Known lists what vndb has, from the database; the crawler itself stays
 	// free of it.
-	Known  func(ctx context.Context) ([]Known, error)
-	PerRun int           // fetches per run; 0 means no ceiling
+	Known func(ctx context.Context) ([]Known, error)
+	// Fetches tried per run, whatever came of them; 0 means no ceiling.
+	PerRun int
 	Delay  time.Duration // between fetches, out of politeness to vndb
 	log    *slog.Logger
 	// Images vndb answered 404 for, not asked again while this process runs.
 	gone map[Ref]bool
 }
 
-func NewCrawler(store *Store, source *Source, log *slog.Logger) *Crawler {
-	return &Crawler{store: store, source: source, log: log, gone: map[Ref]bool{}}
+func NewCrawler(store *Store, fetch func(Ref) ([]byte, error), log *slog.Logger) *Crawler {
+	return &Crawler{store: store, fetch: fetch, log: log, gone: map[Ref]bool{}}
 }
 
 // Report is what one crawl found and did.
@@ -80,17 +83,21 @@ func (c *Crawler) Run(ctx context.Context) (Report, error) {
 	// The newest are the likeliest to be asked for next.
 	sort.SliceStable(missing, func(i, j int) bool { return missing[i].Num > missing[j].Num })
 
-	for _, r := range missing {
-		if c.PerRun > 0 && report.Fetched >= c.PerRun {
+	// The ceiling counts every try: counting only what worked, a run while vndb
+	// is failing would work through the whole missing list.
+	gone := 0
+	for tried, r := range missing {
+		if c.PerRun > 0 && tried >= c.PerRun {
 			break
 		}
 		if ctx.Err() != nil {
-			report.Left = len(missing) - report.Fetched
+			report.Left = len(missing) - report.Fetched - gone
 			return report, ctx.Err()
 		}
-		switch _, err := c.source.Fetch(c.store, r); {
+		switch _, err := c.fetch(r); {
 		case errors.Is(err, ErrMissing):
 			c.gone[r] = true
+			gone++
 		case err != nil:
 			c.log.Warn("crawling", "image", r.String(), "err", err)
 		default:
@@ -101,7 +108,8 @@ func (c *Crawler) Run(ctx context.Context) (Report, error) {
 		case <-time.After(c.Delay):
 		}
 	}
-	report.Left = len(missing) - report.Fetched
+	// What vndb turned out not to have is not left to fetch.
+	report.Left = len(missing) - report.Fetched - gone
 	return report, nil
 }
 

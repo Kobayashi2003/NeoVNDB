@@ -57,15 +57,18 @@ func DDLChecksum() (string, error) {
 }
 
 // Describe reads the import_info row of one schema. A missing schema is
-// reported as (nil, nil): absence is an expected state, not a failure.
+// reported as (nil, nil): absence is an expected state, not a failure. So is
+// one an import died making before import_info was there, which the next
+// import drops: asked for the table, it would fail until then.
 func (s *Store) Describe(ctx context.Context, schema string) (*Generation, error) {
-	exists, err := s.schemaExists(ctx, schema)
-	if err != nil || !exists {
+	var exists bool
+	if err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`,
+		pgx.Identifier{schema, "import_info"}.Sanitize()).Scan(&exists); err != nil || !exists {
 		return nil, err
 	}
 
 	g := &Generation{Schema: schema}
-	err = s.pool.QueryRow(ctx, fmt.Sprintf(`
+	err := s.pool.QueryRow(ctx, fmt.Sprintf(`
 		SELECT code, dump_url, dump_sha256, published_at, started_at, finished_at, ddl_checksum
 		  FROM %s.import_info LIMIT 1`, pgx.Identifier{schema}.Sanitize()),
 	).Scan(&g.Code, &g.DumpURL, &g.DumpSHA256, &g.PublishedAt,
@@ -261,7 +264,29 @@ func (s *Store) Index(ctx context.Context, schema string) error {
 	// Freshly copied tables carry no planner statistics, so without this the
 	// derived step plans against an assumed empty database and picks nested
 	// loops over sequential scans.
-	return s.execIn(ctx, schema, "ANALYZE")
+	return s.analyze(ctx, schema)
+}
+
+// analyze gathers planner statistics for every table of schema. A bare
+// ANALYZE would do the whole database: the live generation, the previous one
+// and the translations as well as the one being built. One statement per
+// table: listed in one, the same tables took 9s rather than 2.5s (measured
+// on a whole generation).
+func (s *Store) analyze(ctx context.Context, schema string) error {
+	rows, err := s.pool.Query(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = $1`, schema)
+	if err != nil {
+		return err
+	}
+	names, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		if _, err := s.pool.Exec(ctx, "ANALYZE "+pgx.Identifier{schema, name}.Sanitize()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func isIndexFile(name string) bool { return strings.Contains(name, "_indexes") }
@@ -283,9 +308,9 @@ func (s *Store) Derive(ctx context.Context, schema string, step func(name string
 			step(f.name, time.Since(started))
 		}
 	}
-	// The planner has no statistics for freshly copied tables, so the first
+	// What the steps filled and updated has no statistics yet, so the first
 	// queries after an import would pick bad plans without this.
-	return s.execIn(ctx, schema, "ANALYZE")
+	return s.analyze(ctx, schema)
 }
 
 // SetNextSource records where the pending generation's data came from. It is

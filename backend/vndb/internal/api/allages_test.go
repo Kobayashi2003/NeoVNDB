@@ -125,8 +125,22 @@ func TestAllAges(t *testing.T) {
 	  SELECT id, 'unknown', '', '', 0, 0, 0, 0, 0, 0, '' FROM (VALUES (300), (301)) c(id);
 	  INSERT INTO chars_vns (id, vid, rid) VALUES (300, 100, NULL), (301, 101, NULL);
 	  SET search_path TO DEFAULT`)
+	// The derive step analyses the generation it built and nothing else in
+	// the database.
+	exec(`CREATE SCHEMA analyze_test; CREATE TABLE analyze_test.t (n int)`)
+	t.Cleanup(func() { _, _ = pool.Exec(ctx, `DROP SCHEMA IF EXISTS analyze_test CASCADE`) })
 	if err := store.Derive(ctx, db.SchemaNext, nil); err != nil {
 		t.Fatal(err)
+	}
+	var elsewhere, here bool
+	if err := pool.QueryRow(ctx, `SELECT
+	      (SELECT last_analyze IS NOT NULL FROM pg_stat_user_tables WHERE schemaname = 'analyze_test' AND relname = 't'),
+	      (SELECT last_analyze IS NOT NULL FROM pg_stat_user_tables WHERE schemaname = 'vndb_next' AND relname = 'vn')`).
+		Scan(&elsewhere, &here); err != nil {
+		t.Fatal(err)
+	}
+	if elsewhere || !here {
+		t.Errorf("analysed: another schema's table %v, the generation's vn %v", elsewhere, here)
 	}
 	if err := store.FinishNext(ctx, []byte(`{}`)); err != nil {
 		t.Fatal(err)

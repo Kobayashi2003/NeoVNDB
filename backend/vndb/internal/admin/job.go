@@ -92,7 +92,11 @@ func (j *Job) end(result any, err error) {
 	defer j.mu.Unlock()
 	now := time.Now()
 	j.state.Running, j.state.FinishedAt = false, &now
-	j.state.Result = result
+	// A run that got nowhere has nothing to report and keeps the last report:
+	// an empty one in its place would read as the last run's findings.
+	if result != nil {
+		j.state.Result = result
+	}
 	if err != nil {
 		j.state.Error = err.Error()
 	}

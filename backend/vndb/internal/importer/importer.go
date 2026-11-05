@@ -137,9 +137,11 @@ func (im *Importer) copyTable(ctx context.Context, s spec, table *dump.Table) (i
 		pgx.Identifier{s.table}.Sanitize(),
 		quoteAll(targets))
 	_, err = conn.Conn().PgConn().CopyFrom(ctx, reader, sql)
+	// Before waiting for the writer: when Postgres refuses a row it stops
+	// reading, and the writer would wait on the pipe while this waited on it.
+	reader.Close()
 	rows := <-counted
 	if err != nil {
-		reader.CloseWithError(err)
 		return 0, err
 	}
 	return rows, nil
