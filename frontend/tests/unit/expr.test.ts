@@ -21,7 +21,10 @@ describe('parse and print', () => {
     ['!patch=true', 'patch!=true'],
     ['!(a=1,b=2)', '!(a=1,b=2)'],
     ['!a=1+b=2', 'a!=1+b=2'],
-    ['!rating>=70', 'rating<70'],
+    // A comparison keeps its negation: !a>="1,2" is not a<"1,2", and some
+    // filters take >= and never <.
+    ['!rating>=70', '!(rating>=70)'],
+    ['!resolution>=1920x1080', '!(resolution>=1920x1080)'],
     [' lang = en , lang = ja ', 'lang=en,lang=ja'],
     ['search="ever, out"', 'search="ever, out"'],
     ['search="say \\"no\\""', 'search="say \\"no\\""'],
@@ -58,6 +61,14 @@ describe('parse and print', () => {
     expect(() => parse('('.repeat(200) + 'a=1' + ')'.repeat(200))).toThrow();
   });
 
+  // A group of one, all its other parts unfinished, prints where it stands:
+  // an or inside it keeps its brackets under an and.
+  it('keeps the brackets of an or inside a group of one', () => {
+    const inner = group(false, [leaf('x', '=', '1'), leaf('y', '=', '2')]);
+    const g = group(true, [leaf('z', '=', '1'), group(false, [inner, leaf()])]);
+    expect(print(g)).toBe('z=1+(x=1,y=2)');
+  });
+
   it('leaves unfinished conditions out', () => {
     const g = group(true, [leaf('lang', '=', 'en'), leaf('', '=', ''), leaf('olang', '=', ' ')]);
     expect(print(g)).toBe('lang=en');
@@ -66,9 +77,17 @@ describe('parse and print', () => {
 });
 
 describe('negate', () => {
-  it("flips a leaf's operator and a group's flag", () => {
-    expect(negate(leaf('a', '>=', '1'))).toMatchObject({ op: '<' });
+  it("flips = and != in place, and a group's flag", () => {
+    expect(negate(leaf('a', '=', '1'))).toMatchObject({ op: '!=' });
     expect(negate(group(true, [], false))).toMatchObject({ not: true });
+  });
+
+  it('keeps a comparison as it is, inside a negated group', () => {
+    expect(negate(leaf('a', '>=', '1'))).toMatchObject({
+      kind: 'group',
+      not: true,
+      items: [{ kind: 'leaf', op: '>=' }],
+    });
   });
 });
 

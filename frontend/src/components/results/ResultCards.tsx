@@ -11,7 +11,7 @@ import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { plain } from '@/lib/bbcode';
 import { shouldBlur } from '@/lib/content';
-import { compactCount, display, releaseDate, score, shortLength } from '@/lib/format';
+import { commas, compactCount, display, releaseDate, score, shortLength } from '@/lib/format';
 import { AgeRating } from '@/components/ui/AgeRating';
 import { Icon } from '@/components/ui/Icon';
 import { Name } from '@/components/ui/Name';
@@ -151,7 +151,7 @@ export function VNCard({ row, sort }: { row: VNRow } & Sorted) {
         ) : (
           <span
             className="inline-flex items-center gap-0.5 tabular-nums"
-            title={`${row.votecount.toLocaleString()} votes`}
+            title={`${commas(row.votecount)} votes`}
           >
             <Users className="icon-text size-3" aria-hidden />
             {compactCount(row.votecount)}
@@ -301,7 +301,7 @@ export function TagCard({ row }: { row: TagRow }) {
         {enumLabel('CATEGORY', row.category)}
       </span>
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted">
-        {row.vn_count.toLocaleString()}
+        {commas(row.vn_count)}
       </span>
     </Row>
   );
@@ -332,7 +332,7 @@ export function TraitCard({ row }: { row: TraitRow }) {
         </span>
       )}
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted">
-        {row.char_count.toLocaleString()}
+        {commas(row.char_count)}
       </span>
     </Row>
   );

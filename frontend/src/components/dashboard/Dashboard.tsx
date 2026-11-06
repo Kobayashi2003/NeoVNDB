@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, TriangleAlert, X } from 'lucide-react';
 import { list, vnStats, type VNStats } from '@/lib/api';
+import { commas } from '@/lib/format';
 import { LIST } from '@/lib/list';
 import {
   bounds,
@@ -247,7 +248,7 @@ function Board() {
           <Summary scope={picked} details={details} />
           {scope.length > MAX_IDS && (
             <p className="-mt-6 text-xs text-muted">
-              What they have in common is counted over the latest {MAX_IDS.toLocaleString()}.
+              What they have in common is counted over the latest {commas(MAX_IDS)}.
             </p>
           )}
 
@@ -478,8 +479,7 @@ function Chips({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="mr-1 text-xs tabular-nums text-muted" aria-live="polite">
-        <strong className="font-semibold text-white">{left.toLocaleString()}</strong> of{' '}
-        {of.toLocaleString()} titles
+        <strong className="font-semibold text-white">{commas(left)}</strong> of {commas(of)} titles
       </span>
       {named.map(([facet, label]) => (
         <button

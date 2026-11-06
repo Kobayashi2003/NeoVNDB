@@ -333,7 +333,9 @@ function Canvas({ graph, heading }: { graph: Graph; heading: React.ReactNode }) 
           nodeTypes={NODE_TYPES}
           edgeTypes={EDGE_TYPES}
           onNodeClick={onNodeClick}
-          onPaneClick={() => setFocus(null)}
+          // As Escape: the path's start and the note about it go too, or a
+          // half-picked path stayed, and the next card picked finished it.
+          onPaneClick={letGo}
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={false}

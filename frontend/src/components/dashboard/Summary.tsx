@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { thumbnailURL } from '@/lib/images';
 import { shouldBlur } from '@/lib/content';
-import { display, score } from '@/lib/format';
+import { commas, display, score } from '@/lib/format';
 import type { Detail, Entry } from '@/lib/dashboard';
 import { usePrefs } from '@/hooks/usePrefs';
 import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
@@ -25,7 +25,7 @@ export function Summary({ scope, details }: { scope: Entry[]; details: Map<strin
   const theirs = scored.length ? scored.reduce((s, r) => s + r.rating!, 0) / scored.length : null;
   const timed = rows.filter(r => r.length_minutes);
   const hours = Math.round(timed.reduce((s, r) => s + r.length_minutes!, 0) / 60);
-  const count = (n: number) => Math.round(n).toLocaleString();
+  const count = (n: number) => commas(Math.round(n));
   const figures: { label: string; value: number | null; format: Format; note?: string }[] = [
     { label: 'Titles', value: scope.length, format: count },
     {

@@ -2,6 +2,7 @@
  *  API does not reserve (f= included) is passed through as a filter. */
 
 import { FILTERS } from '@/lib/filters';
+import { commas } from '@/lib/format';
 import { filtersOf, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
@@ -28,7 +29,7 @@ export async function ListPage({ type, params }: { type: string; params: Params 
             {LIST[type].label}
             {!data.failure && (
               <span className="ml-2 text-sm font-normal tabular-nums text-muted">
-                {data.count.toLocaleString()}
+                {commas(data.count)}
               </span>
             )}
           </h1>

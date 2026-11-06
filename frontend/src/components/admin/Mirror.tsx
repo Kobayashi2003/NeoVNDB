@@ -21,6 +21,7 @@ import {
   type ImageStatus,
   type MirrorStatus,
 } from '@/lib/admin';
+import { commas } from '@/lib/format';
 import { errorText } from '@/lib/user';
 import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
@@ -202,7 +203,7 @@ export function Mirror() {
                   ['Database', `${bytes(m.database.bytes)}, ${m.database.server}`],
                   [
                     'Translations',
-                    `${m.translations.terms.toLocaleString()} names, ${m.translations.passages.toLocaleString()} descriptions (${m.translations.lang})`,
+                    `${commas(m.translations.terms)} names, ${commas(m.translations.passages)} descriptions (${m.translations.lang})`,
                   ],
                 ]}
               />
@@ -280,7 +281,7 @@ export function Mirror() {
                   [
                     'Last report',
                     report
-                      ? `fetched ${report.fetched.toLocaleString()}, ${report.left.toLocaleString()} still missing`
+                      ? `fetched ${commas(report.fetched)}, ${commas(report.left)} still missing`
                       : 'none yet',
                   ],
                   [
@@ -355,9 +356,9 @@ export function Mirror() {
             (m.all_ages ? (
               <p className="text-xs text-muted tabular-nums">
                 Held back:{' '}
-                {WITHHELD.map(
-                  ([kind, noun]) => `${(m.all_ages?.[kind] ?? 0).toLocaleString()} ${noun}`,
-                ).join(', ')}
+                {WITHHELD.map(([kind, noun]) => `${commas(m.all_ages?.[kind] ?? 0)} ${noun}`).join(
+                  ', ',
+                )}
                 .
               </p>
             ) : (
@@ -401,8 +402,7 @@ function Coverage({ held, known }: { held: number; known: number }) {
         <div className="h-full bg-accent" style={{ width: `${(share * 100).toFixed(2)}%` }} />
       </div>
       <p className="text-xs text-muted tabular-nums">
-        {held.toLocaleString()} of {known.toLocaleString()} images on disk (
-        {(share * 100).toFixed(1)}%)
+        {commas(held)} of {commas(known)} images on disk ({(share * 100).toFixed(1)}%)
       </p>
     </div>
   );

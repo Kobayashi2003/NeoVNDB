@@ -5,6 +5,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { commas } from '@/lib/format';
 import { Placeholder } from '@/components/ui/Surface';
 import { Grow } from './Grow';
 
@@ -30,7 +31,7 @@ export function Ranking({
   picked,
   onPick,
   of,
-  format = n => n.toLocaleString(),
+  format = commas,
 }: {
   /** Undefined while still being counted. */
   rows: Ranked[] | undefined;

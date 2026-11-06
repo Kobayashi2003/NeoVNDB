@@ -50,11 +50,13 @@ export function VNCharacterCard({
 }) {
   const { original, explicit, sexual, violence } = usePrefs();
   // What this card revealed, and at which section level: a new section level
-  // drops it rather than letting it hold the card open past the control.
+  // drops it rather than letting it hold the card open past the control, and
+  // the move back does not bring it again.
   const [reveal, setReveal] = useState<{ at: SpoilerLevel; level: SpoilerLevel }>({
     at: spoilerLevel,
     level: 0,
   });
+  if (reveal.at !== spoilerLevel) setReveal({ at: spoilerLevel, level: 0 });
   const revealed = reveal.at === spoilerLevel ? reveal.level : 0;
   const setRevealed = (level: SpoilerLevel) => setReveal({ at: spoilerLevel, level });
 

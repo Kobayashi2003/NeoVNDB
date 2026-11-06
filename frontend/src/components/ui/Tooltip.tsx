@@ -27,13 +27,17 @@ export function Tooltip({
 
   useEffect(() => {
     if (!at) return;
-    // Registered after the opening event has finished propagating, so the tap
-    // that opened this one does not immediately close it.
+    // A touch on this one is not one elsewhere. React runs this effect before
+    // the opening touch reaches the window, so that touch came here too and
+    // closed what it had just opened.
+    const away = (e: TouchEvent) => {
+      if (!ref.current?.contains(e.target as Node)) hide();
+    };
     window.addEventListener('scroll', hide, true);
-    window.addEventListener('touchstart', hide);
+    window.addEventListener('touchstart', away);
     return () => {
       window.removeEventListener('scroll', hide, true);
-      window.removeEventListener('touchstart', hide);
+      window.removeEventListener('touchstart', away);
     };
   }, [at, hide]);
 

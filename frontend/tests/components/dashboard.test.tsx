@@ -6,6 +6,46 @@ import { Block, Plot } from '@/components/dashboard/Block';
 import { Columns, type Column } from '@/components/dashboard/Columns';
 import { Grow } from '@/components/dashboard/Grow';
 import { Ranking, share } from '@/components/dashboard/Ranking';
+import { Calendar } from '@/components/dashboard/Calendar';
+import { Recommendations } from '@/components/dashboard/Recommendations';
+import { calendar } from '@/lib/dashboard';
+
+describe('Calendar', () => {
+  // The weeks are worked out afresh on every render; a reader scrolled back
+  // to a day was thrown to the recent end by picking it.
+  it('goes to the recent end when the span does, not on every render', () => {
+    const scrolled = vi.fn();
+    const was = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
+    Object.defineProperty(HTMLElement.prototype, 'scrollLeft', {
+      configurable: true,
+      set: scrolled,
+      get: () => 0,
+    });
+    try {
+      const at = (to: string) => (
+        <Calendar weeks={calendar(['2026-03-14'], to, 8)} unit="titles" onPick={() => {}} />
+      );
+      const { rerender } = render(at('2026-04-01'));
+      const first = scrolled.mock.calls.length;
+      rerender(at('2026-04-01'));
+      expect(scrolled.mock.calls.length).toBe(first);
+      rerender(at('2026-05-01'));
+      expect(scrolled.mock.calls.length).toBe(first + 1);
+    } finally {
+      delete (HTMLElement.prototype as { scrollLeft?: number }).scrollLeft;
+      if (was) Object.defineProperty(Element.prototype, 'scrollLeft', was);
+    }
+  });
+});
+
+describe('Recommendations', () => {
+  // Nothing in scope asks for nothing: once the waiting drew forever, or the
+  // last scope's suggestions stayed, dimmed.
+  it('says there is nothing to go from rather than waiting', () => {
+    render(<Recommendations scope={[]} held={{ lists: [], rated: [] }} details={new Map()} />);
+    expect(screen.getByText('Nothing in scope to go from.')).toBeVisible();
+  });
+});
 
 const months: Column[] = Array.from({ length: 12 }, (_, i) => {
   const key = `2025-${String(i + 1).padStart(2, '0')}`;
@@ -105,6 +145,29 @@ describe('bars and swaps', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show as a table' }));
     expect(screen.getByRole('cell', { name: 'Long' }).closest('.animate-swap-in')).not.toBe(chart);
     expect(screen.getByRole('heading', { name: 'Length' })).toBeInTheDocument();
+  });
+
+  // Two of the same name are still two rows.
+  it('draws every row of its table, names alike or not', async () => {
+    const warned = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <Block
+        title="Developers"
+        table={{
+          head: ['Developer', 'Titles'],
+          rows: [
+            ['Same', 4],
+            ['Same', 2],
+          ],
+        }}
+      >
+        <Plot>chart</Plot>
+      </Block>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Show as a table' }));
+    expect(screen.getAllByRole('cell', { name: 'Same' })).toHaveLength(2);
+    expect(warned.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+    warned.mockRestore();
   });
 
   it('keeps a plot in place while its data changes, and swaps it when its view does', () => {

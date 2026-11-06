@@ -26,14 +26,18 @@ export function CharacterInstances({
   currentId: string;
   spoiler: SpoilerControl;
 }) {
+  // The one this page is an instance of has a spoiler level too: that this
+  // character is secretly that one can be the twist.
+  const all = parent ? [parent, ...instances] : instances;
   const shown = instances.filter(c => c.spoiler <= spoiler.level);
-  const hiddenMinor = instances.filter(c => c.spoiler === 1 && spoiler.level < 1).length;
-  const hiddenMajor = instances.filter(c => c.spoiler === 2 && spoiler.level < 2).length;
+  const parentShown = parent !== null && parent.spoiler <= spoiler.level;
+  const hiddenMinor = all.filter(c => c.spoiler === 1 && spoiler.level < 1).length;
+  const hiddenMajor = all.filter(c => c.spoiler === 2 && spoiler.level < 2).length;
 
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-        {parent && <InstanceTile character={parent} currentId={currentId} isParent />}
+        {parentShown && <InstanceTile character={parent} currentId={currentId} isParent />}
         {shown.map(c => (
           <InstanceTile key={c.id} character={c} currentId={currentId} />
         ))}

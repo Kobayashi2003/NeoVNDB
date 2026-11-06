@@ -14,6 +14,20 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
   ]),
+  {
+    // The server's locale on the server, the reader's in the browser: a
+    // number written so differs between the two and breaks hydration.
+    files: ['src/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='toLocaleString'][arguments.length=0]",
+          message: 'Write a count with commas() from @/lib/format, the same on server and browser.',
+        },
+      ],
+    },
+  },
   prettier,
 ]);
 

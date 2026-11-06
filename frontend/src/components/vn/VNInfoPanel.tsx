@@ -9,7 +9,7 @@ import { iconOf } from '@/lib/icons';
 import { enumLabel } from '@/lib/enums';
 import { shouldBlur } from '@/lib/content';
 import { publishers } from '@/lib/vn';
-import { display, length, releaseDate, score } from '@/lib/format';
+import { commas, display, length, releaseDate, score } from '@/lib/format';
 import { Cover } from '@/components/ui/Cover';
 import { Icon } from '@/components/ui/Icon';
 import { InfoCard, InfoRow, InlineList, TitledCard } from '@/components/ui/InfoCard';
@@ -198,7 +198,7 @@ function Rating({ value, votes }: { value: number | null; votes: number }) {
     <span className="flex w-full flex-wrap items-center gap-1.5">
       <span className="font-semibold text-accent">{score(value)}</span>
       <span className="text-muted">/ 100</span>
-      {votes > 0 && <span className="text-muted">({votes.toLocaleString()})</span>}
+      {votes > 0 && <span className="text-muted">({commas(votes)})</span>}
     </span>
   );
 }

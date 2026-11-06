@@ -41,7 +41,13 @@ export function PageJump({
       noValidate
       onSubmit={e => {
         e.preventDefault();
-        const n = Math.round(Number(new FormData(e.currentTarget).get('page')));
+        const raw = String(new FormData(e.currentTarget).get('page') ?? '').trim();
+        // Nothing typed is no page: Number('') is 0, and 0 clamps to page 1.
+        if (raw === '') {
+          setOpen(false);
+          return;
+        }
+        const n = Math.round(Number(raw));
         if (!Number.isFinite(n)) return;
         const page = Math.min(Math.max(n, 1), last);
         setOpen(false);

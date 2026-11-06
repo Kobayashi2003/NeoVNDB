@@ -7,6 +7,7 @@ import { Fragment, useState } from 'react';
 import { MenuDivider, MenuLabel, MenuMark, MenuPanel, menuItem } from './Menu';
 import { Chevron, pill } from './Pill';
 import { useMenu } from '@/hooks/useMenu';
+import { commas } from '@/lib/format';
 
 export interface MenuChoice<T extends string> {
   value: T;
@@ -73,9 +74,7 @@ export function ChoiceMenu<T extends string>({
                   <MenuMark kind="radio" on={c.value === value} />
                   <span className="min-w-0 flex-1 truncate">{c.label}</span>
                   {c.count !== undefined && (
-                    <span className="shrink-0 tabular-nums text-muted">
-                      {c.count.toLocaleString()}
-                    </span>
+                    <span className="shrink-0 tabular-nums text-muted">{commas(c.count)}</span>
                   )}
                 </button>
               </Fragment>

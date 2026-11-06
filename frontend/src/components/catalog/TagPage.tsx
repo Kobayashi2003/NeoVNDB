@@ -3,8 +3,10 @@
 
 import Link from 'next/link';
 import { enumLabel } from '@/lib/enums';
+import { commas } from '@/lib/format';
 import type { Params } from '@/lib/href';
 import { countOf } from '@/lib/results';
+import { uptoSpoiler } from '@/lib/spoilerCap';
 import { Collapsible } from '@/components/ui/Collapsible';
 import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
 import { DetailControls } from '@/components/user/DetailControls';
@@ -15,9 +17,12 @@ import type { TagDetail } from '@/lib/types';
 
 export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Params }) {
   const path = `/${t.id}`;
+  // As spoilery as the reader allows: a tag can itself be a spoiler for a
+  // work, and listing that work under it would give it away.
+  const id = await uptoSpoiler(t.id, '0');
   const [inherited, direct] = await Promise.all([
-    countOf('v', { tag: t.id }),
-    countOf('v', { dtag: t.id }),
+    countOf('v', { tag: id }),
+    countOf('v', { dtag: id }),
   ]);
 
   return (
@@ -32,7 +37,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
           label: 'Including child tags',
           count: inherited,
           type: 'v',
-          filters: { tag: t.id },
+          filters: { tag: id },
         },
         // The direct ones are among the rest, so an equal count is the same
         // list; left out then, with the other empty tabs.
@@ -41,7 +46,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
           label: 'Tagged directly',
           count: direct === inherited ? 0 : direct,
           type: 'v',
-          filters: { dtag: t.id },
+          filters: { dtag: id },
         },
       ]}
       action={<DetailControls id={t.id} />}
@@ -50,7 +55,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
           <InfoCard>
             <InfoRow label="Category">{enumLabel('CATEGORY', t.category)}</InfoRow>
             <InfoRow label="Visual novels">
-              <span className="tabular-nums">{t.vn_count.toLocaleString()}</span>
+              <span className="tabular-nums">{commas(t.vn_count)}</span>
             </InfoRow>
             {/* A tag that is neither is a heading in the graph rather than
                 something anyone applies, which is why its own count is zero. */}
@@ -113,9 +118,7 @@ export async function TagPage({ tag: t, params }: { tag: TagDetail; params: Para
                     <span className="truncate">
                       <Name name={c.name} original={c.translation?.name ?? null} />
                     </span>
-                    <span className="shrink-0 tabular-nums text-muted">
-                      {c.vn_count.toLocaleString()}
-                    </span>
+                    <span className="shrink-0 tabular-nums text-muted">{commas(c.vn_count)}</span>
                   </Link>
                 ))}
               </div>

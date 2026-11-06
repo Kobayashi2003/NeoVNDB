@@ -3,8 +3,10 @@
  *  often ambiguous. */
 
 import Link from 'next/link';
+import { commas } from '@/lib/format';
 import type { Params } from '@/lib/href';
 import { countOf } from '@/lib/results';
+import { uptoSpoiler } from '@/lib/spoilerCap';
 import { Collapsible } from '@/components/ui/Collapsible';
 import { InfoCard, InfoRow, TitledCard } from '@/components/ui/InfoCard';
 import { DetailControls } from '@/components/user/DetailControls';
@@ -15,9 +17,12 @@ import type { TraitDetail } from '@/lib/types';
 
 export async function TraitPage({ trait: t, params }: { trait: TraitDetail; params: Params }) {
   const path = `/${t.id}`;
+  // As spoilery as the reader allows: "secretly the culprit", listed with
+  // every character carrying it, would name them.
+  const id = await uptoSpoiler(t.id);
   const [inherited, direct] = await Promise.all([
-    countOf('c', { trait: t.id }),
-    countOf('c', { dtrait: t.id }),
+    countOf('c', { trait: id }),
+    countOf('c', { dtrait: id }),
   ]);
 
   return (
@@ -43,7 +48,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           label: 'Including child traits',
           count: inherited,
           type: 'c',
-          filters: { trait: t.id },
+          filters: { trait: id },
         },
         // The direct ones are among the rest, so an equal count is the same
         // list; left out then, with the other empty tabs.
@@ -52,7 +57,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
           label: 'Assigned directly',
           count: direct === inherited ? 0 : direct,
           type: 'c',
-          filters: { dtrait: t.id },
+          filters: { dtrait: id },
         },
       ]}
       action={<DetailControls id={t.id} />}
@@ -60,7 +65,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
         <>
           <InfoCard>
             <InfoRow label="Characters">
-              <span className="tabular-nums">{t.char_count.toLocaleString()}</span>
+              <span className="tabular-nums">{commas(t.char_count)}</span>
             </InfoRow>
             {t.sexual && (
               <InfoRow label="Content">
@@ -126,9 +131,7 @@ export async function TraitPage({ trait: t, params }: { trait: TraitDetail; para
                     <span className="truncate">
                       <Name name={c.name} original={c.translation?.name ?? null} />
                     </span>
-                    <span className="shrink-0 tabular-nums text-muted">
-                      {c.char_count.toLocaleString()}
-                    </span>
+                    <span className="shrink-0 tabular-nums text-muted">{commas(c.char_count)}</span>
                   </Link>
                 ))}
               </div>

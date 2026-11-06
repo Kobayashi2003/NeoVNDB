@@ -12,6 +12,7 @@ import {
   type Translatable,
   type TranslatablePage,
 } from '@/lib/admin';
+import { commas } from '@/lib/format';
 import { errorText } from '@/lib/user';
 import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
@@ -135,9 +136,9 @@ export function Translations() {
 
       {held && (
         <p className="text-xs text-muted tabular-nums">
-          {held.total.toLocaleString()} {category}s: {held.missing_names.toLocaleString()} names and{' '}
-          {held.missing_descriptions.toLocaleString()} descriptions untranslated. Edits show at
-          once; export the corpus to keep them in the repository as internal/trans/init.json.
+          {commas(held.total)} {category}s: {commas(held.missing_names)} names and{' '}
+          {commas(held.missing_descriptions)} descriptions untranslated. Edits show at once; export
+          the corpus to keep them in the repository as internal/trans/init.json.
         </p>
       )}
       <Trouble text={error} />
@@ -146,8 +147,14 @@ export function Translations() {
       {held && held.results.length === 0 && <p className="text-sm text-muted">Nothing here.</p>}
       <div className="flex flex-col gap-3">
         {held?.results.map(t => (
-          // Keyed by the stored text too, so a saved row starts from what was saved.
-          <Row key={`${t.id}:${t.name_to}:${t.description_to}`} category={category} item={t} />
+          // Keyed by the stored text too, so a saved row starts from what was
+          // saved, and by category: tag 12 and trait 12 are different rows, and
+          // a draft kept across the switch was saved to the other one.
+          <Row
+            key={`${category}:${t.id}:${t.name_to}:${t.description_to}`}
+            category={category}
+            item={t}
+          />
         ))}
       </div>
 
@@ -184,7 +191,7 @@ function Row({ category, item }: { category: Category; item: Translatable }) {
         {item.group && <span className="text-xs text-muted">in {item.group}</span>}
         <span className="text-xs text-muted tabular-nums">
           {letter}
-          {item.id} · {item.items.toLocaleString()} uses
+          {item.id} · {commas(item.items)} uses
         </span>
       </div>
       <Field category={category} id={item.id} field="name" saved={item.name_to} />

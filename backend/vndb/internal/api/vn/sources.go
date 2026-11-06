@@ -84,18 +84,20 @@ func loadImage(ctx context.Context, r *Resolver, page []gen.Vn,
 		if !ok {
 			continue
 		}
-		m, voted := meta[num]
-		if !query.ImageShown(ctx, m.CVotecount, m.CSexualAvg, m.CViolenceAvg) {
+		// A cover the images table has no row for has no size to lay it out by
+		// and no votes to judge it by: none, rather than one every reader of
+		// the field has to guard against.
+		m, known := meta[num]
+		if !known || !query.ImageShown(ctx, m.CVotecount, m.CSexualAvg, m.CViolenceAvg) {
 			continue
 		}
-		img := map[string]any{"url": vndb.ImageURL("cv", num)}
-		if voted {
-			img["dims"] = []int16{m.Width, m.Height}
-			img["sexual"] = query.ContentLevel(m.CSexualAvg, m.CVotecount)
-			img["violence"] = query.ContentLevel(m.CViolenceAvg, m.CVotecount)
-			img["votecount"] = m.CVotecount
+		obj["image"] = map[string]any{
+			"url":       vndb.ImageURL("cv", num),
+			"dims":      []int16{m.Width, m.Height},
+			"sexual":    query.ContentLevel(m.CSexualAvg, m.CVotecount),
+			"violence":  query.ContentLevel(m.CViolenceAvg, m.CVotecount),
+			"votecount": m.CVotecount,
 		}
-		obj["image"] = img
 	}
 	return nil
 }

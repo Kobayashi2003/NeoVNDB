@@ -35,20 +35,32 @@ export function SavedSearches({ type, params }: { type: string; params: Params }
     if ([...new URLSearchParams(query).keys()].some(k => !ORDER.has(k))) remember(type, query);
   }, [type, query]);
 
-  // Re-read on every open: another device may have named one meanwhile.
-  async function reveal() {
+  function reveal() {
     setOpen(true);
     setError(null);
     setPast(recent(type).filter(q => q !== query));
-    if (!signedIn) return;
-    setNamed(null);
-    try {
-      setNamed(await savedSearches(type));
-    } catch (err) {
-      setError(errorText(err));
-      setNamed([]);
-    }
   }
+
+  // Re-read on every open: another device may have named one meanwhile. And
+  // when the session turns out signed in with the menu already open: asked
+  // only on the click, a menu opened before the session answered waited on a
+  // read never made.
+  useEffect(() => {
+    if (!open || !signedIn) return;
+    let live = true;
+    savedSearches(type).then(
+      got => live && setNamed(got),
+      err => {
+        if (!live) return;
+        setError(errorText(err));
+        setNamed([]);
+      },
+    );
+    return () => {
+      live = false;
+      setNamed(null);
+    };
+  }, [open, signedIn, type]);
 
   async function name(label: string) {
     const made = await saveSearch(type, label, query);

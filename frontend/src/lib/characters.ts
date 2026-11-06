@@ -41,8 +41,18 @@ function hasSpoilerMarkup(text: string | null | undefined): boolean {
   return !!text && /\[spoiler\]/i.test(text);
 }
 
-/** Whether anything is hidden at each spoiler level, counting spoiler traits.
- *  Sexual traits are left out: they are gated by the content level instead. */
+/** A sex or gender that turns out otherwise: the dump gives it no level, so it
+ *  counts as major, the level readSex shows it at. */
+function spoiledSex(c: Pick<Character, 'sex' | 'spoil_sex' | 'gender' | 'spoil_gender'>): boolean {
+  return (
+    (!!c.sex && spoils(c.spoil_sex, c.sex)) || (!!c.gender && spoils(c.spoil_gender, c.gender))
+  );
+}
+
+/** Whether anything is hidden at each spoiler level, counting spoiler traits
+ *  and spoiled sexes: left out, a cast whose only secret was one had no
+ *  control to reveal it. Sexual traits are left out: they are gated by the
+ *  content level instead. */
 export function spoilerExtent(
   characters: Character[],
   explicit: boolean,
@@ -51,7 +61,7 @@ export function spoilerExtent(
   let major = false;
   for (const c of characters) {
     if (c.spoiler === 1) minor = true;
-    if (c.spoiler === 2 || hasSpoilerMarkup(c.description)) major = true;
+    if (c.spoiler === 2 || hasSpoilerMarkup(c.description) || spoiledSex(c)) major = true;
     for (const t of allowedTraits(c.traits, explicit)) {
       if (t.spoiler === 1) minor = true;
       if (t.spoiler === 2) major = true;
@@ -180,13 +190,9 @@ export function characterSpoilerExtent(
     ...character.instances.map(i => i.spoiler),
     ...character.aliases.map(a => a.spoiler),
   ];
-  // The dump has no level for a spoiled sex/gender; treat it as major.
-  const hidden = (apparent: string | null, spoiler: string | null) =>
-    !!apparent && !!spoiler && spoiler !== apparent && spoiler !== 'n';
   if (
     hasSpoilerMarkup(character.description) ||
-    hidden(character.sex, character.spoil_sex) ||
-    hidden(character.gender, character.spoil_gender) ||
+    spoiledSex(character) ||
     character.instance_of_spoiler === 2
   ) {
     levels.push(2);

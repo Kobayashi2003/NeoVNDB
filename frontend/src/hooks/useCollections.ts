@@ -15,6 +15,8 @@ export interface Lists {
 const NONE: Lists = { lists: null, error: null };
 let current: Lists = NONE;
 let asking: Promise<void> | null = null;
+/** Bumped by forgetting: an answer asked for before it is someone else's. */
+let era = 0;
 const listeners = new Set<() => void>();
 
 function set(next: Lists) {
@@ -24,19 +26,29 @@ function set(next: Lists) {
 
 /** Ask again; a call while one is out waits for that one. */
 export function refreshCollections(): Promise<void> {
-  asking ??= collections()
+  if (asking) return asking;
+  const asked = era;
+  const mine: Promise<void> = collections()
     .then(
-      lists => set({ lists, error: null }),
-      err => set({ lists: current.lists, error: errorText(err) }),
+      lists => {
+        if (era === asked) set({ lists, error: null });
+      },
+      err => {
+        if (era === asked) set({ lists: current.lists, error: errorText(err) });
+      },
     )
     .finally(() => {
-      asking = null;
+      if (asking === mine) asking = null;
     });
-  return asking;
+  asking = mine;
+  return mine;
 }
 
-/** Forget them, as when the reader signs out. */
+/** Forget them, as when the reader signs out. An answer still on its way is
+ *  dropped when it comes: set, it put the last reader's lists back. */
 export function forgetCollections() {
+  era++;
+  asking = null;
   set(NONE);
 }
 

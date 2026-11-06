@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 import { Accounts } from '@/components/admin/Accounts';
 import { ALL_AGES_FIELDS, SERVE_FIELDS, SettingsCard } from '@/components/admin/Settings';
+import { Translations } from '@/components/admin/Translations';
 import type { Account, ServeSettings } from '@/lib/admin';
 
 afterEach(() => {
@@ -174,6 +175,41 @@ describe('SettingsCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Archives kept: not a number.');
     expect(change).not.toHaveBeenCalled();
+  });
+});
+
+describe('Translations', () => {
+  // Tag 12 and trait 12 both untranslated: the same id, the same empty text.
+  it("starts a category's rows afresh, not from the other's drafts", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const category = new URL(String(input), 'http://x').searchParams.get('category');
+        return Response.json({
+          results: [
+            {
+              id: 12,
+              name: `${category} twelve`,
+              description: '',
+              items: 1,
+              name_to: '',
+              description_to: '',
+            },
+          ],
+          count: 1,
+          page_size: 50,
+          total: 1,
+          missing_names: 1,
+          missing_descriptions: 0,
+        });
+      }),
+    );
+    render(<Translations />);
+    await screen.findByText('tag twelve');
+    fireEvent.change(screen.getByLabelText('Name translation'), { target: { value: 'draft' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Traits' }));
+    await screen.findByText('trait twelve');
+    expect(screen.getByLabelText('Name translation')).toHaveValue('');
   });
 });
 

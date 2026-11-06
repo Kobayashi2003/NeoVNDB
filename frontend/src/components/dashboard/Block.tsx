@@ -133,8 +133,10 @@ function Table({ head, rows }: TableView) {
           </tr>
         </thead>
         <tbody>
+          {/* By place, not by the first cell: two developers, or two people,
+              can have the same name. */}
           {rows.map((row, r) => (
-            <tr key={String(row[0])} className={cn(r > 0 && 'border-t border-white/5')}>
+            <tr key={r} className={cn(r > 0 && 'border-t border-white/5')}>
               {row.map((cell, i) => (
                 <td key={i} className={cn(CELL, 'py-1.5', i > 0 && 'text-right tabular-nums')}>
                   {cell}

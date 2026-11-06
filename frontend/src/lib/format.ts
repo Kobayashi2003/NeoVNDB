@@ -31,6 +31,15 @@ export function shortLength(code: number | null, minutes: number | null): string
   return code === null ? '—' : enumLabel('LENGTH', code);
 }
 
+const COMMAS = new Intl.NumberFormat('en');
+
+/** A count with its thousands marked, 1,234, as the page's language writes
+ *  it. Not toLocaleString(): that is the server's locale on the server and the
+ *  reader's in the browser, and a German browser's 1.234 broke hydration. */
+export function commas(n: number): string {
+  return COMMAS.format(n);
+}
+
 const COMPACT = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 /** A count as a card has room for: 8.8K. */

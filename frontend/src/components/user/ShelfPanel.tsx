@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ListChecks, TriangleAlert } from 'lucide-react';
+import { commas } from '@/lib/format';
 import { LIST, PAGE_SIZE, readsDown, type Sort } from '@/lib/list';
 import { one, withParams, type Params } from '@/lib/href';
 import { readShelf, type OwnSort, type ShelfPage, type ShelfSource } from '@/lib/shelf';
@@ -163,9 +164,7 @@ export function ShelfPanel({
           <div className="flex min-w-0 items-center gap-3">
             <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
             {held && (
-              <span className="shrink-0 text-sm tabular-nums text-muted">
-                {held.count.toLocaleString()}
-              </span>
+              <span className="shrink-0 text-sm tabular-nums text-muted">{commas(held.count)}</span>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -210,8 +209,8 @@ export function ShelfPanel({
       {held?.withheld ? (
         // Kept on the list, only not shown: nothing here takes them off it.
         <p className="text-xs text-muted">
-          {held.withheld.toLocaleString()} {held.withheld === 1 ? 'entry is' : 'entries are'} not
-          shown here: this site is set to show only what is for all ages.
+          {commas(held.withheld)} {held.withheld === 1 ? 'entry is' : 'entries are'} not shown here:
+          this site is set to show only what is for all ages.
         </p>
       ) : null}
       {held?.tooBig && (

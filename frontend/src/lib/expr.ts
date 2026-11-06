@@ -52,8 +52,8 @@ export class ExprError extends Error {
 
 const MAX_DEPTH = 64;
 
-/** Parses into a root group. Negated leaves are folded into their operator
- *  (!a=1 is a!=1, !a>=1 is a<1), which the backend treats the same. */
+/** Parses into a root group. A negated = or != is folded into its operator
+ *  (!a=1 is a!=1), which the backend treats the same; see negate. */
 export function parse(text: string): Group {
   if (text.trim() === '') return group();
   const p = new Parser(text);
@@ -63,11 +63,15 @@ export function parse(text: string): Group {
   return node.kind === 'group' && !node.not ? node : group(true, [node]);
 }
 
-const FLIP: Record<Op, Op> = { '=': '!=', '!=': '=', '>=': '<', '<': '>=', '<=': '>', '>': '<=' };
+/** The backend's != is its = negated, for every filter. A comparison has no
+ *  such twin: !a>="1,2" is not (a<1 or a<2), and a filter may take >= and
+ *  not < (resolution), so a negated comparison stays a negated group. */
+const FLIP: Partial<Record<Op, Op>> = { '=': '!=', '!=': '=' };
 
 export function negate(n: Node): Node {
-  if (n.kind === 'leaf') return { ...n, op: FLIP[n.op] };
-  return { ...n, not: !n.not };
+  if (n.kind === 'group') return { ...n, not: !n.not };
+  const op = FLIP[n.op];
+  return op ? { ...n, op } : group(true, [n], true);
 }
 
 class Parser {
@@ -210,7 +214,11 @@ function printNode(n: Node, context: 'or' | 'and'): string {
     const value = typeof n.value === 'string' ? quote(n.value.trim()) : `(${print(n.value)})`;
     return `${n.name}${n.op}${value}`;
   }
-  const parts = n.items.filter(complete).map(item => printNode(item, n.and ? 'and' : 'or'));
+  const items = n.items.filter(complete);
+  // One part is that part, printed where the group stands: printed for inside
+  // an or, an or inside it lost its brackets under an and (a+(b,c) as a+b,c).
+  if (items.length === 1 && !n.not) return printNode(items[0], context);
+  const parts = items.map(item => printNode(item, n.and ? 'and' : 'or'));
   if (parts.length === 0) return '';
   const inner = parts.join(n.and ? '+' : ',');
   if (n.not) return `!(${inner})`;

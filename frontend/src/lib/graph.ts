@@ -144,8 +144,12 @@ export function directOnly(
 
 /** Every edge and title on some simple path between two titles, either way
  *  along the lines -- a relation connects two works whichever way it reads.
- *  All simple paths is exponential, so the walk is capped; real components
- *  stay far inside the caps. Null when the two are not connected. */
+ *  Null when the two are not connected.
+ *
+ *  Not by walking the paths: there are exponentially many, and a walk that
+ *  stopped after so many found ones spun on in a dense corner leading
+ *  nowhere. An edge is on such a path exactly when its biconnected block lies
+ *  between the two in the block-cut tree, which is linear to find. */
 export function pathUnion(
   edges: GraphEdge[],
   start: string,
@@ -159,38 +163,70 @@ export function pathUnion(
     else near.set(a, [{ to: b, key }]);
   };
   for (const e of edges) {
+    if (e.from === e.to) continue; // on no simple path
     link(e.from, e.to, edgeKey(e));
     link(e.to, e.from, edgeKey(e));
   }
 
-  const MAX_PATHS = 20_000;
-  const MAX_DEPTH = 40;
-  const onEdges = new Set<string>();
-  const onNodes = new Set<string>();
-  const visited = new Set([start]);
-  const trail: string[] = [];
-  let found = 0;
-
-  const walk = (node: string) => {
-    if (node === end) {
-      found++;
-      for (const k of trail) onEdges.add(k);
-      for (const n of visited) onNodes.add(n);
-      return;
-    }
-    if (trail.length >= MAX_DEPTH) return;
-    for (const { to, key } of near.get(node) ?? []) {
-      if (found >= MAX_PATHS) return;
-      if (visited.has(to)) continue;
-      visited.add(to);
-      trail.push(key);
-      walk(to);
-      trail.pop();
-      visited.delete(to);
+  // Tarjan's blocks, over start's component; keyed by edge rather than by
+  // parent, so two relations between one pair make a cycle.
+  type Block = { edges: string[]; nodes: Set<string> };
+  const blocks: Block[] = [];
+  const disc = new Map<string, number>();
+  const low = new Map<string, number>();
+  const stack: { a: string; b: string; key: string }[] = [];
+  const visit = (u: string, via: string | null) => {
+    disc.set(u, disc.size);
+    low.set(u, disc.get(u)!);
+    for (const { to, key } of near.get(u) ?? []) {
+      if (key === via) continue;
+      if (!disc.has(to)) {
+        stack.push({ a: u, b: to, key });
+        visit(to, key);
+        low.set(u, Math.min(low.get(u)!, low.get(to)!));
+        if (low.get(to)! >= disc.get(u)!) {
+          const block: Block = { edges: [], nodes: new Set() };
+          for (;;) {
+            const e = stack.pop()!;
+            block.edges.push(e.key);
+            block.nodes.add(e.a).add(e.b);
+            if (e.key === key) break;
+          }
+          blocks.push(block);
+        }
+      } else if (disc.get(to)! < disc.get(u)!) {
+        stack.push({ a: u, b: to, key });
+        low.set(u, Math.min(low.get(u)!, disc.get(to)!));
+      }
     }
   };
-  walk(start);
-  return onEdges.size ? { edges: onEdges, nodes: onNodes } : null;
+  visit(start, null);
+  if (!disc.has(end)) return null;
+
+  // The block-cut tree's path from start to end, found breadth-first: a
+  // shortest walk through blocks takes exactly the blocks on it.
+  const blocksOf = new Map<string, Block[]>();
+  for (const b of blocks) {
+    for (const n of b.nodes) blocksOf.set(n, [...(blocksOf.get(n) ?? []), b]);
+  }
+  const came = new Map<string, { from: string; through: Block } | null>([[start, null]]);
+  const queue = [start];
+  for (let i = 0; i < queue.length && !came.has(end); i++) {
+    for (const b of blocksOf.get(queue[i]) ?? []) {
+      for (const n of b.nodes) {
+        if (came.has(n)) continue;
+        came.set(n, { from: queue[i], through: b });
+        queue.push(n);
+      }
+    }
+  }
+  const onEdges = new Set<string>();
+  const onNodes = new Set<string>();
+  for (let step = came.get(end); step; step = came.get(step.from)) {
+    for (const k of step.through.edges) onEdges.add(k);
+    for (const n of step.through.nodes) onNodes.add(n);
+  }
+  return { edges: onEdges, nodes: onNodes };
 }
 
 /** A layer per release year, earliest first. An undated title takes the year

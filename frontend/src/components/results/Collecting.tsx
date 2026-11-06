@@ -38,13 +38,22 @@ let stopCurrent: (() => void) | null = null;
 export function Collecting({ type, children }: { type: string; children: React.ReactNode }) {
   const signedIn = useSession().status === 'in';
   const [selecting, setSelecting] = useState(false);
-  const [chosen, setChosen] = useState<string[]>([]);
+  // Kept with the type it was made on: a catalog page's tabs change the type
+  // under the same results, and works chosen on one tab are no releases to
+  // save on the next.
+  const [choice, setChoice] = useState<{ type: string; ids: string[] }>({ type, ids: [] });
+  const chosen = useMemo(() => (choice.type === type ? choice.ids : []), [choice, type]);
+  const setChosen = useCallback(
+    (change: (now: string[]) => string[]) =>
+      setChoice(now => ({ type, ids: change(now.type === type ? now.ids : []) })),
+    [type],
+  );
   const [page, setPage] = useState<string[]>([]);
 
   const stop = useCallback(() => {
     setSelecting(false);
-    setChosen([]);
-  }, []);
+    setChoice({ type, ids: [] });
+  }, [type]);
 
   useEffect(
     () => () => {
@@ -66,7 +75,7 @@ export function Collecting({ type, children }: { type: string; children: React.R
       toggle: id => setChosen(now => (now.includes(id) ? now.filter(x => x !== id) : [...now, id])),
       showing: setPage,
     }),
-    [selecting, signedIn, chosen, stop],
+    [selecting, signedIn, chosen, stop, setChosen],
   );
 
   const allOnPage = page.length > 0 && page.every(id => chosen.includes(id));
@@ -85,7 +94,7 @@ export function Collecting({ type, children }: { type: string; children: React.R
               allOnPage ? now.filter(id => !page.includes(id)) : [...new Set([...now, ...page])],
             )
           }
-          onSaved={() => setChosen([])}
+          onSaved={() => setChosen(() => [])}
           onClose={stop}
         />
       )}

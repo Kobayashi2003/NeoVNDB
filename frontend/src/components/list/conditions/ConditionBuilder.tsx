@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@/hooks/useNavigate';
 import { Code2, Wand2 } from 'lucide-react';
 import { ApiError, list } from '@/lib/api';
+import { commas } from '@/lib/format';
 import { TIDY_RULES } from '@/lib/conditions';
 import { group, type Group, outline, parse, print, tidy } from '@/lib/expr';
 import { filtersOf, type Params, withParams } from '@/lib/href';
@@ -175,8 +176,7 @@ function usePreview(type: string, params: Params, expression: string | null): st
       delete filters.f;
       if (expression) filters.f = expression;
       list(LIST[type].type, { fields: 'id', limit: 1, filters }).then(
-        page =>
-          live && setAnswer({ for: expression, text: `${page.count.toLocaleString()} matches` }),
+        page => live && setAnswer({ for: expression, text: `${commas(page.count)} matches` }),
         e =>
           live &&
           setAnswer({

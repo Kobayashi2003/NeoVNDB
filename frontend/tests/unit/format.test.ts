@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { aspect, birthday, bust, display, length, medium, score } from '@/lib/format';
+import { aspect, birthday, bust, commas, display, length, medium, score } from '@/lib/format';
 import { one, withParams } from '@/lib/href';
 import { imageURL, thumbnailURL } from '@/lib/images';
 import { stepMonth } from '@/lib/months';
 import { DEFAULTS, readPrefs } from '@/lib/prefs';
 
 describe('format', () => {
+  // The same wherever it is drawn: a browser's own locale broke hydration.
+  it('writes a count the way the page does, whatever the locale', () => {
+    expect(commas(1234567)).toBe('1,234,567');
+    expect(commas(0)).toBe('0');
+  });
+
   it('prefers measured play time over the length bucket', () => {
     expect(length(null, null, 0)).toBe('Unknown');
     expect(length(3, null, 0)).toBe('Medium');

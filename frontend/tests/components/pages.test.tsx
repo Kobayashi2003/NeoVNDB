@@ -10,7 +10,9 @@ import { CharacterTraits } from '@/components/character/CharacterTraits';
 import { ReleaseRow } from '@/components/vn/ReleaseRow';
 import { usePrefs } from '@/hooks/usePrefs';
 import { VNCharacters } from '@/components/vn/VNCharacters';
-import type { Character, Release, Tag, Trait } from '@/lib/types';
+import { VNCharacterCard } from '@/components/vn/VNCharacterCard';
+import { ReleaseImages } from '@/components/release/ReleaseImages';
+import type { Character, Release, ReleaseImage, Tag, Trait } from '@/lib/types';
 
 function tag(id: string, over: Partial<Tag> = {}): Tag {
   return {
@@ -92,6 +94,34 @@ function Prefs({ explicit }: { explicit: boolean }) {
   return null;
 }
 
+describe('ReleaseImages', () => {
+  // The API's order is back, front, back; the page shows the fronts first.
+  const shot = (n: number, itype: string): ReleaseImage => ({
+    url: `https://t.vndb.org/cv/0${n}/${n}.jpg`,
+    dims: [256, 360],
+    itype,
+    vn: null,
+    languages: [],
+    sexual: 0,
+    violence: 0,
+  });
+
+  it('steps through the pictures in the order the page shows them', async () => {
+    render(
+      <ReleaseImages images={[shot(1, 'pkgback'), shot(2, 'pkgfront'), shot(3, 'pkgback')]} />,
+    );
+    const tiles = screen.getAllByRole('button');
+    await userEvent.click(tiles[0]);
+    const viewer = screen.getByRole('dialog', { name: 'Screenshot viewer' });
+    const now = () => within(viewer).getByRole('img').getAttribute('src');
+    expect(now()).toContain('/2.jpg');
+    await userEvent.keyboard('{ArrowRight}');
+    expect(now()).toContain('/1.jpg');
+    await userEvent.keyboard('{ArrowRight}');
+    expect(now()).toContain('/3.jpg');
+  });
+});
+
 describe('VNCharacters', () => {
   const cast = [
     character('c1', { role: 'main', sex: 'm' }),
@@ -113,6 +143,32 @@ describe('VNCharacters', () => {
     await userEvent.click(screen.getByRole('tab', { name: /Protagonist/ }));
     expect(screen.getAllByRole('link')).toHaveLength(1);
     expect(screen.getByRole('link', { name: /Character c1/ })).toBeInTheDocument();
+  });
+});
+
+describe('VNCharacterCard', () => {
+  // What a card revealed at one section level stays hidden once the level has
+  // moved, the move back included.
+  it('keeps a reveal to the section level it was made at', async () => {
+    const secret: Trait = {
+      id: 'i9',
+      name: 'Secret',
+      group_name: 'Role',
+      spoiler: 1,
+      lie: false,
+      translation: null,
+      group_translation: null,
+    };
+    const card = (level: 0 | 1) => (
+      <VNCharacterCard character={character('c1', { traits: [secret] })} spoilerLevel={level} />
+    );
+    const { rerender } = render(card(0));
+    expect(screen.queryByRole('link', { name: 'Secret' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /1 minor/i }));
+    expect(screen.getByRole('link', { name: 'Secret' })).toBeInTheDocument();
+    rerender(card(1));
+    rerender(card(0));
+    expect(screen.queryByRole('link', { name: 'Secret' })).toBeNull();
   });
 });
 

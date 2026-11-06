@@ -9,6 +9,7 @@ import {
   signOutAccount,
   type Account,
 } from '@/lib/admin';
+import { commas } from '@/lib/format';
 import { errorText } from '@/lib/user';
 import { Placeholder, surface } from '@/components/ui/Surface';
 import { Button, Trouble, when } from './parts';
@@ -111,7 +112,7 @@ export function Accounts({ self }: { self: number }) {
             </td>
             <td className="px-3 py-2">{a.created_at.slice(0, 10)}</td>
             <td className="px-3 py-2">{a.lists}</td>
-            <td className="px-3 py-2">{a.items.toLocaleString()}</td>
+            <td className="px-3 py-2">{commas(a.items)}</td>
             <td className="px-3 py-2">{a.ratings}</td>
             <td className="px-3 py-2">
               {a.sessions > 0

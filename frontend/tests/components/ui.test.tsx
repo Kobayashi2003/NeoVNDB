@@ -19,6 +19,7 @@ import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
 import { Trouble } from '@/components/ui/Trouble';
 import { usePrefs } from '@/hooks/usePrefs';
 import { Collapsible } from '@/components/ui/Collapsible';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { UserMenu } from '@/components/user/UserMenu';
 
 describe('Section', () => {
@@ -176,6 +177,19 @@ describe('Spoiler', () => {
     );
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
+
+  it('stays closed on the move back to the level it was opened at', async () => {
+    const at = (level: 0 | 1) => (
+      <SpoilerScope level={level}>
+        <Spoiler>x</Spoiler>
+      </SpoilerScope>
+    );
+    const { rerender } = render(at(0));
+    await userEvent.click(screen.getByRole('button'));
+    rerender(at(1));
+    rerender(at(0));
+    expect(screen.getByRole('button', { name: 'Show spoiler' })).toBeInTheDocument();
+  });
 });
 
 describe('small pieces', () => {
@@ -330,6 +344,25 @@ describe('small pieces', () => {
   });
 });
 
+describe('Tooltip', () => {
+  // The timing that closed it on a real tap is the e2e's (navigation.spec);
+  // this is what a tap on it and one elsewhere each do.
+  it('stays open after the tap that opened it, and closes on a tap elsewhere', () => {
+    render(
+      <>
+        <Tooltip label="Japanese">
+          <span>ja</span>
+        </Tooltip>
+        <p>elsewhere</p>
+      </>,
+    );
+    fireEvent.touchStart(screen.getByText('ja'));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Japanese');
+    fireEvent.touchStart(screen.getByText('elsewhere'));
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});
+
 describe('placeholders', () => {
   it('stand in for text unseen by a screen reader, the last line short', () => {
     const { container } = render(<PlaceholderLines lines={3} />);
@@ -394,8 +427,8 @@ describe('Rolling', () => {
 describe('holding still while a page loads', () => {
   it('clamps long prose from the first render, and offers the rest over the fade', async () => {
     // jsdom lays nothing out; this text measures tall.
-    const was = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollHeight')!;
-    Object.defineProperty(Element.prototype, 'scrollHeight', {
+    const was = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
       configurable: true,
       get: () => 600,
     });
@@ -421,7 +454,46 @@ describe('holding still while a page loads', () => {
         'true',
       );
     } finally {
-      Object.defineProperty(Element.prototype, 'scrollHeight', was);
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', was);
+    }
+  });
+
+  // Clamped, the box keeps its height while its content grows: the content is
+  // what is watched, or the text is cut off with no button.
+  it('offers to unfold prose that grows past the clamp after the first measure', () => {
+    let height = 100;
+    const was = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    });
+    const watched: { el: Element; grew: () => void }[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(readonly grew: () => void) {}
+        observe(el: Element) {
+          watched.push({ el, grew: this.grew });
+        }
+        disconnect() {}
+      },
+    );
+    try {
+      render(
+        <Collapsible>
+          <p>grows</p>
+        </Collapsible>,
+      );
+      expect(screen.queryByRole('button', { name: /show more/i })).toBeNull();
+      const [w] = watched;
+      expect(w.el).toContainElement(screen.getByText('grows'));
+      expect(w.el.className).not.toMatch(/overflow-hidden/);
+      height = 600;
+      act(() => w.grew());
+      expect(screen.getByRole('button', { name: /show more/i })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', was);
+      vi.unstubAllGlobals();
     }
   });
 

@@ -2,6 +2,17 @@ import { expect, test } from '@playwright/test';
 
 const pages = (page: import('@playwright/test').Page) => page.locator('nav[aria-label="Pages"]');
 
+// Past the last page there is still a way back, and no claim that nothing
+// matched.
+test('a page past the end says so and links to the last one', async ({ page }) => {
+  await page.goto('/v?page=999999');
+  await expect(page.getByText('That is past the last page.')).toBeVisible();
+  await expect(page.getByText('Nothing matched')).toHaveCount(0);
+  await page.getByRole('link', { name: /^Go to page \d+$/ }).click();
+  await expect(pages(page).locator('[aria-current=page]')).toBeVisible();
+  await expect(page.locator('[data-results] a').first()).toBeVisible();
+});
+
 test('the page gap jumps anywhere and clamps', async ({ page }) => {
   await page.goto('/v');
   const jump = async (value: string) => {
@@ -13,6 +24,11 @@ test('the page gap jumps anywhere and clamps', async ({ page }) => {
   await jump('1400');
   await expect(page).toHaveURL(/page=1400/);
   await expect(pages(page).locator('[aria-current=page]')).toHaveText('1400');
+
+  // Nothing typed goes nowhere; 0 is clamped to the first page.
+  await jump('');
+  await expect(page).toHaveURL(/page=1400/);
+  await expect(pages(page).locator('input[name=page]')).toHaveCount(0);
 
   await jump('0');
   await expect(page).not.toHaveURL(/page=/);

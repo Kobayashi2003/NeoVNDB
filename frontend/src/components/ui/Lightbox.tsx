@@ -30,13 +30,32 @@ export function Lightbox({
   const [revealed, setRevealed] = useState(false);
   const image = images[index];
 
-  const step = useCallback(
-    (by: number) => {
-      onIndex((index + by + images.length) % images.length);
+  // A key with nowhere to go (Home on the first, an arrow with one image)
+  // stays where it is, revealed as it was.
+  const go = useCallback(
+    (to: number) => {
+      if (to === index) return;
+      onIndex(to);
       setRevealed(false);
     },
-    [index, images.length, onIndex],
+    [index, onIndex],
   );
+  const step = useCallback(
+    (by: number) => go((index + by + images.length) % images.length),
+    [go, index, images.length],
+  );
+
+  // Focus comes in with the viewer and goes back where it was: left on the
+  // page, Tab walked the links behind it and a reader heard nothing open.
+  const close = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const before = document.activeElement;
+    close.current?.focus();
+    return () => {
+      if (before instanceof HTMLElement) before.focus();
+    };
+  }, []);
 
   // One image per notch of the wheel, however fast it spins: a trackpad sends
   // dozens of small events for one flick.
@@ -51,12 +70,22 @@ export function Lightbox({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        // Round the viewer's own buttons, never out to the page under it.
+        const buttons = [...(dialog.current?.querySelectorAll('button') ?? [])];
+        if (buttons.length === 0) return;
+        const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const next = (at + (e.shiftKey ? -1 : 1) + buttons.length) % buttons.length;
+        e.preventDefault();
+        buttons[at === -1 ? 0 : next].focus();
+        return;
+      }
       const to: Record<string, () => void> = {
         Escape: onClose,
         ArrowRight: () => step(1),
         ArrowLeft: () => step(-1),
-        Home: () => step(-index),
-        End: () => step(images.length - 1 - index),
+        Home: () => go(0),
+        End: () => go(images.length - 1),
       };
       if (!to[e.key]) return;
       // Handled here, so the page's own shortcuts (paging) leave it alone.
@@ -71,13 +100,14 @@ export function Lightbox({
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = previous;
     };
-  }, [onClose, step, index, images.length]);
+  }, [onClose, step, go, images.length]);
 
   if (!image) return null;
   const hidden = image.blurred && !revealed;
 
   return createPortal(
     <div
+      ref={dialog}
       className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
@@ -91,6 +121,7 @@ export function Lightbox({
           {index + 1} / {images.length}
         </span>
         <button
+          ref={close}
           onClick={onClose}
           aria-label="Close"
           className="ml-4 shrink-0 rounded-full p-1 hover:bg-white/10 hover:text-white"

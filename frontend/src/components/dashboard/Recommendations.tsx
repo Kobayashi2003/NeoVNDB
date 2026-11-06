@@ -77,7 +77,13 @@ export function Recommendations({
 
   return (
     <Block title="You might like">
-      {failed ? (
+      {!key ? (
+        // Nothing asked for, so nothing coming: what was there for the last
+        // scope would otherwise stay up, dimmed, waiting.
+        <Plot className="flex h-64 items-center justify-center">
+          <p className="text-center text-xs text-muted">Nothing in scope to go from.</p>
+        </Plot>
+      ) : failed ? (
         <Plot className="flex h-64 items-center justify-center">
           <p role="alert" className="text-center text-xs text-red-400">
             Recommendations could not be worked out.

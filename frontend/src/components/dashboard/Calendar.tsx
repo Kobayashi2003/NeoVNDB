@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { commas } from '@/lib/format';
 import type { Bucket } from '@/lib/dashboard';
 
 const STEPS = ['bg-white/5', 'bg-accent/30', 'bg-accent/55', 'bg-accent/80', 'bg-accent'];
@@ -28,9 +29,13 @@ export function Calendar({
   const step = (n: number) => (n === 0 ? 0 : Math.min(4, Math.ceil((n / max) * 4)));
   const shown = hover ?? days.find(d => d.key === picked);
 
+  // To the recent end when the span does, not on every render: the weeks are
+  // worked out afresh each time, and a reader scrolled back to pick a day was
+  // thrown to the end by the pick.
+  const end = days.length > 0 ? days[days.length - 1].key : '';
   useEffect(() => {
     if (box.current) box.current.scrollLeft = box.current.scrollWidth;
-  }, [weeks]);
+  }, [end, weeks.length]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -43,7 +48,7 @@ export function Calendar({
             </span>
           </>
         ) : (
-          <span className="text-muted">The busiest day had {max.toLocaleString()}</span>
+          <span className="text-muted">The busiest day had {commas(max)}</span>
         )}
       </p>
       <div ref={box} className="overflow-x-auto pb-1" onPointerLeave={() => setHover(null)}>

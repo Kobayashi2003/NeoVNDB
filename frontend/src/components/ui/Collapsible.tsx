@@ -29,14 +29,17 @@ export function Collapsible({
   maxHeight?: number;
   children: React.ReactNode;
 }) {
-  const body = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const [overflows, setOverflows] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // The content is watched, not the clamped box: clamped, the box keeps its
+  // height while what is in it grows (a late image, a font), and text cut
+  // off with no button was all that showed.
   useEffect(() => {
-    const el = body.current;
+    const el = content.current;
     if (!el) return;
-    const measure = () => setOverflows(el.scrollHeight > maxHeight + 8);
+    const measure = () => setOverflows(el.offsetHeight > maxHeight + 8);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
@@ -58,11 +61,13 @@ export function Collapsible({
   return (
     <div className="relative">
       <div
-        ref={body}
         style={{ maxHeight: open ? undefined : maxHeight }}
         className={cn('overflow-hidden', overflows && !open && FADE)}
       >
-        {children}
+        {/* flow-root: a child's margin counts in the height measured. */}
+        <div ref={content} className="flow-root">
+          {children}
+        </div>
       </div>
 
       {overflows && !open && (

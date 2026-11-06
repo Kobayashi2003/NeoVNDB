@@ -33,8 +33,11 @@ export function Spoiler({
   covered?: React.ReactNode;
 }) {
   const level = useContext(Level);
-  // The level it was opened at: a change of level is a new decision.
+  // The level it was opened at: a change of level is a new decision, and
+  // forgets the click. Compared only, a spoiler opened at "none" and closed by
+  // a move to "minor" opened itself again on the move back.
   const [openedAt, setOpenedAt] = useState<SpoilerLevel | -1 | null>(null);
+  if (openedAt !== null && openedAt !== (level ?? -1)) setOpenedAt(null);
   const shown = level === 2 || (openedAt !== null && openedAt === (level ?? -1));
   if (shown) return <span>{children}</span>;
 

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import type { Counted } from '@/lib/api';
+import { commas } from '@/lib/format';
 import { byYear, filled, median, months, stepped, total, years } from '@/lib/siteStats';
 import { cn } from '@/lib/utils';
 import { Block, Plot } from '@/components/dashboard/Block';
@@ -76,11 +77,7 @@ export function Released({
       unit={unit}
       head="Year"
       data={years(past)}
-      note={
-        later
-          ? `${later.toLocaleString()} more ${unit} announced for after ${thisYear}.`
-          : undefined
-      }
+      note={later ? `${commas(later)} more ${unit} announced for after ${thisYear}.` : undefined}
     />
   );
 }
@@ -122,8 +119,8 @@ export function Measure({
       note={
         mid === null
           ? `No ${unit} with ${what} given.`
-          : `Median ${mid}${suffix}, of ${total(counts).toLocaleString()} ${unit} with ${what} given${
-              outside ? `; ${outside.toLocaleString()} fall outside the chart` : ''
+          : `Median ${mid}${suffix}, of ${commas(total(counts))} ${unit} with ${what} given${
+              outside ? `; ${commas(outside)} fall outside the chart` : ''
             }.`
       }
     />

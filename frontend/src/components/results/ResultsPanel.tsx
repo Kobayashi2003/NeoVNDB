@@ -1,15 +1,18 @@
 /** One page of results with its sort and paging controls. Shared by the
  *  listings and the catalogue pages; `path` is where its links point. */
 
+import Link from 'next/link';
 import { LIST, PAGE_SIZE } from '@/lib/list';
 import { cn } from '@/lib/utils';
 import { still } from '@/lib/viewTransitions';
-import type { Params } from '@/lib/href';
+import { withParams, type Params } from '@/lib/href';
 import type { Results as ResultsData } from '@/lib/results';
 import { Pagination } from './Pagination';
 import { Results } from './Results';
 import { SortLinks } from './SortLinks';
 import { Collecting, SelectToggle } from './Collecting';
+
+const last = (count: number) => Math.max(1, Math.ceil(count / PAGE_SIZE));
 
 export function ResultsPanel({
   type,
@@ -85,6 +88,20 @@ export function ResultsPanel({
         {data.failure ? (
           <p className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300">
             {data.failure}
+          </p>
+        ) : data.rows.length === 0 && data.count > 0 ? (
+          // Past the end of what did match: "nothing matched" would be untrue,
+          // and with no rows there is no paging to go back by.
+          <p className="py-12 text-center text-sm text-muted">
+            That is past the last page.{' '}
+            <Link
+              href={withParams(path, params, {
+                page: last(data.count) === 1 ? null : last(data.count),
+              })}
+              className="text-accent hover:underline"
+            >
+              Go to page {last(data.count)}
+            </Link>
           </p>
         ) : data.rows.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">{empty}</p>

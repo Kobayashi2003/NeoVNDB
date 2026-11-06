@@ -478,4 +478,19 @@ func TestAllAges(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT to_regnamespace('withheld_build') IS NOT NULL`).Scan(&left); err != nil || left {
 		t.Errorf("the build's own schema was left behind (%v)", err)
 	}
+
+	// A cover or portrait the images table has no row for has no size; it is
+	// left out, never sent without the dims every page lays it out by.
+	exec(`UPDATE vndb.vn SET c_image = 98 WHERE id = 101; UPDATE vndb.chars SET image = 99 WHERE id = 301`)
+	for _, path := range []string{"/vn?id=v101&fields=image.dims", "/character?id=c301&fields=image.dims"} {
+		var got struct {
+			Results []struct {
+				Image json.RawMessage `json:"image"`
+			} `json:"results"`
+		}
+		ask("member", path, &got)
+		if len(got.Results) != 1 || string(got.Results[0].Image) != "null" {
+			t.Errorf("%s, its image unknown: %+v", path, got.Results)
+		}
+	}
 }

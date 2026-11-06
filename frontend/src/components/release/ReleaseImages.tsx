@@ -14,9 +14,19 @@ import type { ReleaseImage } from '@/lib/types';
 /** vndb's own order: the front of the box first, then the rest of it. */
 const ITYPE_ORDER = ['pkgfront', 'pkgback', 'pkgside', 'pkgmed', 'pkgcontent', 'dig'];
 
-export function ReleaseImages({ images }: { images: ReleaseImage[] }) {
+export function ReleaseImages({ images: given }: { images: ReleaseImage[] }) {
   const { sexual, violence } = usePrefs();
   const [open, setOpen] = useState<number | null>(null);
+
+  // Put in the order they are shown, group by group, before anything is
+  // numbered: the viewer walks this list, and it stepped in the API's order,
+  // back and forth across the groups on the page.
+  const kinds = [...new Set(given.map(i => i.itype))];
+  const order = [
+    ...ITYPE_ORDER.filter(t => kinds.includes(t)),
+    ...kinds.filter(t => !ITYPE_ORDER.includes(t)).sort(),
+  ];
+  const images = order.flatMap(t => given.filter(i => i.itype === t));
 
   const viewable: LightboxImage[] = images.map(i => ({
     url: i.url,
@@ -24,18 +34,15 @@ export function ReleaseImages({ images }: { images: ReleaseImage[] }) {
     caption: enumLabel('IMAGE_TYPE', i.itype),
   }));
 
-  // Grouped for display, but each picture keeps its index in the flat list so
-  // the viewer can move between groups without knowing they exist.
+  // The viewer moves between groups without knowing they exist.
   const groups = new Map<string, number[]>();
   images.forEach((img, i) => {
     groups.set(img.itype, [...(groups.get(img.itype) ?? []), i]);
   });
-  const known = ITYPE_ORDER.filter(t => groups.has(t));
-  const rest = [...groups.keys()].filter(t => !ITYPE_ORDER.includes(t)).sort();
 
   return (
     <div className="flex flex-col gap-4">
-      {[...known, ...rest].map(itype => (
+      {order.map(itype => (
         <div key={itype}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
             {enumLabel('IMAGE_TYPE', itype)}

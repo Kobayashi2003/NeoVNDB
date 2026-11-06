@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { list } from '@/lib/api';
+import { commas } from '@/lib/format';
 import { relatedSearch } from '@/lib/conditions';
 import { LIST, TYPES } from '@/lib/list';
 import { one } from '@/lib/href';
@@ -83,9 +84,7 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
                         href={`/v?f=${encodeURIComponent(v.expression)}`}
                         className="inline-flex items-center gap-1 text-muted transition-colors hover:text-white coarse:py-1"
                       >
-                        <span className="tabular-nums text-white/80">
-                          {v.count.toLocaleString()}
-                        </span>
+                        <span className="tabular-nums text-white/80">{commas(v.count)}</span>
                         visual novels {v.label}
                         <ArrowRight className="icon-text size-3" aria-hidden />
                       </Link>
@@ -96,7 +95,7 @@ export default async function SearchPage({ searchParams }: PageProps<'/q'>) {
                         href={`/${type}?search=${encodeURIComponent(term)}`}
                         className="shrink-0 text-accent transition-colors hover:underline coarse:py-1"
                       >
-                        All {count.toLocaleString()}
+                        All {commas(count)}
                       </Link>
                     )}
                   </div>

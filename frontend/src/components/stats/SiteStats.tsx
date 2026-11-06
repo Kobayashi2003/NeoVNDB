@@ -8,7 +8,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { BySex, Counted, CountedSite, Leader } from '@/lib/api';
 import { enumLabel, type EnumGroup } from '@/lib/enums';
-import { display } from '@/lib/format';
+import { commas, display } from '@/lib/format';
 import {
   byCount,
   filled,
@@ -90,7 +90,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
                   className="group flex h-full flex-col gap-1 p-4 outline-none transition-colors hover:bg-white/[0.04] focus-visible:bg-white/[0.07]"
                 >
                   <span className="font-display text-2xl leading-none tracking-tight tabular-nums">
-                    {count(key).toLocaleString()}
+                    {commas(count(key))}
                   </span>
                   <span className="text-xs text-muted transition-colors group-hover:text-white">
                     {label}
@@ -117,7 +117,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
                   title: `rated ${halfPoint(Number(c.key))}`,
                 };
               })}
-              note={`vndb's rating, of the ${total(s.vn_ratings).toLocaleString()} titles with enough votes for one. The median title is rated ${halfPoint(
+              note={`vndb's rating, of the ${commas(total(s.vn_ratings))} titles with enough votes for one. The median title is rated ${halfPoint(
                 median(s.vn_ratings),
               )}.`}
             />
@@ -131,7 +131,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
                 s.vn_lengths.filter(c => c.key !== '0'),
                 k => enumLabel('LENGTH', k),
               )}
-              note={`${valueOf(s.vn_lengths, '0').toLocaleString()} more with no length given.`}
+              note={`${commas(valueOf(s.vn_lengths, '0'))} more with no length given.`}
             />
             <List
               title="Development"
@@ -191,7 +191,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
               unit="releases"
               head="Minimum age"
               data={labelled(s.release_ages, k => (k === '0' ? 'All' : `${k}+`))}
-              note={`Of the ${total(s.release_ages).toLocaleString()} releases with an age rating.`}
+              note={`Of the ${commas(total(s.release_ages))} releases with an age rating.`}
             />
           </div>
           <div className={PAIR}>
@@ -268,7 +268,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
               of={total(s.char_sex)}
               // Always everyone's; the choice above is lit in it.
               picked={sex === 'all' ? undefined : sex}
-              note={`${(count('c') - total(s.char_sex)).toLocaleString()} more with no sex given.`}
+              note={`${commas(count('c') - total(s.char_sex))} more with no sex given.`}
             />
             <List
               title="Role"
@@ -351,7 +351,7 @@ export function SiteStats({ counted: { stats: s } }: { counted: CountedSite }) {
             head="Gender"
             rows={enumRows(s.char_gender, 'GENDER')}
             of={total(s.char_gender)}
-            note={`Given apart from sex, only where it differs or is the point: ${total(s.char_gender).toLocaleString()} characters of every sex.`}
+            note={`Given apart from sex, only where it differs or is the point: ${commas(total(s.char_gender))} characters of every sex.`}
           />
         </Group>
 
@@ -439,7 +439,5 @@ function labelled(counts: Counted[], label: (key: string) => string): Column[] {
 }
 
 function given(n: number, who: string, what: string): string {
-  return n
-    ? `Of ${n.toLocaleString()} ${who} with ${what} given.`
-    : `No ${who} with ${what} given.`;
+  return n ? `Of ${commas(n)} ${who} with ${what} given.` : `No ${who} with ${what} given.`;
 }

@@ -132,6 +132,37 @@ test('the graph keeps every card mounted, and steps out without a warning', asyn
   expect(errors).toEqual([]);
 });
 
+test.describe('on a touch screen', () => {
+  test.use({ hasTouch: true });
+
+  // jsdom cannot show this: only a real touch lets React's effects run before
+  // the touch reaches the window, where the tooltip used to close itself.
+  test('a tap opens a tooltip and leaves it open', async ({ page }) => {
+    await page.goto('/v17', { waitUntil: 'networkidle' });
+    const heart = page.locator('span[aria-hidden]', { hasText: '♥' }).first();
+    await heart.scrollIntoViewIfNeeded();
+    await heart.tap();
+    await expect(page.getByRole('tooltip')).toHaveText(/erotic scenes/);
+    await page.locator('h1').first().tap();
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  });
+});
+
+test('a click on the empty graph lets go of a half-picked path', async ({ page }) => {
+  await page.goto('/v84/rg', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Find a path' }).click();
+  await page.locator('.react-flow__node').first().click();
+  const note = page.getByRole('status').filter({ hasText: 'Now pick where it ends.' });
+  await expect(note).toBeVisible();
+  // A corner of the pane, clear of every card and panel.
+  await page.locator('.react-flow__pane').click({ position: { x: 5, y: 300 } });
+  await expect(note).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Find a path' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+});
+
 test('the keys page through a list and move about a page', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   // The keys are the page's once it is live.

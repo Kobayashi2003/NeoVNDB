@@ -3,6 +3,7 @@
  *  English works with no votes); the toggle undoes that. */
 
 import Link from 'next/link';
+import { commas } from '@/lib/format';
 import { one, withParams, type Params } from '@/lib/href';
 import { LIST } from '@/lib/list';
 import { countOf, fetchResults } from '@/lib/results';
@@ -56,9 +57,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
               href={`/${type}`}
               className="group flex items-baseline gap-1.5 text-xs transition-colors hover:text-white coarse:py-1"
             >
-              <span className="font-semibold tabular-nums text-accent">
-                {counts[i].toLocaleString()}
-              </span>
+              <span className="font-semibold tabular-nums text-accent">{commas(counts[i])}</span>
               <span className="text-muted transition-colors group-hover:text-white">
                 {LIST[type].label}
               </span>

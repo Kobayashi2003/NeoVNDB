@@ -87,6 +87,27 @@ describe('relation graph', () => {
     expect(pathUnion(edges, 'v1', 'v9')).toBeNull();
   });
 
+  // Fourteen titles all related to each other, hanging off the start: every
+  // simple path through them is a dead end, and walking them took forever.
+  it('answers at once beside a dense corner that leads nowhere', () => {
+    const corner = Array.from({ length: 14 }, (_, i) => `c${i}`);
+    const edges = [edge('v1', 'c0'), edge('v1', 'v2'), edge('v2', 'v3'), edge('v3', 'v1')];
+    for (const a of corner) for (const b of corner) if (a < b) edges.push(edge(a, b));
+    edges.push(edge('v3', 'v4'));
+    const at = performance.now();
+    const found = pathUnion(edges, 'v2', 'v4');
+    expect(performance.now() - at).toBeLessThan(200);
+    // The triangle either way round, then out to v4.
+    expect(found && [...found.nodes].sort()).toEqual(['v1', 'v2', 'v3', 'v4']);
+    expect(found?.edges.size).toBe(4);
+  });
+
+  it('counts two relations between one pair as two ways', () => {
+    const edges = [edge('v1', 'v2', 'seq'), edge('v2', 'v1', 'side'), edge('v2', 'v3')];
+    const found = pathUnion(edges, 'v1', 'v3');
+    expect(found && [...found.edges].sort()).toEqual(edges.map(edgeKey).sort());
+  });
+
   it('puts an undated title in the year of its nearest dated relation', () => {
     const nodes = [node('v1', '2001-05-01'), node('v2'), node('v3', '1999'), node('v9')];
     const layer = yearLayers(nodes, [edge('v1', 'v2')]);

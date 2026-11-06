@@ -198,6 +198,44 @@ describe('Lightbox', () => {
     fireEvent.wheel(viewer, { deltaY: 120 });
     expect(onIndex).toHaveBeenCalledOnce();
   });
+
+  it('keeps a revealed image revealed when a key has nowhere to go', async () => {
+    const onIndex = vi.fn();
+    const one = [{ url: '/img/1.jpg', blurred: true, caption: '#1' }];
+    render(<Lightbox images={one} index={0} onIndex={onIndex} onClose={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Reveal image' }));
+    await userEvent.keyboard('{Home}{ArrowRight}{End}');
+    expect(onIndex).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Reveal image' })).toBeNull();
+  });
+
+  it('takes focus, keeps Tab inside, and gives focus back on closing', async () => {
+    const { rerender } = render(
+      <>
+        <button>Behind</button>
+      </>,
+    );
+    screen.getByRole('button', { name: 'Behind' }).focus();
+    const open = (
+      <>
+        <button>Behind</button>
+        <Lightbox images={images} index={0} onIndex={() => {}} onClose={() => {}} />
+      </>
+    );
+    rerender(open);
+    const viewer = screen.getByRole('dialog', { name: 'Screenshot viewer' });
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+    for (let i = 0; i < 5; i++) {
+      await userEvent.tab();
+      expect(viewer).toContainElement(document.activeElement as HTMLElement);
+    }
+    rerender(
+      <>
+        <button>Behind</button>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Behind' })).toHaveFocus();
+  });
 });
 
 describe('the selection bar', () => {

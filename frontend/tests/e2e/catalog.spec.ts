@@ -21,6 +21,26 @@ test("credits and voice work are both on a person's page", async ({ page }) => {
   expect(works).toBeGreaterThan(credited);
 });
 
+// A trait can itself be a spoiler for a character: Death is one for most who
+// carry it. At the default spoiler level they are left off its list.
+test("a trait's page leaves out those for whom it is a spoiler", async ({ page, request }) => {
+  const count = async (q: string) =>
+    (
+      (await (await request.get(`/vndbserve/character?fields=id&limit=1&${q}`)).json()) as {
+        count: number;
+      }
+    ).count;
+  const capped = await count('trait=i415:0');
+  const all = await count('trait=i415');
+  expect(capped).toBeLessThan(all);
+
+  await page.goto('/i415');
+  // A tab, or the label one tab alone is drawn as.
+  const first = page.locator('a, span', { hasText: /^Including child traits\s*[\d,]+$/ }).first();
+  const shown = Number((await first.textContent())!.replace(/\D/g, ''));
+  expect(shown).toBe(capped);
+});
+
 test("a producer's tabs leave out the empty and the redundant", async ({ page }) => {
   // Sekai Project only publishes: no Developed, and "Developed or published"
   // would be the Published list again.

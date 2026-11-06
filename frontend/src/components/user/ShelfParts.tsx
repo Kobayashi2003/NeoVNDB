@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { Star, X } from 'lucide-react';
+import { commas } from '@/lib/format';
 import { withParams, type Params } from '@/lib/href';
 import { cn } from '@/lib/utils';
 import { ControlLabel } from '@/components/ui/ControlLabel';
@@ -70,7 +71,7 @@ export function Missing({
   href: string;
 }) {
   const [entries, are, them] =
-    count === 1 ? ['One entry', 'is', 'it'] : [`${count.toLocaleString()} entries`, 'are', 'them'];
+    count === 1 ? ['One entry', 'is', 'it'] : [`${commas(count)} entries`, 'are', 'them'];
   return (
     <p className="text-xs text-muted">
       {entries} in {noun} {are} no longer on vndb, so this order leaves {them} out.{' '}

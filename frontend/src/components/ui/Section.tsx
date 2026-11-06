@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { commas } from '@/lib/format';
 
 /** A main-column heading. The short accent tick anchors it and lifts it off
  *  the body without the weight of a full divider. */
@@ -23,9 +24,7 @@ export function Section({
         {title}
       </span>
       {count !== undefined && (
-        <span className="text-xs font-normal tabular-nums text-muted">
-          {count.toLocaleString()}
-        </span>
+        <span className="text-xs font-normal tabular-nums text-muted">{commas(count)}</span>
       )}
       {onTitleClick && (
         <ChevronRight
@@ -43,7 +42,7 @@ export function Section({
     <section
       id={sectionId(title)}
       data-section={title}
-      data-count={count?.toLocaleString()}
+      data-count={count === undefined ? undefined : commas(count)}
       className="scroll-mt-[calc(var(--header-h)+4rem)] lg:scroll-mt-16"
     >
       {/* The controls beside the heading are not part of its name, so they

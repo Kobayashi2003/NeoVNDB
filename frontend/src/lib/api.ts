@@ -32,11 +32,13 @@ async function session(): Promise<string | null> {
   if (typeof window !== 'undefined') return null;
   const { cookies } = await import('next/headers');
   const jar = await cookies();
-  for (const name of SESSION_COOKIES) {
+  // Both, when both are there: the user service reads only the one its
+  // setting names, and the other can be left over from before it changed.
+  const held = SESSION_COOKIES.flatMap(name => {
     const token = jar.get(name)?.value;
-    if (token) return `${name}=${token}`;
-  }
-  return null;
+    return token ? [`${name}=${token}`] : [];
+  });
+  return held.length ? held.join('; ') : null;
 }
 
 /** As the user service names it: behind https with the __Host- prefix. */

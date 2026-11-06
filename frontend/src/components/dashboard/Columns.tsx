@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { commas } from '@/lib/format';
 import { Grow } from './Grow';
 
 export interface Column {
@@ -63,15 +64,11 @@ export function Columns({
     <div className="flex flex-col gap-1.5">
       <p className="flex h-5 items-baseline justify-between gap-3 text-xs" aria-live="polite">
         <span className="min-w-0 truncate">
-          <strong className="font-semibold tabular-nums">
-            {(shown?.value ?? total).toLocaleString()}
-          </strong>{' '}
+          <strong className="font-semibold tabular-nums">{commas(shown?.value ?? total)}</strong>{' '}
           <span className="text-muted">{shown ? `${unit}, ${shown.title}` : `${unit} in all`}</span>
         </span>
         {!counted && (
-          <span className="shrink-0 text-3xs tabular-nums text-muted">
-            most {max.toLocaleString()}
-          </span>
+          <span className="shrink-0 text-3xs tabular-nums text-muted">most {commas(max)}</span>
         )}
       </p>
       <div
@@ -111,7 +108,7 @@ export function Columns({
                   )}
                   aria-hidden
                 >
-                  {d.value.toLocaleString()}
+                  {commas(d.value)}
                 </span>
               )}
               <Grow

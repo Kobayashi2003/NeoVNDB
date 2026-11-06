@@ -186,6 +186,10 @@ describe('characters', () => {
     expect(spoilerExtent([character({ description: 'a [Spoiler]b[/spoiler]' })], false).major).toBe(
       true,
     );
+    // A cast whose one secret is a sex: without it counted, no control showed
+    // and its (?) could never be opened.
+    expect(spoilerExtent([character({ sex: 'f', spoil_sex: 'm' })], false).major).toBe(true);
+    expect(spoilerExtent([character({ sex: 'f', spoil_sex: 'n' })], false).major).toBe(false);
 
     const detail: CharacterDetail = {
       ...character({ sex: 'f', spoil_sex: 'm' }),

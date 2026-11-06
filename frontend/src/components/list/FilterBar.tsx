@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, ListFilter, SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { commas } from '@/lib/format';
 import { facet } from '@/lib/api';
 import { LIST } from '@/lib/list';
 import { ControlLabel } from '@/components/ui/ControlLabel';
@@ -375,9 +376,7 @@ function Option({
       {choice.icon && <span className={cn(choice.icon, 'shrink-0')} aria-hidden />}
       <span className="truncate">{choice.label}</span>
       {count !== undefined && (
-        <span className="ml-auto pl-3 text-xs tabular-nums text-muted">
-          {count.toLocaleString()}
-        </span>
+        <span className="ml-auto pl-3 text-xs tabular-nums text-muted">{commas(count)}</span>
       )}
     </Link>
   );

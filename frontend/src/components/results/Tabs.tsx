@@ -3,6 +3,7 @@
 'use client';
 
 import Link from 'next/link';
+import { commas } from '@/lib/format';
 import { rowKeys } from '@/lib/rowKeys';
 import { pill } from '@/components/ui/Pill';
 import { withParams, type Params } from '@/lib/href';
@@ -35,7 +36,7 @@ export function Tabs({
     return (
       <span className={pill({ tone: 'on', className: 'gap-1.5 hover:bg-white/20' })}>
         {tabs[0].label}
-        <span className="tabular-nums text-muted">{tabs[0].count.toLocaleString()}</span>
+        <span className="tabular-nums text-muted">{commas(tabs[0].count)}</span>
       </span>
     );
   }
@@ -47,7 +48,7 @@ export function Tabs({
         const label = (
           <>
             {tab.label}
-            <span className="tabular-nums text-muted">{tab.count.toLocaleString()}</span>
+            <span className="tabular-nums text-muted">{commas(tab.count)}</span>
           </>
         );
         return (
