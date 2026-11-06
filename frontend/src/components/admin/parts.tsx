@@ -115,7 +115,9 @@ export function Output({ lines }: { lines: string[] }) {
   );
 }
 
-export function Trouble({ text }: { text: string | null }) {
+/** What went wrong, in a line, inside a card. Not ui/Trouble, which is a whole
+ *  page with nothing to show. */
+export function Failure({ text }: { text: string | null }) {
   if (!text) return null;
   return (
     <p role="alert" className="text-xs text-red-400">

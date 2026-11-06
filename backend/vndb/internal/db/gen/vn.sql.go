@@ -333,6 +333,59 @@ func (q *Queries) VNCharacterList(ctx context.Context, ids []int32) ([]VNCharact
 	return items, nil
 }
 
+const vNCharacterListAllAges = `-- name: VNCharacterListAllAges :many
+SELECT cv.vid AS vn_id,
+       (array_agg(cv.role ORDER BY array_position(
+           ARRAY['main', 'primary', 'side', 'appears'], cv.role)))[1]::text AS role,
+       MIN(cv.spoil)::smallint AS spoil, c.id, c.c_lang, c.image, c.sex
+  FROM chars_vns cv
+  JOIN chars c ON c.id = cv.id
+ WHERE cv.vid = ANY($1::int[])
+   AND NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'r' AND w.id = cv.rid)
+ GROUP BY cv.vid, c.id
+ ORDER BY cv.vid, MIN(array_position(ARRAY['main', 'primary', 'side', 'appears'], cv.role)), c.id
+`
+
+type VNCharacterListAllAgesRow struct {
+	VnID  int32  `db:"vn_id" json:"vn_id"`
+	Role  string `db:"role" json:"role"`
+	Spoil int16  `db:"spoil" json:"spoil"`
+	ID    int32  `db:"id" json:"id"`
+	CLang string `db:"c_lang" json:"c_lang"`
+	Image *int32 `db:"image" json:"image"`
+	Sex   string `db:"sex" json:"sex"`
+}
+
+// The same, under the all-ages mask: a row tied to a withheld release is that
+// release's, so it neither lists a character nor lends one its role or level.
+func (q *Queries) VNCharacterListAllAges(ctx context.Context, ids []int32) ([]VNCharacterListAllAgesRow, error) {
+	rows, err := q.db.Query(ctx, vNCharacterListAllAges, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VNCharacterListAllAgesRow{}
+	for rows.Next() {
+		var i VNCharacterListAllAgesRow
+		if err := rows.Scan(
+			&i.VnID,
+			&i.Role,
+			&i.Spoil,
+			&i.ID,
+			&i.CLang,
+			&i.Image,
+			&i.Sex,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const vNDevelopers = `-- name: VNDevelopers :many
 SELECT v.id AS vn_id, p.id, p.name, p.latin
   FROM vn v

@@ -95,7 +95,11 @@ var fields = query.NewTable(query.Table[*Resolver, gen.Char]{
 })
 
 func fetch(ctx context.Context, r *Resolver, ids []int32) ([]gen.Char, error) {
-	return r.q.GetChars(ctx, ids)
+	rows, err := r.q.GetChars(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	return rows, asShown(ctx, rows)
 }
 
 // The dump packs a birthday as mmdd in one smallint, with 0 for unknown.

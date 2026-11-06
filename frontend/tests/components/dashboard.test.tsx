@@ -42,7 +42,13 @@ describe('Recommendations', () => {
   // Nothing in scope asks for nothing: once the waiting drew forever, or the
   // last scope's suggestions stayed, dimmed.
   it('says there is nothing to go from rather than waiting', () => {
-    render(<Recommendations scope={[]} held={{ lists: [], rated: [] }} details={new Map()} />);
+    render(
+      <Recommendations
+        scope={[]}
+        held={{ lists: [], rated: [], ratedCount: 0, unread: 0 }}
+        details={new Map()}
+      />,
+    );
     expect(screen.getByText('Nothing in scope to go from.')).toBeVisible();
   });
 });

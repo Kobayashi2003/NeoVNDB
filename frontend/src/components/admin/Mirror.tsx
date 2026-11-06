@@ -24,7 +24,7 @@ import {
 import { commas } from '@/lib/format';
 import { errorText } from '@/lib/user';
 import { Placeholder, PlaceholderLines } from '@/components/ui/Surface';
-import { Button, Card, Facts, JobFacts, Output, Trouble, bytes, span, when } from './parts';
+import { Button, Card, Facts, Failure, JobFacts, Output, bytes, span, when } from './parts';
 import {
   ALL_AGES_FIELDS,
   IMAGE_FIELDS,
@@ -137,7 +137,7 @@ export function Mirror() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Trouble text={trouble} />
+      <Failure text={trouble} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
@@ -161,7 +161,7 @@ export function Mirror() {
             ))
           }
         >
-          <Trouble text={mirror.error} />
+          <Failure text={mirror.error} />
           {m && (
             <>
               <div className="overflow-x-auto">
@@ -269,7 +269,7 @@ export function Mirror() {
             )
           }
         >
-          <Trouble text={images.error} />
+          <Failure text={images.error} />
           {crawl && images.value && (
             <>
               {report && report.known > 0 && (
@@ -312,7 +312,7 @@ export function Mirror() {
             )
           }
         >
-          <Trouble text={saved.error} />
+          <Failure text={saved.error} />
           {saved.value && (
             <>
               <Facts

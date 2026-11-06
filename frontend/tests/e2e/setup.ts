@@ -199,7 +199,8 @@ export default async function setup() {
   }
   start(
     process.execPath,
-    [require.resolve('next/dist/bin/next'), 'start', '-p', String(DEPLOYED.web)],
+    // On the loopback, as every app here: only the edge faces outward.
+    [require.resolve('next/dist/bin/next'), 'start', '-H', '127.0.0.1', '-p', String(DEPLOYED.web)],
     web,
     {
       ...dist,

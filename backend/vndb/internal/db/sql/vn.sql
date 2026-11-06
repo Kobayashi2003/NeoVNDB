@@ -165,6 +165,20 @@ SELECT cv.vid AS vn_id,
  -- By that weight: as text, "appears" would sort ahead of "main".
  ORDER BY cv.vid, MIN(array_position(ARRAY['main', 'primary', 'side', 'appears'], cv.role)), c.id;
 
+-- name: VNCharacterListAllAges :many
+-- The same, under the all-ages mask: a row tied to a withheld release is that
+-- release's, so it neither lists a character nor lends one its role or level.
+SELECT cv.vid AS vn_id,
+       (array_agg(cv.role ORDER BY array_position(
+           ARRAY['main', 'primary', 'side', 'appears'], cv.role)))[1]::text AS role,
+       MIN(cv.spoil)::smallint AS spoil, c.id, c.c_lang, c.image, c.sex
+  FROM chars_vns cv
+  JOIN chars c ON c.id = cv.id
+ WHERE cv.vid = ANY(@ids::int[])
+   AND NOT EXISTS (SELECT 1 FROM withheld w WHERE w.entity_type = 'r' AND w.id = cv.rid)
+ GROUP BY cv.vid, c.id
+ ORDER BY cv.vid, MIN(array_position(ARRAY['main', 'primary', 'side', 'appears'], cv.role)), c.id;
+
 -- name: GetCharImages :many
 SELECT num, width, height, c_sexual_avg, c_violence_avg, c_votecount
   FROM images

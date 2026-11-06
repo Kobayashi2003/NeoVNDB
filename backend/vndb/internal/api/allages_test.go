@@ -122,8 +122,13 @@ func TestAllAges(t *testing.T) {
 	  INSERT INTO staff_alias (aid, id, name) VALUES (1, 1, 'Voice');
 	  INSERT INTO vn_seiyuu (id, aid, cid, note) VALUES (100, 1, 301, ''), (101, 1, 301, '');
 	  INSERT INTO chars (id, bloodt, cup_size, sex, main_spoil, s_bust, s_waist, s_hip, birthday, height, description)
-	  SELECT id, 'unknown', '', '', 0, 0, 0, 0, 0, 0, '' FROM (VALUES (300), (301)) c(id);
-	  INSERT INTO chars_vns (id, vid, rid) VALUES (300, 100, NULL), (301, 101, NULL);
+	  SELECT id, 'unknown', '', '', 0, 0, 0, 0, 0, 0, '' FROM (VALUES (300), (301), (302)) c(id);
+	  -- c302 is in v101 throughout as a side character, and the lead of its
+	  -- adult release; an instance of c300, which only withheld v100 has.
+	  UPDATE chars SET main = 300, main_spoil = 1 WHERE id = 302;
+	  INSERT INTO chars_vns (id, vid, rid, role, spoil) VALUES
+	    (300, 100, NULL, 'main', 0), (301, 101, NULL, 'main', 0),
+	    (302, 101, NULL, 'side', 0), (302, 101, 201, 'main', 0);
 	  SET search_path TO DEFAULT`)
 	// The derive step analyses the generation it built and nothing else in
 	// the database.
@@ -281,9 +286,62 @@ func TestAllAges(t *testing.T) {
 		t.Errorf("guest: %v, count %d", ids(guest), guest.Count)
 	}
 	var chars page
-	ask("", "/character?fields=id", &chars)
-	if len(chars.Results) != 1 || chars.Results[0].ID != "c301" {
+	ask("", "/character?fields=id&sort=id", &chars)
+	if !slices.Equal(ids(chars), []string{"c301", "c302"}) {
 		t.Errorf("guest characters: %v", ids(chars))
+	}
+
+	// What the adult release alone says of c302 goes with it: its lead role
+	// there, the release itself, and being an instance of withheld c300.
+	type cast struct {
+		Results []struct {
+			ID         string  `json:"id"`
+			InstanceOf *string `json:"instance_of"`
+			VNs        []struct {
+				ID      string  `json:"id"`
+				Role    string  `json:"role"`
+				Release *string `json:"release"`
+			} `json:"vns"`
+			Characters []struct {
+				ID   string `json:"id"`
+				Role string `json:"role"`
+			} `json:"characters"`
+		} `json:"results"`
+	}
+	for _, c := range []struct {
+		viewer, instanceOf, vns, role string
+	}{
+		{"", "", "v101:side:-", "side"},
+		{"member", "c300", "v101:main:r201,v101:side:-", "main"},
+	} {
+		var who, work cast
+		ask(c.viewer, "/character?id=c302&fields=instance_of,vns.role,vns.release", &who)
+		ask(c.viewer, "/vn?id=v101&fields=characters.role", &work)
+		if len(who.Results) != 1 || len(work.Results) != 1 {
+			t.Fatalf("as %q: %+v %+v", c.viewer, who, work)
+		}
+		var got []string
+		for _, v := range who.Results[0].VNs {
+			rel := "-"
+			if v.Release != nil {
+				rel = *v.Release
+			}
+			got = append(got, v.ID+":"+v.Role+":"+rel)
+		}
+		slices.Sort(got)
+		instance := ""
+		if p := who.Results[0].InstanceOf; p != nil {
+			instance = *p
+		}
+		role := ""
+		for _, ch := range work.Results[0].Characters {
+			if ch.ID == "c302" {
+				role = ch.Role
+			}
+		}
+		if instance != c.instanceOf || strings.Join(got, ",") != c.vns || role != c.role {
+			t.Errorf("as %q: instance of %q, vns %v, role in v101 %q", c.viewer, instance, got, role)
+		}
 	}
 
 	// A lookup says which ids it held back, so the page can say so.

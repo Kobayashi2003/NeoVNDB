@@ -12,7 +12,7 @@ import {
 import { commas } from '@/lib/format';
 import { errorText } from '@/lib/user';
 import { Placeholder, surface } from '@/components/ui/Surface';
-import { Button, Trouble, when } from './parts';
+import { Button, Failure, when } from './parts';
 
 const COLUMNS = ['Account', 'Joined', 'Lists', 'Items', 'Ratings', 'Signed in'];
 
@@ -97,11 +97,11 @@ export function Accounts({ self }: { self: number }) {
     setReads(n => n + 1);
   }
 
-  if (!list) return error ? <Trouble text={error} /> : <AccountsWaiting />;
+  if (!list) return error ? <Failure text={error} /> : <AccountsWaiting />;
 
   return (
     <div className="flex flex-col gap-3">
-      <Trouble text={error} />
+      <Failure text={error} />
       <Table>
         {list.map(a => (
           <tr key={a.id} className="border-t border-white/5 align-middle">

@@ -16,6 +16,11 @@ import {
 export interface Holdings {
   lists: { list: Collection; marks: Mark[] }[];
   rated: Rated[];
+  /** How many ratings there are, read or not. */
+  ratedCount: number;
+  /** Marks and ratings past the user service's ceiling for one read
+   *  (NEOVNDB_USERS_MAX_ITEMS), so not counted here: the latest are read. */
+  unread: number;
 }
 
 export function useHoldings(): { held: Holdings | null; error: string | null } {
@@ -29,10 +34,17 @@ export function useHoldings(): { held: Holdings | null; error: string | null } {
         collections('v'),
         ratedItems('v', { sort: 'rated', ascending: false }),
       ]);
-      const marks = await Promise.all(
-        lists.map(l => items(l.id, { sort: 'added', ascending: false }).then(r => r.items)),
+      const read = await Promise.all(
+        lists.map(l => items(l.id, { sort: 'added', ascending: false })),
       );
-      return { lists: lists.map((list, i) => ({ list, marks: marks[i] })), rated: rated.items };
+      const unread =
+        read.reduce((n, r) => n + r.count - r.items.length, 0) + rated.count - rated.items.length;
+      return {
+        lists: lists.map((list, i) => ({ list, marks: read[i].items })),
+        rated: rated.items,
+        ratedCount: rated.count,
+        unread,
+      };
     })().then(
       got => live && setHeld(got),
       err => live && setError(errorText(err)),

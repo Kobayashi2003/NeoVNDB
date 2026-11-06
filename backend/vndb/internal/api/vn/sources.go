@@ -348,7 +348,17 @@ func loadReleases(ctx context.Context, r *Resolver, page []gen.Vn,
 func loadCharacters(ctx context.Context, r *Resolver, page []gen.Vn,
 	sel query.Selection, byID map[int32]map[string]any) error {
 
-	rows, err := r.q.VNCharacterList(ctx, idsOf(page))
+	var rows []gen.VNCharacterListRow
+	var err error
+	if query.MaskOf(ctx) != nil {
+		var masked []gen.VNCharacterListAllAgesRow
+		masked, err = r.q.VNCharacterListAllAges(ctx, idsOf(page))
+		for _, m := range masked {
+			rows = append(rows, gen.VNCharacterListRow(m))
+		}
+	} else {
+		rows, err = r.q.VNCharacterList(ctx, idsOf(page))
+	}
 	if err != nil {
 		return err
 	}

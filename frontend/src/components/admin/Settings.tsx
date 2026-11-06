@@ -8,7 +8,7 @@ import type { ImageSettings, ServeSettings, Settings } from '@/lib/admin';
 import { errorText } from '@/lib/user';
 import { Segmented } from '@/components/ui/Segmented';
 import { PlaceholderLines } from '@/components/ui/Surface';
-import { Button, Card, FIELD, Trouble } from './parts';
+import { Button, Card, FIELD, Failure } from './parts';
 
 type Kind =
   /** A Go duration; 0 turns a schedule off. */
@@ -185,7 +185,7 @@ export function SettingsCard<T extends object>({
   if (!settings) {
     return trouble ? (
       <Card title={title} className={className}>
-        <Trouble text={trouble} />
+        <Failure text={trouble} />
       </Card>
     ) : (
       <SettingsWaiting title={title} className={className} />
@@ -303,7 +303,7 @@ export function SettingsCard<T extends object>({
             </div>
           );
         })}
-        <Trouble text={trouble} />
+        <Failure text={trouble} />
       </div>
     </Card>
   );

@@ -7,9 +7,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "next dev -p 17034",
+    "dev": "next dev -H 127.0.0.1 -p 17034",
     "build": "next build",
-    "start": "next start -p 17034",
+    "start": "next start -H 127.0.0.1 -p 17034",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",

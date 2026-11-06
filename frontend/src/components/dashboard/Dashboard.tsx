@@ -160,13 +160,14 @@ function Board() {
 
   const sources: MenuChoice<string>[] = [
     { value: 'all', label: 'Every list' },
-    ...held.lists.map(({ list: l, marks }) => ({
+    // What each holds, not what was read of it.
+    ...held.lists.map(({ list: l }) => ({
       value: `list:${l.id}`,
       label: l.name,
-      count: marks.length,
+      count: l.count,
       group: 'Lists',
     })),
-    { value: 'rated', label: 'Rated', count: held.rated.length },
+    { value: 'rated', label: 'Rated', count: held.ratedCount },
   ];
   const ranges: MenuChoice<Range>[] = [
     { value: 'all', label: 'All time' },
@@ -246,6 +247,12 @@ function Board() {
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start">
         <div className="flex min-w-0 flex-col gap-8">
           <Summary scope={picked} details={details} />
+          {held.unread > 0 && (
+            <p className="-mt-6 text-xs text-muted">
+              Only the latest entries of a very long list are read: {commas(held.unread)} older{' '}
+              {held.unread === 1 ? 'one is' : 'ones are'} not counted here.
+            </p>
+          )}
           {scope.length > MAX_IDS && (
             <p className="-mt-6 text-xs text-muted">
               What they have in common is counted over the latest {commas(MAX_IDS)}.

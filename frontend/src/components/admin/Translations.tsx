@@ -17,7 +17,7 @@ import { errorText } from '@/lib/user';
 import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
 import { Placeholder, PlaceholderLines, surface } from '@/components/ui/Surface';
-import { Button, FIELD, Trouble } from './parts';
+import { Button, FIELD, Failure } from './parts';
 
 /** The count line and a few entries, each a name, its field and its
  *  description beside the field for it. */
@@ -141,7 +141,7 @@ export function Translations() {
           the corpus to keep them in the repository as internal/trans/init.json.
         </p>
       )}
-      <Trouble text={error} />
+      <Failure text={error} />
       {!held && !error && <EntriesWaiting />}
 
       {held && held.results.length === 0 && <p className="text-sm text-muted">Nothing here.</p>}
@@ -268,7 +268,7 @@ function Field({
           </Button>
         )}
         {!changed && stored && <span className="text-2xs text-muted">Saved</span>}
-        <Trouble text={error} />
+        <Failure text={error} />
       </div>
     </div>
   );

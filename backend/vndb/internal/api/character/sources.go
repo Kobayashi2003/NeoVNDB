@@ -139,13 +139,28 @@ func loadVNs(ctx context.Context, r *Resolver, page []gen.Char,
 	if err != nil {
 		return err
 	}
-	edges := make([]query.Edge, len(rows))
-	for i, v := range rows {
+	var rids []int32
+	for _, v := range rows {
+		if v.Rid != nil {
+			rids = append(rids, *v.Rid)
+		}
+	}
+	// An appearance in a withheld release is that release's: it goes, rather
+	// than staying with a link to what is not shown, as vn.characters drops it.
+	gone, err := query.WithheldOf(ctx, vndb.TypeRelease, rids)
+	if err != nil {
+		return err
+	}
+	edges := make([]query.Edge, 0, len(rows))
+	for _, v := range rows {
+		if v.Rid != nil && gone[*v.Rid] {
+			continue
+		}
 		attrs := map[string]any{"role": v.Role, "spoiler": v.Spoil, "release": nil}
 		if v.Rid != nil {
 			attrs["release"] = vndb.FormatID(vndb.TypeRelease, *v.Rid)
 		}
-		edges[i] = query.Edge{Parent: v.CharID, Child: v.Vid, Attrs: attrs}
+		edges = append(edges, query.Edge{Parent: v.CharID, Child: v.Vid, Attrs: attrs})
 	}
 	return query.Relate(ctx, r.cat, vndb.TypeCharacter, "vns", edges, sel, byID)
 }

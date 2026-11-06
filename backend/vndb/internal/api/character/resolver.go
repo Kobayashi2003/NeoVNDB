@@ -57,8 +57,32 @@ func (r *Resolver) Resolve(ctx context.Context, req *query.Request) ([]map[strin
 	for i, c := range collected {
 		page[i] = c.Char
 	}
+	if err := asShown(ctx, page); err != nil {
+		return nil, 0, err
+	}
 	results, err := fields.Apply(ctx, r, page, req.Fields)
 	return results, total, err
+}
+
+// asShown leaves rows read under the all-ages mask no link to a character the
+// mask withholds: instance_of would name one the reader cannot open.
+func asShown(ctx context.Context, rows []gen.Char) error {
+	var mains []int32
+	for _, c := range rows {
+		if c.Main != nil {
+			mains = append(mains, *c.Main)
+		}
+	}
+	gone, err := query.WithheldOf(ctx, vndb.TypeCharacter, mains)
+	if err != nil {
+		return err
+	}
+	for i := range rows {
+		if m := rows[i].Main; m != nil && gone[*m] {
+			rows[i].Main, rows[i].MainSpoil = nil, 0
+		}
+	}
+	return nil
 }
 
 func (r *Resolver) Facet(ctx context.Context, req *query.Request, name string, values []string) (map[string]int, error) {
