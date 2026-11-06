@@ -17,15 +17,29 @@ type call struct {
 	done  chan struct{}
 	bytes []byte
 	err   error
+	// Callers waiting on this one, so a test can tell one has joined rather
+	// than sleep and hope.
+	waiting int
 }
 
 func newFlight() *flight { return &flight{calls: map[string]*call{}} }
+
+// waiters is how many callers wait on the work running for key.
+func (f *flight) waiters(key string) int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if c, ok := f.calls[key]; ok {
+		return c.waiting
+	}
+	return 0
+}
 
 // Do runs fn for the first caller on key and makes every other caller that
 // arrives while it runs wait for the same answer.
 func (f *flight) Do(key string, fn func() ([]byte, error)) (data []byte, err error) {
 	f.mu.Lock()
 	if c, running := f.calls[key]; running {
+		c.waiting++
 		f.mu.Unlock()
 		<-c.done
 		return c.bytes, c.err

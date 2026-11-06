@@ -12,7 +12,7 @@ interface User {
   call(method: string, path: string, body?: unknown): Promise<Response>;
 }
 
-export const test = base.extend<{ user: User; admin: User }>({
+export const test = base.extend<{ user: User; member: User; admin: User }>({
   user: async ({ context, baseURL }, provide) => {
     const service = process.env.E2E_USERS_URL;
     test.skip(!service, 'set NEOVNDB_USERS_TEST_DB_URL to run signed-in tests');
@@ -48,6 +48,19 @@ export const test = base.extend<{ user: User; admin: User }>({
     // A page can still be asking (its lists, its preferences) when the test
     // ends; a forwarded request cut short then is not a failure.
     await context.unrouteAll({ behavior: 'ignoreErrors' });
+  },
+
+  /** `user`, for a test that needs the read API to answer them as a member,
+   *  unmasked. Only the deployment check's edge asks the throwaway service who
+   *  a cookie is; the running site's edge asks the real one, which has never
+   *  heard of this account and calls it a guest -- on pages drawn on the
+   *  server too, which no route here can reach. */
+  member: async ({ user }, provide) => {
+    test.skip(
+      !process.env.E2E_DEPLOYED,
+      "the running site's edge reads a test account as a guest; pnpm test:e2e:deployed runs this",
+    );
+    await provide(user);
   },
 
   /** `user`, made an administrator. The edge would ask the real user service

@@ -72,9 +72,12 @@ describe('AuthForm', () => {
       '/login/',
     ]) {
       service(200);
+      // Each round's own push: the last one standing would pass a round that
+      // went nowhere.
+      router.push.mockClear();
       const { unmount } = render(<AuthForm mode="login" next={next} />);
       await signIn();
-      expect(router.push).toHaveBeenLastCalledWith('/');
+      expect(router.push, next).toHaveBeenCalledExactlyOnceWith('/');
       unmount();
     }
   });

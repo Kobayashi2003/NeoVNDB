@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"github.com/kobayashi/neovndb/internal/vndb"
 )
 
 type testRow struct{ id int32 }
@@ -76,7 +78,8 @@ func (tagType) Registry() Registry {
 func (tagType) Objects(_ context.Context, ids []int32, sel Selection) (map[int32]map[string]any, error) {
 	out := map[int32]map[string]any{}
 	for _, id := range ids {
-		obj := map[string]any{"id": id}
+		// As a real type writes it, so a test reads what a client would.
+		obj := map[string]any{"id": vndb.FormatID(vndb.TypeTag, id)}
 		for _, c := range sel.Columns {
 			obj[c] = c + "-value"
 		}

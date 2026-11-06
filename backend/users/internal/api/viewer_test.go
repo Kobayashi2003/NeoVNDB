@@ -12,18 +12,20 @@ import (
 func TestViewer(t *testing.T) {
 	h := server(t, func(*config.Config) {})
 	session := register(t, h, "reader")
-	for name, c := range map[string]struct {
+	// In order: the last is answered from what the first left in the cache.
+	for _, c := range []struct {
+		name    string
 		session string
 		want    string
 	}{
-		"signed in":         {session, "member"},
-		"no cookie":         {"", "guest"},
-		"a session forged":  {"not-a-session", "guest"},
-		"signed in, again ": {session, "member"}, // from the cache this time
+		{"signed in", session, "member"},
+		{"no cookie", "", "guest"},
+		{"a session forged", "not-a-session", "guest"},
+		{"signed in, again", session, "member"},
 	} {
 		w := call(h, "GET", "/auth/viewer", "", c.session)
 		if w.Code != http.StatusNoContent || w.Header().Get("X-Viewer") != c.want {
-			t.Errorf("%s: %d %q, want 204 %q", name, w.Code, w.Header().Get("X-Viewer"), c.want)
+			t.Errorf("%s: %d %q, want 204 %q", c.name, w.Code, w.Header().Get("X-Viewer"), c.want)
 		}
 	}
 }

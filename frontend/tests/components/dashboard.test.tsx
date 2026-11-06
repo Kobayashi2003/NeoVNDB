@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { Block, Plot } from '@/components/dashboard/Block';
 import { Columns, type Column } from '@/components/dashboard/Columns';
 import { Grow } from '@/components/dashboard/Grow';
@@ -150,6 +150,7 @@ describe('bars and swaps', () => {
   // Two of the same name are still two rows.
   it('draws every row of its table, names alike or not', async () => {
     const warned = vi.spyOn(console, 'error').mockImplementation(() => {});
+    onTestFinished(() => warned.mockRestore());
     render(
       <Block
         title="Developers"
@@ -167,7 +168,6 @@ describe('bars and swaps', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show as a table' }));
     expect(screen.getAllByRole('cell', { name: 'Same' })).toHaveLength(2);
     expect(warned.mock.calls.flat().join(' ')).not.toMatch(/same key/);
-    warned.mockRestore();
   });
 
   it('keeps a plot in place while its data changes, and swaps it when its view does', () => {

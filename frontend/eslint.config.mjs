@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // The build for checking (next.config.ts).
+    '.next-check/**',
   ]),
   {
     // The server's locale on the server, the reader's in the browser: a

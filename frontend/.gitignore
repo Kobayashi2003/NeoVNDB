@@ -1,6 +1,8 @@
 /node_modules
 /coverage
 /.next/
+# A build for checking, beside the one the running site serves (next.config.ts).
+/.next-check/
 /out/
 /build
 

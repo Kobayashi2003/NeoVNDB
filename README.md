@@ -236,11 +236,25 @@ cd frontend      && pnpm test        # unit and component tests
 cd frontend      && pnpm test:e2e    # end to end, against the running site
 ```
 
-The user service's storage tests, and the end-to-end tests that sign in, need
-`NEOVNDB_USERS_TEST_DB_URL` pointing at a database whose name ends in `_test`;
-each run empties it. Without it they skip. The all-ages rules' test in
-`backend/vndb` needs `NEOVNDB_TEST_DB_URL`, likewise a `_test` database (the
-user service's will do): it works in a schema of its own and rolls it back.
+The user service's storage and API tests, and the end-to-end tests that sign
+in, need `NEOVNDB_USERS_TEST_DB_URL` pointing at a database whose name ends in
+`_test`. The Go tests empty its tables before each test; the end-to-end tests
+leave the `e2e_…` accounts they register. Without it they skip. The read API's
+database tests (the all-ages rules, a full generation built and served, the
+import's copy) need `NEOVNDB_TEST_DB_URL`, likewise a `_test` database (the
+user service's will do): each works in schemas of its own and drops them.
+
+Against the running site, `pnpm test:e2e` skips the tests that need the read
+API to answer a test account as a member: that site's edge asks the real user
+service, which calls it a guest. `pnpm test:e2e:deployed` starts a whole site
+of its own beside the running one and runs them all; it builds the frontend
+into `.next-check` (`NEOVNDB_NEXT_DIR`), not the `.next` the running site
+serves. Build the same way by hand while the site runs:
+
+```powershell
+$env:NEOVNDB_NEXT_DIR = '.next-check'; pnpm build
+```
+
 `layout.spec.ts` checks every main
 page at five widths for sideways overflow and measures layout shift on a
 throttled line.

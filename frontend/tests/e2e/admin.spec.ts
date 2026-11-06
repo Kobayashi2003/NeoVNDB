@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { DEPLOYED } from './setup';
 
 test("the services' admin routes are closed to anyone not signed in", async ({ request }) => {
   for (const path of [
@@ -94,8 +95,29 @@ test('an administrator sees the mirror, the accounts and the translations on one
   await expect(page.getByLabel('Name translation').first()).toBeVisible();
 
   // A description that loses its markup is refused, and nothing is stored.
-  const refused = await page.request.put('http://127.0.0.1:17031/admin/trans', {
-    data: { category: 'trait', id: 1162, field: 'description', target: 'リンクを落とした訳' },
-  });
-  expect(refused.status()).toBe(400);
+  // Straight to the read API, as the edge would forward it; this run's own,
+  // whose database is the running site's, so a check that let it through puts
+  // back what was there.
+  const api = `http://127.0.0.1:${process.env.E2E_DEPLOYED ? DEPLOYED.api : 17031}`;
+  const trait = 1162;
+  const { results } = (await (
+    await page.request.get(`/vndbserve/trait?id=i${trait}&fields=name`)
+  ).json()) as { results: { name: string }[] };
+  const listed = (await (
+    await page.request.get(`${api}/admin/trans`, {
+      params: { category: 'trait', q: results[0].name },
+    })
+  ).json()) as { results: { id: number; description_to: string }[] };
+  const was = listed.results.find(t => t.id === trait);
+  expect(was, `trait ${trait} in the translation table`).toBeTruthy();
+  const put = (target: string) =>
+    page.request.put(`${api}/admin/trans`, {
+      data: { category: 'trait', id: trait, field: 'description', target },
+    });
+  const refused = await put('リンクを落とした訳');
+  try {
+    expect(refused.status()).toBe(400);
+  } finally {
+    if (refused.ok()) await put(was!.description_to);
+  }
 });

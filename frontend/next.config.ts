@@ -11,6 +11,10 @@ function ownAddresses(): string[] {
 }
 
 const nextConfig: NextConfig = {
+  // A build for checking (the deployment e2e, a hand-off) goes beside the one
+  // the running site serves: next start reads its build as it goes, and one
+  // replaced under it serves pages whose scripts are gone.
+  distDir: process.env.NEOVNDB_NEXT_DIR || '.next',
   // The site is reached through the edge, never on :17034 directly, and Next
   // refuses its dev resources to any origin but its own. Without this the
   // hot-reload socket is turned away, the dev client never finishes starting,

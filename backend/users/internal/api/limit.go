@@ -95,6 +95,8 @@ func refuseTooMany(w http.ResponseWriter, wait time.Duration) {
 
 func humanWait(seconds int) string {
 	switch {
+	case seconds <= 1:
+		return "a second"
 	case seconds < 60:
 		return strconv.Itoa(seconds) + " seconds"
 	case seconds < 120:

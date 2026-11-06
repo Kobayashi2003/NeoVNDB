@@ -147,8 +147,19 @@ describe('RatingStars', () => {
     expect(fetch.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true);
     expect(screen.queryByRole('button', { name: 'Clear your rating' })).not.toBeInTheDocument();
 
+    // Held until the click has shown, so the putting back is seen to happen
+    // rather than a click that was never taken.
     failing = true;
+    let fail: () => void = () => {};
+    const failed = new Promise<void>(r => (fail = r));
+    fetch.mockImplementationOnce(async () => {
+      await failed;
+      throw new Error('down');
+    });
     await userEvent.click(screen.getByRole('button', { name: 'Rate 4 of 5' }));
+    // Shown at once: the fourth star is now the one that clears it.
+    expect(screen.getByRole('button', { name: 'Clear your rating' })).toBeInTheDocument();
+    fail();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Rate 4 of 5' })).toHaveAttribute(
         'aria-pressed',

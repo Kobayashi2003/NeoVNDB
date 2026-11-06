@@ -11,7 +11,7 @@
  *  -- so the tests show what the limits a deployment sets do to the pages. It
  *  shares the live mirror's database and images, and only reads them. */
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { isAbsolute, join, resolve } from 'node:path';
@@ -20,6 +20,8 @@ import { isAbsolute, join, resolve } from 'node:path';
 export const USERS_PORT = 17035;
 export const DEPLOYED = { edge: 17036, api: 17037, web: 17038 };
 export const STATE = join(tmpdir(), 'neovndb-e2e.json');
+/** Where the deployment check's frontend build goes; see next.config.ts. */
+export const CHECK_BUILD = '.next-check';
 
 const ROOT = join(__dirname, '../../..');
 const exe = (name: string) => (process.platform === 'win32' ? `${name}.exe` : name);
@@ -90,8 +92,17 @@ async function prerequisites(deployed: boolean) {
 
 export default async function setup() {
   const children: ChildProcess[] = [];
+  // Made here, removed by teardown: each run's binaries are some 20 MB, and
+  // nothing else ever cleared them.
+  const dirs: string[] = [];
   const keep = () =>
-    writeFileSync(STATE, JSON.stringify({ pids: children.map(c => c.pid).filter(Boolean) }));
+    writeFileSync(STATE, JSON.stringify({ pids: children.map(c => c.pid).filter(Boolean), dirs }));
+  const scratch = (prefix: string) => {
+    const dir = mkdtempSync(join(tmpdir(), prefix));
+    dirs.push(dir);
+    keep();
+    return dir;
+  };
   const start = (cmd: string, args: string[], cwd: string, env: Record<string, string>) => {
     const child = spawn(cmd, args, { cwd, env: { ...process.env, ...env }, stdio: 'ignore' });
     children.push(child);
@@ -100,7 +111,7 @@ export default async function setup() {
   };
   // Built rather than `go run`, which would leave the real server behind when
   // the wrapper is stopped.
-  const bin = mkdtempSync(join(tmpdir(), 'neovndb-e2e-'));
+  const bin = scratch('neovndb-e2e-');
   const build = (dir: string, pkg: string, name: string) => {
     const out = join(bin, exe(name));
     execFileSync('go', ['build', '-o', out, pkg], { cwd: dir, stdio: 'inherit' });
@@ -166,18 +177,32 @@ export default async function setup() {
     // the real one's admin settings would override these.
     NEOVNDB_UPDATE_EVERY: '0',
     NEOVNDB_IMAGE_CRAWL_EVERY: '0',
-    NEOVNDB_SETTINGS_DIR: mkdtempSync(join(tmpdir(), 'neovndb-e2e-settings-')),
+    NEOVNDB_SETTINGS_DIR: scratch('neovndb-e2e-settings-'),
   });
 
-  // A production build, served the way a deployment serves it.
+  // A production build, served the way a deployment serves it -- in a
+  // directory of its own: the running site's next start serves .next, and a
+  // build replacing it there leaves its pages asking for scripts that are gone.
   const web = join(ROOT, 'frontend');
-  if (!process.env.E2E_SKIP_BUILD)
-    execFileSync('pnpm', ['build'], { cwd: web, stdio: 'inherit', shell: true });
+  const dist = { NEOVNDB_NEXT_DIR: CHECK_BUILD };
+  if (!process.env.E2E_SKIP_BUILD) {
+    execFileSync('pnpm', ['build'], {
+      cwd: web,
+      stdio: 'inherit',
+      shell: true,
+      env: { ...process.env, ...dist },
+    });
+  } else if (!existsSync(join(web, CHECK_BUILD, 'BUILD_ID'))) {
+    throw new Error(
+      `E2E_SKIP_BUILD is set but there is no ${CHECK_BUILD} build: run NEOVNDB_NEXT_DIR=${CHECK_BUILD} pnpm build, or drop E2E_SKIP_BUILD`,
+    );
+  }
   start(
     process.execPath,
     [require.resolve('next/dist/bin/next'), 'start', '-p', String(DEPLOYED.web)],
     web,
     {
+      ...dist,
       NEOVNDB_API_BASE: `http://127.0.0.1:${DEPLOYED.edge}/vndbserve`,
     },
   );

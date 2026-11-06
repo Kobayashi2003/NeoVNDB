@@ -18,7 +18,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `pnpm-lock.yaml`. `next`, `eslint-config-next`, `react` and `react-dom` are
   pinned exactly; move them together.
 - Before handing off: `pnpm typecheck`, `pnpm typecheck:tests`, `pnpm lint`,
-  `pnpm format:check`, `pnpm test`, `pnpm build`.
+  `pnpm format:check`, `pnpm test`, `pnpm build`. Build with
+  `NEOVNDB_NEXT_DIR=.next-check` set: the running site's `next start` serves
+  `.next`, and a build replacing it leaves its pages without their scripts.
 
 ## Versions
 

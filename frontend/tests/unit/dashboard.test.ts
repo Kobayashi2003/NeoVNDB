@@ -16,7 +16,9 @@ import {
   type Detail,
 } from '@/lib/dashboard';
 
-const today = new Date('2026-10-29T12:00:00Z');
+// Noon on the reader's clock, which is the clock the dashboard counts days
+// by: noon UTC is already the 30th east of UTC+12.
+const today = new Date(2026, 9, 29, 12);
 
 describe('dashboard', () => {
   it('holds each title once, at the day it first entered a list', () => {
@@ -24,7 +26,8 @@ describe('dashboard', () => {
       [
         [
           { id: 'v1', marked_at: '2026-03-02T10:00:00+08:00' },
-          { id: 'v2', marked_at: '2025-01-01T00:00:00+08:00' },
+          // Midsummer: a time near New Year falls in another year somewhere.
+          { id: 'v2', marked_at: '2025-06-15T12:00:00+08:00' },
         ],
         [{ id: 'v1', marked_at: '2024-07-07T00:00:00+08:00' }],
       ],
@@ -33,7 +36,7 @@ describe('dashboard', () => {
     // On the reader's clock, whatever offset the service wrote.
     expect(entries).toEqual([
       { id: 'v1', at: local('2024-07-07T00:00:00+08:00'), rating: null },
-      { id: 'v2', at: local('2025-01-01T00:00:00+08:00'), rating: 4 },
+      { id: 'v2', at: local('2025-06-15T12:00:00+08:00'), rating: 4 },
     ]);
     expect(entries[0].at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
     expect(years(entries)).toEqual([2025, 2024]);

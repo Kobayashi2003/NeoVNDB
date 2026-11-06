@@ -8,10 +8,11 @@ async function cookiePrefs(context: BrowserContext): Promise<Record<string, unkn
   return found ? (JSON.parse(decodeURIComponent(found.value)) as Record<string, unknown>) : {};
 }
 
+// A member: masked, the content levels are not the reader's to choose.
 test('a device signing in takes on the account’s preferences, and sends its changes', async ({
   page,
   context,
-  user,
+  member: user,
 }) => {
   expect((await user.call('PUT', '/me/prefs', { spoiler: 2, violence: 'violent' })).status).toBe(
     204,

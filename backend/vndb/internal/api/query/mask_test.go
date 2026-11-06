@@ -71,7 +71,7 @@ func TestRelateDropsWithheld(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := byID[17]["tags"].([]map[string]any)
-	if len(got) != 1 || got[0]["id"] != int32(2) {
+	if len(got) != 1 || got[0]["id"] != "g2" {
 		t.Errorf("tags %v, want only 2", got)
 	}
 	if len(mask.asked) != 1 || mask.asked[0] != "g" {

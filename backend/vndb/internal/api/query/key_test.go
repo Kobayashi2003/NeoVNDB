@@ -44,21 +44,30 @@ func TestCanonicalIgnoresOrder(t *testing.T) {
 
 // Anything that changes the answer has to change the key.
 func TestCanonicalSeparatesDifferentRequests(t *testing.T) {
-	base := canonical(t, "title", nil)
+	// Against a base with a filter and an f=, so that a value alone differing
+	// is a change: a key of the names only would pass "a filter" and fail here.
+	base := canonical(t, "title", func(r *Request) { r.Filters["lang"] = "en"; r.Filter = "olang=ja" })
 	for name, mutate := range map[string]func(*Request){
-		"a filter":       func(r *Request) { r.Filters["lang"] = "ja" },
-		"a filter value": func(r *Request) { r.Filters["lang"] = "en" },
-		"sort":           func(r *Request) { r.Sort = "rating" },
-		"reverse":        func(r *Request) { r.Reverse = true },
-		"page":           func(r *Request) { r.Page = 2 },
-		"limit":          func(r *Request) { r.Limit = 50 },
-		"a raised limit": func(r *Request) { r.Limits.MaxCost = 999 },
+		"another filter":   func(r *Request) { r.Filters["olang"] = "ja" },
+		"a filter's value": func(r *Request) { r.Filters["lang"] = "ja" },
+		"no filter":        func(r *Request) { delete(r.Filters, "lang") },
+		"f=":               func(r *Request) { r.Filter = "olang=en" },
+		"no f=":            func(r *Request) { r.Filter = "" },
+		"sort":             func(r *Request) { r.Sort = "rating" },
+		"reverse":          func(r *Request) { r.Reverse = true },
+		"page":             func(r *Request) { r.Page = 2 },
+		"limit":            func(r *Request) { r.Limit = 50 },
+		"a raised limit":   func(r *Request) { r.Limits.MaxCost = 999 },
 	} {
-		if got := canonical(t, "title", mutate); got == base {
+		if got := canonical(t, "title", func(r *Request) {
+			r.Filters["lang"] = "en"
+			r.Filter = "olang=ja"
+			mutate(r)
+		}); got == base {
 			t.Errorf("%s did not change the key", name)
 		}
 	}
-	if got := canonical(t, "title,olang", nil); got == base {
+	if got := canonical(t, "title,olang", func(r *Request) { r.Filters["lang"] = "en"; r.Filter = "olang=ja" }); got == base {
 		t.Error("a different field selection did not change the key")
 	}
 }

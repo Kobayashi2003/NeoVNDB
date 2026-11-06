@@ -8,7 +8,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 )
 
 // The crawler fetches only what is missing, thumbnails included, newest first;
@@ -117,8 +116,11 @@ func TestCrawlSharesAFetchWithAReader(t *testing.T) {
 		srv.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/img/ch/03/3.jpg", nil))
 		read <- rec.Code
 	}()
-	// Give the reader time to join the crawler's fetch, or to start its own.
-	time.Sleep(100 * time.Millisecond)
+	// The reader waits on the crawler's fetch before it is let finish; one
+	// that started its own instead shows as a second ask.
+	eventually(t, "the reader neither joined the fetch nor asked itself", func() bool {
+		return srv.flight.waiters(Ref{"ch", 3}.String()) == 1 || asked.Load() > 1
+	})
 	close(release)
 	if err := <-crawled; err != nil {
 		t.Fatal(err)

@@ -62,7 +62,7 @@ func TestCallerTrustsTheLastForwardedEntry(t *testing.T) {
 }
 
 func TestHumanWait(t *testing.T) {
-	for s, want := range map[int]string{1: "1 seconds", 59: "59 seconds", 60: "a minute", 121: "3 minutes"} {
+	for s, want := range map[int]string{1: "a second", 2: "2 seconds", 59: "59 seconds", 60: "a minute", 121: "3 minutes"} {
 		if got := humanWait(s); got != want {
 			t.Errorf("%d: %q, want %q", s, got, want)
 		}

@@ -29,9 +29,10 @@ test("a list orders by the reader's rating and shows it on the cards", async ({ 
   await expect(added).toHaveCount(0);
 });
 
+// A member: v1-v30 hold adult works, which a guest's pages leave out.
 test('a list ordered by a vndb field pages through it, not the whole list on every page', async ({
   page,
-  user,
+  member: user,
 }) => {
   const list = (await (
     await user.call('POST', '/collections', { type: 'v', name: 'Long' })
@@ -130,7 +131,8 @@ test('the page of lists and a list fade into each other without scaling', async 
   await expect(page).toHaveURL(/\/u$/);
 });
 
-test('a choice on a list is gathered across its pages', async ({ page, user }) => {
+// A member, as above: a guest's pages leave the adult works out.
+test('a choice on a list is gathered across its pages', async ({ page, member: user }) => {
   const list = (await (
     await user.call('POST', '/collections', { type: 'v', name: 'Paged' })
   ).json()) as { id: number };

@@ -39,8 +39,10 @@ func TestJobRunsOneAtATime(t *testing.T) {
 	}
 
 	close(release)
-	for j.State().Running {
-		time.Sleep(time.Millisecond)
+	for deadline := time.Now().Add(5 * time.Second); j.State().Running; time.Sleep(time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatal("the run did not finish once released")
+		}
 	}
 	s := j.State()
 	if s.Error != "upstream gone" || s.Result != 3 || s.FinishedAt == nil {

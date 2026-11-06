@@ -22,17 +22,18 @@ test('a guest is answered for all ages, and told why', async ({ page, request })
 
 test('a held-back entry says so to a guest, and is there for a member', async ({
   page,
-  user,
+  member,
   browser,
   baseURL,
 }) => {
-  void user;
+  void member;
   // The fixture signed this context in; a fresh one is a guest.
   const context = await browser.newContext({ baseURL });
   const guest = await context.newPage();
   await guest.goto(WITHHELD);
   await expect(guest.getByRole('heading', { name: 'Not shown in all-ages mode' })).toBeVisible();
-  await expect(guest.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+  // The page's own, not the header's, which comes back to wherever it is.
+  await expect(guest.getByRole('main').getByRole('link', { name: 'Sign in' })).toHaveAttribute(
     'href',
     `/login?next=${encodeURIComponent(WITHHELD)}`,
   );
@@ -45,8 +46,8 @@ test('a held-back entry says so to a guest, and is there for a member', async ({
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/沙耶|Saya/);
 });
 
-test('a guest counts fewer works than a member', async ({ request, page, user }) => {
-  void user;
+test('a guest counts fewer works than a member', async ({ request, page, member }) => {
+  void member;
   // `request` carries no cookie; the page's own does, the fixture's session.
   const asGuest = await (await request.get('/vndbserve/vn?fields=id&limit=1')).json();
   const asMember = await (await page.request.get('/vndbserve/vn?fields=id&limit=1')).json();
