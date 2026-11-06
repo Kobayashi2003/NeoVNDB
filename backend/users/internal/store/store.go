@@ -142,9 +142,22 @@ func (s *Store) PasswordHash(ctx context.Context, id int32) (string, error) {
 	return hash, err
 }
 
+// SetPassword changes the password and ends every session of the account, in
+// one transaction: whoever held a session under the old password is out the
+// moment the new one stands, never one without the other.
 func (s *Store) SetPassword(ctx context.Context, id int32, hash string) error {
-	_, err := s.pool.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE id = $1`, id, hash)
-	return err
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2 WHERE id = $1`, id, hash); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE user_id = $1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // Account is a user as the admin page lists them.
@@ -195,8 +208,12 @@ func (s *Store) SetAdmin(ctx context.Context, id int32, admin bool) error {
 }
 
 // DeleteUser removes the account; every other table cascades from it.
+// ErrNotFound if no such user.
 func (s *Store) DeleteUser(ctx context.Context, id int32) error {
-	_, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	tag, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
 	return err
 }
 

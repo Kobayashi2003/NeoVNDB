@@ -40,6 +40,9 @@ export function useShelfChoice(sourceKey: string, here: string[], changed: () =>
       changed();
     } catch (err) {
       setTrouble(errorText(err));
+      // A long choice goes in batches, and those before the one that failed
+      // went through: the page should show them.
+      changed();
     }
     setBusy(false);
   }

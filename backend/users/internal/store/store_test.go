@@ -339,6 +339,28 @@ func TestRatingOrders(t *testing.T) {
 }
 
 // Deleting an account takes everything of theirs and nothing of anyone else's.
+// A new password ends every session of the account in the same step.
+func TestSetPasswordEndsSessions(t *testing.T) {
+	s, ctx := open(t), context.Background()
+	u := user(t, s, "reader")
+	for _, token := range []string{"token-a", "token-b"} {
+		if err := s.CreateSession(ctx, token, u.ID, time.Hour); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.SetPassword(ctx, u.ID, "new-hash"); err != nil {
+		t.Fatal(err)
+	}
+	if hash, _ := s.PasswordHash(ctx, u.ID); hash != "new-hash" {
+		t.Errorf("hash %q after the change", hash)
+	}
+	for _, token := range []string{"token-a", "token-b"} {
+		if _, _, err := s.Session(ctx, token); !errors.Is(err, ErrNotFound) {
+			t.Errorf("%s still signs in: %v", token, err)
+		}
+	}
+}
+
 func TestDeleteUser(t *testing.T) {
 	s, ctx := open(t), context.Background()
 	gone, kept := user(t, s, "gone"), user(t, s, "kept")
@@ -350,6 +372,9 @@ func TestDeleteUser(t *testing.T) {
 
 	if err := s.DeleteUser(ctx, gone.ID); err != nil {
 		t.Fatal(err)
+	}
+	if err := s.DeleteUser(ctx, gone.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("deleting it again: %v, want ErrNotFound", err)
 	}
 	for table, want := range map[string]int{"users": 1, "sessions": 1, "collections": len(kinds), "marks": 1, "ratings": 1} {
 		var n int

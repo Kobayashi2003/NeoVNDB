@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import * as FIELDS from '@/lib/fields';
 import { LIST } from '@/lib/list';
+import { BULK_BATCH } from '@/lib/user';
 
 const sample = readFileSync(
   fileURLToPath(new URL('../../../backend/vndb/.env.sample', import.meta.url)),
@@ -18,6 +19,20 @@ const asked: [string, string][] = [
   ...Object.entries(FIELDS).map(([name, v]) => [name, String(v)] as [string, string]),
   ...Object.entries(LIST).map(([type, spec]) => [`LIST.${type}`, spec.fields] as [string, string]),
 ];
+
+// The user service's own sample, for the bulk requests a choice is sent in.
+describe('a bulk request', () => {
+  const users = readFileSync(
+    fileURLToPath(new URL('../../../backend/users/.env.sample', import.meta.url)),
+    'utf8',
+  );
+  const most = Number(/^NEOVNDB_USERS_MAX_PAGE_SIZE=(\d+)/m.exec(users)?.[1]);
+
+  it('names no more than a deployment takes at once', () => {
+    expect(most).toBeGreaterThan(0);
+    expect(BULK_BATCH).toBeLessThanOrEqual(most);
+  });
+});
 
 describe('the fields each page asks for', () => {
   const depth = ceiling('NEOVNDB_MAX_FIELD_DEPTH');

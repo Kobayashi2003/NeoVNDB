@@ -152,7 +152,9 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request, userID int32) err
 	return nil
 }
 
-func (s *Server) logout(w http.ResponseWriter, r *http.Request, _ int32) {
+// logout asks for no live session: signing out of one that has already
+// ended still has to clear its cookie, which only the service can.
+func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	if token := auth.TokenFrom(r, s.cfg.SecureCookie); token != "" {
 		if err := s.store.DeleteSession(r.Context(), token); err != nil {
 			s.oops(w, "ending session", err)
@@ -182,6 +184,7 @@ func (s *Server) whoIs(w http.ResponseWriter, r *http.Request) {
 	}
 	userID, _, err := s.store.Session(r.Context(), token)
 	if errors.Is(err, store.ErrNotFound) {
+		auth.ClearCookie(w, s.cfg.SecureCookie)
 		send(w, http.StatusOK, map[string]any{"user": nil})
 		return
 	}
@@ -226,13 +229,10 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, userID i
 		s.oops(w, "hashing password", err)
 		return
 	}
+	// Ends every session, this one included, with the change; then a fresh
+	// one starts here.
 	if err := s.store.SetPassword(r.Context(), userID, next); err != nil {
 		s.oops(w, "saving password", err)
-		return
-	}
-	// End every session, this one included, then start a fresh one here.
-	if err := s.store.DeleteSessionsOf(r.Context(), userID); err != nil {
-		s.oops(w, "ending sessions", err)
 		return
 	}
 	if err := s.start(w, r, userID); err != nil {
@@ -252,7 +252,8 @@ func (s *Server) deleteAccount(w http.ResponseWriter, r *http.Request, userID in
 	if !ok || !s.confirm(w, r, userID, body.Password) {
 		return
 	}
-	if err := s.store.DeleteUser(r.Context(), userID); err != nil {
+	// Not found only if an administrator deleted it a moment ago: gone either way.
+	if err := s.store.DeleteUser(r.Context(), userID); err != nil && !errors.Is(err, store.ErrNotFound) {
 		s.oops(w, "deleting account", err)
 		return
 	}

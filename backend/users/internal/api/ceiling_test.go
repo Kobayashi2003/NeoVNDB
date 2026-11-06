@@ -146,6 +146,80 @@ func TestSignInNamesDoNotSpendAnotherAccountsTries(t *testing.T) {
 	}
 }
 
+// An id named twice in one bulk request counts once, rather than failing the
+// whole statement with a 500.
+func TestBulkNamesEachOnce(t *testing.T) {
+	h := server(t, func(*config.Config) {})
+	session := register(t, h, "reader")
+
+	w := call(h, "POST", "/ratings/set", `{"items":["v1","v1","v2"],"rating":4}`, session)
+	var set struct{ Changed int }
+	if err := json.NewDecoder(w.Body).Decode(&set); w.Code != http.StatusOK || err != nil || set.Changed != 2 {
+		t.Errorf("rating v1 twice and v2: %d, changed %d", w.Code, set.Changed)
+	}
+
+	w = call(h, "GET", "/collections?type=v", "", session)
+	var lists struct{ Results []struct{ ID int32 } }
+	if err := json.NewDecoder(w.Body).Decode(&lists); err != nil || len(lists.Results) == 0 {
+		t.Fatalf("lists: %v %s", err, w.Body)
+	}
+	add := fmt.Sprintf("/collections/%d/marks/add", lists.Results[0].ID)
+	if w := call(h, "POST", add, `{"items":["v3","v3"]}`, session); w.Code != http.StatusOK {
+		t.Errorf("adding v3 twice: %d %s", w.Code, w.Body)
+	}
+}
+
+// A cookie for a session that has ended is cleared wherever it turns up, and
+// signing out with one succeeds: the browser cannot clear an HttpOnly cookie,
+// and while it is sent the edge asks the service about it on every request.
+func TestEndedSessionCookieIsCleared(t *testing.T) {
+	h := server(t, func(*config.Config) {})
+	session := register(t, h, "reader")
+	if w := call(h, "POST", "/logout-everywhere", "", session); w.Code != http.StatusNoContent {
+		t.Fatalf("ending the session: %d", w.Code)
+	}
+	cleared := func(w *httptest.ResponseRecorder) bool {
+		for _, c := range w.Result().Cookies() {
+			if c.Name == "neovndb_session" && c.MaxAge < 0 {
+				return true
+			}
+		}
+		return false
+	}
+	for _, c := range []struct {
+		method, path string
+		want         int
+	}{
+		{"POST", "/logout", http.StatusNoContent},
+		{"GET", "/me", http.StatusUnauthorized},
+		{"GET", "/session", http.StatusOK},
+	} {
+		if w := call(h, c.method, c.path, "", session); w.Code != c.want || !cleared(w) {
+			t.Errorf("%s %s with an ended session: %d, cookie cleared %v", c.method, c.path, w.Code, cleared(w))
+		}
+	}
+}
+
+// An administrator acting on an account that does not exist is told so, not
+// answered as if it had worked.
+func TestAdminOnNoSuchAccount(t *testing.T) {
+	h := server(t, func(*config.Config) {})
+	session := register(t, h, "keeper")
+	pool, err := pgxpool.New(context.Background(), os.Getenv("NEOVNDB_USERS_TEST_DB_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := pool.Exec(context.Background(), `UPDATE users SET is_admin = true WHERE username = 'keeper'`); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range [][2]string{{"DELETE", "/admin/users/999"}, {"POST", "/admin/users/999/logout"}} {
+		if w := call(h, c[0], c[1], "", session); w.Code != http.StatusNotFound {
+			t.Errorf("%s %s: %d, want 404", c[0], c[1], w.Code)
+		}
+	}
+}
+
 func TestSignUpCeiling(t *testing.T) {
 	h := server(t, func(c *config.Config) { c.SignUpTries = 1 })
 	register(t, h, "first")

@@ -48,7 +48,7 @@ func run(ctx context.Context) error {
 	switch {
 	case len(os.Args) == 2 && os.Args[1] == "backup":
 		path, err := backup.Run(ctx, dumps, time.Now())
-		if err == nil {
+		if path != "" {
 			log.Info("backed up", "file", path)
 		}
 		return err
@@ -128,10 +128,14 @@ func backUpIfDue(ctx context.Context, o backup.Options, every time.Duration, log
 	if !due {
 		return
 	}
-	if path, err := backup.Run(ctx, o, time.Now()); err != nil {
+	path, err := backup.Run(ctx, o, time.Now())
+	if path == "" {
 		log.Error("backing up", "err", err)
-	} else {
-		log.Info("backed up", "file", path)
+		return
+	}
+	log.Info("backed up", "file", path)
+	if err != nil {
+		log.Warn("backed up, but", "err", err)
 	}
 }
 

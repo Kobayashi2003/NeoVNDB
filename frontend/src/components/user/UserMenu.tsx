@@ -17,7 +17,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserError } from '@/lib/user';
+import { errorText, UserError } from '@/lib/user';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
@@ -80,18 +80,27 @@ function SignedIn() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { box } = useMenu(open, setOpen);
+  const [trouble, setTrouble] = useState<string | null>(null);
+  const { box } = useMenu(open, o => {
+    setOpen(o);
+    setTrouble(null);
+  });
 
   async function leave(everywhere: boolean) {
-    setOpen(false);
+    setTrouble(null);
     try {
       await (everywhere ? session.signOutEverywhere() : session.signOut());
     } catch (err) {
       // A 401 means the session is already gone. Any other failure keeps the
-      // signed-in bar, since the cookie is still live.
-      if (!(err instanceof UserError && err.status === 401)) return;
+      // signed-in bar, since the cookie is still live, and the menu open to
+      // say why: closed without a word, it looked as if nothing was tried.
+      if (!(err instanceof UserError && err.status === 401)) {
+        setTrouble(errorText(err));
+        return;
+      }
       session.forget();
     }
+    setOpen(false);
     // Every other page is still worth reading signed out. This one is about
     // an account the reader no longer has here.
     if (pathname === '/account') router.push('/');
@@ -101,7 +110,10 @@ function SignedIn() {
     <div ref={box} className="relative shrink-0">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => {
+          setOpen(o => !o);
+          setTrouble(null);
+        }}
         aria-expanded={open}
         // One cap at every width. When the bar runs out of room it is the
         // browse control beside this that gives way, not the name: that label
@@ -153,6 +165,11 @@ function SignedIn() {
             <MonitorSmartphone className="icon-text h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
             Sign out everywhere
           </button>
+          {trouble && (
+            <p role="alert" className="max-w-56 px-3 py-1.5 text-xs text-red-400">
+              {trouble}
+            </p>
+          )}
         </MenuPanel>
       )}
     </div>

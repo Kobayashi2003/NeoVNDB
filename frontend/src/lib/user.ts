@@ -133,16 +133,40 @@ export const removeMark = (list: number, item: string) =>
 export const items = (list: number, order: OwnOrder) =>
   call<{ items: Mark[]; count: number }>('GET', `/collections/${list}/items?${ordered(order)}`);
 
+/** The most one bulk request may name: the user service's
+ *  NEOVNDB_USERS_MAX_PAGE_SIZE as its sample sets it (a checkout lifts it). */
+export const BULK_BATCH = 100;
+
+/** A choice gathered across pages can name more than one request may, so it
+ *  goes a batch at a time. A batch that fails stops the rest; those before it
+ *  stand. */
+async function inBatches(
+  items: string[],
+  send: (batch: string[]) => Promise<{ changed: number }>,
+): Promise<{ changed: number }> {
+  let changed = 0;
+  for (let i = 0; i < items.length; i += BULK_BATCH) {
+    changed += (await send(items.slice(i, i + BULK_BATCH))).changed;
+  }
+  return { changed };
+}
+
 /** `changed` counts only what was new; the rest were already there. */
 export const addMarks = (list: number, items: string[]) =>
-  call<{ changed: number }>('POST', `/collections/${list}/marks/add`, { items });
+  inBatches(items, batch =>
+    call<{ changed: number }>('POST', `/collections/${list}/marks/add`, { items: batch }),
+  );
 
 /** `changed` can be less than asked when the page is out of date. */
 export const removeMarks = (list: number, items: string[]) =>
-  call<{ changed: number }>('POST', `/collections/${list}/marks/remove`, { items });
+  inBatches(items, batch =>
+    call<{ changed: number }>('POST', `/collections/${list}/marks/remove`, { items: batch }),
+  );
 
 export const moveMarks = (from: number, to: number, items: string[]) =>
-  call<{ changed: number }>('POST', `/collections/${from}/marks/move`, { items, to });
+  inBatches(items, batch =>
+    call<{ changed: number }>('POST', `/collections/${from}/marks/move`, { items: batch, to }),
+  );
 
 /** 1-5 or null; per item, not per list. */
 export const rating = (item: string) =>
@@ -176,10 +200,12 @@ export const ratingCounts = () =>
 
 /** One rating for all of them, rated before or not; all of one type. */
 export const setRatings = (items: string[], value: number) =>
-  call<{ changed: number }>('POST', '/ratings/set', { items, rating: value });
+  inBatches(items, batch =>
+    call<{ changed: number }>('POST', '/ratings/set', { items: batch, rating: value }),
+  );
 
 export const clearRatings = (items: string[]) =>
-  call<{ changed: number }>('POST', '/ratings/clear', { items });
+  inBatches(items, batch => call<{ changed: number }>('POST', '/ratings/clear', { items: batch }));
 
 /** The preferences kept on the account, as some device last sent them; null
  *  until one has. Read them with prefsFrom, which takes any shape. */

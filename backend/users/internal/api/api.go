@@ -62,7 +62,7 @@ func (s *Server) Routes() http.Handler {
 
 	mux.HandleFunc("POST /register", s.register)
 	mux.HandleFunc("POST /login", s.login)
-	mux.HandleFunc("POST /logout", s.signedIn(s.logout))
+	mux.HandleFunc("POST /logout", s.logout)
 	mux.HandleFunc("POST /logout-everywhere", s.signedIn(s.logoutEverywhere))
 	mux.HandleFunc("GET /session", s.whoIs)
 	mux.HandleFunc("GET /me", s.signedIn(s.me))
@@ -135,7 +135,9 @@ func (s *Server) adminOnly(next func(http.ResponseWriter, *http.Request, int32))
 	}
 }
 
-// session reads who is asking, answering 401 itself when nobody is.
+// session reads who is asking, answering 401 itself when nobody is. A cookie
+// for a session that has ended is cleared on the way: the browser cannot
+// (it is HttpOnly), and while it is sent the edge asks about it every time.
 func (s *Server) session(w http.ResponseWriter, r *http.Request) (userID int32, isAdmin, ok bool) {
 	token := auth.TokenFrom(r, s.cfg.SecureCookie)
 	if token == "" {
@@ -144,6 +146,7 @@ func (s *Server) session(w http.ResponseWriter, r *http.Request) (userID int32, 
 	}
 	userID, isAdmin, err := s.store.Session(r.Context(), token)
 	if errors.Is(err, store.ErrNotFound) {
+		auth.ClearCookie(w, s.cfg.SecureCookie)
 		fail(w, http.StatusUnauthorized, "Not signed in.")
 		return 0, false, false
 	}
@@ -237,7 +240,8 @@ func positive(w http.ResponseWriter, r *http.Request, name string, fallback, max
 }
 
 // ids parses the items of a bulk request: at least one, at most a page, and
-// all of the first one's type.
+// all of the first one's type. Each once, in the order first named: one
+// statement may not upsert a row twice, and Postgres refuses it whole.
 func (s *Server) ids(w http.ResponseWriter, raw []string) (string, []int32, bool) {
 	switch {
 	case len(raw) == 0:
@@ -249,6 +253,7 @@ func (s *Server) ids(w http.ResponseWriter, raw []string) (string, []int32, bool
 	}
 	var first string
 	nums := make([]int32, 0, len(raw))
+	seen := make(map[int32]bool, len(raw))
 	for _, id := range raw {
 		kind, num, valid := parseID(id)
 		if !valid {
@@ -261,7 +266,10 @@ func (s *Server) ids(w http.ResponseWriter, raw []string) (string, []int32, bool
 			fail(w, http.StatusBadRequest, "Those are not all the same kind of thing.")
 			return "", nil, false
 		}
-		nums = append(nums, num)
+		if !seen[num] {
+			seen[num] = true
+			nums = append(nums, num)
+		}
 	}
 	return first, nums, true
 }

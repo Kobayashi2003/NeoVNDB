@@ -8,6 +8,7 @@ import { ViewMenu } from '@/components/layout/ViewMenu';
 import { SortMenu } from '@/components/results/SortMenu';
 import { LIST } from '@/lib/list';
 import { PREFS_COOKIE } from '@/lib/prefs';
+import { addMarks, BULK_BATCH } from '@/lib/user';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -34,6 +35,24 @@ async function signIn() {
   await userEvent.type(screen.getByLabelText('Password'), 'test-only-value');
   await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 }
+
+describe('a choice gathered across pages', () => {
+  it('goes to the service a batch at a time, the counts added up', async () => {
+    const sent: number[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_: string, init?: RequestInit) => {
+        const { items } = JSON.parse(String(init?.body)) as { items: string[] };
+        sent.push(items.length);
+        return new Response(JSON.stringify({ changed: items.length }), { status: 200 });
+      }),
+    );
+    const ids = Array.from({ length: 250 }, (_, i) => `v${i + 1}`);
+    const { changed } = await addMarks(1, ids);
+    expect(sent).toEqual([BULK_BATCH, BULK_BATCH, 50]);
+    expect(changed).toBe(250);
+  });
+});
 
 describe('AuthForm', () => {
   it('goes back to where the reader came from', async () => {

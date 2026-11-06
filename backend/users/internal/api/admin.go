@@ -55,9 +55,17 @@ func (s *Server) setAdmin(w http.ResponseWriter, r *http.Request, self int32) {
 }
 
 func (s *Server) signOutUser(w http.ResponseWriter, r *http.Request, self int32) {
-	if id, ok := s.target(w, r, self); ok {
-		s.onAccount(w, "signing a user out", s.store.DeleteSessionsOf(r.Context(), id))
+	id, ok := s.target(w, r, self)
+	if !ok {
+		return
 	}
+	// Ending no sessions is no error elsewhere, so whether there is such an
+	// account is asked first.
+	if _, err := s.store.UserByID(r.Context(), id); err != nil {
+		s.onAccount(w, "signing a user out", err)
+		return
+	}
+	s.onAccount(w, "signing a user out", s.store.DeleteSessionsOf(r.Context(), id))
 }
 
 func (s *Server) removeUser(w http.ResponseWriter, r *http.Request, self int32) {
@@ -94,9 +102,13 @@ func (s *Server) backups(w http.ResponseWriter, r *http.Request, _ int32) {
 // backUp dumps now. The user database is small, so the answer waits for it.
 func (s *Server) backUp(w http.ResponseWriter, r *http.Request, _ int32) {
 	path, err := backup.Run(r.Context(), backup.OptionsFrom(s.cfg), time.Now())
-	if err != nil {
+	if path == "" {
 		s.oops(w, "backing up", err)
 		return
+	}
+	// Made, whatever came of the pruning: the page lists it either way.
+	if err != nil {
+		s.log.Warn("backed up, but", "file", path, "err", err)
 	}
 	s.log.Info("backed up", "file", path, "by", "admin page")
 	s.backups(w, r, 0)

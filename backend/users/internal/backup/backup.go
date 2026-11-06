@@ -42,7 +42,9 @@ func OptionsFrom(cfg *config.Config) Options {
 var running sync.Mutex
 
 // Run writes one dump and prunes to Keep. The dump goes to a temporary name
-// first, so a failed or interrupted run never looks like a backup.
+// first, so a failed or interrupted run never looks like a backup. A path is
+// a backup made: with an error beside it, only the older copies could not be
+// pruned, and the backup stands.
 func Run(ctx context.Context, o Options, now time.Time) (string, error) {
 	running.Lock()
 	defer running.Unlock()
@@ -61,7 +63,10 @@ func Run(ctx context.Context, o Options, now time.Time) (string, error) {
 	if err := os.Rename(partial, path); err != nil {
 		return "", err
 	}
-	return path, prune(o.Dir, o.Keep)
+	if err := prune(o.Dir, o.Keep); err != nil {
+		return path, fmt.Errorf("pruning older backups: %w", err)
+	}
+	return path, nil
 }
 
 // Due reports whether the newest backup is older than every, or missing.
@@ -70,10 +75,7 @@ func Due(dir string, every time.Duration, now time.Time) (bool, error) {
 	if err != nil || len(files) == 0 {
 		return err == nil, err
 	}
-	newest, err := taken(files[len(files)-1])
-	if err != nil {
-		return true, nil
-	}
+	newest, _ := taken(files[len(files)-1]) // list keeps only names that parse
 	return now.Sub(newest) >= every, nil
 }
 
@@ -123,7 +125,10 @@ func prune(dir string, keep int) error {
 	return nil
 }
 
-// list returns this package's finished dumps, oldest first.
+// list returns this package's finished dumps, oldest first: only names it
+// writes, with a time in them. Any other users-*.dump sorts after every
+// time, would read as the newest backup and, having no time, as always due,
+// and each run would then prune a real backup to keep it.
 func list(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
@@ -135,7 +140,9 @@ func list(dir string) ([]string, error) {
 	var out []string
 	for _, e := range entries {
 		if n := e.Name(); !e.IsDir() && strings.HasPrefix(n, prefix) && strings.HasSuffix(n, suffix) {
-			out = append(out, n)
+			if _, err := taken(n); err == nil {
+				out = append(out, n)
+			}
 		}
 	}
 	sort.Strings(out)

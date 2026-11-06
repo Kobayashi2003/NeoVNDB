@@ -318,7 +318,12 @@ export function Mirror() {
                 rows={[
                   [
                     'Schedule',
-                    `when the newest is older than ${span(saved.value.every)} (checked every ${span(saved.value.check_every)}); keeps ${saved.value.keep || 'all'}`,
+                    // What is kept applies to a backup made with the button too.
+                    `${
+                      off(saved.value.every)
+                        ? 'off'
+                        : `when the newest is older than ${span(saved.value.every)} (checked every ${span(saved.value.check_every)})`
+                    }; keeps ${saved.value.keep || 'all'}`,
                   ],
                 ]}
               />
