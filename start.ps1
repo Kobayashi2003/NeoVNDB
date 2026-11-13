@@ -108,6 +108,9 @@ $vndbDir  = Join-Path $root 'backend/vndb'
 $usersDir = Join-Path $root 'backend/users'
 $webDir   = Join-Path $root 'frontend'
 $edgeDir  = Join-Path $root 'edge'
+# Each service logs beside itself unless $env:NEOVNDB_LOG_DIR gathers them in one
+# folder; a relative path is relative to this folder.
+$logDir = if ($env:NEOVNDB_LOG_DIR) { [IO.Path]::GetFullPath($env:NEOVNDB_LOG_DIR, $root) }
 
 $ports = @{
     api    = Get-EnvPort $vndbDir  'NEOVNDB_PORT'        17031
@@ -266,16 +269,18 @@ function Start-Child {
         [string[]]$Arguments,
         [string]$LogStem
     )
+    $logAt = $logDir ?? $Dir
+    New-Item -ItemType Directory -Force -Path $logAt | Out-Null
     $proc = Start-Process -FilePath $File -ArgumentList $Arguments `
         -WorkingDirectory $Dir -PassThru -WindowStyle Hidden `
-        -RedirectStandardOutput (Join-Path $Dir "$LogStem.out.log") `
-        -RedirectStandardError  (Join-Path $Dir "$LogStem.err.log")
+        -RedirectStandardOutput (Join-Path $logAt "$LogStem.out.log") `
+        -RedirectStandardError  (Join-Path $logAt "$LogStem.err.log")
     $when = try { $proc.StartTime.ToString('o') } catch { '' }
     $started.Add([pscustomobject]@{
         Name      = $Name
         ProcessId = $proc.Id
         StartTime = $when
-        Log       = Join-Path $Dir "$LogStem.err.log"
+        Log       = Join-Path $logAt "$LogStem.err.log"
     })
     return $proc
 }
@@ -283,7 +288,9 @@ function Start-Child {
 # Next runs straight through node rather than a pnpm shim, so Stop-Tree reaches
 # the server itself.
 $nextBin = Join-Path $webDir 'node_modules/next/dist/bin/next'
-$webArgs = @($nextBin, ($builtWeb ? 'start' : 'dev'), '-p', "$($ports.web)")
+# On the loopback: only the edge faces outward, and Next's default is every
+# address.
+$webArgs = @($nextBin, ($builtWeb ? 'start' : 'dev'), '-H', '127.0.0.1', '-p', "$($ports.web)")
 
 Start-Child 'api'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('serve')  'api'    | Out-Null
 Start-Child 'img'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('images') 'img'    | Out-Null

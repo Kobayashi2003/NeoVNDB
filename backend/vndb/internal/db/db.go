@@ -64,8 +64,24 @@ func Open(ctx context.Context, cfg *config.Config) (*Store, error) {
 	return store, nil
 }
 
+// transLock queues the processes applying the trans schema: CREATE ... IF NOT
+// EXISTS is not safe run twice at once, and serve and images start together,
+// so on a fresh database one of them failed to start.
+const transLock = 17031
+
 func (s *Store) ensureTrans(ctx context.Context) error {
-	if _, err := s.pool.Exec(ctx, trans.Schema()); err != nil {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("apply trans schema: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }() // a no-op once committed
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, transLock); err != nil {
+		return fmt.Errorf("apply trans schema: %w", err)
+	}
+	if _, err := tx.Exec(ctx, trans.Schema()); err != nil {
+		return fmt.Errorf("apply trans schema: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("apply trans schema: %w", err)
 	}
 	return nil

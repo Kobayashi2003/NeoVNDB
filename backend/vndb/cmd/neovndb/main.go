@@ -15,6 +15,7 @@ import (
 
 	"github.com/kobayashi/neovndb/internal/config"
 	"github.com/kobayashi/neovndb/internal/db"
+	"github.com/kobayashi/neovndb/internal/netproxy"
 	"github.com/kobayashi/neovndb/internal/settings"
 )
 
@@ -50,6 +51,7 @@ func main() {
 }
 
 func run() error {
+	netproxy.Install()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
