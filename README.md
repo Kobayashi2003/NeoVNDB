@@ -262,6 +262,15 @@ throttled line.
 
 ## Docs
 
-`docs/` holds the design and structure notes, in Chinese:
-`后端代码结构.md` (backend structure), `前端代码结构.md` (frontend structure),
-`已实现功能.md` (what is done) and `拟实现功能.md` (what is planned or declined).
+`docs/` holds the design and structure notes, in Chinese. Start with
+`总览.md` (the overview, and a map of the rest):
+
+| File | What it covers |
+| --- | --- |
+| `总览.md` | the system's shape, data flow and standing constraints |
+| `功能.md` | what it does now |
+| `计划.md` | what is not done yet, deferred or declined, and why things are as they are |
+| `后端代码结构.md` / `前端代码结构.md` | file trees and what each file and function does |
+| `测试.md` | the test suites: how to run them, what they need, what they cover |
+| `运维.md` | what to do when something goes wrong: updates, the guard, rollback, the all-ages list, backups, logs |
+| `代码审查.md` | the full review of November 2026 (closed) |
