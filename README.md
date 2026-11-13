@@ -243,8 +243,9 @@ in, need `NEOVNDB_USERS_TEST_DB_URL` pointing at a database whose name ends in
 `_test`. The Go tests empty its tables before each test; the end-to-end tests
 leave the `e2e_…` accounts they register. Without it they skip. The read API's
 database tests (the all-ages rules, a full generation built and served, the
-import's copy) need `NEOVNDB_TEST_DB_URL`, likewise a `_test` database (the
-user service's will do): each works in schemas of its own and drops them.
+import's copy) need `NEOVNDB_TEST_DB_URL`, likewise a `_test` database: each
+works in schemas of its own and drops them. One database, `neovndb_test`,
+serves both; it holds nothing that is not made again on the next run.
 
 Against the running site, `pnpm test:e2e` skips the tests that need the read
 API to answer a test account as a member: that site's edge asks the real user
