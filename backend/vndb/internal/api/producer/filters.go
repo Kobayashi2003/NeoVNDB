@@ -12,15 +12,16 @@ var filters = map[string]query.FilterFunc{
 	"search":      query.SearchFilter("p", "p"),
 	"description": query.TextFilter("p", "p"),
 
-	"relation": query.RelatedID(vndb.TypeProducer, `EXISTS (
-		SELECT 1 FROM producers_relations pr WHERE pr.id = p.id AND pr.pid = %s)`),
-	"release": query.RelatedID(vndb.TypeRelease, `EXISTS (
-		SELECT 1 FROM releases_producers rp WHERE rp.pid = p.id AND rp.id = %s)`),
+	"relation": query.Relation{Type: vndb.TypeProducer,
+		From: "producers_relations pr", Owner: "pr.id = p.id", ID: "pr.pid",
+		Join: "producers p ON p.id = pr.pid"}.Filter(),
+	"release": query.Relation{Type: vndb.TypeRelease,
+		From: "releases_producers rp", Owner: "rp.pid = p.id", ID: "rp.id",
+		Join: "releases r ON r.id = rp.id"}.Filter(),
 	// A producer is on a VN through any of that VN's releases.
-	"vn": query.RelatedID(vndb.TypeVN, `EXISTS (
-		SELECT 1 FROM releases_vn rv
-		  JOIN releases_producers rp ON rp.id = rv.id
-		 WHERE rp.pid = p.id AND rv.vid = %s)`),
+	"vn": query.Relation{Type: vndb.TypeVN,
+		From: "releases_vn rv JOIN releases_producers rp ON rp.id = rv.id", Owner: "rp.pid = p.id", ID: "rv.vid",
+		Join: "vn ON vn.id = rv.vid"}.Filter(),
 }
 
 var sorts = map[string]query.Sort{

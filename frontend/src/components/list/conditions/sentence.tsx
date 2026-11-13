@@ -2,17 +2,19 @@
 'use client';
 
 import { Fragment } from 'react';
+import { ChevronRight } from 'lucide-react';
 import {
   type Condition,
+  conditionOf,
   nestable,
   OP_LABEL,
   readCredit,
   readScored,
   relatedType,
 } from '@/lib/conditions';
-import { type Group, type Leaf, switchAt } from '@/lib/expr';
+import { type Group, type Leaf, type Node, switchAt } from '@/lib/expr';
 import { cn } from '@/lib/utils';
-import { Popover, useBuilder } from './context';
+import { Popover, type Step, useBuilder } from './context';
 import { useEntityName } from './entity';
 import { AddMenu, ModeMenu, TypeIcon } from './menus';
 import { Editor } from './editor';
@@ -20,21 +22,79 @@ import { useCondition } from './useCondition';
 import { listed, values } from './text';
 import { RemoveButton } from './parts';
 
-export function Flow({ type, node, top = false }: { type: string; node: Group; top?: boolean }) {
+/** A group's items and its add button. `trail` runs from the outermost level
+ *  to this group's, whose step names this group. */
+export function Flow({
+  type,
+  node,
+  trail,
+  top = false,
+}: {
+  type: string;
+  node: Group;
+  trail: Step[];
+  top?: boolean;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {node.items.map((item, i) => (
         <span key={item.key} className="inline-flex min-w-0 max-w-full items-center gap-1.5">
           {i > 0 && <Connector node={node} at={i} />}
           {item.kind === 'group' ? (
-            <SubGroup type={type} node={item} />
+            <SubGroup type={type} node={item} trail={trail} />
           ) : (
-            <Chip type={type} node={item} />
+            <Chip type={type} node={item} trail={trail} />
           )}
         </span>
       ))}
-      <AddMenu type={type} node={node} top={top} />
+      <AddMenu node={node} top={top} trail={trail} />
     </div>
+  );
+}
+
+/** A condition on another type and the conditions inside it, one level of
+ *  the path down from the leaf before it. */
+interface Link {
+  type: string;
+  leaf: Leaf;
+  cond: Condition;
+  /** The type its conditions are about. */
+  inside: string;
+  value: Group;
+}
+
+function linkOf(type: string, node: Node | undefined): Link | null {
+  if (node?.kind !== 'leaf' || typeof node.value === 'string') return null;
+  const cond = conditionOf(type, node.name);
+  const inside = nestable(cond);
+  return cond && inside ? { type, leaf: node, cond, inside, value: node.value } : null;
+}
+
+/** A condition on another type, and each one alone inside it: release that
+ *  has a producer that has a related producer that... Shown as one block
+ *  headed by the path, rather than a block in a block for every level with
+ *  nothing else in it. Only "has one with" chains, with no level negated: a
+ *  "none" or a "not" is kept in sight as a block of its own. */
+function chainOf(type: string, node: Leaf): Link[] {
+  const first = linkOf(type, node);
+  if (!first) return [];
+  const links = [first];
+  for (;;) {
+    const last = links[links.length - 1];
+    if (last.leaf.op !== '=' || last.value.not || last.value.items.length !== 1) break;
+    const next = linkOf(last.inside, last.value.items[0]);
+    if (!next || next.leaf.op !== '=') break;
+    links.push(next);
+  }
+  return links;
+}
+
+/** A block of conditions on another type. Only the outermost is filled: the
+ *  same tint laid over itself grew lighter with every level. */
+function blockClass(trail: Step[]): string {
+  return cn(
+    'inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5 rounded-2xl py-0.5 pr-1 text-xs text-sky-200 ring-1 ring-inset ring-sky-400/25',
+    trail.length === 1 && 'bg-sky-400/[0.07]',
   );
 }
 
@@ -53,26 +113,34 @@ function Connector({ node, at }: { node: Group; at: number }) {
   );
 }
 
-function SubGroup({ type, node }: { type: string; node: Group }) {
+function SubGroup({ type, node, trail }: { type: string; node: Group; trail: Step[] }) {
   const { edit } = useBuilder();
+  // The same level, in a group of its own: added to, it takes the condition.
+  const here = [...trail.slice(0, -1), { ...trail[trail.length - 1], group: node.key }];
   return (
     <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5 rounded-2xl bg-white/[0.04] px-1.5 py-1 ring-1 ring-inset ring-white/10">
       <ModeMenu node={node} onRemove={() => edit(node.key, () => null, null)} />
       <span className="text-2xs text-muted">of</span>
-      <Flow type={type} node={node} />
+      <Flow type={type} node={node} trail={here} />
     </span>
   );
 }
 
-function Chip({ type, node }: { type: string; node: Leaf }) {
-  const { edit } = useBuilder();
-  const cond = useCondition(type, node.name);
-  const nested = typeof node.value !== 'string' ? node.value : null;
-  const remove = (
-    <RemoveButton label="Remove condition" onClick={() => edit(node.key, () => null, null)} />
-  );
-
-  const editor = (
+/** A condition's name and what it says, opening its editor. In a path, a
+ *  level before the last shows its name alone. */
+function LeafEditor({
+  type,
+  cond,
+  node,
+  named = false,
+}: {
+  type: string;
+  cond: Condition | undefined;
+  node: Leaf;
+  named?: boolean;
+}) {
+  const nested = typeof node.value !== 'string';
+  return (
     <Popover
       id={`leaf${node.key}`}
       wide
@@ -82,8 +150,8 @@ function Chip({ type, node }: { type: string; node: Leaf }) {
           onClick={toggle}
           aria-expanded={open}
           className={cn(
-            'inline-flex min-w-0 max-w-full items-center gap-1 py-1 pl-2.5 text-left',
-            nested ? 'pr-1.5' : 'pr-0.5',
+            'inline-flex min-w-0 max-w-full items-center gap-1 py-1 text-left',
+            named ? 'px-1' : nested ? 'pl-2.5 pr-1.5' : 'pl-2.5 pr-0.5',
           )}
         >
           {relatedType(cond) && (
@@ -93,40 +161,62 @@ function Chip({ type, node }: { type: string; node: Leaf }) {
             />
           )}
           <span className={nested ? 'text-sky-300/80' : 'text-accent/70'}>
-            {cond?.label ?? (node.name || 'New condition')}:
+            {cond?.label ?? (node.name || 'New condition')}
+            {!named && ':'}
           </span>
-          <span className="min-w-0 truncate text-white">
-            <Summary cond={cond} node={node} />
-          </span>
+          {!named && (
+            <span className="min-w-0 truncate text-white">
+              <Summary cond={cond} node={node} />
+            </span>
+          )}
         </button>
       )}
     >
       <Editor type={type} cond={cond} node={node} />
     </Popover>
   );
+}
 
-  const inside = nestable(cond);
-  if (nested && inside) {
+function Chip({ type, node, trail }: { type: string; node: Leaf; trail: Step[] }) {
+  const { edit } = useBuilder();
+  const cond = useCondition(type, node.name);
+  const chain = chainOf(type, node);
+
+  if (chain.length > 0) {
+    const end = chain[chain.length - 1];
+    const inner = [
+      ...trail,
+      ...chain.map(k => ({ type: k.inside, label: k.cond.label, group: k.value.key })),
+    ];
     return (
       // A condition about another type holds its own sentence, so it is set
       // apart from the green property chips in a colour of its own.
-      <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5 rounded-2xl bg-sky-400/[0.07] py-0.5 pr-1 text-xs text-sky-200 ring-1 ring-inset ring-sky-400/25">
-        {editor}
-        {nested.items.length > 1 && (
+      <span className={blockClass(trail)}>
+        <span className="inline-flex min-w-0 max-w-full flex-wrap items-center pl-1.5">
+          {chain.map((k, i) => (
+            <Fragment key={k.leaf.key}>
+              {i > 0 && (
+                <ChevronRight className="size-3 shrink-0 text-sky-300/40" aria-label="then" />
+              )}
+              <LeafEditor type={k.type} cond={k.cond} node={k.leaf} named={i < chain.length - 1} />
+            </Fragment>
+          ))}
+        </span>
+        {end.value.items.length > 1 && (
           <>
-            <ModeMenu node={nested} />
+            <ModeMenu node={end.value} />
             <span className="text-2xs text-sky-300/60">of</span>
           </>
         )}
-        <Flow type={inside} node={nested} />
+        <Flow type={end.inside} node={end.value} trail={inner} />
       </span>
     );
   }
 
   return (
     <span className="inline-flex items-center gap-0.5 rounded-full bg-accent/15 pr-1 text-xs text-accent transition-colors hover:bg-accent/25">
-      {editor}
-      {remove}
+      <LeafEditor type={type} cond={cond} node={node} />
+      <RemoveButton label="Remove condition" onClick={() => edit(node.key, () => null, null)} />
     </span>
   );
 }
@@ -155,7 +245,6 @@ function Summary({ cond, node }: { cond: Condition | undefined; node: Leaf }) {
     }
     case 'text':
       return <span>“{value}”</span>;
-    case 'entity':
     case 'relation':
       return <EntityList type={cond.target} ids={values(value)} not={not} />;
     case 'scored': {

@@ -71,6 +71,17 @@ func TestBoolFilter(t *testing.T) {
 	}
 }
 
+// A Join the filter cannot read stops the server as the tables are built,
+// rather than failing the first request that brackets a condition.
+func TestRelationJoinIsReadAtOnce(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("a join with no ON was accepted")
+		}
+	}()
+	Relation{Type: "vn", From: "x", Owner: "true", ID: "x.id", Join: "vn"}.Filter()
+}
+
 func TestRelatedParts(t *testing.T) {
 	tag := Related{Entity: "tag", From: "tags_vn tv", Owner: "tv.vid = vn.id", ID: "tv.tag",
 		Score: "tv.score", Spoiler: "tv.spoiler"}.Filter()

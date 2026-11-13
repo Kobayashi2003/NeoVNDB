@@ -22,8 +22,9 @@ const grammar = `Filters are query parameters (lang=en) or one expression in f=.
 In f=: "," is or, "+" is and, "!" negates, () groups, "..." quotes a value.
 A comparing filter takes an operator: rating>=80, released<2010.
 A comma list in a plain parameter means any of: lang=en,ja.
-A filter about another type takes that type's conditions in brackets:
-release=(lang=en+freeware=true), tag=(search=school).
+A filter about another type takes that type's conditions in brackets, or
+an id: release=(lang=en+freeware=true), tag=(search=school). Every such
+filter does, at any depth: character=(seiyuu=(gender=f)).
 Tags and traits take an optional minimum score and spoiler ceiling: tag=g749:2.0:1.`
 
 // openapi describes the read API from the same tables that serve it, so it

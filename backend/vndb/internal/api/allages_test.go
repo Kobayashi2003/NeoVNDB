@@ -108,18 +108,20 @@ func TestAllAges(t *testing.T) {
 	  -- v101's adult original came first, on another platform, in another
 	  -- language, by another developer: none of it is the all-ages version's.
 	  UPDATE releases SET released = 20190101 WHERE id = 201;
-	  INSERT INTO producers (id, name) VALUES (1, 'Adult Dev'), (2, 'Clean Dev');
+	  INSERT INTO producers (id, name, type, lang, alias, description) VALUES
+	    (1, 'Adult Dev', 'co', 'ja', '', ''), (2, 'Clean Dev', 'co', 'ja', '', '');
 	  INSERT INTO releases_producers (id, pid, developer, publisher) VALUES (201, 1, true, true), (202, 2, true, true);
 	  INSERT INTO releases_platforms (id, platform) VALUES (201, 'win'), (202, 'swi');
 	  INSERT INTO releases_titles (id, lang, mtl, title) VALUES (201, 'ja', false, 'x'), (202, 'en', false, 'x');
 	  -- A tag about sex, withheld, and one that is not.
-	  INSERT INTO tags (id, cat, name) VALUES (1, 'ero', 'Sex'), (2, 'cont', 'School');
+	  INSERT INTO tags (id, cat, name, defaultspoil, searchable, applicable, alias, description, c_items)
+	  VALUES (1, 'ero', 'Sex', 0, true, true, '', '', 0), (2, 'cont', 'School', 0, true, true, '', '', 0);
 	  -- A tame screenshot of v101's adult release, and c301's voice in both
 	  -- v100 (withheld) and v101.
 	  INSERT INTO images (kind, num, width, height, c_votecount, c_sexual_avg, c_violence_avg) VALUES
 	    ('sf', 9, 1280, 720, 5, 0, 0);
 	  INSERT INTO vn_screenshots (id, scr, rid) VALUES (101, 9, 201);
-	  INSERT INTO staff (id, main, lang) VALUES (1, 1, 'ja');
+	  INSERT INTO staff (id, main, lang, gender, description) VALUES (1, 1, 'ja', 'f', '');
 	  INSERT INTO staff_alias (aid, id, name) VALUES (1, 1, 'Voice');
 	  INSERT INTO vn_seiyuu (id, aid, cid, note) VALUES (100, 1, 301, ''), (101, 1, 301, '');
 	  INSERT INTO chars (id, bloodt, cup_size, sex, main_spoil, s_bust, s_waist, s_hip, birthday, height, description)
@@ -268,6 +270,58 @@ func TestAllAges(t *testing.T) {
 			t.Errorf("%s: %v", q, ids(none))
 		}
 	}
+	// Every relation takes conditions, and the right rows answer them. c302 is a
+	// variant of c300, which only v100 has: the inner character is c300, not
+	// the one asked about under the same alias. c301 is voiced by s1 (ja),
+	// three types down from the work.
+	for q, want := range map[string][]string{
+		"/character?fields=id&sort=id&variant_of=(vn=v100)": {"c302"},
+		"/character?fields=id&sort=id&variant_of=(vn=v101)": {},
+		// c301 has a voice in v100 too, but only appears in v101.
+		"/vn?fields=id&sort=id&character=(seiyuu=(lang=ja))":       {"v101"},
+		"/staff?fields=id&character=(vn=v101)":                     {"s1"},
+		"/producer?fields=id&sort=id&vn=(olang=ja)":                {"p1", "p2"},
+		"/producer?fields=id&sort=id&release=(minage=0)":           {"p2"},
+		"/vn?fields=id&sort=id&character=(variant_of=(role=main))": {"v101"},
+	} {
+		var hit page
+		ask("member", q, &hit)
+		if got := ids(hit); !slices.Equal(got, want) && !(len(got) == 0 && len(want) == 0) {
+			t.Errorf("%s: %v, want %v", q, got, want)
+		}
+	}
+	// Every other relation, by id and by conditions, against the real tables:
+	// a wrong column would only show here, as a 500.
+	for _, q := range []string{
+		"/vn?fields=id&trait=i1", "/vn?fields=id&trait=i1:0", "/vn?fields=id&trait=(sexual=false)",
+		"/staff?fields=id&vn=v101", "/staff?fields=id&vn=(olang=ja)",
+		"/staff?fields=id&voiced=v101", "/staff?fields=id&voiced=(olang=ja)",
+		"/staff?fields=id&character=c301",
+		"/producer?fields=id&relation=p1", "/producer?fields=id&relation=(type=co)",
+		"/producer?fields=id&release=r202", "/producer?fields=id&vn=v101",
+		"/tag?fields=id&parent=g1", "/tag?fields=id&parent=(category=cont)",
+		"/tag?fields=id&under=g1", "/tag?fields=id&under=(category=ero)",
+		"/tag?fields=id&vn=v101", "/tag?fields=id&vn=(olang=ja)",
+		"/trait?fields=id&group=i1", "/trait?fields=id&group=(sexual=true)",
+		"/trait?fields=id&parent=i1", "/trait?fields=id&parent=(sexual=true)",
+		"/trait?fields=id&under=i1", "/trait?fields=id&under=(sexual=true)",
+		"/trait?fields=id&character=c301", "/trait?fields=id&character=(sex=f)",
+		"/release?fields=id&supersedes=r201", "/release?fields=id&supersedes=(patch=true)",
+		"/character?fields=id&variant_of=c300", "/character?fields=id&seiyuu=s1",
+	} {
+		for _, viewer := range []string{"member", ""} {
+			var any page
+			ask(viewer, q, &any)
+		}
+	}
+
+	// Masked, a related row the guest cannot see answers nothing, at any depth.
+	var hidden page
+	ask("", "/character?fields=id&variant_of=(vn=v100)", &hidden)
+	if len(hidden.Results) != 0 {
+		t.Errorf("a guest reached withheld v100 through a variant: %v", ids(hidden))
+	}
+
 	// A title the reader disliked takes from a suggestion but is never its reason.
 	var picks struct {
 		Results []struct {
@@ -584,10 +638,7 @@ func TestAllAges(t *testing.T) {
 	// translation is there.
 	exec(`INSERT INTO trans.terms (target_lang, source_key, source_text, target_text, category)
 	      VALUES ('ja', 'school', 'School', '学園', 'tag')
-	      ON CONFLICT (target_lang, source_key) DO UPDATE SET target_text = EXCLUDED.target_text;
-	      -- The fixture's tags carry only what the rules read; /tag reads them whole.
-	      UPDATE vndb.tags SET defaultspoil = 0, searchable = true, applicable = true,
-	             alias = '', description = '', c_items = 0`)
+	      ON CONFLICT (target_lang, source_key) DO UPDATE SET target_text = EXCLUDED.target_text`)
 	var byTranslation page
 	ask("member", "/tag?fields=id&search="+neturl.QueryEscape("学園"), &byTranslation)
 	if !slices.Equal(ids(byTranslation), []string{"g2"}) {

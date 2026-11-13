@@ -13,15 +13,20 @@ var filters = map[string]query.FilterFunc{
 	"sexual":      query.BoolFilter("i.sexual", "NOT i.sexual"),
 	"char_count":  query.IntColumn("i.c_items", 1),
 
-	"group": query.RelatedID(vndb.TypeTrait, "i.gid = %s"),
-	"parent": query.RelatedID(vndb.TypeTrait, `EXISTS (
-		SELECT 1 FROM traits_parents tp WHERE tp.id = i.id AND tp.parent = %s)`),
+	"group": query.Relation{Type: vndb.TypeTrait,
+		From: "traits ig", Owner: "ig.id = i.gid", ID: "ig.id",
+		Join: "traits i ON i.id = ig.id"}.Filter(),
+	"parent": query.Relation{Type: vndb.TypeTrait,
+		From: "traits_parents tp", Owner: "tp.id = i.id", ID: "tp.parent",
+		Join: "traits i ON i.id = tp.parent"}.Filter(),
 	// Anything at or below the given trait. The closure carries a row for a
 	// trait against itself, so this includes the trait named.
-	"under": query.RelatedID(vndb.TypeTrait, `EXISTS (
-		SELECT 1 FROM traits_closure tc WHERE tc.descendant = i.id AND tc.ancestor = %s)`),
-	"character": query.RelatedID(vndb.TypeCharacter, `EXISTS (
-		SELECT 1 FROM chars_traits ct WHERE ct.tid = i.id AND ct.id = %s)`),
+	"under": query.Relation{Type: vndb.TypeTrait,
+		From: "traits_closure tc", Owner: "tc.descendant = i.id", ID: "tc.ancestor",
+		Join: "traits i ON i.id = tc.ancestor"}.Filter(),
+	"character": query.Relation{Type: vndb.TypeCharacter,
+		From: "chars_traits ct", Owner: "ct.tid = i.id", ID: "ct.id",
+		Join: "chars c ON c.id = ct.id"}.Filter(),
 }
 
 var sorts = map[string]query.Sort{

@@ -76,15 +76,50 @@ export function Editor({
   if (inside) {
     const nested = typeof node.value !== 'string';
     const noun = NOUN[inside];
+    // Several chosen by id: any of them, none of them, or every one of them,
+    // which is one condition per id joined by and, as for a list of choices.
+    const ids =
+      typeof node.value === 'string' && cond.kind === 'relation' ? values(node.value) : [];
+    const several = ids.length > 1;
     const modes = [
-      { id: 'is', op: '=' as Op, has: false, label: `is this ${noun}` },
-      { id: 'isnot', op: '!=' as Op, has: false, label: `is not this ${noun}` },
+      {
+        id: 'is',
+        op: '=' as Op,
+        has: false,
+        label: several ? 'is any of these' : `is this ${noun}`,
+      },
+      {
+        id: 'isnot',
+        op: '!=' as Op,
+        has: false,
+        label: several ? 'is none of these' : `is not this ${noun}`,
+      },
       { id: 'has', op: '=' as Op, has: true, label: `has one with…` },
       { id: 'hasnot', op: '!=' as Op, has: true, label: `has none with…` },
     ];
     return (
       <>
         {heading}
+        {several && (
+          <button
+            type="button"
+            className={menuItem()}
+            onClick={() =>
+              edit(
+                node.key,
+                () =>
+                  group(
+                    true,
+                    ids.map(id => leaf(node.name, '=', id)),
+                  ),
+                null,
+              )
+            }
+          >
+            <MenuMark kind="radio" on={false} />
+            is all of these
+          </button>
+        )}
         {modes.map(m => (
           <button
             key={m.id}
@@ -122,7 +157,7 @@ export function Editor({
 
   const ops = opsFor(cond);
   const chosen = typeof node.value === 'string' ? values(node.value) : [];
-  const several = (cond.kind === 'enum' || cond.kind === 'entity') && chosen.length > 1;
+  const several = cond.kind === 'enum' && chosen.length > 1;
   // "All of" cannot be one condition: it is one per value, joined by and.
   const options = several
     ? [
@@ -236,8 +271,6 @@ function Value({
           ))}
         </>
       );
-    case 'entity':
-      return <EntityValue type={cond.target} node={node} set={set} />;
     case 'scored': {
       const v = readScored(value, cond.score);
       const put = (change: Partial<typeof v>, then?: string | null) =>

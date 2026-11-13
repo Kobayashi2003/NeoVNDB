@@ -50,6 +50,15 @@ export interface Builder {
   edit: (key: number, fn: (n: Node) => Node | null, then?: string | null) => void;
 }
 
+/** One level on the way from the outermost conditions to a group: the type
+ *  its conditions are about, what the level is called, and the group a
+ *  condition added at this level goes into. */
+export interface Step {
+  type: string;
+  label: string;
+  group: number;
+}
+
 export const BuilderContext = createContext<Builder | null>(null);
 export const useBuilder = () => useContext(BuilderContext)!;
 

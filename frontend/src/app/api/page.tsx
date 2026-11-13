@@ -204,8 +204,6 @@ function valueForm(c: Condition): string {
       return 'WxH, e.g. 1920x1080; =, !=, >=, <=';
     case 'credit':
       return 'a staff id, optionally with a role: s224 or s224:scenario';
-    case 'entity':
-      return `an id, e.g. ${c.target}17`;
     case 'scored':
       return c.score
         ? 'g749, g749:2.0 (minimum score), g749:2.0:1 (spoiler ceiling), or (tag conditions)'

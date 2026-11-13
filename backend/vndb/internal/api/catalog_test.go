@@ -49,6 +49,28 @@ func TestNestedConditionsCompile(t *testing.T) {
 		{vndb.TypeStaff, "role=seiyuu", "FROM vn_seiyuu vs"},
 		{vndb.TypeStaff, "voiced=v17", "FROM vn_seiyuu vs"},
 		{vndb.TypeStaff, "role=scenario", "FROM vn_staff vs"},
+		// Every relation takes conditions on what it reaches, as vndb's own
+		// search does: a work's character's voice actor, by what they are.
+		{vndb.TypeVN, "character=(seiyuu=(gender=m+lang=ja))", "s.gender ="},
+		{vndb.TypeVN, "trait=(sexual=false)", "JOIN traits i ON i.id = ct.tid"},
+		{vndb.TypeVN, "trait=i568:0", "ct.spoil <="},
+		{vndb.TypeStaff, "vn=(olang=ja)", "vn.olang ="},
+		{vndb.TypeStaff, "voiced=(length>=4)", "vn.length >="},
+		{vndb.TypeStaff, "character=(sex=f)", "c.sex ="},
+		{vndb.TypeProducer, "vn=(rating>=80)", "vn.c_rating >="},
+		{vndb.TypeProducer, "release=(freeware=true)", "r.freeware"},
+		{vndb.TypeTag, "vn=(votecount>=1000)", "vn.c_votecount >="},
+		{vndb.TypeTrait, "character=(age>=20)", "c.age >="},
+		// A type related to itself: the owner is judged against the outer row
+		// before the inner one, under the same alias, is brought in.
+		{vndb.TypeProducer, "relation=(type=co)", "pr.id = p.id AND EXISTS (SELECT 1 FROM producers p WHERE p.id = pr.pid AND"},
+		{vndb.TypeCharacter, "variant_of=(sex=f)", "cm.id = c.main AND EXISTS (SELECT 1 FROM chars c WHERE c.id = cm.id AND"},
+		{vndb.TypeTag, "parent=(category=cont)", "tp.id = g.id AND EXISTS (SELECT 1 FROM tags g WHERE g.id = tp.parent AND"},
+		{vndb.TypeTag, "under=(search=school)", "tc.descendant = g.id AND EXISTS (SELECT 1 FROM tags g"},
+		{vndb.TypeTrait, "group=(search=hair)", "ig.id = i.gid AND EXISTS (SELECT 1 FROM traits i"},
+		{vndb.TypeTrait, "parent=(sexual=true)", "tp.id = i.id AND EXISTS (SELECT 1 FROM traits i"},
+		{vndb.TypeTrait, "under=(char_count>=10)", "tc.descendant = i.id AND EXISTS (SELECT 1 FROM traits i"},
+		{vndb.TypeRelease, "supersedes=(patch=true)", "rs.id = r.id AND EXISTS (SELECT 1 FROM releases r WHERE r.id = rs.rid AND"},
 	} {
 		sql, err := compile(cat, c.typ, c.expr)
 		if err != nil {
@@ -61,9 +83,29 @@ func TestNestedConditionsCompile(t *testing.T) {
 	}
 }
 
+// The types reach each other in cycles, so how far down one condition goes
+// is bounded across the whole request, not per bracket.
+func TestRelationsNestOnlySoDeep(t *testing.T) {
+	cat := realCatalog(t)
+	// From a work: release=(vn=(release=(...olang=ja...))), which both types take.
+	down := func(levels int) string {
+		open := ""
+		for i := range levels {
+			open += map[bool]string{true: "release=(", false: "vn=("}[i%2 == 0]
+		}
+		return open + "olang=ja" + strings.Repeat(")", levels)
+	}
+	if _, err := compile(cat, vndb.TypeVN, down(8)); err != nil {
+		t.Errorf("eight relations deep: %v", err)
+	}
+	if _, err := compile(cat, vndb.TypeVN, down(9)); err == nil || !query.IsClientError(err) {
+		t.Errorf("nine relations deep: got %v, want a client error", err)
+	}
+}
+
 func TestNestedTagRefusesItsOwnUnknowns(t *testing.T) {
 	cat := realCatalog(t)
-	for _, expr := range []string{"tag=(nosuch=1)", "tag=()", "trait=(search=x)"} {
+	for _, expr := range []string{"tag=(nosuch=1)", "tag=()", "trait=(sexual=maybe)", "character=(seiyuu=(nosuch=1))"} {
 		if _, err := compile(cat, vndb.TypeVN, expr); err == nil || !query.IsClientError(err) {
 			t.Errorf("%q: got %v, want a client error", expr, err)
 		}

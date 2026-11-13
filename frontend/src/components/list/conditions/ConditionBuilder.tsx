@@ -8,7 +8,7 @@ import { useNavigate } from '@/hooks/useNavigate';
 import { Code2, Wand2 } from 'lucide-react';
 import { ApiError, list } from '@/lib/api';
 import { commas } from '@/lib/format';
-import { TIDY_RULES } from '@/lib/conditions';
+import { NOUN, TIDY_RULES } from '@/lib/conditions';
 import { group, type Group, outline, parse, print, tidy } from '@/lib/expr';
 import { filtersOf, type Params, withParams } from '@/lib/href';
 import { LIST } from '@/lib/list';
@@ -106,7 +106,12 @@ export function ConditionBuilder({
             <ModeMenu node={root} />
             of these:
           </div>
-          <Flow type={type} node={root} top />
+          <Flow
+            type={type}
+            node={root}
+            trail={[{ type, label: capitalised(NOUN[type] ?? type), group: root.key }]}
+            top
+          />
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-1 border-t border-white/5 px-3 py-2 text-xs">
@@ -162,6 +167,8 @@ export function ConditionBuilder({
     </BuilderContext>
   );
 }
+
+const capitalised = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Live match count for the expression, alongside the page's other filters. */
 function usePreview(type: string, params: Params, expression: string | null): string {

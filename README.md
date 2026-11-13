@@ -25,7 +25,9 @@ suggestive or explicit are blurred until a reader chooses otherwise.
   previous generation is kept for a rollback. Updates run on a schedule.
 - **Read API.** One query endpoint for all seven types (visual novels,
   releases, characters, producers, staff, tags, traits): field selection,
-  a filter expression language with nesting (`release=(lang=en+freeware=true)`),
+  a filter expression language in which every relation takes conditions on
+  what it reaches, up to eight deep (`release=(lang=en+freeware=true)`,
+  `character=(seiyuu=(gender=f))`),
   sorting, search (names, tags and traits by their translated name too, and
   descriptions with `description=`) and paging. Also the relation graph, facet counts,
   similar titles, recommendations and whole-database statistics. It

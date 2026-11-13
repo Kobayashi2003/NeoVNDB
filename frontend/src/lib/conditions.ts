@@ -19,11 +19,10 @@ export type ConditionKind =
   | { kind: 'resolution' }
   /** A person credited on this item, optionally in one role: s224:scenario. */
   | { kind: 'credit'; target: 's'; roles: Choice[] }
-  /** Matched by id: staff=s8. */
-  | { kind: 'entity'; target: string }
   /** Tag or trait with optional minimum score and spoiler ceiling. */
   | { kind: 'scored'; target: 'g' | 'i'; score: boolean }
-  /** By id, or by a condition on the related type: release=(lang=en). */
+  /** By id, or by a condition on the related type: release=(lang=en). Every
+   *  relation the API has takes both, at any depth. */
   | { kind: 'relation'; target: string };
 
 export type Condition = ConditionKind & { key: string; label: string };
@@ -92,7 +91,6 @@ const DRM_NEEDS: Choice[] = [
   { value: 'physical', label: 'A physical item' },
   { value: 'cloud', label: 'Cloud play' },
 ];
-const on = (target: string) => ({ kind: 'entity' as const, target });
 const rel = (target: string) => ({ kind: 'relation' as const, target });
 
 export const CONDITIONS: Record<string, Condition[]> = {
@@ -122,7 +120,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'publisher', label: 'Publisher', ...rel('p') },
     { key: 'producer', label: 'Producer', ...rel('p') },
     { key: 'character', label: 'Character', ...rel('c') },
-    { key: 'trait', label: 'Character trait', ...on('i') },
+    { key: 'trait', label: 'Character trait', kind: 'scored', target: 'i', score: false },
     { key: 'staff', label: 'Staff', ...rel('s') },
     { key: 'seiyuu', label: 'Voice actor', ...rel('s') },
     {
@@ -173,7 +171,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'producer', label: 'Producer', ...rel('p') },
     { key: 'developer', label: 'Developer', ...rel('p') },
     { key: 'publisher', label: 'Publisher', ...rel('p') },
-    { key: 'supersedes', label: 'Supersedes', ...on('r') },
+    { key: 'supersedes', label: 'Supersedes', ...rel('r') },
   ],
   c: [
     { key: 'search', label: 'Name', ...SEARCH },
@@ -184,12 +182,12 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'trait', label: 'Trait', kind: 'scored', target: 'i', score: false },
     { key: 'dtrait', label: 'Trait (not inherited)', kind: 'scored', target: 'i', score: false },
     { key: 'vn', label: 'Visual novel', ...rel('v') },
-    { key: 'seiyuu', label: 'Voice actor', ...on('s') },
+    { key: 'seiyuu', label: 'Voice actor', ...rel('s') },
     { key: 'age', label: 'Age', ...NUM },
     { key: 'birthday', label: 'Birthday', kind: 'text', hint: '12-25, or 12 for a month' },
     { key: 'has_image', label: 'Has a picture', ...BOOL },
     { key: 'is_variant', label: 'Is a variant', ...BOOL },
-    { key: 'variant_of', label: 'Variant of', ...on('c') },
+    { key: 'variant_of', label: 'Variant of', ...rel('c') },
     { key: 'height', label: 'Height', kind: 'number', hint: 'cm', unit: 'cm' },
     { key: 'weight', label: 'Weight', kind: 'number', hint: 'kg', unit: 'kg' },
     { key: 'bust', label: 'Bust', kind: 'number', hint: 'cm', unit: 'cm' },
@@ -208,9 +206,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'description', label: 'Description', ...SEARCH },
     { key: 'type', label: 'Type', kind: 'enum', choices: choices('TYPE') },
     { key: 'lang', label: 'Language', ...LANG() },
-    { key: 'vn', label: 'Visual novel', ...on('v') },
-    { key: 'release', label: 'Release', ...on('r') },
-    { key: 'relation', label: 'Related producer', ...on('p') },
+    { key: 'vn', label: 'Visual novel', ...rel('v') },
+    { key: 'release', label: 'Release', ...rel('r') },
+    { key: 'relation', label: 'Related producer', ...rel('p') },
     LINK,
   ],
   s: [
@@ -225,9 +223,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     },
     { key: 'lang', label: 'Language', ...LANG() },
     { key: 'gender', label: 'Gender', kind: 'enum', choices: STAFF_GENDER },
-    { key: 'vn', label: 'Credited on', ...on('v') },
-    { key: 'voiced', label: 'Voiced in', ...on('v') },
-    { key: 'character', label: 'Voiced character', ...on('c') },
+    { key: 'vn', label: 'Credited on', ...rel('v') },
+    { key: 'voiced', label: 'Voiced in', ...rel('v') },
+    { key: 'character', label: 'Voiced character', ...rel('c') },
     LINK,
   ],
   g: [
@@ -235,9 +233,9 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'description', label: 'Description', ...SEARCH },
     { key: 'category', label: 'Category', kind: 'enum', choices: choices('CATEGORY') },
     { key: 'vn_count', label: 'Visual novels', ...NUM },
-    { key: 'parent', label: 'Parent', ...on('g') },
-    { key: 'under', label: 'Anywhere under', ...on('g') },
-    { key: 'vn', label: 'Visual novel', ...on('v') },
+    { key: 'parent', label: 'Parent', ...rel('g') },
+    { key: 'under', label: 'Anywhere under', ...rel('g') },
+    { key: 'vn', label: 'Visual novel', ...rel('v') },
     { key: 'searchable', label: 'Searchable', ...BOOL },
     { key: 'applicable', label: 'Applicable', ...BOOL },
   ],
@@ -245,10 +243,10 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'search', label: 'Name', ...SEARCH },
     { key: 'description', label: 'Description', ...SEARCH },
     { key: 'char_count', label: 'Characters', ...NUM },
-    { key: 'group', label: 'Group', ...on('i') },
-    { key: 'parent', label: 'Parent', ...on('i') },
-    { key: 'under', label: 'Anywhere under', ...on('i') },
-    { key: 'character', label: 'Character', ...on('c') },
+    { key: 'group', label: 'Group', ...rel('i') },
+    { key: 'parent', label: 'Parent', ...rel('i') },
+    { key: 'under', label: 'Anywhere under', ...rel('i') },
+    { key: 'character', label: 'Character', ...rel('c') },
     { key: 'sexual', label: 'Sexual', ...BOOL },
     { key: 'searchable', label: 'Searchable', ...BOOL },
     { key: 'applicable', label: 'Applicable', ...BOOL },
@@ -258,8 +256,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
 /** The other type a condition is about, or undefined for the item's own
  *  properties. */
 export function relatedType(c: Condition | undefined): string | undefined {
-  return c &&
-    (c.kind === 'relation' || c.kind === 'entity' || c.kind === 'scored' || c.kind === 'credit')
+  return c && (c.kind === 'relation' || c.kind === 'scored' || c.kind === 'credit')
     ? c.target
     : undefined;
 }
@@ -307,16 +304,7 @@ export function writeScored(v: Scored, score: boolean): string {
 
 /** Kinds whose backend filter reads a comma list as "any of". Scored values
  *  carry their own colon syntax per item, so they are left alone. */
-const LISTABLE = new Set([
-  'enum',
-  'site',
-  'entity',
-  'relation',
-  'number',
-  'date',
-  'resolution',
-  'credit',
-]);
+const LISTABLE = new Set(['enum', 'site', 'relation', 'number', 'date', 'resolution', 'credit']);
 
 export const TIDY_RULES: TidyRules = {
   mergeable: (type, name) => LISTABLE.has(conditionOf(type, name)?.kind ?? ''),

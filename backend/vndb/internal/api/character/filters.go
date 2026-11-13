@@ -12,7 +12,9 @@ var filters = map[string]query.FilterFunc{
 	"has_image": query.BoolFilter("c.image IS NOT NULL", "c.image IS NULL"),
 	// Variants: vndb files a character's other forms under one main entry.
 	"is_variant": query.BoolFilter("c.main IS NOT NULL", "c.main IS NULL"),
-	"variant_of": query.RelatedID(vndb.TypeCharacter, "c.main = %s"),
+	"variant_of": query.Relation{Type: vndb.TypeCharacter,
+		From: "chars cm", Owner: "cm.id = c.main", ID: "cm.id",
+		Join: "chars c ON c.id = cm.id"}.Filter(),
 	// Stored as mmdd, 0 for unknown: birthday=12-25, or birthday=12 for a month.
 	"birthday": query.Match(func(b *query.Builder, v string) error {
 		month, day, withDay := strings.Cut(v, "-")
@@ -59,10 +61,10 @@ var filters = map[string]query.FilterFunc{
 	"vn": query.Relation{Type: vndb.TypeVN,
 		From: "chars_vns cv", Owner: "cv.id = c.id", ID: "cv.vid",
 		Join: "vn ON vn.id = cv.vid"}.Filter(),
-	"seiyuu": query.RelatedID(vndb.TypeStaff, `EXISTS (
-		SELECT 1 FROM vn_seiyuu vs
-		  JOIN staff_alias sa ON sa.aid = vs.aid
-		 WHERE vs.cid = c.id AND sa.id = %s)`),
+	// Voiced under an alias, so the person is reached through staff_alias.
+	"seiyuu": query.Relation{Type: vndb.TypeStaff,
+		From: "vn_seiyuu vs JOIN staff_alias sa ON sa.aid = vs.aid", Owner: "vs.cid = c.id", ID: "sa.id",
+		Join: "staff s ON s.id = sa.id"}.Filter(),
 
 	// A role belongs to an appearance, not to the character, so it only makes
 	// sense as a condition on some VN.

@@ -95,8 +95,9 @@ var filters = map[string]query.FilterFunc{
 	"publisher": query.Relation{Type: vndb.TypeProducer,
 		From: "releases_producers rp", Owner: "rp.id = r.id AND rp.publisher", ID: "rp.pid",
 		Join: "producers p ON p.id = rp.pid"}.Filter(),
-	"supersedes": query.RelatedID(vndb.TypeRelease, `EXISTS (
-		SELECT 1 FROM releases_supersedes rs WHERE rs.id = r.id AND rs.rid = %s)`),
+	"supersedes": query.Relation{Type: vndb.TypeRelease,
+		From: "releases_supersedes rs", Owner: "rs.id = r.id", ID: "rs.rid",
+		Join: "releases r ON r.id = rs.rid"}.Filter(),
 }
 
 var sorts = map[string]query.Sort{

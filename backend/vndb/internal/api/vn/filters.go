@@ -95,10 +95,12 @@ var filters = map[string]query.FilterFunc{
 	"character": query.Relation{Type: vndb.TypeCharacter,
 		From: "chars_vns cv", Owner: "cv.vid = vn.id", ID: "cv.id",
 		Join: "chars c ON c.id = cv.id"}.Filter(),
-	"trait": query.RelatedID(vndb.TypeTrait, `EXISTS (
-		SELECT 1 FROM chars_vns cv
-		  JOIN chars_traits_inherit ct ON ct.id = cv.id
-		 WHERE cv.vid = vn.id AND ct.tid = %s)`),
+	// A trait of any of the work's characters, inherited as character's own
+	// trait filter has it; i568:0 keeps to what is no spoiler.
+	"trait": query.Related{Entity: vndb.TypeTrait,
+		From:  "chars_vns cv JOIN chars_traits_inherit ct ON ct.id = cv.id",
+		Owner: "cv.vid = vn.id", ID: "ct.tid", Spoiler: "ct.spoil",
+		Join: "traits i ON i.id = ct.tid"}.Filter(),
 
 	"release": query.Relation{Type: vndb.TypeRelease,
 		From: "releases_vn rv", Owner: "rv.vid = vn.id", ID: "rv.id",

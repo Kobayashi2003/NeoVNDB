@@ -24,7 +24,17 @@ type Builder struct {
 	Budget *int
 	// Whether the request is masked, for a filter whose column differs then.
 	Masked bool
+	// How many relations deep these conditions are (see maxRelationDepth).
+	depth int
 }
+
+// maxRelationDepth bounds how many relations one condition may go down.
+// Each bracket is parsed on its own, so the parser's depth starts again at
+// every level and does not bound this; with every relation nestable the
+// types reach each other in cycles (a work's release's work's...), and,
+// with no condition budget set, one long address could ask for thousands
+// of nested subqueries. vndb's own search goes three or four deep.
+const maxRelationDepth = 8
 
 // unwithheld is, under the mask, a condition (starting " AND ") that the
 // entity of type typ whose id is the SQL expression id is not withheld: a
@@ -98,7 +108,7 @@ func (b *Builder) AnyOf(value string, one func(*Builder, string) error) error {
 // sub is a builder whose conditions can be combined rather than ANDed. Args are
 // shared so placeholder numbering stays in step.
 func (b *Builder) sub() *Builder {
-	return &Builder{Args: b.Args, Limits: b.Limits, Types: b.Types, Budget: b.Budget, Masked: b.Masked}
+	return &Builder{Args: b.Args, Limits: b.Limits, Types: b.Types, Budget: b.Budget, Masked: b.Masked, depth: b.depth}
 }
 
 func (b *Builder) SQL() string {
@@ -330,20 +340,30 @@ func (r Related) byID() FilterFunc {
 // two different releases. The inner conditions are the related type's own
 // filters, looked up at compile time.
 //
-// Nesting the same type twice reuses its alias; SQL scoping makes the inner one
-// win, which is right as long as no filter reaches for an outer row.
+// The related row is brought in by Join one level further in than From, so
+// Owner is still judged against the outer row: a type related to itself
+// (a producer's related producers, a tag's parent) uses one alias for both,
+// and joined beside From the inner row would hide the outer one. Measured
+// on the live data (2026-11-14), the inner EXISTS costs nothing over the
+// join beside it.
 type Relation struct {
 	// Type is both what an id is parsed as and whose filters apply inside.
 	Type  string
 	From  string
 	Owner string
 	ID    string
-	// Join brings the related row in under its filters' alias; empty when From
-	// already has it.
+	// Join brings the related row in under its filters' alias, as
+	// "table alias ON condition"; empty when From already has it.
 	Join string
 }
 
 func (rel Relation) Filter() FilterFunc {
+	// Read when the filter tables are built, so a mistyped Join stops the
+	// server at start rather than failing the first bracketed request.
+	target, on, ok := strings.Cut(rel.Join, " ON ")
+	if rel.Join != "" && !ok {
+		panic(fmt.Sprintf("relation to %s: join %q has no ON", rel.Type, rel.Join))
+	}
 	return func(b *Builder, value string) error {
 		inner, nested, err := bracketed(value)
 		if err != nil {
@@ -365,13 +385,11 @@ func (rel Relation) Filter() FilterFunc {
 		if err != nil {
 			return err
 		}
-
-		from := rel.From
 		if rel.Join != "" {
-			from += " JOIN " + rel.Join
+			cond = "EXISTS (SELECT 1 FROM " + target + " WHERE " + on + " AND " + cond + ")"
 		}
 		b.Conds = append(b.Conds,
-			"EXISTS (SELECT 1 FROM "+from+" WHERE "+rel.Owner+" AND "+cond+b.unwithheld(rel.Type, rel.ID)+")")
+			"EXISTS (SELECT 1 FROM "+rel.From+" WHERE "+rel.Owner+" AND "+cond+b.unwithheld(rel.Type, rel.ID)+")")
 		return nil
 	}
 }
@@ -396,6 +414,9 @@ func (b *Builder) nested(typ, inner string) (string, error) {
 	if b.Types == nil {
 		return "", BadRequest("conditions about a related type are not available here")
 	}
+	if b.depth >= maxRelationDepth {
+		return "", BadRequest("conditions go at most %d relations deep", maxRelationDepth)
+	}
 	target := b.Types.Get(typ)
 	if target == nil {
 		return "", BadRequest("nothing is known about %s", typ)
@@ -408,28 +429,13 @@ func (b *Builder) nested(typ, inner string) (string, error) {
 		return "", BadRequest("%s needs a condition between its brackets", typ)
 	}
 	sub := b.sub()
+	sub.depth++
 	cond, err := expr.compile(sub, target.Filters())
 	if err != nil {
 		return "", err
 	}
 	b.Args = sub.Args
 	return cond, nil
-}
-
-// RelatedID matches another entity by id; the template takes one placeholder.
-func RelatedID(entity, template string) FilterFunc {
-	return Match(func(b *Builder, v string) error {
-		id, err := vndb.ParseID(entity, v)
-		if err != nil {
-			return BadRequest("%v", err)
-		}
-		if mask := b.unwithheld(entity, "%s"); mask != "" {
-			b.Where("("+template+")"+mask, id, id)
-			return nil
-		}
-		b.Where(template, id)
-		return nil
-	})
 }
 
 // ExtLinkFilter matches an entry with a link to a site: extlink=steam. table

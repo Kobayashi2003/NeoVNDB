@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { router } from '../router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -96,6 +96,82 @@ describe('ConditionBuilder', () => {
     await userEvent.click(apply);
     expect(router.push).toHaveBeenCalledWith(
       `/v?lang=en&f=${encodeURIComponent('olang=ja+has_anime=true')}`,
+    );
+  });
+
+  // A chain of single "has one with" levels is one block headed by its path,
+  // with one add button at its end rather than one per level.
+  it('shows a chain of related conditions as one path', () => {
+    serve({ 'GET /vndbserve/vn': () => ({ results: [], count: 1, more: false }) });
+    render(
+      <ConditionBuilder
+        type="v"
+        path="/v"
+        params={{}}
+        current="release=(producer=(relation=(type=co+lang=ja)))"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Release' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Producer' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Related producer:\s*has one with$/ }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Add a condition' })).toHaveLength(2);
+  });
+
+  it('keeps a level that has none, or is negated, in a block of its own', () => {
+    serve({ 'GET /vndbserve/vn': () => ({ results: [], count: 1, more: false }) });
+    render(
+      <ConditionBuilder type="v" path="/v" params={{}} current="release!=(producer=(type=co))" />,
+    );
+    expect(screen.getByRole('button', { name: /^Release:\s*has none with$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Producer:\s*has one with$/ })).toBeInTheDocument();
+  });
+
+  it('goes down a relation in the add menu, and makes the whole condition at once', async () => {
+    serve({ 'GET /vndbserve/vn': () => ({ results: [], count: 1, more: false }) });
+    render(<ConditionBuilder type="v" path="/v" params={{}} current="olang=ja" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Add a condition' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Conditions on staff' }));
+    const where = screen.getByRole('navigation', { name: 'Add to' });
+    expect(where).toHaveTextContent('Visual novel');
+    expect(where).toHaveTextContent('Staff');
+    await userEvent.click(screen.getByRole('button', { name: 'Gender' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Female' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(router.push).toHaveBeenLastCalledWith(
+      `/v?${new URLSearchParams({ f: 'olang=ja+staff=(gender=f)' })}`,
+    );
+  });
+
+  it('adds to a level further out from the path at the top of the menu', async () => {
+    serve({ 'GET /vndbserve/vn': () => ({ results: [], count: 1, more: false }) });
+    render(
+      <ConditionBuilder type="v" path="/v" params={{}} current="release=(producer=(type=co))" />,
+    );
+    const adds = screen.getAllByRole('button', { name: 'Add a condition' });
+    await userEvent.click(adds[0]);
+    const where = screen.getByRole('navigation', { name: 'Add to' });
+    await userEvent.click(within(where).getByRole('button', { name: /Release/ }));
+    // A yes-or-no condition goes in as yes, with nothing more to choose.
+    await userEvent.click(screen.getByRole('button', { name: 'Freeware' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(router.push).toHaveBeenLastCalledWith(
+      `/v?${new URLSearchParams({ f: 'release=(producer=(type=co)+freeware=true)' })}`,
+    );
+  });
+
+  // A relation chosen by id takes several, and can ask for every one of them.
+  it('turns several chosen by id into all of them', async () => {
+    serve({ 'GET /vndbserve/staff': () => ({ results: [], count: 1, more: false }) });
+    render(<ConditionBuilder type="s" path="/s" params={{}} current='vn="v17,v11"' />);
+    await userEvent.click(screen.getByRole('button', { name: /^Credited on:/ }));
+    expect(screen.getByRole('button', { name: /is any of these/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /is all of these/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(router.push).toHaveBeenLastCalledWith(
+      `/s?${new URLSearchParams({ f: 'vn=v17+vn=v11' })}`,
     );
   });
 
