@@ -23,9 +23,9 @@ import { Notice, noticeAction } from '@/components/ui/Notice';
 import { Placeholder } from '@/components/ui/Surface';
 import { Mine, Missing, SearchInList } from './ShelfParts';
 
-/** The whole panel before the session is known: its title, its order row and
- *  a page of results, all still to come. */
-export function ShelfWaiting({ type }: { type: string }) {
+/** The whole panel before its first answer: its title, its order row and a
+ *  page of results, all still to come. */
+function ShelfWaiting({ type }: { type: string }) {
   return (
     <div className="flex flex-col gap-4" aria-hidden>
       <Placeholder className="h-8 w-48" />
@@ -56,9 +56,12 @@ export function ShelfPanel({
   bar,
   reloads = 0,
   noun,
+  waiting = false,
 }: {
   /** The vndb type letter of what is held; null until known. */
   type: string | null;
+  /** Not to be read yet: the session is still being asked about. */
+  waiting?: boolean;
   source: ShelfSource;
   /** Names the set: a new one drops the selection and leaves select mode. */
   sourceKey: string;
@@ -100,7 +103,7 @@ export function ShelfPanel({
   const want = `${sourceKey}|${page}|${sort}|${reverse}|${search}|${reloads}|${mine}`;
 
   useEffect(() => {
-    if (!type) return;
+    if (!type || waiting) return;
     let live = true;
 
     readShelf({ type, source, own, sort, reverse, search, page }).then(
@@ -125,9 +128,14 @@ export function ShelfPanel({
     // `want` names every input; the functions and objects behind it change
     // identity on each render without changing what they ask for.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [want, type]);
+  }, [want, type, waiting]);
 
-  if (error && !held) {
+  const shownType = type ?? 'v';
+  if (!held) {
+    // One placeholder from the first paint until the first answer, whatever
+    // arrives on the way (the session, the lists, a title): each new one
+    // faded in afresh, so swapping between them flashed (2026-11-14).
+    if (!error) return <ShelfWaiting type={shownType} />;
     return (
       <Notice
         icon={TriangleAlert}
@@ -144,14 +152,13 @@ export function ShelfPanel({
     );
   }
 
-  const stale = !held || held.key !== want;
-  const shownType = type ?? 'v';
-  const sorts: Sort[] = [...own, ...(held?.tooBig ? [] : LIST[shownType].sorts)];
+  const stale = held.key !== want;
+  const sorts: Sort[] = [...own, ...(held.tooBig ? [] : LIST[shownType].sorts)];
   // Highlight the order actually used, not the one in the address.
-  const showing = held?.tooBig && !ownSort ? own[0].value : sort;
+  const showing = held.tooBig && !ownSort ? own[0].value : sort;
   // Ordered by when items were saved or rated, the cards say when.
   const dated = (id: string) => {
-    const at = ownSort?.dated ? held?.dates.get(id) : undefined;
+    const at = ownSort?.dated ? held.dates.get(id) : undefined;
     return at && ownSort ? { at, label: ownSort.label } : undefined;
   };
 
@@ -163,9 +170,7 @@ export function ShelfPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <h1 className="truncate text-xl font-bold sm:text-2xl">{title}</h1>
-            {held && (
-              <span className="shrink-0 text-sm tabular-nums text-muted">{commas(held.count)}</span>
-            )}
+            <span className="shrink-0 text-sm tabular-nums text-muted">{commas(held.count)}</span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {aside}
@@ -184,7 +189,7 @@ export function ShelfPanel({
 
         {tabs}
 
-        {(held === null || held.count > 0 || search) && (
+        {(held.count > 0 || search) && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SortLinks
               path={path}
@@ -198,7 +203,7 @@ export function ShelfPanel({
         )}
       </div>
 
-      {held?.missing ? (
+      {held.missing ? (
         <Missing
           count={held.missing}
           noun={noun}
@@ -206,14 +211,14 @@ export function ShelfPanel({
           href={withParams(path, params, { sort: null, reverse: null, page: null })}
         />
       ) : null}
-      {held?.withheld ? (
+      {held.withheld ? (
         // Kept on the list, only not shown: nothing here takes them off it.
         <p className="text-xs text-muted">
           {commas(held.withheld)} {held.withheld === 1 ? 'entry is' : 'entries are'} not shown here:
           this site is set to show only what is for all ages.
         </p>
       ) : null}
-      {held?.tooBig && (
+      {held.tooBig && (
         <p className="text-xs text-muted">
           This is longer than can be ordered by vndb&apos;s fields or searched here, so only{' '}
           {own.map(s => s.label.toLowerCase()).join(' and ')} work.
@@ -225,11 +230,7 @@ export function ShelfPanel({
         </p>
       )}
 
-      {held === null ? (
-        // Keyed apart from the results, so they arrive as a new element rather
-        // than as this one moved and grown, which counts as a layout shift.
-        <ResultsWaiting key="waiting" type={shownType} />
-      ) : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-sm text-muted">
           {search ? (
             <>

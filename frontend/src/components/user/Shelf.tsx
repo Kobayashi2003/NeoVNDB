@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import { ListChecks } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
 import { useCollections } from '@/hooks/useCollections';
-import { ShelfWaiting } from './ShelfPanel';
 import { SignInFirst } from './SignInFirst';
 import { CollectionColumn } from './CollectionSwitcher';
 
@@ -46,12 +45,10 @@ export function Shelf({ children }: { children: React.ReactNode }) {
         // Holds the column's place until the lists arrive.
         <div className="hidden w-[13.5rem] shrink-0 lg:block" aria-hidden />
       )}
+      {/* The list itself shows the one placeholder until it has an answer,
+          the session included, so nothing in between replaces it. */}
       <div data-scroll-top className={BODY}>
-        {session.status === 'in' ? (
-          children
-        ) : (
-          <ShelfWaiting type={lists?.find(l => l.id === current)?.type ?? 'v'} />
-        )}
+        {children}
       </div>
     </div>
   );

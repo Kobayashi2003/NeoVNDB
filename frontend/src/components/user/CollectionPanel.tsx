@@ -9,6 +9,7 @@ import { LIST } from '@/lib/list';
 import { items, marks, moveMarks, removeMarks, type Mark } from '@/lib/user';
 import type { Params } from '@/lib/href';
 import { refreshCollections, useCollections } from '@/hooks/useCollections';
+import { useSession } from '@/hooks/useSession';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
 import { Notice, noticeAction } from '@/components/ui/Notice';
 import { ShelfPanel } from './ShelfPanel';
@@ -32,7 +33,10 @@ export function CollectionPanel({
   page: number;
   params: Params;
 }) {
-  const { lists, error } = useCollections(true);
+  // Drawn while the session is still unknown, as its own placeholder; asks
+  // nothing until it is known (Shelf says so when it turns out signed out).
+  const signedIn = useSession().status === 'in';
+  const { lists, error } = useCollections(signedIn);
   const list = lists?.find(l => l.id === id);
 
   const source = useMemo<ShelfSource>(
@@ -67,6 +71,7 @@ export function CollectionPanel({
   return (
     <ShelfPanel
       type={list?.type ?? null}
+      waiting={!signedIn}
       source={source}
       sourceKey={`list:${id}`}
       own={OWN}

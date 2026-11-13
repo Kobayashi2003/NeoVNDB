@@ -55,6 +55,49 @@ test('a list ordered by a vndb field pages through it, not the whole list on eve
   expect(second.filter(id => first.includes(id))).toEqual([]);
 });
 
+// On a first load the session, the lists and the page arrive one after another.
+// Each used to bring a placeholder of its own, which faded in afresh: the page
+// flashed several times before showing anything (2026-11-14).
+test('a list and the ratings keep one placeholder until their first answer', async ({
+  page,
+  user,
+}) => {
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Waited' })
+  ).json()) as { id: number };
+  await user.call('POST', `/collections/${list.id}/marks/add`, { items: ['v17', 'v11'] });
+  await user.call('PUT', '/ratings/v17', { rating: 3 });
+
+  // Each answer later than the last, so each is drawn on its own.
+  await page.route('**/userserve/**', async route => {
+    await new Promise(r => setTimeout(r, 300));
+    await route.fallback();
+  });
+  await page.addInitScript(() => {
+    const w = window as unknown as { late: number };
+    w.late = 0;
+    let drawn = false;
+    new MutationObserver(records => {
+      // A card's own image placeholder, inside the results, is not one.
+      const waiting = (e: Element) => e.matches('.skeleton') && !e.closest('[data-results]');
+      let added = 0;
+      for (const r of records)
+        for (const n of r.addedNodes)
+          if (n instanceof Element && n.closest('main'))
+            added += [n, ...n.querySelectorAll('.skeleton')].filter(waiting).length;
+      if (added && drawn) w.late += added;
+      if (added) drawn = true;
+    }).observe(document, { subtree: true, childList: true });
+  });
+
+  for (const path of [`/u/${list.id}`, '/u/ratings']) {
+    await page.goto(path);
+    await expect(page.locator("[data-results] a[href^='/v']").first()).toBeVisible();
+    // Replaced, not added to: the placeholder first drawn is the only one.
+    expect(await page.evaluate(() => (window as unknown as { late: number }).late), path).toBe(0);
+  }
+});
+
 test('paging a list holds its heading and controls still', async ({ page, user }) => {
   const list = (await (
     await user.call('POST', '/collections', { type: 'v', name: 'Paged' })

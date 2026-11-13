@@ -19,7 +19,7 @@ import { LIST, TYPES } from '@/lib/list';
 import { useSession } from '@/hooks/useSession';
 import { pill } from '@/components/ui/Pill';
 import type { Owned, OwnSort, ShelfSource } from '@/lib/shelf';
-import { ShelfPanel, ShelfWaiting } from './ShelfPanel';
+import { ShelfPanel } from './ShelfPanel';
 import { RatingsBar } from './RatingsBar';
 import { SignInFirst } from './SignInFirst';
 
@@ -35,7 +35,6 @@ const owned = (r: Rated): Owned => ({ id: r.id, rating: r.rating, at: r.rated_at
 
 export function RatingsPanel({ page, params }: { page: number; params: Params }) {
   const session = useSession();
-  if (session.status === 'unknown') return <ShelfWaiting type={one(params, 'type') ?? 'v'} />;
   if (session.status === 'out') {
     return (
       <SignInFirst next={PATH} icon={Star} title="Your ratings live here">
@@ -43,16 +42,19 @@ export function RatingsPanel({ page, params }: { page: number; params: Params })
       </SignInFirst>
     );
   }
-  return <Ratings page={page} params={params} />;
+  // Drawn while the session is unknown too, as the panel's own placeholder:
+  // one of its own here first, then the panel's, flashed as they swapped.
+  return <Ratings page={page} params={params} waiting={session.status !== 'in'} />;
 }
 
-function Ratings({ page, params }: { page: number; params: Params }) {
+function Ratings({ page, params, waiting }: { page: number; params: Params; waiting: boolean }) {
   const asked = one(params, 'type') ?? 'v';
   const type = (TYPES as readonly string[]).includes(asked) ? asked : 'v';
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [changes, setChanges] = useState(0);
 
   useEffect(() => {
+    if (waiting) return;
     let live = true;
     ratingCounts().then(
       got => {
@@ -63,7 +65,7 @@ function Ratings({ page, params }: { page: number; params: Params }) {
     return () => {
       live = false;
     };
-  }, [changes]);
+  }, [changes, waiting]);
 
   const source = useMemo<ShelfSource>(
     () => ({
@@ -78,6 +80,7 @@ function Ratings({ page, params }: { page: number; params: Params }) {
   return (
     <ShelfPanel
       type={type}
+      waiting={waiting}
       source={source}
       sourceKey={`ratings:${type}`}
       own={OWN}
