@@ -43,6 +43,9 @@ func TestSearchIsText(t *testing.T) {
 	if len(b.Args) != 1 || b.Args[0] != "<3" || !strings.Contains(b.SQL(), "ESCAPE ''") {
 		t.Errorf("<3: %v %s", b.Args, b.SQL())
 	}
+	if !strings.Contains(b.SQL(), "|| (SELECT search_norm_term($1)) ||") {
+		t.Errorf("the word is not normalised once: %s", b.SQL())
+	}
 }
 
 // Every word of description= is a condition on the one row holding the
@@ -60,6 +63,10 @@ func TestTextFilter(t *testing.T) {
 	}
 	if len(b.Args) != 3 || b.Args[1] != "time" || b.Args[2] != "loop back" {
 		t.Errorf("args = %v", b.Args)
+	}
+	// Normalised in a subquery, once per statement, never inline per row.
+	if strings.Count(sql, "(SELECT search_norm_term($") != 4 || strings.Contains(sql, "|| search_norm_term(") {
+		t.Errorf("a word is normalised per row: %s", sql)
 	}
 	if err := TextFilter("v", "vn")(&Builder{}, "  "); err == nil || !IsClientError(err) {
 		t.Errorf("no words: %v", err)

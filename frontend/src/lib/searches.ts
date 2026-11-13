@@ -3,6 +3,7 @@
  *  (lib/user.ts); the recent ones only here. */
 
 import type { Params } from './href';
+import { textKey } from './list';
 
 /** Where the reader is in a listing, not what they asked for. */
 const PLACE = new Set(['page', 'limit']);
@@ -21,13 +22,22 @@ export function queryOf(params: Params): string {
   return new URLSearchParams(kept).toString();
 }
 
+/** The filters a search of descriptions writes, a release's and the rest's. */
+const TEXT_KEYS = [textKey('v'), textKey('r')];
+
 /** The query as a line a reader can scan: the search words first, then each
  *  parameter as it is written. */
 export function describe(query: string): string {
   const params = new URLSearchParams(query);
   const words = params.get('search');
-  const rest = [...params].filter(([key]) => key !== 'search').map(([k, v]) => `${k}=${v}`);
-  return [words && `“${words}”`, ...rest].filter(Boolean).join(' · ');
+  // What the search box's other side writes, said as words too.
+  const text = TEXT_KEYS.map(k => [k, params.get(k)] as const).find(([, v]) => v);
+  const rest = [...params]
+    .filter(([key]) => key !== 'search' && !TEXT_KEYS.includes(key))
+    .map(([k, v]) => `${k}=${v}`);
+  return [words && `“${words}”`, text && `${text[0]} “${text[1]}”`, ...rest]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 const RECENT = (type: string) => `neovndb:recent:${type}`;

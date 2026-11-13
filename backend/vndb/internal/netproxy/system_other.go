@@ -2,4 +2,4 @@
 
 package netproxy
 
-func systemProxy() (server, override string, ok bool) { return "", "", false }
+func systemProxy() system { return system{} }

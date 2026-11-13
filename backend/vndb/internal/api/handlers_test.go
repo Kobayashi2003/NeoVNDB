@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/kobayashi/neovndb/internal/cache"
 	"github.com/kobayashi/neovndb/internal/config"
 )
@@ -25,6 +27,10 @@ func TestCachedFailureStatus(t *testing.T) {
 		{fmt.Errorf("vn: %w", context.Canceled), statusClientClosed},
 		{fmt.Errorf("vn: %w", context.DeadlineExceeded), http.StatusGatewayTimeout},
 		{errors.New("relation does not exist"), http.StatusInternalServerError},
+		// A generation from before the description index: not ready, said so.
+		{fmt.Errorf("vn: %w", &pgconn.PgError{Code: "42P01", Message: `relation "search_text" does not exist`}), http.StatusServiceUnavailable},
+		// Any other missing table is a fault, not something on its way.
+		{&pgconn.PgError{Code: "42P01", Message: `relation "vn_titles" does not exist`}, http.StatusInternalServerError},
 	} {
 		w := httptest.NewRecorder()
 		s.cached(context.Background(), w, "k", "vn", func() (any, error) { return nil, tc.err })

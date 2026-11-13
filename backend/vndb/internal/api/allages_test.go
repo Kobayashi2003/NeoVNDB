@@ -560,6 +560,9 @@ func TestAllAges(t *testing.T) {
 	if err := store.BuildSearchText(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if err := pool.QueryRow(ctx, `SELECT to_regnamespace('search_text_build') IS NOT NULL`).Scan(&left); err != nil || left {
+		t.Errorf("the description build's own schema was left behind (%v)", err)
+	}
 	for _, c := range []struct {
 		viewer, query string
 		want          []string

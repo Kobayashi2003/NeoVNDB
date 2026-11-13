@@ -19,6 +19,11 @@ describe('a search as an address', () => {
   it('is described with the words first', () => {
     expect(describeQuery('lang=en%2Cja&search=ever+17')).toBe('“ever 17” · lang=en,ja');
     expect(describeQuery('sort=title')).toBe('sort=title');
+    // A search of descriptions reads as words too, saying where it looked.
+    expect(describeQuery('description=time+loop&lang=en')).toBe(
+      'description “time loop” · lang=en',
+    );
+    expect(describeQuery('notes=patch')).toBe('notes “patch”');
   });
 });
 

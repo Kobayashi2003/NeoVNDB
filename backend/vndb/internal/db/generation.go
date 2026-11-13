@@ -413,94 +413,77 @@ func (s *Store) HasSearchText(ctx context.Context) (bool, error) {
 }
 
 // BuildSearchText gives the live generation its search_text, with the DDL and
-// the script an import uses, as BuildWithheld does for its table: filled and
-// indexed beside the live schema, then moved in. About half a minute. Callers
-// hold ImportLock.
+// the script an import uses (buildBeside). About half a minute. Callers hold
+// ImportLock.
 func (s *Store) BuildSearchText(ctx context.Context) error {
-	table, err := sourceFS.ReadFile("ddl/02_text.sql")
-	if err != nil {
-		return err
-	}
-	fill, err := sourceFS.ReadFile("derive/05_text.sql")
-	if err != nil {
-		return err
-	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	live, build := pgx.Identifier{SchemaLive}.Sanitize(), pgx.Identifier{textBuild}.Sanitize()
-	for _, sql := range []string{
-		"CREATE SCHEMA " + build,
-		"SET LOCAL search_path TO " + build + "," + live + ",public",
-		string(table),
-		string(fill),
-		"ANALYZE search_text",
-		"DROP TABLE IF EXISTS " + live + ".search_text",
-		"ALTER TABLE " + build + ".search_text SET SCHEMA " + live,
-		"DROP SCHEMA " + build,
-	} {
-		if _, err := tx.Exec(ctx, sql); err != nil {
-			return fmt.Errorf("building search_text: %w", err)
-		}
+	if err := buildBeside(ctx, tx, "search_text_build", []string{"search_text"},
+		"ddl/02_text.sql", "derive/05_text.sql"); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
 }
 
-// textBuild is where BuildSearchText fills the new table.
-const textBuild = "search_text_build"
-
-// withheldBuild is where BuildWithheld fills the new table, inside its
-// transaction, so the old one goes on answering until the swap.
-const withheldBuild = "withheld_build"
-
-// BuildWithheld makes the live generation's withheld table afresh from what
-// it already holds, with the DDL and rules an import uses: a generation from
-// before all-ages mode gets it without a whole import, and one whose rules
-// changed is brought up to them. One transaction, so readers see the old
-// table or the new one, and the new one is filled beside the old: readers
-// wait only for the swap at the end, not the seconds the rules take. Callers
-// hold ImportLock, so no promote moves the schema underneath.
+// BuildWithheld makes the live generation's all-ages list afresh from what it
+// already holds, with the DDL and rules an import uses (buildBeside): a
+// generation from before all-ages mode gets it without a whole import, and
+// one whose rules changed is brought up to them. Callers hold ImportLock, so
+// no promote moves the schema underneath.
 func (s *Store) BuildWithheld(ctx context.Context) (map[string]int64, error) {
-	table, err := sourceFS.ReadFile("ddl/02_withheld.sql")
-	if err != nil {
-		return nil, err
-	}
-	rules, err := sourceFS.ReadFile("derive/06_withheld.sql")
-	if err != nil {
-		return nil, err
-	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
-	live, build := pgx.Identifier{SchemaLive}.Sanitize(), pgx.Identifier{withheldBuild}.Sanitize()
-	for _, sql := range []string{
-		"CREATE SCHEMA " + build,
-		// The new table lands in the first schema; the rules read the live
-		// generation's tables through the second.
-		"SET LOCAL search_path TO " + build + "," + live + ",public",
-		string(table),
-		string(rules),
-		"ANALYZE withheld",
-		"ANALYZE vn_allages",
-		"DROP TABLE IF EXISTS " + live + ".withheld, " + live + ".vn_allages",
-		"ALTER TABLE " + build + ".withheld SET SCHEMA " + live,
-		"ALTER TABLE " + build + ".vn_allages SET SCHEMA " + live,
-		"DROP SCHEMA " + build,
-		"SET LOCAL search_path TO " + live + ",public",
-	} {
-		if _, err := tx.Exec(ctx, sql); err != nil {
-			return nil, fmt.Errorf("building withheld: %w", err)
-		}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := buildBeside(ctx, tx, "withheld_build", []string{"withheld", "vn_allages"},
+		"ddl/02_withheld.sql", "derive/06_withheld.sql"); err != nil {
+		return nil, err
 	}
 	counts, err := withheldCounts(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
 	return counts, tx.Commit(ctx)
+}
+
+// buildBeside makes tables for the live generation from the DDL and derive
+// scripts an import runs, in tx: in a schema of their own beside the live one
+// (the scripts read the live tables through the search path), analysed, then
+// moved in over the old ones. Readers see the old tables or the new, and wait
+// only for the swap at the end, not the seconds the scripts take.
+func buildBeside(ctx context.Context, tx pgx.Tx, schema string, tables []string, files ...string) error {
+	live, build := pgx.Identifier{SchemaLive}.Sanitize(), pgx.Identifier{schema}.Sanitize()
+	// The new tables land in the first schema; what the scripts read is in
+	// the second.
+	sqls := []string{"CREATE SCHEMA " + build, "SET LOCAL search_path TO " + build + "," + live + ",public"}
+	for _, f := range files {
+		body, err := sourceFS.ReadFile(f)
+		if err != nil {
+			return err
+		}
+		sqls = append(sqls, string(body))
+	}
+	old := make([]string, len(tables))
+	for i, t := range tables {
+		name := pgx.Identifier{t}.Sanitize()
+		old[i] = live + "." + name
+		sqls = append(sqls, "ANALYZE "+name)
+	}
+	sqls = append(sqls, "DROP TABLE IF EXISTS "+strings.Join(old, ", "))
+	for _, t := range tables {
+		sqls = append(sqls, "ALTER TABLE "+build+"."+pgx.Identifier{t}.Sanitize()+" SET SCHEMA "+live)
+	}
+	sqls = append(sqls, "DROP SCHEMA "+build, "SET LOCAL search_path TO "+live+",public")
+	for _, sql := range sqls {
+		if _, err := tx.Exec(ctx, sql); err != nil {
+			return fmt.Errorf("building %s: %w", strings.Join(tables, ", "), err)
+		}
+	}
+	return nil
 }
 
 // WithheldCounts is how many of each type the live generation withholds, or

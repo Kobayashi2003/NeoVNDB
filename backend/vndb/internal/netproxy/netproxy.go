@@ -1,10 +1,15 @@
-// Package netproxy picks the proxy for outbound requests: HTTPS_PROXY /
-// HTTP_PROXY, else the proxy Windows is set to use (which Clash switches),
-// else none. Go's own lookup stops at the environment, so a mirror started by a
-// launcher or the gateway, with no proxy variables, would otherwise go direct.
+// Package netproxy picks the proxy for outbound requests, by the rule in
+// D:\Program\Code\AGENTS.md: the first of HTTPS_PROXY and HTTP_PROXY that is
+// set, else the proxy Windows is set to use (which Clash switches), else
+// none; loopback and private addresses, the hosts NO_PROXY names and those in
+// the Windows bypass list always go direct. Not Go's ProxyFromEnvironment: it
+// stops at the environment, so a mirror started by a launcher or the gateway
+// would go direct, and it gives an https request HTTPS_PROXY alone, so one
+// with only HTTP_PROXY set went direct too.
 package netproxy
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -21,23 +26,41 @@ func Install() {
 	}
 }
 
-// Proxy is an http.Transport Proxy function.
+// Proxy is an http.Transport Proxy function. The system settings are read
+// on every request, so switching Clash takes effect without a restart.
 func Proxy(req *http.Request) (*url.URL, error) {
-	host := req.URL.Hostname()
-	if direct(host) {
+	return choose(req.URL.Hostname(), req.URL.Scheme, os.Getenv, systemProxy())
+}
+
+// choose is Proxy with its sources passed in, so the rule is tested apart
+// from this machine's environment and registry.
+func choose(host, scheme string, getenv func(string) string, sys system) (*url.URL, error) {
+	// NO_PROXY set alone names hosts to reach directly; it does not turn the
+	// system proxy off. The bypass list holds whichever proxy is in use.
+	if direct(host) || noProxy(host, getenv("NO_PROXY")+","+getenv("no_proxy")) || bypassed(host, sys.override) {
 		return nil, nil
 	}
-	// Once the environment names a proxy it decides, NO_PROXY included.
-	if envSet() {
-		return http.ProxyFromEnvironment(req)
+	for _, name := range []string{"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"} {
+		if v := strings.TrimSpace(getenv(name)); v != "" {
+			u := parse(v, "http")
+			if u == nil {
+				return nil, fmt.Errorf("%s is not a proxy address: %q", name, v)
+			}
+			return u, nil
+		}
 	}
-	// NO_PROXY set alone still names hosts to reach directly; it does not turn
-	// the system proxy off.
-	server, override, ok := systemProxy()
-	if !ok || bypassed(host, override) || noProxy(host, os.Getenv("NO_PROXY")+","+os.Getenv("no_proxy")) {
+	if !sys.on {
 		return nil, nil
 	}
-	return pick(server, req.URL.Scheme), nil
+	return pick(sys.server, scheme), nil
+}
+
+// system is the proxy Windows is set to use: on or off, its server, and the
+// hosts it bypasses (which apply even while it is off).
+type system struct {
+	on       bool
+	server   string
+	override string
 }
 
 // noProxy applies a NO_PROXY list as Go's environment lookup reads one:
@@ -68,15 +91,6 @@ func noProxy(host, list string) bool {
 			if host == name || strings.HasSuffix(host, "."+name) {
 				return true
 			}
-		}
-	}
-	return false
-}
-
-func envSet() bool {
-	for _, name := range []string{"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"} {
-		if os.Getenv(name) != "" {
-			return true
 		}
 	}
 	return false

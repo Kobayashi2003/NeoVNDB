@@ -260,8 +260,8 @@ func SearchFilter(entity, alias string) FilterFunc {
 	condition := fmt.Sprintf(`EXISTS (
 		SELECT 1 FROM search_labels sc
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
-		   AND search_norm_term(%%[1]s) <> ''
-		   AND sc.label LIKE '%%%%' || search_norm_term(%%[1]s) || '%%%%' ESCAPE '')`, entity, alias)
+		   AND %s <> ''
+		   AND sc.label LIKE '%%%%' || %[3]s || '%%%%' ESCAPE '')`, entity, alias, normalised("%[1]s"))
 	return func(b *Builder, value string) error {
 		terms, err := searchTerms(b, value)
 		if err != nil {
@@ -285,8 +285,8 @@ func TextFilter(entity, alias string) FilterFunc {
 		}
 		likes := make([]string, len(terms))
 		for i, term := range terms {
-			arg := b.Arg(term)
-			likes[i] = fmt.Sprintf("search_norm_term(%[1]s) <> '' AND st.body LIKE '%%' || search_norm_term(%[1]s) || '%%' ESCAPE ''", arg)
+			n := normalised(b.Arg(term))
+			likes[i] = fmt.Sprintf("%[1]s <> '' AND st.body LIKE '%%' || %[1]s || '%%' ESCAPE ''", n)
 		}
 		// Appended as it is: the placeholders are bound already, and Where
 		// would read the LIKE's literal % as formatting.
@@ -297,6 +297,13 @@ func TextFilter(entity, alias string) FilterFunc {
 		return nil
 	}
 }
+
+// normalised is a search word through search_norm_term, as an uncorrelated
+// subquery so it runs once per statement. Written inline, a cached statement's
+// generic plan normalised it again for every row it rechecked: "the" took
+// 163ms rather than 24 among names, 293ms rather than 36 among descriptions
+// (measured 2026-11-13).
+func normalised(arg string) string { return "(SELECT search_norm_term(" + arg + "))" }
 
 // searchTerms is a search value's words, under the request's ceiling on them.
 func searchTerms(b *Builder, value string) ([]string, error) {
