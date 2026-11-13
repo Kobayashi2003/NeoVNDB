@@ -26,7 +26,8 @@ suggestive or explicit are blurred until a reader chooses otherwise.
 - **Read API.** One query endpoint for all seven types (visual novels,
   releases, characters, producers, staff, tags, traits): field selection,
   a filter expression language with nesting (`release=(lang=en+freeware=true)`),
-  sorting, search and paging. Also the relation graph, facet counts,
+  sorting, search (names, tags and traits by their translated name too, and
+  descriptions with `description=`) and paging. Also the relation graph, facet counts,
   similar titles, recommendations and whole-database statistics. It
   describes itself as OpenAPI 3.1 (`/vndbserve/meta/openapi`, rendered at `/api`).
 - **All ages.** A reader not signed in only ever sees what is for all ages:

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"os"
 	"slices"
 	"strings"
@@ -550,5 +551,62 @@ func TestAllAges(t *testing.T) {
 		if len(got.Results) != 1 || string(got.Results[0].Image) != "null" {
 			t.Errorf("%s, its image unknown: %+v", path, got.Results)
 		}
+	}
+
+	// Descriptions are searched as names are: every word, case and width
+	// folded, markup out of it. Masked, withheld v102 is not found by its own.
+	exec(`UPDATE vndb.vn SET description = 'A [url=https://x.test/a]Time Loop[/url] at a ＳＣＨＯＯＬ.' WHERE id = 101;
+	      UPDATE vndb.vn SET description = 'A ghost at a school.' WHERE id = 102`)
+	if err := store.BuildSearchText(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		viewer, query string
+		want          []string
+	}{
+		{"member", "description=time+loop", []string{"v101"}},
+		{"member", "description=school", []string{"v101", "v102"}},
+		{"", "description=school", []string{"v101"}},
+		{"member", "description=xtest", nil},
+		{"member", "description=loop+ghost", nil},
+	} {
+		var found page
+		ask(c.viewer, "/vn?fields=id&sort=id&"+c.query, &found)
+		if !slices.Equal(ids(found), c.want) {
+			t.Errorf("%s as %q: %v, want %v", c.query, c.viewer, ids(found), c.want)
+		}
+	}
+
+	// A tag is found by its translated name too, and from the moment the
+	// translation is there.
+	exec(`INSERT INTO trans.terms (target_lang, source_key, source_text, target_text, category)
+	      VALUES ('ja', 'school', 'School', '学園', 'tag')
+	      ON CONFLICT (target_lang, source_key) DO UPDATE SET target_text = EXCLUDED.target_text;
+	      -- The fixture's tags carry only what the rules read; /tag reads them whole.
+	      UPDATE vndb.tags SET defaultspoil = 0, searchable = true, applicable = true,
+	             alias = '', description = '', c_items = 0`)
+	var byTranslation page
+	ask("member", "/tag?fields=id&search="+neturl.QueryEscape("学園"), &byTranslation)
+	if !slices.Equal(ids(byTranslation), []string{"g2"}) {
+		t.Errorf("a tag by its translated name: %v", ids(byTranslation))
+	}
+
+	// A generation from before the view gets it on start; searching works on.
+	exec(`DROP VIEW vndb.search_labels`)
+	if err := store.EnsureSearchLabels(ctx); err != nil {
+		t.Fatal(err)
+	}
+	ask("member", "/tag?fields=id&search="+neturl.QueryEscape("学"), &byTranslation)
+	if !slices.Equal(ids(byTranslation), []string{"g2"}) {
+		t.Errorf("after the view was made again: %v", ids(byTranslation))
+	}
+
+	// Before its description index is built, description= says so rather
+	// than failing as a 500.
+	exec(`DROP TABLE vndb.search_text`)
+	notYet := httptest.NewRecorder()
+	routes.ServeHTTP(notYet, httptest.NewRequest(http.MethodGet, "/vn?fields=id&description=ghost", nil))
+	if notYet.Code != http.StatusServiceUnavailable {
+		t.Errorf("description= with no index: %d %s", notYet.Code, notYet.Body)
 	}
 }

@@ -361,7 +361,7 @@ func sqlFiles(dir string) ([]sqlFile, error) {
 // query matched nothing.
 var Derived = []string{
 	"tags_vn_direct", "tags_vn_inherit", "chars_traits_inherit",
-	"search_cache", "tags_closure", "traits_closure", "vn_similar", "withheld",
+	"search_cache", "search_text", "tags_closure", "traits_closure", "vn_similar", "withheld",
 }
 
 // HasWithheld says whether the live generation has the tables all-ages mode
@@ -384,6 +384,72 @@ func (s *Store) WithheldVersion(ctx context.Context) (uint32, error) {
 		pgx.Identifier{SchemaLive, "withheld"}.Sanitize()).Scan(&oid)
 	return oid, err
 }
+
+// EnsureSearchLabels gives the live generation the search_labels view every
+// search reads, when it is from before the view: a view is a definition, made
+// in an instant, and without it every search would fail until the next import.
+// Nothing to do without a live generation.
+func (s *Store) EnsureSearchLabels(ctx context.Context) error {
+	var live, has bool
+	err := s.pool.QueryRow(ctx, `SELECT to_regnamespace($1) IS NOT NULL, to_regclass($2) IS NOT NULL`,
+		SchemaLive, pgx.Identifier{SchemaLive, "search_labels"}.Sanitize()).Scan(&live, &has)
+	if err != nil || !live || has {
+		return err
+	}
+	view, err := sourceFS.ReadFile("ddl/02_search_labels.sql")
+	if err != nil {
+		return err
+	}
+	return s.execIn(ctx, SchemaLive, string(view))
+}
+
+// HasSearchText says whether the live generation has the table description=
+// reads; one from before it does not.
+func (s *Store) HasSearchText(ctx context.Context) (bool, error) {
+	var ok bool
+	err := s.pool.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`,
+		pgx.Identifier{SchemaLive, "search_text"}.Sanitize()).Scan(&ok)
+	return ok, err
+}
+
+// BuildSearchText gives the live generation its search_text, with the DDL and
+// the script an import uses, as BuildWithheld does for its table: filled and
+// indexed beside the live schema, then moved in. About half a minute. Callers
+// hold ImportLock.
+func (s *Store) BuildSearchText(ctx context.Context) error {
+	table, err := sourceFS.ReadFile("ddl/02_text.sql")
+	if err != nil {
+		return err
+	}
+	fill, err := sourceFS.ReadFile("derive/05_text.sql")
+	if err != nil {
+		return err
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	live, build := pgx.Identifier{SchemaLive}.Sanitize(), pgx.Identifier{textBuild}.Sanitize()
+	for _, sql := range []string{
+		"CREATE SCHEMA " + build,
+		"SET LOCAL search_path TO " + build + "," + live + ",public",
+		string(table),
+		string(fill),
+		"ANALYZE search_text",
+		"DROP TABLE IF EXISTS " + live + ".search_text",
+		"ALTER TABLE " + build + ".search_text SET SCHEMA " + live,
+		"DROP SCHEMA " + build,
+	} {
+		if _, err := tx.Exec(ctx, sql); err != nil {
+			return fmt.Errorf("building search_text: %w", err)
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+// textBuild is where BuildSearchText fills the new table.
+const textBuild = "search_text_build"
 
 // withheldBuild is where BuildWithheld fills the new table, inside its
 // transaction, so the old one goes on answering until the swap.

@@ -45,6 +45,27 @@ func TestSearchIsText(t *testing.T) {
 	}
 }
 
+// Every word of description= is a condition on the one row holding the
+// entry's description, numbered after what was bound before it.
+func TestTextFilter(t *testing.T) {
+	b := &Builder{}
+	b.Arg("already bound")
+	if err := TextFilter("v", "vn")(b, `time "loop back"`); err != nil {
+		t.Fatal(err)
+	}
+	sql := b.SQL()
+	if strings.Count(sql, "EXISTS") != 1 || strings.Count(sql, "st.body LIKE") != 2 ||
+		!strings.Contains(sql, "$2") || !strings.Contains(sql, "$3") || strings.Contains(sql, "%!") {
+		t.Errorf("SQL = %s", sql)
+	}
+	if len(b.Args) != 3 || b.Args[1] != "time" || b.Args[2] != "loop back" {
+		t.Errorf("args = %v", b.Args)
+	}
+	if err := TextFilter("v", "vn")(&Builder{}, "  "); err == nil || !IsClientError(err) {
+		t.Errorf("no words: %v", err)
+	}
+}
+
 // searchrank orders a search written in f= as well as one given on its own;
 // a negated one has nothing to rank by.
 func TestSearchRankFindsTheSearch(t *testing.T) {

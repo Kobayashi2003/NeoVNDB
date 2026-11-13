@@ -98,6 +98,7 @@ const rel = (target: string) => ({ kind: 'relation' as const, target });
 export const CONDITIONS: Record<string, Condition[]> = {
   v: [
     { key: 'search', label: 'Title', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     { key: 'lang', label: 'Language', ...LANG() },
     { key: 'olang', label: 'Original language', ...LANG() },
     { key: 'platform', label: 'Platform', ...PLATFORM() },
@@ -141,6 +142,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   r: [
     { key: 'search', label: 'Title', ...SEARCH },
+    { key: 'notes', label: 'Notes', ...SEARCH },
     { key: 'lang', label: 'Language', ...LANG() },
     { key: 'olang', label: 'Original language', ...LANG() },
     { key: 'platform', label: 'Platform', ...PLATFORM() },
@@ -175,6 +177,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   c: [
     { key: 'search', label: 'Name', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     { key: 'role', label: 'Role', kind: 'enum', choices: choices('CHARACTER_ROLE') },
     { key: 'sex', label: 'Sex', kind: 'enum', choices: choices('CHARACTER_SEX') },
     { key: 'gender', label: 'Gender', kind: 'enum', choices: choices('GENDER') },
@@ -202,6 +205,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   p: [
     { key: 'search', label: 'Name', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     { key: 'type', label: 'Type', kind: 'enum', choices: choices('TYPE') },
     { key: 'lang', label: 'Language', ...LANG() },
     { key: 'vn', label: 'Visual novel', ...on('v') },
@@ -211,6 +215,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   s: [
     { key: 'search', label: 'Name', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     {
       key: 'role',
       label: 'Role',
@@ -227,6 +232,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   g: [
     { key: 'search', label: 'Name', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     { key: 'category', label: 'Category', kind: 'enum', choices: choices('CATEGORY') },
     { key: 'vn_count', label: 'Visual novels', ...NUM },
     { key: 'parent', label: 'Parent', ...on('g') },
@@ -237,6 +243,7 @@ export const CONDITIONS: Record<string, Condition[]> = {
   ],
   i: [
     { key: 'search', label: 'Name', ...SEARCH },
+    { key: 'description', label: 'Description', ...SEARCH },
     { key: 'char_count', label: 'Characters', ...NUM },
     { key: 'group', label: 'Group', ...on('i') },
     { key: 'parent', label: 'Parent', ...on('i') },

@@ -70,6 +70,23 @@ test('a tag can be asked for by what it is', async ({ page }) => {
   await expect(page.locator('h1')).toContainText(/\d/);
 });
 
+// The translated name is searched as an alias, so a reader can type the
+// Japanese for a tag: 学園 is School's.
+test('a tag is found by its translated name', async ({ page, request }) => {
+  const res = await request.get(`/vndbserve/tag?fields=name&search=${encodeURIComponent('学園')}`);
+  expect(res.status()).toBe(200);
+  const names = ((await res.json()) as { results: { name: string }[] }).results.map(r => r.name);
+  expect(names).toContain('School');
+
+  await page.goto(`/g?search=${encodeURIComponent('学園')}`);
+  await expect(
+    page
+      .locator('[data-results]')
+      .getByRole('link', { name: /School/ })
+      .first(),
+  ).toBeVisible();
+});
+
 test('a filter the backend refuses says why', async ({ request }) => {
   const res = await request.get('/vndbserve/vn?fields=id&cover_sexual=bogus');
   expect(res.status()).toBe(400);

@@ -37,6 +37,33 @@ func runServe(ctx context.Context, args []string) error {
 	} else {
 		log.Warn("no live generation; every query will fail until an import is promoted")
 	}
+	// A generation imported by an older version lacks what search now reads:
+	// the view at once, the description index behind it (half a minute, and
+	// description= answers 503 meanwhile). The next import brings both anyway.
+	if err := store.EnsureSearchLabels(ctx); err != nil {
+		log.Error("giving the live generation search_labels", "err", err)
+	}
+	go func() {
+		// Only a serve that keeps the mirror builds into it: one with updates
+		// off (the deployment e2e's, beside the real one on the same
+		// database) leaves that to the one that does.
+		if live.Get().UpdateEvery == 0 {
+			return
+		}
+		if has, err := store.HasSearchText(ctx); err != nil || has {
+			return
+		}
+		log.Info("building the live generation's description index")
+		err := store.Exclusive(ctx, db.ImportLock, func() error { return store.BuildSearchText(ctx) })
+		switch {
+		case err == nil:
+			log.Info("description index built")
+		case errors.Is(err, db.ErrBusy):
+			log.Info("description index left to the import that is running")
+		case ctx.Err() == nil:
+			log.Error("building the description index", "err", err)
+		}
+	}()
 
 	if *addr != "" {
 		cfg.Host, cfg.Port = splitAddr(*addr, cfg.Host, cfg.Port)

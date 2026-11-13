@@ -39,8 +39,9 @@ var filters = map[string]query.FilterFunc{
 	"lang":      query.Masked(query.ArrayColumn("vn.c_languages"), query.ArrayColumn(allAges("c_languages"))),
 	"platform":  query.Masked(query.ArrayColumn("vn.c_platforms"), query.ArrayColumn(allAges("c_platforms"))),
 
-	"released": query.Masked(query.ReleasedColumn("vn.c_released"), query.ReleasedColumn(allAges("c_released"))),
-	"search":   query.SearchFilter("v", "vn"),
+	"released":    query.Masked(query.ReleasedColumn("vn.c_released"), query.ReleasedColumn(allAges("c_released"))),
+	"search":      query.SearchFilter("v", "vn"),
+	"description": query.TextFilter("v", "vn"),
 
 	"has_description": query.BoolFilter("vn.description <> ''", "vn.description = ''"),
 	"has_screenshot": query.BoolFilter(

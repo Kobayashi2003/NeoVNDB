@@ -42,7 +42,8 @@ var filters = map[string]query.FilterFunc{
 	"hips":       query.IntColumn("c.s_hip", 1),
 	"age":        query.IntColumn("c.age", 1),
 
-	"search": query.SearchFilter("c", "c"),
+	"search":      query.SearchFilter("c", "c"),
+	"description": query.TextFilter("c", "c"),
 
 	// trait expands through the closure, so a parent trait also matches
 	// characters carrying any of its children; dtrait matches only what was

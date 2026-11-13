@@ -158,9 +158,30 @@ describe('Tabs', () => {
 
 describe('SearchBox', () => {
   it('searches from the first page', async () => {
-    render(<SearchBox path="/v" params={{ page: '4', lang: 'en' }} initial="" />);
+    render(<SearchBox type="v" path="/v" params={{ page: '4', lang: 'en' }} />);
     await userEvent.type(screen.getByRole('searchbox'), 'ever17{Enter}');
     expect(router.push).toHaveBeenCalledWith('/v?lang=en&search=ever17');
+  });
+
+  // Switched over, the same box searches descriptions instead of names, and
+  // one search replaces the other.
+  it('searches descriptions when switched to them', async () => {
+    render(<SearchBox type="v" path="/v" params={{ search: 'ever', page: '2' }} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Search descriptions' }));
+    await userEvent.type(
+      screen.getByRole('searchbox', { name: 'Search descriptions' }),
+      'time loop{Enter}',
+    );
+    expect(router.push).toHaveBeenCalledWith('/v?description=time+loop');
+  });
+
+  it('opens on what the address searches, and calls a release’s notes notes', () => {
+    render(<SearchBox type="r" path="/r" params={{ notes: 'patch' }} />);
+    expect(screen.getByRole('button', { name: 'Search notes' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveValue('patch');
   });
 });
 

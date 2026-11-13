@@ -3,7 +3,8 @@ import { expect, test } from './fixtures';
 test('results are saved to a new list from the list page', async ({ page, user }) => {
   await page.goto('/v?sort=votecount&reverse=true');
   await page.locator('button[data-select]:visible').click();
-  const cards = page.locator('main button[aria-pressed]:not([data-select])');
+  // The cards' own boxes: the search box beside the heading has a toggle too.
+  const cards = page.locator('[data-results] button[aria-pressed]:not([data-select])');
   for (let i = 0; i < 3; i++) await cards.nth(i).click();
   await expect(page.getByText('3 selected')).toBeVisible();
 

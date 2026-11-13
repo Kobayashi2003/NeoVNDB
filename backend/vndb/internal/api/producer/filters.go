@@ -6,10 +6,11 @@ import (
 )
 
 var filters = map[string]query.FilterFunc{
-	"extlink": query.ExtLinkFilter("producers_extlinks", "p.id"),
-	"lang":    query.TextColumn("p.lang"),
-	"type":    query.TextColumn("p.type"),
-	"search":  query.SearchFilter("p", "p"),
+	"extlink":     query.ExtLinkFilter("producers_extlinks", "p.id"),
+	"lang":        query.TextColumn("p.lang"),
+	"type":        query.TextColumn("p.type"),
+	"search":      query.SearchFilter("p", "p"),
+	"description": query.TextFilter("p", "p"),
 
 	"relation": query.RelatedID(vndb.TypeProducer, `EXISTS (
 		SELECT 1 FROM producers_relations pr WHERE pr.id = p.id AND pr.pid = %s)`),

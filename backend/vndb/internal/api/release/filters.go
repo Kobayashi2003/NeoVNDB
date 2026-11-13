@@ -43,6 +43,7 @@ var filters = map[string]query.FilterFunc{
 
 	"released": query.ReleasedColumn("r.released"),
 	"search":   query.SearchFilter("r", "r"),
+	"notes":    query.TextFilter("r", "r"),
 
 	"patch":      query.BoolFilter("r.patch", "NOT r.patch"),
 	"freeware":   query.BoolFilter("r.freeware", "NOT r.freeware"),

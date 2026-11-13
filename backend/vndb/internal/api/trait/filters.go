@@ -6,11 +6,12 @@ import (
 )
 
 var filters = map[string]query.FilterFunc{
-	"search":     query.SearchFilter("i", "i"),
-	"searchable": query.BoolFilter("i.searchable", "NOT i.searchable"),
-	"applicable": query.BoolFilter("i.applicable", "NOT i.applicable"),
-	"sexual":     query.BoolFilter("i.sexual", "NOT i.sexual"),
-	"char_count": query.IntColumn("i.c_items", 1),
+	"search":      query.SearchFilter("i", "i"),
+	"description": query.TextFilter("i", "i"),
+	"searchable":  query.BoolFilter("i.searchable", "NOT i.searchable"),
+	"applicable":  query.BoolFilter("i.applicable", "NOT i.applicable"),
+	"sexual":      query.BoolFilter("i.sexual", "NOT i.sexual"),
+	"char_count":  query.IntColumn("i.c_items", 1),
 
 	"group": query.RelatedID(vndb.TypeTrait, "i.gid = %s"),
 	"parent": query.RelatedID(vndb.TypeTrait, `EXISTS (

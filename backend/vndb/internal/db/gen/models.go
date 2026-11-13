@@ -249,6 +249,20 @@ type SearchCache struct {
 	Label      string `db:"label" json:"label"`
 }
 
+type SearchLabel struct {
+	EntityType string `db:"entity_type" json:"entity_type"`
+	ID         int32  `db:"id" json:"id"`
+	Subid      *int32 `db:"subid" json:"subid"`
+	Prio       int16  `db:"prio" json:"prio"`
+	Label      string `db:"label" json:"label"`
+}
+
+type SearchText struct {
+	EntityType string `db:"entity_type" json:"entity_type"`
+	ID         int32  `db:"id" json:"id"`
+	Body       string `db:"body" json:"body"`
+}
+
 type Staff struct {
 	ID          int32  `db:"id" json:"id"`
 	Gender      string `db:"gender" json:"gender"`
@@ -368,6 +382,7 @@ type TransTerm struct {
 	SourceText string  `db:"source_text" json:"source_text"`
 	TargetText string  `db:"target_text" json:"target_text"`
 	Category   *string `db:"category" json:"category"`
+	TargetNorm *string `db:"target_norm" json:"target_norm"`
 }
 
 type Vn struct {

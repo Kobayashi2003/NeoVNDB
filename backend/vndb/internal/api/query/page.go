@@ -207,7 +207,7 @@ func searchRank(spec PageSpec, req *Request, b *Builder, direction string) (stri
 	      * CASE sc.prio WHEN 3 THEN 1.0 WHEN 2 THEN 0.7 ELSE 0.4 END
 	    + sc.prio * 5
 	    + similarity(sc.label, %[1]s) * 10)
-	   FROM search_cache sc
+	   FROM search_labels sc
 	  WHERE sc.entity_type = '%[2]s' AND sc.id = %[3]s.id)`,
 		q, spec.SearchEntity, spec.Alias)
 	if spec.Popularity != "" {
@@ -254,24 +254,58 @@ const idFilter = "id"
 // each match part of the query. Terms go through the same normaliser as the
 // index. The value is text, not a comparison: <3 is searched for as written.
 // A backslash is no escape (an empty ESCAPE), and a term that normalises to nothing,
-// all punctuation, matches nothing rather than every label.
+// all punctuation, matches nothing rather than every label. Labels are
+// search_labels: the names, and a tag's or trait's translated name.
 func SearchFilter(entity, alias string) FilterFunc {
 	condition := fmt.Sprintf(`EXISTS (
-		SELECT 1 FROM search_cache sc
+		SELECT 1 FROM search_labels sc
 		 WHERE sc.entity_type = '%s' AND sc.id = %s.id
 		   AND search_norm_term(%%[1]s) <> ''
 		   AND sc.label LIKE '%%%%' || search_norm_term(%%[1]s) || '%%%%' ESCAPE '')`, entity, alias)
 	return func(b *Builder, value string) error {
-		terms := SearchTerms(strings.TrimSpace(value))
-		if len(terms) == 0 {
-			return BadRequest("search needs a term")
-		}
-		if max := b.Limits.MaxSearchTerms; max > 0 && len(terms) > max {
-			return BadRequest("a search may have at most %d words", max)
+		terms, err := searchTerms(b, value)
+		if err != nil {
+			return err
 		}
 		for _, term := range terms {
 			b.Where(condition, term)
 		}
 		return nil
 	}
+}
+
+// TextFilter is description= (a release's notes=): every word must appear in
+// the entry's description, read the way a search reads names. One row holds
+// an entry's whole description, so the words are one condition on it.
+func TextFilter(entity, alias string) FilterFunc {
+	return func(b *Builder, value string) error {
+		terms, err := searchTerms(b, value)
+		if err != nil {
+			return err
+		}
+		likes := make([]string, len(terms))
+		for i, term := range terms {
+			arg := b.Arg(term)
+			likes[i] = fmt.Sprintf("search_norm_term(%[1]s) <> '' AND st.body LIKE '%%' || search_norm_term(%[1]s) || '%%' ESCAPE ''", arg)
+		}
+		// Appended as it is: the placeholders are bound already, and Where
+		// would read the LIKE's literal % as formatting.
+		b.Conds = append(b.Conds, fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM search_text st
+			 WHERE st.entity_type = '%s' AND st.id = %s.id
+			   AND %s)`, entity, alias, strings.Join(likes, " AND ")))
+		return nil
+	}
+}
+
+// searchTerms is a search value's words, under the request's ceiling on them.
+func searchTerms(b *Builder, value string) ([]string, error) {
+	terms := SearchTerms(strings.TrimSpace(value))
+	if len(terms) == 0 {
+		return nil, BadRequest("a search needs a term")
+	}
+	if max := b.Limits.MaxSearchTerms; max > 0 && len(terms) > max {
+		return nil, BadRequest("a search may have at most %d words", max)
+	}
+	return terms, nil
 }

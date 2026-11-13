@@ -4,7 +4,9 @@
 import { FILTERS } from '@/lib/filters';
 import { commas } from '@/lib/format';
 import { filtersOf, withParams, type Params } from '@/lib/href';
-import { LIST } from '@/lib/list';
+// textKey from lib, not from SearchBox: a client module's exports are only
+// references on the server, and calling one there fails the whole page.
+import { LIST, textKey } from '@/lib/list';
 import { fetchResults } from '@/lib/results';
 import { still } from '@/lib/viewTransitions';
 import { DataAge } from '@/components/layout/DataAge';
@@ -16,7 +18,7 @@ import { SearchBox } from './SearchBox';
 export async function ListPage({ type, params }: { type: string; params: Params }) {
   const path = `/${type}`;
   const filters = filtersOf(params);
-  const search = filters.search ?? '';
+  const searching = !!filters.search || !!filters[textKey(type)];
   const data = await fetchResults(type, params, filters);
 
   return (
@@ -34,7 +36,7 @@ export async function ListPage({ type, params }: { type: string; params: Params 
             )}
           </h1>
           <div className="flex w-full items-center gap-2 sm:w-auto">
-            <SearchBox path={path} params={params} initial={search} />
+            <SearchBox type={type} path={path} params={params} />
             <SavedSearches type={type} params={params} />
           </div>
         </div>
@@ -57,9 +59,13 @@ export async function ListPage({ type, params }: { type: string; params: Params 
         empty={
           <>
             Nothing matched.{' '}
-            {search && (
+            {searching && (
               <a
-                href={withParams(path, params, { search: null, page: null })}
+                href={withParams(path, params, {
+                  search: null,
+                  [textKey(type)]: null,
+                  page: null,
+                })}
                 className="text-accent hover:underline"
               >
                 Clear the search

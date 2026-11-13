@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/kobayashi/neovndb/internal/api/query"
 	"github.com/kobayashi/neovndb/internal/api/vn"
 	"github.com/kobayashi/neovndb/internal/cache"
@@ -305,6 +307,14 @@ func (s *Server) extlinks(w http.ResponseWriter, r *http.Request) {
 	respond(w, http.StatusOK, map[string]any{"results": vndb.Sites()})
 }
 
+// textNotBuilt reports a query that reached for search_text in a generation
+// that has none yet.
+func textNotBuilt(err error) bool {
+	var pg *pgconn.PgError
+	const undefinedTable = "42P01"
+	return errors.As(err, &pg) && pg.Code == undefinedTable && strings.Contains(pg.Message, "search_text")
+}
+
 // statusClientClosed is nginx's code for a request the client gave up on.
 // Nobody reads it; it keeps the access log from calling that a server error.
 const statusClientClosed = 499
@@ -333,6 +343,12 @@ func (s *Server) cached(ctx context.Context, w http.ResponseWriter, key, what st
 	case errors.Is(err, context.DeadlineExceeded):
 		s.log.Warn("request timed out", "what", what, "limit", s.cfg.RequestTimeout)
 		fail(w, http.StatusGatewayTimeout, "that took too long; try narrowing it")
+		return
+	case textNotBuilt(err):
+		// A generation from before the description index; serve builds it on
+		// start, and every import brings one.
+		s.log.Warn("description index not built yet", "what", what)
+		fail(w, http.StatusServiceUnavailable, "searching descriptions is not ready yet; try again in a minute")
 		return
 	default:
 		s.log.Error("request failed", "what", what, "err", err)

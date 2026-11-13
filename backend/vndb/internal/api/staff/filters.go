@@ -6,10 +6,11 @@ import (
 )
 
 var filters = map[string]query.FilterFunc{
-	"extlink": query.ExtLinkFilter("staff_extlinks", "s.id"),
-	"lang":    query.TextColumn("s.lang"),
-	"gender":  query.TextColumn("s.gender"),
-	"search":  query.SearchFilter("s", "s"),
+	"extlink":     query.ExtLinkFilter("staff_extlinks", "s.id"),
+	"lang":        query.TextColumn("s.lang"),
+	"gender":      query.TextColumn("s.gender"),
+	"search":      query.SearchFilter("s", "s"),
+	"description": query.TextFilter("s", "s"),
 
 	// A credit is recorded against an alias, so every filter here reaches the
 	// person through staff_alias. Voice work is kept apart from the credit

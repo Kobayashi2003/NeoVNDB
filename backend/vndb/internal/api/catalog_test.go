@@ -79,9 +79,11 @@ func TestEveryFilterFailsAsAClientError(t *testing.T) {
 	for _, typ := range types {
 		for name, f := range cat.Get(typ).Filters() {
 			// Nothing to match is refused by every filter; a search is text, and
-			// may look for a comma or what reads as an operator (<3).
+			// may look for a comma or what reads as an operator (<3), as may a
+			// search of descriptions.
+			text := name == "search" || name == "description" || name == "notes"
 			for _, v := range []string{"", ",", ">="} {
-				if name == "search" && v != "" {
+				if text && v != "" {
 					continue
 				}
 				if err := f(newBuilder(cat), v); err == nil || !query.IsClientError(err) {

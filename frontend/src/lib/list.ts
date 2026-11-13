@@ -154,3 +154,6 @@ export const LIST: Record<string, ListSpec> = {
 /** How many results one page shows. Small enough that a page of visual novels
  *  with covers is not a megabyte, large enough to be worth paging. */
 export const PAGE_SIZE = 24;
+
+/** The filter that searches a type's descriptions (a release's notes). */
+export const textKey = (type: string) => (type === 'r' ? 'notes' : 'description');
