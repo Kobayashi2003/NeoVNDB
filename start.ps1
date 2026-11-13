@@ -120,6 +120,41 @@ $ports = @{
     edge   = Get-EnvPort $edgeDir  'NEOVNDB_EDGE_PORT'   17030
 }
 
+# The outbound proxy, by the rule in D:\Program\Code\AGENTS.md: HTTPS_PROXY,
+# then HTTP_PROXY, else the proxy Windows is set to use (which Clash
+# switches), else none. The Go services resolve it themselves on every
+# request; Next does not -- next/font fetches Google Fonts at build time and
+# in `next dev`, and reads only the environment -- so the frontend is handed
+# this. NeoVNDB has no proxy setting of its own.
+function Get-OutboundProxy {
+    foreach ($value in $env:HTTPS_PROXY, $env:https_proxy, $env:HTTP_PROXY, $env:http_proxy) {
+        if ($value) { return $value }
+    }
+    $settings = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction SilentlyContinue
+    if (-not $settings) { return $null }
+    $enable = $settings.PSObject.Properties['ProxyEnable']
+    $server = $settings.PSObject.Properties['ProxyServer']
+    if (-not $enable -or $enable.Value -ne 1 -or -not $server -or -not $server.Value) { return $null }
+    # Either "host:port" for every scheme, or "http=host:port;https=host:port;...".
+    $address = $server.Value
+    if ($address -match '(?:^|;)https=([^;]+)') { $address = $Matches[1] }
+    elseif ($address -match '(?:^|;)http=([^;]+)') { $address = $Matches[1] }
+    elseif ($address -match '=') { return $null }
+    if ($address -notmatch '://') { $address = "http://$address" }
+    return $address
+}
+
+# Runs $Action with the proxy in HTTPS_PROXY, for the frontend only: left in
+# this script's environment it would reach the Go services too, where a set
+# variable outranks the system proxy and switching Clash would no longer move
+# them.
+function Invoke-WithProxy {
+    param([scriptblock]$Action)
+    $before = $env:HTTPS_PROXY
+    $env:HTTPS_PROXY = Get-OutboundProxy
+    try { & $Action } finally { $env:HTTPS_PROXY = $before }
+}
+
 function Write-Step { param([string]$Text) Write-Host "  $Text" -ForegroundColor DarkGray }
 function Write-Good { param([string]$Text) Write-Host "  $Text" -ForegroundColor Green }
 function Write-Bad  { param([string]$Text) Write-Host "  $Text" -ForegroundColor Red }
@@ -239,7 +274,7 @@ if ($Build -or $BuildBackend) {
 if ($builtWeb) {
     Write-Step 'building frontend (production)'
     Push-Location $webDir
-    try { $log = pnpm build 2>&1 } finally { Pop-Location }
+    try { $log = Invoke-WithProxy { pnpm build 2>&1 } } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) {
         $log | Select-Object -Last 20 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
         Write-Bad 'next build failed'
@@ -295,7 +330,7 @@ $webArgs = @($nextBin, ($builtWeb ? 'start' : 'dev'), '-H', '127.0.0.1', '-p', "
 Start-Child 'api'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('serve')  'api'    | Out-Null
 Start-Child 'img'   $vndbDir  (Join-Path $vndbDir  'bin/neovndb.exe') @('images') 'img'    | Out-Null
 Start-Child 'users' $usersDir (Join-Path $usersDir 'bin/users.exe')   @()         'users'  | Out-Null
-Start-Child 'web'   $webDir   'node'                                 $webArgs    'next'   | Out-Null
+Invoke-WithProxy { Start-Child 'web' $webDir 'node' $webArgs 'next' } | Out-Null
 Start-Child 'edge'  $edgeDir  'caddy'                                @('run')    'caddy'  | Out-Null
 
 $started | ConvertTo-Json -AsArray | Set-Content $pidFile -Encoding utf8

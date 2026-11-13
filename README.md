@@ -174,7 +174,10 @@ Caddy has no `.env`; `start.ps1` sets its environment.
    from different directories.
 4. `.\start.ps1 -Build`, or `pnpm build` and `pnpm start` (on 127.0.0.1;
    only the edge faces outward); point
-   `NEOVNDB_API_BASE` at the edge as the server reaches it.
+   `NEOVNDB_API_BASE` at the edge as the server reaches it. The build fetches
+   its display font from Google Fonts and reads only `HTTPS_PROXY` /
+   `HTTP_PROXY`; `start.ps1` sets it from the system proxy, so by hand set it
+   yourself where Google is unreachable directly.
 5. Run `edge/Caddyfile` behind whatever terminates TLS, or import
    `edge/Caddyfile.snippet` into a shared edge's site block.
 6. Make the first administrator on the machine:
