@@ -175,6 +175,24 @@ describe('ConditionBuilder', () => {
     );
   });
 
+  // Direct-only tags are not a filter of their own in the menu, but a switch
+  // on the tag that swaps it for dtag, keeping what was chosen.
+  it('offers direct-only tags as a switch on the tag, not as a filter of its own', async () => {
+    serve({ 'GET /vndbserve/vn': () => ({ results: [], count: 1, more: false }) });
+    render(<ConditionBuilder type="v" path="/v" params={{}} current="tag=g7:2.0" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Add a condition' }));
+    expect(screen.getByRole('button', { name: 'Tag' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Tag \(/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /trait/i })).not.toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+
+    await userEvent.click(screen.getByRole('button', { name: /^Tag:/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Include child tags/ }));
+    expect(screen.getByRole('button', { name: /^Tag \(direct only\):/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(router.push).toHaveBeenLastCalledWith(`/v?${new URLSearchParams({ f: 'dtag=g7:2.0' })}`);
+  });
+
   it('says what is wrong with text it cannot read, and will not apply it', async () => {
     serve({});
     render(<ConditionBuilder type="v" path="/v" params={{}} current="" />);

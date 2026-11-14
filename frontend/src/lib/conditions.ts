@@ -19,8 +19,11 @@ export type ConditionKind =
   | { kind: 'resolution' }
   /** A person credited on this item, optionally in one role: s224:scenario. */
   | { kind: 'credit'; target: 's'; roles: Choice[] }
-  /** Tag or trait with optional minimum score and spoiler ceiling. */
-  | { kind: 'scored'; target: 'g' | 'i'; score: boolean }
+  /** Tag or trait with optional minimum score and spoiler ceiling. One of a
+   *  pair: `direct` names the filter matching only what was tagged directly,
+   *  `inherited` the one that also counts children. The direct one is not
+   *  offered on its own; the inherited one's editor switches between them. */
+  | { kind: 'scored'; target: 'g' | 'i'; score: boolean; direct?: string; inherited?: string }
   /** By id, or by a condition on the related type: release=(lang=en). Every
    *  relation the API has takes both, at any depth. */
   | { kind: 'relation'; target: string };
@@ -113,14 +116,20 @@ export const CONDITIONS: Record<string, Condition[]> = {
       kind: 'enum',
       choices: Object.entries(VN_RELATION).map(([value, label]) => ({ value, label })),
     },
-    { key: 'tag', label: 'Tag', kind: 'scored', target: 'g', score: true },
-    { key: 'dtag', label: 'Tag (not inherited)', kind: 'scored', target: 'g', score: true },
+    { key: 'tag', label: 'Tag', kind: 'scored', target: 'g', score: true, direct: 'dtag' },
+    {
+      key: 'dtag',
+      label: 'Tag (direct only)',
+      kind: 'scored',
+      target: 'g',
+      score: true,
+      inherited: 'tag',
+    },
     { key: 'release', label: 'Release', ...rel('r') },
     { key: 'developer', label: 'Developer', ...rel('p') },
     { key: 'publisher', label: 'Publisher', ...rel('p') },
     { key: 'producer', label: 'Producer', ...rel('p') },
     { key: 'character', label: 'Character', ...rel('c') },
-    { key: 'trait', label: 'Character trait', kind: 'scored', target: 'i', score: false },
     { key: 'staff', label: 'Staff', ...rel('s') },
     { key: 'seiyuu', label: 'Voice actor', ...rel('s') },
     {
@@ -179,8 +188,15 @@ export const CONDITIONS: Record<string, Condition[]> = {
     { key: 'role', label: 'Role', kind: 'enum', choices: choices('CHARACTER_ROLE') },
     { key: 'sex', label: 'Sex', kind: 'enum', choices: choices('CHARACTER_SEX') },
     { key: 'gender', label: 'Gender', kind: 'enum', choices: choices('GENDER') },
-    { key: 'trait', label: 'Trait', kind: 'scored', target: 'i', score: false },
-    { key: 'dtrait', label: 'Trait (not inherited)', kind: 'scored', target: 'i', score: false },
+    { key: 'trait', label: 'Trait', kind: 'scored', target: 'i', score: false, direct: 'dtrait' },
+    {
+      key: 'dtrait',
+      label: 'Trait (direct only)',
+      kind: 'scored',
+      target: 'i',
+      score: false,
+      inherited: 'trait',
+    },
     { key: 'vn', label: 'Visual novel', ...rel('v') },
     { key: 'seiyuu', label: 'Voice actor', ...rel('s') },
     { key: 'age', label: 'Age', ...NUM },
@@ -269,6 +285,11 @@ export function nestable(c: Condition | undefined): string | undefined {
 
 export function conditionOf(type: string, key: string): Condition | undefined {
   return CONDITIONS[type]?.find(c => c.key === key);
+}
+
+/** The conditions the add menu lists: all but the direct half of a pair. */
+export function offered(type: string): Condition[] {
+  return (CONDITIONS[type] ?? []).filter(c => !(c.kind === 'scored' && c.inherited));
 }
 
 /** Singular names for "a release that…". */

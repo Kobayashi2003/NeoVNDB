@@ -43,6 +43,8 @@ const (
 	defaultMaxFieldDepth = 4
 	// Estimated field values per response; follows vndb's ceiling.
 	defaultMaxCost = 100_000
+	// vndb's own search goes three or four relations deep.
+	defaultMaxRelationDepth = 8
 
 	defaultGraphDepth    = 3
 	defaultMaxGraphDepth = 8
@@ -111,6 +113,8 @@ type Config struct {
 	MaxIDs         int
 	MaxFieldDepth  int
 	MaxCost        int
+	// How many relations one condition may go down.
+	MaxRelationDepth int
 
 	// The relation graph is a walk, bounded by depth and node count.
 	GraphDepth    int
@@ -182,6 +186,8 @@ func Load() (*Config, error) {
 		MaxIDs:         e.int("NEOVNDB_MAX_IDS", defaultMaxIDs),
 		MaxFieldDepth:  e.int("NEOVNDB_MAX_FIELD_DEPTH", defaultMaxFieldDepth),
 		MaxCost:        e.int("NEOVNDB_MAX_COST", defaultMaxCost),
+
+		MaxRelationDepth: e.int("NEOVNDB_MAX_RELATION_DEPTH", defaultMaxRelationDepth),
 
 		GraphDepth:    e.int("NEOVNDB_GRAPH_DEPTH", defaultGraphDepth),
 		MaxGraphDepth: e.int("NEOVNDB_MAX_GRAPH_DEPTH", defaultMaxGraphDepth),

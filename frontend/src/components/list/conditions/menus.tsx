@@ -15,7 +15,7 @@ import {
   Tag,
   UserRound,
 } from 'lucide-react';
-import { conditionOf, CONDITIONS, nestable, relatedType } from '@/lib/conditions';
+import { conditionOf, nestable, offered, relatedType } from '@/lib/conditions';
 import { group, type Group, leaf, type Leaf, type Node } from '@/lib/expr';
 import { cn } from '@/lib/utils';
 import { menuItem, MenuLabel, MenuMark } from '@/components/ui/Menu';
@@ -254,7 +254,7 @@ export function FilterList({
 }) {
   const [term, setTerm] = useState('');
   const q = term.trim().toLowerCase();
-  const shown = (CONDITIONS[type] ?? []).filter(c => c.label.toLowerCase().includes(q));
+  const shown = offered(type).filter(c => c.label.toLowerCase().includes(q));
   const own = shown.filter(c => !relatedType(c));
   const related = shown.filter(c => relatedType(c));
   const first = own[0] ?? related[0];

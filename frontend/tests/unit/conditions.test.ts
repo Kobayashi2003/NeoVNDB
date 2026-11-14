@@ -6,6 +6,7 @@ import {
   asExpression,
   conditionOf,
   nestable,
+  offered,
   opsFor,
   readCredit,
   readScored,
@@ -60,6 +61,20 @@ describe('CONDITIONS', () => {
         if (target) expect(CONDITIONS[target], `${c.key} → ${target}`).toBeDefined();
       }
     }
+  });
+
+  // The editor's switch swaps one half of a pair for the other.
+  it('pairs each tag or trait filter with its direct-only half, both ways', () => {
+    for (const [type, list] of Object.entries(CONDITIONS)) {
+      for (const c of list) {
+        if (c.kind !== 'scored') continue;
+        const other = conditionOf(type, c.direct ?? c.inherited ?? '');
+        expect(other?.kind === 'scored' && (other.inherited ?? other.direct), c.key).toBe(c.key);
+      }
+    }
+    expect(offered('v').map(c => c.key)).toContain('tag');
+    expect(offered('v').map(c => c.key)).not.toContain('dtag');
+    expect(offered('c').map(c => c.key)).not.toContain('dtrait');
   });
 });
 

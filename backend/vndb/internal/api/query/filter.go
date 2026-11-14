@@ -24,17 +24,9 @@ type Builder struct {
 	Budget *int
 	// Whether the request is masked, for a filter whose column differs then.
 	Masked bool
-	// How many relations deep these conditions are (see maxRelationDepth).
+	// How many relations deep these conditions are (Limits.MaxRelationDepth).
 	depth int
 }
-
-// maxRelationDepth bounds how many relations one condition may go down.
-// Each bracket is parsed on its own, so the parser's depth starts again at
-// every level and does not bound this; with every relation nestable the
-// types reach each other in cycles (a work's release's work's...), and,
-// with no condition budget set, one long address could ask for thousands
-// of nested subqueries. vndb's own search goes three or four deep.
-const maxRelationDepth = 8
 
 // unwithheld is, under the mask, a condition (starting " AND ") that the
 // entity of type typ whose id is the SQL expression id is not withheld: a
@@ -414,8 +406,8 @@ func (b *Builder) nested(typ, inner string) (string, error) {
 	if b.Types == nil {
 		return "", BadRequest("conditions about a related type are not available here")
 	}
-	if b.depth >= maxRelationDepth {
-		return "", BadRequest("conditions go at most %d relations deep", maxRelationDepth)
+	if max := b.Limits.MaxRelationDepth; max > 0 && b.depth >= max {
+		return "", BadRequest("conditions go at most %d relations deep", max)
 	}
 	target := b.Types.Get(typ)
 	if target == nil {

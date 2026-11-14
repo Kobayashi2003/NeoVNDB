@@ -44,7 +44,7 @@ func TestAllAges(t *testing.T) {
 	cfg := &config.Config{
 		DatabaseURL: url, MaxConns: 4, MinConns: 0, ConnLifetime: time.Hour,
 		ConnectTimeout: 10 * time.Second, TransLang: "ja",
-		PageSize: 24, MaxIDs: 100, MaxFieldDepth: 4, MaxFilterNodes: 64, MaxSearchTerms: 8,
+		PageSize: 24, MaxIDs: 100, MaxFieldDepth: 4, MaxFilterNodes: 64, MaxRelationDepth: 8, MaxSearchTerms: 8,
 		// Cached, as deployed: a rebuilt list must not be answered from the old.
 		CacheBackend: "memory", CacheEntries: 100, CacheTTL: time.Hour, RequestTimeout: 30 * time.Second,
 		GraphDepth: 3, MaxGraphDepth: 8, MaxGraphNodes: 300,
@@ -293,7 +293,7 @@ func TestAllAges(t *testing.T) {
 	// Every other relation, by id and by conditions, against the real tables:
 	// a wrong column would only show here, as a 500.
 	for _, q := range []string{
-		"/vn?fields=id&trait=i1", "/vn?fields=id&trait=i1:0", "/vn?fields=id&trait=(sexual=false)",
+		"/vn?fields=id&character=(trait=i1:0)", "/vn?fields=id&character=(dtrait=(sexual=false))",
 		"/staff?fields=id&vn=v101", "/staff?fields=id&vn=(olang=ja)",
 		"/staff?fields=id&voiced=v101", "/staff?fields=id&voiced=(olang=ja)",
 		"/staff?fields=id&character=c301",

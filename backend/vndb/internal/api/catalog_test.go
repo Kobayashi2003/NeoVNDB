@@ -21,11 +21,15 @@ func realCatalog(t *testing.T) *query.Catalog {
 }
 
 func compile(cat *query.Catalog, typ, expr string) (string, error) {
+	return compileUnder(query.DefaultLimits(), cat, typ, expr)
+}
+
+func compileUnder(lim query.Limits, cat *query.Catalog, typ, expr string) (string, error) {
 	n, err := query.ParseExpr(expr, query.Budget(0))
 	if err != nil {
 		return "", err
 	}
-	b := newBuilder(cat)
+	b := &query.Builder{Types: cat, Budget: query.Budget(0), Limits: lim}
 	if err := b.Expr(n, cat.Get(typ).Filters()); err != nil {
 		return "", err
 	}
@@ -52,8 +56,8 @@ func TestNestedConditionsCompile(t *testing.T) {
 		// Every relation takes conditions on what it reaches, as vndb's own
 		// search does: a work's character's voice actor, by what they are.
 		{vndb.TypeVN, "character=(seiyuu=(gender=m+lang=ja))", "s.gender ="},
-		{vndb.TypeVN, "trait=(sexual=false)", "JOIN traits i ON i.id = ct.tid"},
-		{vndb.TypeVN, "trait=i568:0", "ct.spoil <="},
+		{vndb.TypeVN, "character=(trait=(sexual=false))", "JOIN traits i ON i.id = ct.tid"},
+		{vndb.TypeVN, "character=(trait=i568:0)", "ct.spoil <="},
 		{vndb.TypeStaff, "vn=(olang=ja)", "vn.olang ="},
 		{vndb.TypeStaff, "voiced=(length>=4)", "vn.length >="},
 		{vndb.TypeStaff, "character=(sex=f)", "c.sex ="},
@@ -101,11 +105,25 @@ func TestRelationsNestOnlySoDeep(t *testing.T) {
 	if _, err := compile(cat, vndb.TypeVN, down(9)); err == nil || !query.IsClientError(err) {
 		t.Errorf("nine relations deep: got %v, want a client error", err)
 	}
+
+	// It is a setting: tightened it refuses sooner, and 0 lifts it.
+	at := func(max, levels int) error {
+		lim := query.DefaultLimits()
+		lim.MaxRelationDepth = max
+		_, err := compileUnder(lim, cat, vndb.TypeVN, down(levels))
+		return err
+	}
+	if err := at(2, 3); err == nil || !query.IsClientError(err) {
+		t.Errorf("three deep under a ceiling of two: got %v, want a client error", err)
+	}
+	if err := at(0, 40); err != nil {
+		t.Errorf("forty deep with no ceiling: %v", err)
+	}
 }
 
 func TestNestedTagRefusesItsOwnUnknowns(t *testing.T) {
 	cat := realCatalog(t)
-	for _, expr := range []string{"tag=(nosuch=1)", "tag=()", "trait=(sexual=maybe)", "character=(seiyuu=(nosuch=1))"} {
+	for _, expr := range []string{"tag=(nosuch=1)", "tag=()", "character=(trait=(sexual=maybe))", "character=(seiyuu=(nosuch=1))"} {
 		if _, err := compile(cat, vndb.TypeVN, expr); err == nil || !query.IsClientError(err) {
 			t.Errorf("%q: got %v, want a client error", expr, err)
 		}

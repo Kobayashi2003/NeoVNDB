@@ -76,6 +76,10 @@ export function Editor({
   if (inside) {
     const nested = typeof node.value !== 'string';
     const noun = NOUN[inside];
+    // A tag or trait switches between counting children and not by swapping
+    // to the other filter of its pair, keeping the value.
+    const other = cond.kind === 'scored' ? (cond.direct ?? cond.inherited) : undefined;
+    const pair = other && cond.kind === 'scored' ? { other, inheriting: !cond.inherited } : null;
     // Several chosen by id: any of them, none of them, or every one of them,
     // which is one condition per id joined by and, as for a list of choices.
     const ids =
@@ -138,6 +142,15 @@ export function Editor({
             {m.label}
           </button>
         ))}
+        {pair && (
+          <>
+            <div className="-mx-1 my-1 h-px bg-white/10" role="separator" />
+            <button type="button" className={menuItem()} onClick={() => set({ name: pair.other })}>
+              <MenuMark kind="check" on={pair.inheriting} />
+              Include child {noun}s
+            </button>
+          </>
+        )}
         {!nested && (
           <>
             <div className="-mx-1 my-1 h-px bg-white/10" role="separator" />

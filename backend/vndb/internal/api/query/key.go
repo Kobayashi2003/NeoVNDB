@@ -50,7 +50,7 @@ func (r *Request) Canonical(entity string) string {
 	b.WriteString("|l=")
 	for _, n := range []int{r.Limits.MaxPageSize, r.Limits.MaxIDs,
 		r.Limits.MaxFieldDepth, r.Limits.MaxCost, r.Limits.MaxSearchTerms,
-		r.Limits.MaxFilterNodes} {
+		r.Limits.MaxFilterNodes, r.Limits.MaxRelationDepth} {
 		b.WriteString(strconv.Itoa(n))
 		b.WriteByte(',')
 	}
