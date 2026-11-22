@@ -5,8 +5,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { errorText, RULES } from '@/lib/user';
+import { useNavigate } from '@/hooks/useNavigate';
 import { useSession } from '@/hooks/useSession';
 import { surface } from '@/components/ui/Surface';
 
@@ -31,7 +31,7 @@ function safe(next: string | undefined): string | null {
 
 export function AuthForm({ mode, next }: { mode: 'login' | 'register'; next?: string }) {
   const session = useSession();
-  const router = useRouter();
+  const router = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

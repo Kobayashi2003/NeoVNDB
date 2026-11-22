@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { rewordHiddenAborts, still } from '@/lib/viewTransitions';
+import { onViewTransition, rewordHiddenAborts, still } from '@/lib/viewTransitions';
 
 /** A document whose transitions all end with `error`, patched, and one
  *  transition started on it. */
@@ -52,6 +52,30 @@ describe('page transitions', () => {
     const patched = doc.startViewTransition;
     rewordHiddenAborts(doc);
     expect(doc.startViewTransition).toBe(patched);
+  });
+
+  it('notifies watchers when a view transition starts until unsubscribed', () => {
+    const first = {
+      ready: Promise.resolve(),
+      finished: Promise.resolve(),
+      skipTransition() {},
+    } as unknown as ViewTransition;
+    const second = {
+      ready: Promise.resolve(),
+      finished: Promise.resolve(),
+      skipTransition() {},
+    } as unknown as ViewTransition;
+    const native = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const doc = { startViewTransition: native } as unknown as Document;
+    rewordHiddenAborts(doc);
+
+    const seen: ViewTransition[] = [];
+    const stop = onViewTransition(t => seen.push(t));
+    doc.startViewTransition(() => {});
+    stop();
+    doc.startViewTransition(() => {});
+
+    expect(seen).toEqual([first]);
   });
 });
 

@@ -6,23 +6,31 @@
  *  their own go back to the top, as the window does. */
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   finishNavigation,
   isNavigating,
-  markMoving,
+  isPendingNavigation,
   onNavigating,
   startNavigation,
+  startPopState,
+  watchTransition,
 } from '@/lib/navigating';
+import { onViewTransition, rewordHiddenAborts } from '@/lib/viewTransitions';
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /** Clicks on links start the sign; a new address ends it. */
 export function Navigation() {
   const path = usePathname();
   const search = useSearchParams().toString();
   const showing = useSyncExternalStore(onNavigating, isNavigating, () => false);
+  const lastAddress = useRef('');
 
   useEffect(() => {
+    rewordHiddenAborts(document);
+    const stopWatching = onViewTransition(watchTransition);
     const onClick = (e: MouseEvent) => {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
@@ -32,22 +40,40 @@ export function Navigation() {
       if (link.hasAttribute('data-inert')) return;
       startNavigation(link.href);
     };
+    // Back and forward: skip when only a #fragment changed, or when Next
+    // already flushed a cached history entry synchronously before this listener
+    // (window listeners fire in registration order, so marking afterward would
+    // leave `data-moving` stuck with no matching commit).
+    const onPopState = () => {
+      const next = location.pathname + location.search;
+      if (next === lastAddress.current) return;
+      startPopState();
+    };
     // Capturing: next/link prevents the default to navigate on the client,
     // so a listener after it could not tell its clicks from inert ones.
     document.addEventListener('click', onClick, true);
-    // Back and forward: no bar (the page is usually cached), but the same
-    // crossfade as any other move.
-    window.addEventListener('popstate', markMoving);
+    window.addEventListener('popstate', onPopState);
     return () => {
+      stopWatching();
       document.removeEventListener('click', onClick, true);
-      window.removeEventListener('popstate', markMoving);
+      window.removeEventListener('popstate', onPopState);
     };
   }, []);
 
-  useEffect(() => {
-    finishNavigation();
+  useIsomorphicLayoutEffect(() => {
+    lastAddress.current = location.pathname + location.search;
+    // Next skips scrolling to top when the new <main>'s top is still inside the
+    // viewport -- which happens whenever the incoming page's initial height
+    // clamps scrollY to (0, headerH] under the sticky header, letting scroll
+    // anchoring drag the window down once client data arrives. Reset before the
+    // new view-transition snapshot is captured, for forward moves without a hash.
+    if (isPendingNavigation() && !location.hash && window.scrollY > 0) window.scrollTo(0, 0);
     for (const box of document.querySelectorAll<HTMLElement>('[data-scroll-top]'))
       box.scrollTop = 0;
+  }, [path, search]);
+
+  useEffect(() => {
+    finishNavigation();
   }, [path, search]);
 
   return (

@@ -242,3 +242,122 @@ test('ratings are changed several at once on the ratings page', async ({ page, u
   await expect(page.getByText('No visual novels rated yet.', { exact: false })).toBeVisible();
   expect(await rated()).toEqual([]);
 });
+
+test('dashboard transitions hold data-moving past 600ms and share page width with user pages', async ({
+  page,
+  user,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Played' })
+  ).json()) as { id: number };
+  await user.call('POST', `/collections/${list.id}/marks/add`, { items: ['v17', 'v11', 'v2'] });
+  await user.call('PUT', '/ratings/v17', { rating: 5 });
+
+  // Every user page shares the same `<main>` width so switching between them
+  // never rescales the transition snapshot.
+  const widths = new Set<number>();
+  for (const path of ['/u/dashboard', '/u', '/u/ratings', `/u/${list.id}`, '/account']) {
+    await page.goto(path, { waitUntil: 'networkidle' });
+    widths.add(
+      await page.locator('main').evaluate(m => Math.round(m.getBoundingClientRect().width)),
+    );
+  }
+  expect(widths.size).toBe(1);
+
+  // Slow the transition animations to ~1.4s (well past the old 600ms fixed
+  // timer) and confirm `data-moving` is never stripped mid-transition.
+  await page.goto('/u/dashboard', { waitUntil: 'networkidle' });
+  await expect(page.locator('section').first()).toBeVisible();
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      droppedMidTransition: boolean;
+      finished: boolean;
+    };
+    w.droppedMidTransition = false;
+    w.finished = false;
+    let active = false;
+    new MutationObserver(() => {
+      if (active && !document.documentElement.hasAttribute('data-moving'))
+        w.droppedMidTransition = true;
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-moving'] });
+
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = ((...args: Parameters<typeof start>) => {
+      const t = start(...args);
+      active = true;
+      void t.ready.then(() => {
+        for (const a of document.getAnimations()) {
+          if ((a.effect as KeyframeEffect | null)?.pseudoElement?.startsWith('::view-transition'))
+            a.playbackRate = 0.25;
+        }
+      });
+      void t.finished.then(
+        () => {
+          active = false;
+          w.finished = true;
+        },
+        () => {
+          active = false;
+          w.finished = true;
+        },
+      );
+      return t;
+    }) as typeof document.startViewTransition;
+  });
+
+  await page.locator('header button[aria-expanded]').last().click();
+  await page.locator('header a[href="/u"]').click();
+  await expect(page).toHaveURL(/\/u$/);
+  await page.waitForFunction(() => (window as unknown as { finished: boolean }).finished);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { droppedMidTransition: boolean }).droppedMidTransition,
+    ),
+  ).toBe(false);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-moving')))
+    .toBe(false);
+});
+
+test('leaving a scrolled dashboard for ratings resets scroll, and history back clears data-moving', async ({
+  page,
+  member: user,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const list = (await (
+    await user.call('POST', '/collections', { type: 'v', name: 'Read' })
+  ).json()) as { id: number };
+  const items = Array.from({ length: 30 }, (_, i) => `v${i + 1}`);
+  await user.call('POST', `/collections/${list.id}/marks/add`, { items });
+  await user.call('POST', '/ratings/set', { items, rating: 4 });
+
+  await page.goto('/u/dashboard', { waitUntil: 'networkidle' });
+  await expect(page.locator('section').first()).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(500);
+
+  await page.locator('header button[aria-expanded]').last().click();
+  await page.locator('header a[href="/u/ratings"]').click();
+  await expect(page).toHaveURL(/\/u\/ratings$/);
+  await expect(page.locator("[data-results] a[href^='/v']").first()).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Math.round(scrollY))).toBe(0);
+  await expect(page.getByRole('heading', { name: 'Your ratings' })).toBeInViewport();
+
+  // Cached browser back from dashboard to /u must not leave `data-moving` stuck.
+  await page.goto('/u', { waitUntil: 'networkidle' });
+  await page.locator('header button[aria-expanded]').last().click();
+  await page.locator('header a[href="/u/dashboard"]').click();
+  await expect(page).toHaveURL(/\/u\/dashboard$/);
+  await expect(page.locator('section').first()).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-moving')))
+    .toBe(false);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/u$/);
+  await page.waitForTimeout(700);
+  expect(await page.evaluate(() => document.documentElement.hasAttribute('data-moving'))).toBe(
+    false,
+  );
+});

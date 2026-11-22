@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   KeyRound,
   LayoutDashboard,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { errorText, UserError } from '@/lib/user';
+import { useNavigate } from '@/hooks/useNavigate';
 import { useSession } from '@/hooks/useSession';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuDivider, MenuLabel, MenuPanel, menuItem } from '@/components/ui/Menu';
@@ -58,7 +59,7 @@ export function UserMenu({ name }: { name: string | null }) {
  *  reading it during render needs useSearchParams, which opts the page out of
  *  static rendering. */
 function SignInLink() {
-  const router = useRouter();
+  const router = useNavigate();
 
   return (
     <Link
@@ -77,7 +78,7 @@ function SignInLink() {
 
 function SignedIn() {
   const session = useSession();
-  const router = useRouter();
+  const router = useNavigate();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [trouble, setTrouble] = useState<string | null>(null);

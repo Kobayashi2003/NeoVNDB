@@ -3,9 +3,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { UserRound } from 'lucide-react';
 import { errorText, RULES } from '@/lib/user';
+import { useNavigate } from '@/hooks/useNavigate';
 import { useSession } from '@/hooks/useSession';
 import { Placeholder, PlaceholderLines, surface } from '@/components/ui/Surface';
 import { SignInFirst } from './SignInFirst';
@@ -147,7 +147,7 @@ const FIELD =
  *  undo, and a session alone may be a borrowed browser. */
 function DeleteForm() {
   const session = useSession();
-  const router = useRouter();
+  const router = useNavigate();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

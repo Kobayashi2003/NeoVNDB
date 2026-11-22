@@ -15,6 +15,13 @@ export function still(name: string): CSSProperties {
 
 const REWORDED = Symbol.for('neovndb.reworded');
 const ABORTED = 'Transition was aborted because of invalid state';
+const watchers = new Set<(transition: ViewTransition) => void>();
+
+/** Runs `notify` each time a view transition starts on a patched document. */
+export function onViewTransition(notify: (transition: ViewTransition) => void): () => void {
+  watchers.add(notify);
+  return () => void watchers.delete(notify);
+}
 
 /** Matched by shape rather than `instanceof DOMException`, which fails for an
  *  exception made in another realm. */
@@ -35,8 +42,8 @@ function reword(error: unknown): unknown {
 
 /** Chrome words a hidden-tab abort "…invalid state. Document hidden", which
  *  React 19.3 does not ignore and reports as a recoverable error; this rewords
- *  it to the form React knows. Installed from instrumentation-client.ts, so it
- *  is in place before any transition. */
+ *  it to the form React knows, and lets callers track when each transition
+ *  actually ends. Installed from instrumentation-client.ts before hydration. */
 export function rewordHiddenAborts(doc: Document) {
   // Once, though this module is evaluated again on every hot reload.
   if (!doc.startViewTransition || REWORDED in doc.startViewTransition) return;
@@ -48,6 +55,7 @@ export function rewordHiddenAborts(doc: Document) {
         throw reword(error);
       });
       Object.defineProperty(transition, 'ready', { value: ready });
+      for (const notify of watchers) notify(transition);
       return transition;
     },
     { [REWORDED]: true },

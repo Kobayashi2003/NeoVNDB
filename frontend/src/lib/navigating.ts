@@ -5,27 +5,60 @@
 /** Below this a navigation is instant to the eye, and a bar would flicker. */
 const QUIET_MS = 120;
 /** A navigation that never finishes (an error page, a dropped request) must
- *  not leave the bar running forever. */
+ *  not leave the bar or the transition mark running forever. */
 const GIVE_UP_MS = 15_000;
-/** Longer than the page crossfade (globals.css), which stops the moment its
- *  mark goes. */
-const CROSSFADE_MS = 600;
+/** Short fallback for popstate when the browser does not start a view
+ *  transition or does not commit a new route. */
+export const POPSTATE_MS = 500;
+
+let moving = false;
+let landed = true;
+let activeTransitions = 0;
 let settling: ReturnType<typeof setTimeout> | undefined;
+
+function clearMoving() {
+  clearTimeout(settling);
+  settling = undefined;
+  moving = false;
+  document.documentElement.removeAttribute('data-moving');
+}
+
+function armMovingTimeout(after: number) {
+  clearTimeout(settling);
+  settling = setTimeout(clearMoving, after);
+}
 
 /** Marks the document as going to another page, which is what lets the page
  *  crossfade play (globals.css). React runs a view transition for commits that
  *  are not navigations too -- the first after hydration among them -- and the
  *  crossfade on a page that stayed where it was blanked it for a frame. */
-export function markMoving() {
+export function markMoving(timeout = GIVE_UP_MS) {
+  moving = true;
+  landed = false;
   document.documentElement.setAttribute('data-moving', '');
-  // A move that never lands on a new address (back over a #fragment, one
-  // given up) must not leave the mark for the next commit that is no move.
-  settleMoving(GIVE_UP_MS);
+  // A move that never lands on a new address (a dropped request, an error
+  // page) must not leave the mark for a later non-navigation commit.
+  armMovingTimeout(timeout);
 }
 
-function settleMoving(after = CROSSFADE_MS) {
-  clearTimeout(settling);
-  settling = setTimeout(() => document.documentElement.removeAttribute('data-moving'), after);
+/** Keeps `data-moving` on the document until the active view transition
+ *  tears down. Removing it via a fixed timer used to strip `:root[data-moving]`
+ *  mid-transition on tall pages (the dashboard), reverting `::view-transition-old`
+ *  to the UA 250ms fade-out at opacity 1 and flashing the pre-fade frame. */
+export function watchTransition(transition: ViewTransition) {
+  if (!transition?.finished) return;
+  activeTransitions++;
+  // Extend any shorter fallback (e.g. popstate) while a transition is live.
+  if (moving) armMovingTimeout(GIVE_UP_MS);
+  let ended = false;
+  const end = () => {
+    if (ended) return;
+    ended = true;
+    activeTransitions = Math.max(0, activeTransitions - 1);
+    if (activeTransitions === 0 && landed) clearMoving();
+  };
+  // Handle rejection too so an aborted transition never raises unhandledrejection.
+  transition.finished.then(end, end);
 }
 
 let pending = false;
@@ -69,7 +102,12 @@ function clear() {
 
 /** Starts the sign for a navigation to href; nothing if it goes nowhere new. */
 export function startNavigation(href: string) {
-  const to = new URL(href, location.href);
+  let to: URL;
+  try {
+    to = new URL(href, location.href);
+  } catch {
+    return;
+  }
   if (
     to.origin !== location.origin ||
     to.pathname + to.search === location.pathname + location.search
@@ -88,9 +126,22 @@ export function startNavigation(href: string) {
   );
 }
 
+/** Marks a browser history traversal (back/forward) for the crossfade while
+ *  cancelling any abandoned forward navigation bar and pending-scroll flag. */
+export function startPopState() {
+  clear();
+  restoreImages();
+  if (pending || shown) {
+    pending = shown = false;
+    announce();
+  }
+  markMoving(POPSTATE_MS);
+}
+
 export function finishNavigation() {
   clear();
-  settleMoving();
+  landed = true;
+  if (activeTransitions === 0) clearMoving();
   restoreImages();
   if (!pending && !shown) return;
   pending = shown = false;
@@ -104,4 +155,10 @@ export function onNavigating(notify: () => void) {
 
 export function isNavigating() {
   return shown;
+}
+
+/** True from `startNavigation` until the new route finishes committing (never
+ *  for initial load or browser back/forward). */
+export function isPendingNavigation() {
+  return pending;
 }

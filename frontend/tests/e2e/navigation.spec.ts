@@ -285,3 +285,74 @@ test('moving to another page fades one into the next', async ({ page }) => {
     .poll(() => page.evaluate(() => (window as unknown as { transitions: number }).transitions))
     .toBeGreaterThan(before);
 });
+
+test('page transition group step-end sits in the blank gap between page-out and page-in', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/v', { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      timings?: { outEnd: number; groupEnd: number; inDelay: number } | null;
+    };
+    w.timings = null;
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = ((...args: Parameters<typeof start>) => {
+      const t = start(...args);
+      void t.ready.then(() => {
+        const anims = document
+          .getAnimations()
+          .filter(a => (a.effect as KeyframeEffect | null)?.pseudoElement);
+        const byName = (name: string) =>
+          anims.find(a => (a as CSSAnimation).animationName === name)?.effect?.getComputedTiming();
+        const group = anims
+          .find(a => {
+            const p = (a.effect as KeyframeEffect).pseudoElement!;
+            return (
+              p.startsWith('::view-transition-group(') &&
+              !/\((root|site-header|shelf-lists|still-[\w-]+)\)$/.test(p)
+            );
+          })
+          ?.effect?.getComputedTiming();
+        const out = byName('page-out');
+        const enter = byName('page-in');
+        if (out && group && enter) {
+          w.timings = {
+            outEnd: Number(out.endTime),
+            groupEnd: Number(group.endTime),
+            inDelay: Number(enter.delay),
+          };
+        }
+      });
+      return t;
+    }) as typeof document.startViewTransition;
+  });
+
+  await page.locator('header a[href="/c"]').first().click();
+  await expect(page).toHaveURL(/\/c$/);
+  await page.waitForFunction(() => !!(window as unknown as { timings?: unknown }).timings);
+  const timings = await page.evaluate(
+    () =>
+      (window as unknown as { timings: { outEnd: number; groupEnd: number; inDelay: number } })
+        .timings,
+  );
+  expect(timings.outEnd).toBeLessThan(timings.groupEnd);
+  expect(timings.groupEnd).toBeLessThan(timings.inDelay);
+
+  // Without `data-moving`, `.still:only-child` layers must not run `page-out`/`page-in`.
+  const nonNavStillAnims = await page.evaluate(async () => {
+    document.documentElement.removeAttribute('data-moving');
+    const tr = document.startViewTransition(() => {
+      document.querySelector('[style*="view-transition-name"]')?.remove();
+    });
+    await tr.ready;
+    const names = document
+      .getAnimations()
+      .filter(a => (a.effect as KeyframeEffect | null)?.pseudoElement?.includes('still-'))
+      .map(a => (a as CSSAnimation).animationName);
+    await tr.finished;
+    return names;
+  });
+  expect(nonNavStillAnims).not.toContain('page-out');
+  expect(nonNavStillAnims).not.toContain('page-in');
+});
